@@ -1,0 +1,121 @@
+/* global.css */
+.node circle {
+  fill: #ffab00;
+  stroke: #664d03;
+  stroke-width: 3px;
+}
+
+.node text {
+  font: 12px sans-serif;
+  fill: #333;
+  text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, -1px 1px 0 #fff,
+    1px -1px 0 #fff;
+}
+
+.link {
+  fill: none;
+  stroke: #888;
+  stroke-opacity: 0.6;
+  stroke-width: 1.5px;
+}
+
+.node--internal circle {
+  fill: #4caf50;
+}
+
+body {
+  background-color: #f8f9fa;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h3 {
+  color: #007bff;
+}
+
+.container {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.accordion-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: #0056b3;
+  color: white;
+}
+
+.table {
+  margin-top: 20px;
+}
+
+.table thead th {
+  background-color: #007bff;
+  color: white;
+}
+
+#mermaid-container {
+  display: block;
+}
+
+#json-ld-container {
+  display: none;
+}
+
+.json-wrapper {
+  position: relative;
+  padding: 20px;
+  margin-top: 20px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  color: #0056b3;
+}
+
+.serialization-btn-group {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  /* Center the button group */
+}
+
+.serialization-btn-group .btn-check {
+  width: auto;
+}
+
+.serialization-btn-group .btn-outline-info {
+  padding: 10px 20px;
+  /* Increase the padding */
+  font-size: 1rem;
+  /* Increase the font size */
+}
+
+.btn-group {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.btn-check + .btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+}
