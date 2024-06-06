@@ -1,11 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import App from "./App";
+import MetadataPage from "./MetadataPage";
 import "./global.css";
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <MetadataPage type={"ROCrate"} />
   </React.StrictMode>,
   document.getElementById("root")
 );

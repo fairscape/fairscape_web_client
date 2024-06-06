@@ -4,7 +4,7 @@ import MetadataComponent from "./components/MetadataComponent";
 import SerializationComponent from "./components/SerializationComponent";
 import EvidenceGraphComponent from "./components/EvidenceGraphComponent";
 
-const App = ({ type }) => {
+const MetadataPage = ({ type }) => {
   const [view, setView] = useState("metadata");
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const App = ({ type }) => {
   };
 
   const json = JSON.stringify(metadata, null, 2);
-  const rdfXml = "<rdf>example rdf/xml content</rdf>";
+  const rdfXml = "<rdf>example rdf/xml content</rdf>"; //TODO convert json to rdf/turtle
   const turtle = "@prefix ex: <http://example.org/> .";
 
   const evidenceGraph = {
@@ -88,4 +88,4 @@ const App = ({ type }) => {
   );
 };
 
-export default App;
+export default MetadataPage;
