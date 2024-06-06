@@ -15,10 +15,10 @@ const App = ({ type }) => {
   const showJSON = () => setView("serialization");
   const showEvidenceGraph = () => setView("evidenceGraph");
 
-  const rocrate = {
+  const metadata = {
     guid: "ark:99999/example-guid",
     "@type": "ROCrate",
-    name: "Example ROCrate",
+    name: "Example crate",
     description: "This is an example ROCrate.",
     sourceOrganization: {
       name: "Metadata 1",
@@ -49,7 +49,7 @@ const App = ({ type }) => {
     distributions: ["Test1", "Test2"],
   };
 
-  const json = JSON.stringify(rocrate, null, 2);
+  const json = JSON.stringify(metadata, null, 2);
   const rdfXml = "<rdf>example rdf/xml content</rdf>";
   const turtle = "@prefix ex: <http://example.org/> .";
 
@@ -69,13 +69,15 @@ const App = ({ type }) => {
 
   return (
     <div className="container">
-      <h3>ROCrate Metadata: {rocrate.guid}</h3>
+      <h3>
+        {metadata["@type"]} Metadata: {metadata.guid}
+      </h3>
       <ButtonGroupComponent
         showMetadata={showMetadata}
         showJSON={showJSON}
         showEvidenceGraph={showEvidenceGraph}
       />
-      {view === "metadata" && <MetadataComponent metadata={rocrate} />}
+      {view === "metadata" && <MetadataComponent metadata={metadata} />}
       {view === "serialization" && (
         <SerializationComponent json={json} rdfXml={rdfXml} turtle={turtle} />
       )}
