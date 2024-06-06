@@ -16,21 +16,36 @@ const App = ({ type }) => {
   const showMermaid = () => setView("mermaid");
 
   const rocrate = {
-    guid: "example-guid",
+    guid: "ark:99999/example-guid",
     name: "Example ROCrate",
     description: "This is an example ROCrate.",
-    sourceOrganization: "Example Organization",
+    sourceOrganization: {
+      name: "Metadata 1",
+      "@id": "ark:99999/metadata-1-id",
+      "@type": "MetadataType",
+      description: "Metadata 1 description",
+      metadataType: "Type 1",
+      keywords: "example, metadata",
+    },
     metadataGraph: [
       {
         name: "Metadata 1",
-        "@id": "metadata-1-id",
+        "@id": "ark:99999/metadata-1-id",
         "@type": "MetadataType",
         description: "Metadata 1 description",
         metadataType: "Type 1",
         keywords: "example, metadata",
       },
-      // Add more metadata as needed
+      {
+        name: "Metadata 2",
+        "@id": "ark:99999/metadata-2-id",
+        "@type": "MetadataType",
+        description: "Metadata 1 description",
+        metadataType: "Type 1",
+        keywords: "example, metadata",
+      },
     ],
+    distributions: ["Test1", "Test2"],
   };
 
   const json = JSON.stringify(rocrate, null, 2);

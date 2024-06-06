@@ -120,20 +120,57 @@
       .serialization-btn-group .btn-check {
         width: 100px;
       }
+
+      /* Accordion-specific styles */
+      .accordion-button {
+        width: 100%;
+        overflow: hidden; /* Prevent horizontal overflow */
+        white-space: nowrap; /* Prevent text wrapping */
+        text-overflow: ellipsis; /* Add ellipsis to overflowing text */
+      }
+
+      .accordion-item {
+        width: 100%;
+        overflow: hidden; /* Prevent horizontal overflow */
+      }
+
+      .accordion-body {
+        width: 100%;
+        padding: 1rem 1.25rem; /* Adjust padding as needed */
+        overflow-x: auto; /* Allow horizontal scrolling if necessary */
+      }
+
+      .table {
+        table-layout: fixed; /* Ensure table layout is fixed */
+        width: 100%; /* Ensure table takes the full width */
+      }
+
+      .table th,
+      .table td {
+        width: 50%; /* Adjust width as needed */
+        overflow: hidden;
+        white-space: nowrap; /* Prevent text wrapping */
+        text-overflow: ellipsis; /* Add ellipsis to overflowing text */
+      }
+      .table ul {
+        padding-left: 20px; /* Add padding to the left */
+        margin: 10px 0; /* Add margin to top and bottom */
+      }
+
+      .table ul li {
+        margin-bottom: 5px; /* Add space between list items */
+        list-style-type: disc; /* Ensure bullet points are discs */
+      }
+
+      .table ul li:last-child {
+        margin-bottom: 0; /* Remove margin from the last item */
+      }
     </style>
   </head>
   <body>
     <div id="root"></div>
-    <script
-      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
-      integrity="sha384-oBqDVmMz4fnFO9gybBogGzQ1pGsFWvY7CjJ8x0PiKbbV+AMbSRDbYMMIjFoC8/h0"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"
-      integrity="sha384-cn7l7gDp0eylGw3XHMEYBf6rP6MD5MJOEAd6RYhuKtrLIYU7A4K9U8NFpH0bBIpG"
-      crossorigin="anonymous"
-    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
