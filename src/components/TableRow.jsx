@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 const FAIRSCAPE_URL = "http://example.com/"; // Replace with your actual URL
 const urlPattern = /^(http|https):\/\/[^\s]+/;
-const identifierPattern = /^ark[0-9]{5}:\/.*$/;
+const identifierPattern = /^ark:[0-9]{5}\/.*$/;
 
 const addLink = (value, download = false) => {
   if (download) {

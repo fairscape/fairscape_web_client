@@ -17,6 +17,7 @@ const App = ({ type }) => {
 
   const rocrate = {
     guid: "ark:99999/example-guid",
+    "@type": "ROCrate",
     name: "Example ROCrate",
     description: "This is an example ROCrate.",
     sourceOrganization: {
@@ -74,7 +75,7 @@ const App = ({ type }) => {
         showJSON={showJSON}
         showMermaid={showMermaid}
       />
-      {view === "metadata" && <MetadataComponent rocrate={rocrate} />}
+      {view === "metadata" && <MetadataComponent metadata={rocrate} />}
       {view === "serialization" && (
         <SerializationComponent json={json} rdfXml={rdfXml} turtle={turtle} />
       )}

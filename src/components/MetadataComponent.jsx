@@ -1,18 +1,30 @@
+// MetadataComponent.js
 import React from "react";
 import TableRow from "./TableRow";
+import {
+  ROCrateProperties,
+  DatasetProperties,
+  SoftwareProperties,
+  SchemaProperties,
+} from "./metadataProperties.js";
 
-const MetadataComponent = ({ rocrate }) => {
-  const properties = [
-    { name: "Name", value: rocrate.name },
-    { name: "Persistent Identifier", value: rocrate.guid },
-    { name: "Description", value: rocrate.description },
-    {
-      name: "Source Organization",
-      value: rocrate.sourceOrganization || "No source organization available",
-    },
-    { name: "Contains", value: rocrate.metadataGraph },
-    { name: "Distributions", value: rocrate.distributions }, // Assuming distributions is an array
-  ];
+const getPropertyList = (type) => {
+  switch (type) {
+    case "ROCrate":
+      return ROCrateProperties;
+    case "Dataset":
+      return DatasetProperties;
+    case "Software":
+      return SoftwareProperties;
+    case "Schema":
+      return SchemaProperties;
+    default:
+      return [];
+  }
+};
+
+const MetadataComponent = ({ metadata }) => {
+  const properties = getPropertyList(metadata["@type"]);
 
   return (
     <div className="container">
@@ -28,7 +40,7 @@ const MetadataComponent = ({ rocrate }) => {
             <TableRow
               key={property.name}
               property={property.name}
-              value={property.value}
+              value={metadata[property.key] || "N/A"}
             />
           ))}
         </tbody>
