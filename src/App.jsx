@@ -13,7 +13,7 @@ const App = ({ type }) => {
 
   const showMetadata = () => setView("metadata");
   const showJSON = () => setView("serialization");
-  const showMermaid = () => setView("mermaid");
+  const showEvidenceGraph = () => setView("evidenceGraph");
 
   const rocrate = {
     guid: "ark:99999/example-guid",
@@ -73,13 +73,13 @@ const App = ({ type }) => {
       <ButtonGroupComponent
         showMetadata={showMetadata}
         showJSON={showJSON}
-        showMermaid={showMermaid}
+        showEvidenceGraph={showEvidenceGraph}
       />
       {view === "metadata" && <MetadataComponent metadata={rocrate} />}
       {view === "serialization" && (
         <SerializationComponent json={json} rdfXml={rdfXml} turtle={turtle} />
       )}
-      {view === "mermaid" && (
+      {view === "evidenceGraph" && (
         <EvidenceGraphComponent evidenceGraph={evidenceGraph} />
       )}
     </div>

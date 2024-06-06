@@ -1,6 +1,10 @@
 import React from "react";
 
-const ButtonGroupComponent = ({ showMetadata, showJSON, showMermaid }) => {
+const ButtonGroupComponent = ({
+  showMetadata,
+  showJSON,
+  showEvidenceGraph,
+}) => {
   return (
     <div
       className="btn-group"
@@ -34,13 +38,13 @@ const ButtonGroupComponent = ({ showMetadata, showJSON, showMermaid }) => {
 
       <input
         type="radio"
-        onClick={showMermaid}
+        onClick={showEvidenceGraph}
         className="btn-check"
         name="btnradio"
-        id="btn-mermaid"
+        id="btn-evidencegraph"
         autoComplete="off"
       />
-      <label className="btn btn-outline-primary" htmlFor="btn-mermaid">
+      <label className="btn btn-outline-primary" htmlFor="btn-evidencegraph">
         Evidence Graph
       </label>
     </div>
