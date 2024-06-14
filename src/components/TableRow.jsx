@@ -98,46 +98,118 @@ const TableRow = ({ property, value }) => {
         </div>
       );
     } else if (typeof value === "object" && value !== null) {
-      return (
-        <div
-          className="accordion"
-          id={`accordion${keyPrefix}${property.replace(/\s+/g, "-")}`}
-        >
-          <div className="accordion-item">
-            <h2
-              className="accordion-header"
-              id={`heading${keyPrefix}${property.replace(/\s+/g, "-")}-object`}
+      if (property === "Properties") {
+        return (
+          <div>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#collapseProperties"
+              aria-expanded="false"
+              aria-controls="collapseProperties"
             >
-              <button
-                className="accordion-button"
-                type="button"
-                onClick={() => setIsExpanded(!isExpanded)}
-                aria-expanded={isExpanded}
-                aria-controls={`collapse${keyPrefix}${property.replace(
+              Show/Hide Properties
+            </button>
+            <div className="collapse" id="collapseProperties">
+              {Object.entries(value).map(([propName, propDetails], index) => (
+                <div
+                  className="accordion"
+                  id={`accordion${propName.replace(/\s+/g, "-")}`}
+                  key={index}
+                >
+                  <div className="accordion-item">
+                    <h2 className="accordion-header">
+                      <button
+                        className="accordion-button collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target={`#collapse${propName.replace(
+                          /\s+/g,
+                          "-"
+                        )}`}
+                        aria-expanded="false"
+                        aria-controls={`collapse${propName.replace(
+                          /\s+/g,
+                          "-"
+                        )}`}
+                      >
+                        {propName}
+                      </button>
+                    </h2>
+                    <div
+                      id={`collapse${propName.replace(/\s+/g, "-")}`}
+                      className="accordion-collapse collapse"
+                      data-bs-parent={`#accordion${propName.replace(
+                        /\s+/g,
+                        "-"
+                      )}`}
+                    >
+                      <div className="accordion-body">
+                        <strong>Description:</strong>{" "}
+                        {propDetails.description || "No description"}
+                        <br />
+                        <strong>Type:</strong>{" "}
+                        {propDetails.type || "No type specified"}
+                        <br />
+                        <strong>Index:</strong>{" "}
+                        {propDetails.index || "No index specified"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <div
+            className="accordion"
+            id={`accordion${keyPrefix}${property.replace(/\s+/g, "-")}`}
+          >
+            <div className="accordion-item">
+              <h2
+                className="accordion-header"
+                id={`heading${keyPrefix}${property.replace(
                   /\s+/g,
                   "-"
                 )}-object`}
               >
-                {property}
-              </button>
-            </h2>
-            <div
-              id={`collapse${keyPrefix}${property.replace(/\s+/g, "-")}-object`}
-              className={`accordion-collapse collapse ${
-                isExpanded ? "show" : ""
-              }`}
-              aria-labelledby={`heading${keyPrefix}${property.replace(
-                /\s+/g,
-                "-"
-              )}-object`}
-            >
-              <div className="accordion-body">
-                {renderObject(value, `${keyPrefix}`)}
+                <button
+                  className="accordion-button"
+                  type="button"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  aria-expanded={isExpanded}
+                  aria-controls={`collapse${keyPrefix}${property.replace(
+                    /\s+/g,
+                    "-"
+                  )}-object`}
+                >
+                  {property}
+                </button>
+              </h2>
+              <div
+                id={`collapse${keyPrefix}${property.replace(
+                  /\s+/g,
+                  "-"
+                )}-object`}
+                className={`accordion-collapse collapse ${
+                  isExpanded ? "show" : ""
+                }`}
+                aria-labelledby={`heading${keyPrefix}${property.replace(
+                  /\s+/g,
+                  "-"
+                )}-object`}
+              >
+                <div className="accordion-body">
+                  {renderObject(value, `${keyPrefix}`)}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      );
+        );
+      }
     }
     return addLink(value);
   };

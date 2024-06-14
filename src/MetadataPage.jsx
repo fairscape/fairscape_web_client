@@ -1,57 +1,54 @@
 import React, { useState, useEffect } from "react";
+import { useParams, useLocation } from "react-router-dom";
+import axios from "axios";
 import ButtonGroupComponent from "./components/ButtonGroupComponent";
 import MetadataComponent from "./components/MetadataComponent";
 import SerializationComponent from "./components/SerializationComponent";
 import EvidenceGraphComponent from "./components/EvidenceGraphComponent";
 
-const MetadataPage = ({ type }) => {
+const MetadataPage = () => {
+  const { type } = useParams();
+  const location = useLocation();
+  const ark = location.pathname.split("/").slice(2).join("/");
+
   const [view, setView] = useState("metadata");
+  const [metadata, setMetadata] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     document.title = `Fairscape ${type} Metadata`;
-  }, [type]);
+
+    const fetchMetadata = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8080/${type}/${ark}`
+        );
+        setMetadata(response.data);
+      } catch (error) {
+        console.error("Error fetching metadata:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetadata();
+  }, [type, ark]);
 
   const showMetadata = () => setView("metadata");
   const showJSON = () => setView("serialization");
   const showEvidenceGraph = () => setView("evidenceGraph");
 
-  const metadata = {
-    guid: "ark:99999/example-guid",
-    "@type": "ROCrate",
-    name: "Example crate",
-    description: "This is an example ROCrate.",
-    sourceOrganization: {
-      name: "Metadata 1",
-      "@id": "ark:99999/metadata-1-id",
-      "@type": "MetadataType",
-      description: "Metadata 1 description",
-      metadataType: "Type 1",
-      keywords: "example, metadata",
-    },
-    metadataGraph: [
-      {
-        name: "Metadata 1",
-        "@id": "ark:99999/metadata-1-id",
-        "@type": "MetadataType",
-        description: "Metadata 1 description",
-        metadataType: "Type 1",
-        keywords: "example, metadata",
-      },
-      {
-        name: "Metadata 2",
-        "@id": "ark:99999/metadata-2-id",
-        "@type": "MetadataType",
-        description: "Metadata 1 description",
-        metadataType: "Type 1",
-        keywords: "example, metadata",
-      },
-    ],
-    distributions: ["Test1", "Test2"],
-  };
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!metadata) {
+    return <div>Error loading metadata</div>;
+  }
 
   const json = JSON.stringify(metadata, null, 2);
-  const rdfXml = "<rdf>example rdf/xml content</rdf>"; //TODO convert json to rdf/turtle
-  const turtle = "@prefix ex: <http://example.org/> .";
+  const rdfXml = "<rdf>example rdf/xml content</rdf>"; // TODO: convert JSON to RDF/XML
+  const turtle = "@prefix ex: <http://example.org/> ."; // TODO: convert JSON to Turtle
 
   const evidenceGraph = {
     name: "Example Graph",

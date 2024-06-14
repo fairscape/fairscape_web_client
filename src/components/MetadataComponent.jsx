@@ -1,6 +1,6 @@
-// MetadataComponent.js
-import React from "react";
+import React, { useState } from "react";
 import TableRow from "./TableRow";
+import SimpleTableRowComponent from "./SimpleTableRowComponent";
 import {
   ROCrateProperties,
   DatasetProperties,
@@ -9,7 +9,9 @@ import {
 } from "./metadataProperties.js";
 
 const getPropertyList = (type) => {
-  switch (type) {
+  const cleanType = type.replace(/^evi:/, "");
+
+  switch (cleanType) {
     case "ROCrate":
       return ROCrateProperties;
     case "Dataset":
@@ -24,7 +26,12 @@ const getPropertyList = (type) => {
 };
 
 const MetadataComponent = ({ metadata }) => {
+  const [showSimpleTable, setShowSimpleTable] = useState(false);
   const properties = getPropertyList(metadata["@type"]);
+  const displayedProperties = properties.map((property) => property.key);
+  const additionalProperties = Object.keys(metadata).filter(
+    (key) => !displayedProperties.includes(key) && key !== "@type"
+  );
 
   return (
     <div className="container">
@@ -45,6 +52,30 @@ const MetadataComponent = ({ metadata }) => {
           ))}
         </tbody>
       </table>
+      <button onClick={() => setShowSimpleTable(!showSimpleTable)}>
+        {showSimpleTable
+          ? "Hide Additional Properties"
+          : "Show Additional Properties"}
+      </button>
+      {showSimpleTable && (
+        <table className="table table-sm table-bordered mt-3">
+          <thead>
+            <tr>
+              <th scope="col">Property</th>
+              <th scope="col">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {additionalProperties.map((key) => (
+              <SimpleTableRowComponent
+                key={key}
+                property={key}
+                value={metadata[key] || "N/A"}
+              />
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };
