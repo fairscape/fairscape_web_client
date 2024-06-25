@@ -1,0 +1,153 @@
+/* HomePage.css */
+
+.home-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  color: #007bff;
+}
+
+.content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.description {
+  flex: 1;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.description p {
+  font-size: 1.2rem;
+  color: #555;
+  line-height: 1.6;
+}
+
+.features {
+  flex: 1;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.features h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+}
+
+.feature-list li {
+  background-color: #f8f9fa;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.feature-list a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.feature-list a:hover {
+  text-decoration: underline;
+}
+
+.call-to-action {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.call-to-action h2 {
+  font-size: 2.5rem;
+  color: #007bff;
+}
+
+.call-to-action p {
+  font-size: 1.2rem;
+  color: #555;
+  margin: 20px 0;
+}
+
+.cta-button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cta-button:hover {
+  background-color: #0056b3;
+}
+
+.footer {
+  background-color: #007bff;
+  color: white;
+  text-align: center;
+  padding: 10px 0;
+}
+
+.footer-meta {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.footer-meta__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.copyright {
+  text-align: left;
+}
+
+.social {
+  text-align: right;
+}
+
+.social__link {
+  color: white;
+  margin-left: 10px;
+}
+
+.social__link:hover {
+  color: #ddd;
+}
+
+.highlight {
+  font-weight: bold;
+}
