@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import Header from "../components/Header";
 import "./UploadROCratePage.css"; // Import the CSS file for this component
+import Footer from "../components/Footer";
 
 const UploadROCratePage = () => {
   const [file, setFile] = useState(null);
@@ -51,6 +52,7 @@ const UploadROCratePage = () => {
         </form>
         {message && <p className="message">{message}</p>}
       </div>
+      <Footer />
     </div>
   );
 };

@@ -1,73 +1,43 @@
 /* UploadROCratePage.css */
 
 .upload-page {
-  background-color: #f0f2f5;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-.header {
-  background-color: #007bff;
-  padding: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.logo {
-  color: white;
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.nav-links {
-  list-style: none;
-  display: flex;
-  gap: 20px;
-}
-
-.nav-links li a {
-  color: white;
-  text-decoration: none;
-  font-size: 16px;
-}
-
-.nav-links li a:hover {
-  text-decoration: underline;
-}
-
 .container {
+  flex: 0 0 auto;
+  padding: 20px;
+  max-width: 600px;
+  margin: 20px auto; /* Adjusted margin */
+  text-align: center;
   background-color: #ffffff;
-  padding: 40px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin: 40px auto;
-  max-width: 600px;
+}
+
+h2 {
+  color: #007bff;
+  margin-bottom: 20px;
 }
 
 .upload-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
 }
 
 .file-input {
   padding: 10px;
-  font-size: 16px;
-  border: 2px solid #007bff;
+  border: 1px solid #ddd;
   border-radius: 5px;
 }
 
 .upload-button {
+  padding: 10px 20px;
   background-color: #007bff;
   color: white;
-  padding: 10px 20px;
-  font-size: 16px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -79,5 +49,15 @@
 
 .message {
   margin-top: 20px;
-  font-size: 16px;
+  color: #555;
+}
+
+.footer {
+  background-color: #007bff;
+  color: white;
+  text-align: center;
+  padding: 10px 0;
+  width: 100%;
+  position: absolute; /* Ensure footer sticks to bottom */
+  bottom: 0;
 }

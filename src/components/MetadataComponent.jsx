@@ -8,6 +8,7 @@ import {
   SchemaProperties,
 } from "./metadataProperties.js";
 
+
 const getPropertyList = (type) => {
   const cleanType = type.replace(/^evi:/, "");
 
@@ -77,6 +78,7 @@ const MetadataComponent = ({ metadata }) => {
         </table>
       )}
     </div>
+    
   );
 };
 

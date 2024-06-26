@@ -1,0 +1,42 @@
+/* Footer.css */
+
+.footer {
+  background-color: #007bff;
+  color: white;
+  text-align: center;
+  padding: 10px 0;
+  width: 100%;
+}
+
+.footer-meta {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.footer-meta__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.copyright {
+  text-align: left;
+}
+
+.social {
+  text-align: right;
+}
+
+.social__link {
+  color: white;
+  margin-left: 10px;
+}
+
+.social__link:hover {
+  color: #ddd;
+}
+
+.highlight {
+  font-weight: bold;
+}
