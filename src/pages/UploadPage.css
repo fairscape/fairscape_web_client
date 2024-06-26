@@ -1,0 +1,8 @@
+.upload-container {
+  padding: 20px;
+}
+
+.upload-container h1 {
+  margin-top: 20px; /* Adjust space between header and h1 */
+  margin-bottom: 0px; /* Adjust space between h1 and the component */
+}

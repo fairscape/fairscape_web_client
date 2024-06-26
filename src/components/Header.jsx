@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "./Header.css";
 import FairscapeLogo from "./FairscapeLogo"; // Import the logo component
 
@@ -8,16 +9,16 @@ const Header = () => {
       <nav className="navbar">
         <div className="navbar-brand">
           <FairscapeLogo /> {/* Use the logo component */}
-          <a href="#" className="logo">
+          <Link to="/" className="logo">
             Fairscape
-          </a>
+          </Link>
         </div>
         <ul className="nav-links">
           <li>
-            <a href="#">Home</a>
+            <Link to="/">Home</Link>
           </li>
           <li>
-            <a href="#">About</a>
+            <Link to="/upload">Upload</Link>
           </li>
           <li>
             <a href="#">Documentation</a>

@@ -14,35 +14,35 @@ const UploadOptionsPage = () => {
           <div className="option-box">
             <h2>ROCrate</h2>
             <p>Upload and manage ROCrates.</p>
-            <Link to="/upload-rocrate" className="option-link">
+            <Link to="/upload/ROCrate" className="option-link">
               ROCrate Upload
             </Link>
           </div>
           <div className="option-box">
             <h2>Dataset</h2>
             <p>Upload and manage datasets.</p>
-            <Link to="/upload-dataset" className="option-link">
+            <Link to="/upload/Dataset" className="option-link">
               Dataset Upload
             </Link>
           </div>
           <div className="option-box">
             <h2>Software</h2>
             <p>Upload and manage software.</p>
-            <Link to="/upload-software" className="option-link">
+            <Link to="/upload/Software" className="option-link">
               Software Upload
             </Link>
           </div>
           <div className="option-box">
             <h2>Schema</h2>
             <p>Upload and manage schemas.</p>
-            <Link to="/upload-schema" className="option-link">
+            <Link to="/upload/Schema" className="option-link">
               Schema Upload
             </Link>
           </div>
           <div className="option-box">
             <h2>Computation</h2>
             <p>Upload and manage computation details.</p>
-            <Link to="/upload-computation" className="option-link">
+            <Link to="/upload/Computation" className="option-link">
               Computation Upload
             </Link>
           </div>
