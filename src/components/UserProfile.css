@@ -1,0 +1,52 @@
+.user-profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: auto; /* This pushes it to the right */
+}
+
+.user-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: white; /* Changed to white */
+  color: #007bff; /* Changed text color to blue */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  margin-left: 20px; /* Added margin to separate it from the nav links */
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 50px; /* Ensure it appears below the circle */
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  width: 200px;
+  z-index: 1000; /* Ensure it appears above other elements */
+  display: block; /* Ensures the menu does not move other content */
+}
+
+.dropdown-menu p {
+  margin: 5px 0;
+}
+
+.logout-button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+
+.logout-button:hover {
+  background-color: #c82333;
+}

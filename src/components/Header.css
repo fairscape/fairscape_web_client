@@ -1,6 +1,6 @@
 .header {
   background-color: #007bff;
-  padding: 5px 20px; /* Reduced padding to make the header smaller in height */
+  padding: 0 20px; /* Add padding to the sides for width */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -8,8 +8,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0; /* Ensure it spans the full width */
 }
 
 .navbar-brand {
@@ -19,25 +19,50 @@
 
 .logo {
   color: white;
-  font-size: 24px; /* Increased font size */
+  font-size: 24px;
   font-weight: bold;
   text-decoration: none;
-  margin-left: 10px; /* Adjusted margin */
+  margin-left: 10px;
 }
 
 .nav-links {
   list-style: none;
   display: flex;
   gap: 20px;
-  margin-left: auto; /* Align navigation links to the right */
+  margin: 0; /* Reset margin */
+  padding: 0; /* Reset padding */
+  align-items: center; /* Center align vertically */
+}
+
+.nav-links li {
+  display: flex;
+  align-items: center; /* Center align vertically */
 }
 
 .nav-links li a {
   color: white;
   text-decoration: none;
-  font-size: 18px; /* Increased font size */
+  font-size: 18px;
+  text-align: center; /* Center align text */
+  width: 100%; /* Ensure it takes full width */
 }
 
 .nav-links li a:hover {
   text-decoration: underline;
+}
+
+/* Correct duplicate CSS and add new styles for proper alignment */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.user-profile {
+  margin-left: 20px; /* Add some space between nav links and user profile */
+}
+
+/* Remove padding from navbar to ensure it is against the edge */
+.navbar {
+  padding: 0; /* Ensure navbar has no padding */
 }
