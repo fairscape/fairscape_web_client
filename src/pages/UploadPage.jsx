@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import GenericUploadComponent from "../components/GenericUploadComponent";
+import GenericUploadComponent from "../components/UploadForm/GenericUploadComponent";
 import Header from "../components/header_footer/Header";
 import Footer from "../components/header_footer/Footer";
 import "./UploadPage.css";

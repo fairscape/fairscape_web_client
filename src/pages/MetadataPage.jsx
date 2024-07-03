@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
-import ButtonGroupComponent from "../components/metadataResolver/ButtonGroupComponent";
-import MetadataComponent from "../components/MetadataComponent";
-import SerializationComponent from "../components/metadataResolver/SerializationComponent";
-import EvidenceGraphComponent from "../components/metadataResolver/EvidenceGraphComponent";
+import ButtonGroupComponent from "../components/MetadataViewer/ButtonGroupComponent";
+import MetadataComponent from "../components/MetadataViewer/MetadataComponent";
+import SerializationComponent from "../components/MetadataViewer/SerializationComponent";
+import EvidenceGraphComponent from "../components/MetadataViewer/EvidenceGraphComponent";
 
 const MetadataPage = () => {
   const { type } = useParams();

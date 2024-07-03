@@ -1,7 +1,7 @@
 import React from "react";
-import { useFormState } from "./InputForm/useFormState";
-import FormField from "./InputForm/FormField";
-import getPropertyList from "./InputForm/uploadProperties";
+import { useFormState } from "./useFormState";
+import FormField from "./FormField";
+import getPropertyList from "./uploadProperties";
 import "./GenericUploadComponent.css";
 
 const initializeFormData = (properties) => {

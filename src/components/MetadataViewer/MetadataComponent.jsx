@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import TableRow from "./metadataResolver/TableRow";
-import SimpleTableRowComponent from "./metadataResolver/SimpleTableRowComponent";
+import TableRow from "./TableRow";
+import SimpleTableRowComponent from "./SimpleTableRowComponent";
 import {
   ROCrateProperties,
   DatasetProperties,
   SoftwareProperties,
   SchemaProperties,
-} from "./metadataResolver/metadataProperties";
+} from "./metadataProperties";
 
 const getPropertyList = (type) => {
   const cleanType = type.replace(/^evi:/, "");
