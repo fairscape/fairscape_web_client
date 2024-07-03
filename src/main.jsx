@@ -6,7 +6,7 @@ import UploadOptionsPage from "./pages/UploadOptionsPage";
 import UploadPage from "./pages/UploadPage";
 import HomePage from "./pages/HomePage";
 import "./global.css";
-import "./components/Header.css";
+import "./components/header_footer/Header.css";
 
 ReactDOM.render(
   <React.StrictMode>

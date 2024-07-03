@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Header from "../components/Header";
+import Header from "../components/header_footer/Header";
 import "./UploadOptionsPage.css"; // Import the CSS file for this component
-import Footer from "../components/Footer";
+import Footer from "../components/header_footer/Footer";
 
 const UploadOptionsPage = () => {
   return (

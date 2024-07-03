@@ -1,71 +1,70 @@
-import React, { useState } from "react";
-import getPropertyList from "./uploadProperties";
+import React from "react";
+import { useFormState } from "./InputForm/useFormState";
+import FormField from "./InputForm/FormField";
+import getPropertyList from "./InputForm/uploadProperties";
+import "./GenericUploadComponent.css";
+
+const initializeFormData = (properties) => {
+  const initialData = {};
+  properties.forEach((property) => {
+    if (property.type.startsWith("list")) {
+      initialData[property.key] = [];
+    } else if (property.type === "file") {
+      initialData[property.key] = null;
+    } else if (property.type === "property") {
+      initialData[property.key] = {
+        name: "",
+        description: "",
+        type: "",
+        index: "",
+        value_url: "",
+      };
+    } else {
+      initialData[property.key] = "";
+    }
+  });
+  return initialData;
+};
 
 const GenericUploadComponent = ({ type }) => {
-  const [formData, setFormData] = useState({});
-  const [errors, setErrors] = useState({});
   const properties = getPropertyList(type);
-
-  const handleChange = (key, value) => {
-    setFormData({ ...formData, [key]: value });
-    setErrors({
-      ...errors,
-      [key]: !value && properties.find((prop) => prop.key === key).required,
-    });
-  };
-
-  const handleFileChange = (key, file) => {
-    setFormData({ ...formData, [key]: file });
-    setErrors({
-      ...errors,
-      [key]: !file && properties.find((prop) => prop.key === key).required,
-    });
-  };
+  const initialFormData = initializeFormData(properties);
+  const formState = useFormState(initialFormData, properties);
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const newErrors = {};
     properties.forEach((property) => {
-      if (property.required && !formData[property.key]) {
-        newErrors[property.key] = true;
+      if (property.required) {
+        if (property.type.startsWith("list")) {
+          newErrors[property.key] =
+            formState.formData[property.key].length === 0 ||
+            formState.formData[property.key].some((item) =>
+              typeof item === "object"
+                ? Object.values(item).some((val) => val === "")
+                : item === ""
+            );
+        } else if (property.type === "file") {
+          newErrors[property.key] = !formState.formData[property.key];
+        } else if (property.type === "property") {
+          newErrors[property.key] = Object.values(formState.formData[property.key]).some(
+            (item) => item === ""
+          );
+        } else {
+          newErrors[property.key] = formState.formData[property.key] === "";
+        }
       }
     });
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
-      // Handle form submission, e.g., send formData to an API
-      console.log("Form submitted successfully with data:", formData);
+    formState.setErrors(newErrors);
+    if (Object.keys(newErrors).filter((key) => newErrors[key]).length === 0) {
+      console.log("Form submitted successfully with data:", formState.formData);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="container">
       {properties.map((property) => (
-        <div key={property.key} className="mb-3">
-          <label className="form-label">{property.name}</label>
-          {property.type === "file" ? (
-            <input
-              type="file"
-              className={`form-control ${
-                errors[property.key] ? "is-invalid" : ""
-              }`}
-              onChange={(e) =>
-                handleFileChange(property.key, e.target.files[0])
-              }
-            />
-          ) : (
-            <input
-              type={property.type}
-              className={`form-control ${
-                errors[property.key] ? "is-invalid" : ""
-              }`}
-              onChange={(e) => handleChange(property.key, e.target.value)}
-            />
-          )}
-          {errors[property.key] && (
-            <div className="invalid-feedback">This field is required.</div>
-          )}
-        </div>
+        <FormField key={property.key} property={property} formState={formState} />
       ))}
       <button type="submit" className="btn btn-primary">
         Submit

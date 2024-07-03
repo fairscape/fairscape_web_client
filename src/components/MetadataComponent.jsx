@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import TableRow from "./TableRow";
-import SimpleTableRowComponent from "./SimpleTableRowComponent";
+import TableRow from "./metadataResolver/TableRow";
+import SimpleTableRowComponent from "./metadataResolver/SimpleTableRowComponent";
 import {
   ROCrateProperties,
   DatasetProperties,
   SoftwareProperties,
   SchemaProperties,
-} from "./metadataProperties.js";
-
+} from "./metadataResolver/metadataProperties";
 
 const getPropertyList = (type) => {
   const cleanType = type.replace(/^evi:/, "");
@@ -78,7 +77,6 @@ const MetadataComponent = ({ metadata }) => {
         </table>
       )}
     </div>
-    
   );
 };
 

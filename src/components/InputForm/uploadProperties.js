@@ -8,7 +8,12 @@ export const ROCrateUploadProperties = [
     type: "text",
     required: false,
   },
-  { name: "Contains", key: "metadataGraph", type: "file", required: false },
+  {
+    name: "File",
+    key: "metadataGraph",
+    type: "list:file",
+    required: false,
+  },
   {
     name: "Distributions",
     key: "distributions",
@@ -39,7 +44,7 @@ export const SoftwareUploadProperties = [
   { name: "Persistent Identifier", key: "guid", type: "text", required: true },
   { name: "Description", key: "description", type: "text", required: false },
   { name: "Author", key: "author", type: "text", required: false },
-  { name: "Used By", key: "usedBy", type: "text", required: false },
+  { name: "Used By", key: "usedBy", type: "list:text", required: false },
   {
     name: "Date Published",
     key: "datePublished",
@@ -59,7 +64,12 @@ export const SchemaUploadProperties = [
   { name: "Name", key: "name", type: "text", required: true },
   { name: "Description", key: "description", type: "text", required: false },
   { name: "Persistent Identifier", key: "@id", type: "text", required: true },
-  { name: "Properties", key: "properties", type: "file", required: false },
+  {
+    name: "Properties",
+    key: "properties",
+    type: "list:property",
+    required: false,
+  },
   { name: "Author", key: "author", type: "text", required: false },
   { name: "License", key: "license", type: "text", required: false },
 ];
