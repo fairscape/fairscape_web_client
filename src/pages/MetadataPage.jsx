@@ -8,7 +8,8 @@ import MetadataComponent from "../components/MetadataViewer/MetadataComponent";
 import SerializationComponent from "../components/MetadataViewer/SerializationComponent";
 import EvidenceGraphComponent from "../components/MetadataViewer/EvidenceGraphComponent";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://fairscape.net";
+const API_URL =
+  process.env.REACT_APP_FAIRSCAPE_API_URL || "http://fairscape.net";
 
 const MetadataPage = () => {
   const { type: rawType } = useParams();
