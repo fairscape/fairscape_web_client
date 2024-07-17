@@ -8,6 +8,8 @@ import MetadataComponent from "../components/MetadataViewer/MetadataComponent";
 import SerializationComponent from "../components/MetadataViewer/SerializationComponent";
 import EvidenceGraphComponent from "../components/MetadataViewer/EvidenceGraphComponent";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://fairscape.net";
+
 const MetadataPage = () => {
   const { type: rawType } = useParams();
   const location = useLocation();
@@ -51,7 +53,7 @@ const MetadataPage = () => {
     const fetchData = async () => {
       try {
         const metadataResponse = await axios.get(
-          `http://localhost:8080/${rawType}/${ark}`
+          `${API_URL}/${rawType}/${ark}`
         );
         const metadataData = metadataResponse.data;
         console.log("Fetched metadata:", metadataData);
@@ -88,7 +90,7 @@ const MetadataPage = () => {
 
         try {
           const evidenceGraphResponse = await axios.get(
-            `http://localhost:8080/evidencegraph/${ark}`
+            `${API_URL}/evidencegraph/${ark}`
           );
           setEvidenceGraph(evidenceGraphResponse.data);
           console.log("Evidence Graph:", evidenceGraphResponse.data);
