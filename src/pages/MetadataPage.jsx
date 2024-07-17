@@ -10,20 +10,26 @@ const MetadataPage = () => {
   const { type } = useParams();
   const location = useLocation();
   const ark = location.pathname.split("/").slice(2).join("/");
-
   const [view, setView] = useState("metadata");
   const [metadata, setMetadata] = useState(null);
+  const [evidenceGraph, setEvidenceGraph] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     document.title = `Fairscape ${type} Metadata`;
 
-    const fetchMetadata = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:8080/${type}/${ark}`
-        );
-        setMetadata(response.data);
+        const metadataResponse = await axios.get(`http://fairscape.net/${type}/${ark}`);
+        setMetadata(metadataResponse.data);
+
+        try {
+          const evidenceGraphResponse = await axios.get(`http://fairscape.net/evidencegraph/${ark}`);
+          setEvidenceGraph(evidenceGraphResponse.data);
+        } catch (error) {
+          console.error("Error fetching evidence graph:", error);
+          setEvidenceGraph(metadataResponse.data);
+        }
       } catch (error) {
         console.error("Error fetching metadata:", error);
       } finally {
@@ -31,7 +37,7 @@ const MetadataPage = () => {
       }
     };
 
-    fetchMetadata();
+    fetchData();
   }, [type, ark]);
 
   const showMetadata = () => setView("metadata");
@@ -49,20 +55,6 @@ const MetadataPage = () => {
   const json = JSON.stringify(metadata, null, 2);
   const rdfXml = "<rdf>example rdf/xml content</rdf>"; // TODO: convert JSON to RDF/XML
   const turtle = "@prefix ex: <http://example.org/> ."; // TODO: convert JSON to Turtle
-
-  const evidenceGraph = {
-    name: "Example Graph",
-    children: [
-      {
-        name: "Child 1",
-        children: [{ name: "Grandchild 1" }, { name: "Grandchild 2" }],
-      },
-      {
-        name: "Child 2",
-        children: [{ name: "Grandchild 3" }],
-      },
-    ],
-  };
 
   return (
     <div className="container">
