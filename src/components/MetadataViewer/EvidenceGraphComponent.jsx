@@ -174,14 +174,26 @@ const EvidenceGraphComponent = ({ evidenceGraph }) => {
             if (value.hasOwnProperty(k)) {
               if (typeof value[k] === "object" && value[k] !== null) {
                 if (Array.isArray(value[k])) {
-                  value[k].forEach((item, index) => {
-                    children.push(
-                      recurse({
-                        name: `${k} ${index}`,
-                        ...item,
-                      })
-                    );
-                  });
+                  if (value[k].length > 0 && typeof value[k][0] === "string") {
+                    // Handle array of strings
+                    children.push({
+                      name: k,
+                      value: value[k].join(", "),
+                      type: "property",
+                      visible: true,
+                      textVisible: true,
+                      nameOnly: false,
+                    });
+                  } else {
+                    value[k].forEach((item, index) => {
+                      children.push(
+                        recurse({
+                          name: `${k} ${index}`,
+                          ...item,
+                        })
+                      );
+                    });
+                  }
                 } else {
                   children.push(
                     recurse({

@@ -19,11 +19,19 @@ const Link = ({ value, download = false }) => {
   return value;
 };
 
-const Accordion = ({ title, children, isExpanded, onToggle }) => (
-  <div className="accordion-item">
+const Accordion = ({
+  title,
+  children,
+  isExpanded,
+  onToggle,
+  isSubItem = false,
+}) => (
+  <div className={`accordion-item ${isSubItem ? "sub-item" : ""}`}>
     <h2 className="accordion-header">
       <button
-        className={`accordion-button ${isExpanded ? "" : "collapsed"}`}
+        className={`accordion-button ${isExpanded ? "" : "collapsed"} ${
+          isSubItem ? "sub-item-button" : ""
+        }`}
         type="button"
         onClick={onToggle}
         aria-expanded={isExpanded}
@@ -32,7 +40,9 @@ const Accordion = ({ title, children, isExpanded, onToggle }) => (
       </button>
     </h2>
     <div className={`accordion-collapse collapse ${isExpanded ? "show" : ""}`}>
-      <div className="accordion-body">{children}</div>
+      <div className={`accordion-body ${isSubItem ? "sub-item-body" : ""}`}>
+        {children}
+      </div>
     </div>
   </div>
 );
@@ -51,76 +61,140 @@ const ArrayRenderer = ({ items }) => (
   </ul>
 );
 
-const ObjectRenderer = ({ object }) => (
-  <ul>
-    {Object.entries(object).map(([key, value], index) => (
-      <li key={index}>
-        <strong>{key}: </strong>
-        {Array.isArray(value) ? (
-          <ArrayRenderer items={value} />
-        ) : typeof value === "object" ? (
-          <ObjectRenderer object={value} />
-        ) : (
-          <Link value={value} />
-        )}
-      </li>
-    ))}
-  </ul>
-);
-
-const PropertiesRenderer = ({ properties }) => (
-  <div>
-    <button
-      className="btn btn-secondary"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#collapseProperties"
-    >
-      Show/Hide Properties
-    </button>
-    <div className="collapse" id="collapseProperties">
-      {Object.entries(properties).map(([propName, propDetails], index) => (
-        <Accordion key={index} title={propName}>
-          <strong>Description:</strong>{" "}
-          {propDetails.description || "No description"}
-          <br />
-          <strong>Type:</strong> {propDetails.type || "No type specified"}
-          <br />
-          <strong>Index:</strong> {propDetails.index || "No index specified"}
-        </Accordion>
+const ObjectRenderer = ({ object }) => {
+  if (object === null || object === undefined) {
+    return <span>No data</span>;
+  }
+  return (
+    <ul>
+      {Object.entries(object).map(([key, value], index) => (
+        <li key={index}>
+          <strong>{key}: </strong>
+          <ValueRenderer value={value} />
+        </li>
       ))}
+    </ul>
+  );
+};
+
+const PropertiesRenderer = ({ properties }) => {
+  const [expandedProps, setExpandedProps] = useState({});
+
+  return (
+    <div>
+      <button
+        className="btn btn-secondary"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapseProperties"
+      >
+        Show/Hide Properties
+      </button>
+      <div className="collapse" id="collapseProperties">
+        {Object.entries(properties).map(([propName, propDetails], index) => (
+          <Accordion
+            key={index}
+            title={propName}
+            isExpanded={expandedProps[propName] || false}
+            onToggle={() => {
+              setExpandedProps((prev) => ({
+                ...prev,
+                [propName]: !prev[propName],
+              }));
+            }}
+            isSubItem={true}
+          >
+            <strong>Description:</strong>{" "}
+            {propDetails.description || "No description"}
+            <br />
+            <strong>Type:</strong> {propDetails.type || "No type specified"}
+            <br />
+            <strong>Index:</strong> {propDetails.index || "No index specified"}
+          </Accordion>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ValueRenderer = ({ value }) => {
+  if (value === null || value === undefined) {
+    return <span>No data</span>;
+  }
   if (Array.isArray(value)) {
     return <ArrayRenderer items={value} />;
-  } else if (typeof value === "object" && value !== null) {
+  } else if (typeof value === "object") {
     return <ObjectRenderer object={value} />;
   }
   return <Link value={value} />;
 };
 
 const TableRow = ({ property, value }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMainExpanded, setIsMainExpanded] = useState(false);
+  const [expandedSubItems, setExpandedSubItems] = useState({});
+
+  const renderValue = () => {
+    if (property === "Properties") {
+      return <PropertiesRenderer properties={value} />;
+    }
+
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      return <ValueRenderer value={value} />;
+    }
+
+    if (
+      Array.isArray(value) &&
+      value.every((item) => typeof item === "object" && item !== null)
+    ) {
+      return (
+        <Accordion
+          title={`${property} (${value.length} items)`}
+          isExpanded={isMainExpanded}
+          onToggle={() => setIsMainExpanded(!isMainExpanded)}
+        >
+          {value.map((item, index) => (
+            <Accordion
+              key={index}
+              title={item.name || `Item ${index + 1}`}
+              isExpanded={expandedSubItems[index] || false}
+              onToggle={() => {
+                setExpandedSubItems((prev) => ({
+                  ...prev,
+                  [index]: !prev[index],
+                }));
+              }}
+              isSubItem={true}
+            >
+              <ObjectRenderer object={item} />
+            </Accordion>
+          ))}
+        </Accordion>
+      );
+    }
+
+    if (typeof value === "object" && value !== null) {
+      return (
+        <Accordion
+          title={property}
+          isExpanded={isMainExpanded}
+          onToggle={() => setIsMainExpanded(!isMainExpanded)}
+        >
+          <ObjectRenderer object={value} />
+        </Accordion>
+      );
+    }
+
+    return <span>No data</span>;
+  };
 
   return (
     <tr>
       <td>{property}</td>
-      <td>
-        {property === "Properties" ? (
-          <PropertiesRenderer properties={value} />
-        ) : (
-          <Accordion
-            title={property}
-            isExpanded={isExpanded}
-            onToggle={() => setIsExpanded(!isExpanded)}
-          >
-            <ValueRenderer value={value} />
-          </Accordion>
-        )}
-      </td>
+      <td>{renderValue()}</td>
     </tr>
   );
 };

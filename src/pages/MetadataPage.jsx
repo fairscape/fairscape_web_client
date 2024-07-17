@@ -9,52 +9,108 @@ import SerializationComponent from "../components/MetadataViewer/SerializationCo
 import EvidenceGraphComponent from "../components/MetadataViewer/EvidenceGraphComponent";
 
 const MetadataPage = () => {
-  const { type } = useParams();
+  const { type: rawType } = useParams();
   const location = useLocation();
   const ark = location.pathname.split("/").slice(2).join("/");
   const [view, setView] = useState("metadata");
   const [metadata, setMetadata] = useState(null);
   const [evidenceGraph, setEvidenceGraph] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [evidenceGraphLoading, setEvidenceGraphLoading] = useState(true);
   const [turtle, setTurtle] = useState("");
   const [rdfXml, setRdfXml] = useState("");
 
-  useEffect(() => {
-    document.title = `Fairscape ${type} Metadata`;
+  const mapType = (rawType) => {
+    const typeMap = {
+      rocrate: "ROCrate",
+      dataset: "Dataset",
+      software: "Software",
+      schema: "Schema",
+    };
+    return typeMap[rawType.toLowerCase()] || rawType;
+  };
 
+  const type = mapType(rawType);
+
+  function filter_nonprov(d, keys_to_keep) {
+    if (typeof d === "object" && d !== null) {
+      if (Array.isArray(d)) {
+        return d.map((item) => filter_nonprov(item, keys_to_keep));
+      } else {
+        return Object.fromEntries(
+          Object.entries(d)
+            .filter(([k]) => keys_to_keep.includes(k))
+            .map(([k, v]) => [k, filter_nonprov(v, keys_to_keep)])
+        );
+      }
+    }
+    return d;
+  }
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const metadataResponse = await axios.get(
-          `http://fairscape.net/${type}/${ark}`
+          `http://localhost:8080/${rawType}/${ark}`
         );
-        setMetadata(metadataResponse.data);
+        const metadataData = metadataResponse.data;
+        console.log("Fetched metadata:", metadataData);
 
-        // Convert JSON-LD to Turtle
-        const nquads = await jsonld.toRDF(metadataResponse.data, {
-          format: "application/n-quads",
-        });
-        const parser = new N3.Parser();
-        const writer = new N3.Writer({ format: "text/turtle" });
+        if (!metadataData || typeof metadataData !== "object") {
+          console.error("Invalid metadata format:", metadataData);
+          return;
+        }
 
-        parser.parse(nquads, (error, quad, prefixes) => {
-          if (quad) writer.addQuad(quad);
-          else writer.end((error, result) => setTurtle(result));
-        });
+        setMetadata(metadataData);
+        document.title = `Fairscape ${type} Metadata`;
 
-        // Convert JSON-LD to RDF/XML
-        const rdfXmlData = await jsonld.toRDF(metadataResponse.data, {
-          format: "application/rdf+xml",
-        });
-        setRdfXml(rdfXmlData);
+        try {
+          const nquads = await jsonld.toRDF(metadataData, {
+            format: "application/n-quads",
+          });
+          console.log("Successfully converted to N-Quads");
+
+          const parser = new N3.Parser();
+          const writer = new N3.Writer({ format: "text/turtle" });
+          parser.parse(nquads, (error, quad, prefixes) => {
+            if (quad) writer.addQuad(quad);
+            else writer.end((error, result) => setTurtle(result));
+          });
+
+          const rdfXmlData = await jsonld.toRDF(metadataData, {
+            format: "application/rdf+xml",
+          });
+          setRdfXml(rdfXmlData);
+        } catch (error) {
+          console.error("Error converting JSON-LD to RDF:", error);
+          console.log("Metadata data:", metadataData);
+        }
 
         try {
           const evidenceGraphResponse = await axios.get(
-            `http://fairscape.net/evidencegraph/${ark}`
+            `http://localhost:8080/evidencegraph/${ark}`
           );
           setEvidenceGraph(evidenceGraphResponse.data);
+          console.log("Evidence Graph:", evidenceGraphResponse.data);
         } catch (error) {
           console.error("Error fetching evidence graph:", error);
-          setEvidenceGraph(metadataResponse.data);
+          const keys_to_keep = [
+            "@id",
+            "name",
+            "description",
+            "@type",
+            "generatedBy",
+            "isPartOf",
+            "@graph",
+            "usedByComputation",
+            "usedSoftware",
+            "usedDataset",
+          ];
+          const filteredMetadata = filter_nonprov(metadataData, keys_to_keep);
+          setEvidenceGraph(filteredMetadata);
+          console.log("Evidence Graph:", filteredMetadata);
+        } finally {
+          setEvidenceGraphLoading(false);
         }
       } catch (error) {
         console.error("Error fetching metadata:", error);
@@ -64,7 +120,7 @@ const MetadataPage = () => {
     };
 
     fetchData();
-  }, [type, ark]);
+  }, [rawType, ark, type]);
 
   const showMetadata = () => setView("metadata");
   const showJSON = () => setView("serialization");
@@ -83,18 +139,20 @@ const MetadataPage = () => {
   return (
     <div className="container">
       <h3>
-        {metadata["@type"]} Metadata: {metadata.guid}
+        {type} Metadata: {metadata.guid}
       </h3>
       <ButtonGroupComponent
         showMetadata={showMetadata}
         showJSON={showJSON}
         showEvidenceGraph={showEvidenceGraph}
       />
-      {view === "metadata" && <MetadataComponent metadata={metadata} />}
+      {view === "metadata" && (
+        <MetadataComponent metadata={metadata} type={type} />
+      )}
       {view === "serialization" && (
         <SerializationComponent json={json} rdfXml={rdfXml} turtle={turtle} />
       )}
-      {view === "evidenceGraph" && (
+      {view === "evidenceGraph" && !evidenceGraphLoading && (
         <EvidenceGraphComponent evidenceGraph={evidenceGraph} />
       )}
     </div>
