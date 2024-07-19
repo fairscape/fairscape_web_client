@@ -4,7 +4,7 @@ import Header from "../header_footer/Header";
 import "./Login.css";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://fairscape.net";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://fairscape.net/api";
 
 const Login = () => {
   const [username, setUsername] = useState("");

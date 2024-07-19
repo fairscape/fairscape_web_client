@@ -9,7 +9,7 @@ import SerializationComponent from "../components/MetadataViewer/SerializationCo
 import EvidenceGraphComponent from "../components/MetadataViewer/EvidenceGraphComponent";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://fairscape.net";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://fairscape.net/api";
 
 const MetadataPage = () => {
   const { type: rawType } = useParams();
