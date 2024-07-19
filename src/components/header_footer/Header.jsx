@@ -5,6 +5,8 @@ import FairscapeLogo from "./FairscapeLogo";
 import UserProfile from "./UserProfile";
 
 const Header = () => {
+  const isLoggedIn = !!localStorage.getItem("token");
+
   return (
     <header className="header">
       <nav className="navbar">
@@ -19,15 +21,19 @@ const Header = () => {
             <li>
               <Link to="/">Home</Link>
             </li>
-            <li>{/* <Link to="/upload">Upload</Link> */}</li>
             <li>
               <a href="#">Documentation</a>
             </li>
             <li>
               <a href="#">Contact</a>
             </li>
+            {!isLoggedIn && (
+              <li>
+                <Link to="/login">Login</Link>
+              </li>
+            )}
           </ul>
-          <UserProfile />
+          {isLoggedIn && <UserProfile />}
         </div>
       </nav>
     </header>

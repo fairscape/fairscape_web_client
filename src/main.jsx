@@ -7,6 +7,7 @@ import UploadPage from "./pages/UploadPage";
 import HomePage from "./pages/HomePage";
 import "./global.css";
 import "./components/header_footer/Header.css";
+import Login from "./components/Login/LoginComponent";
 
 ReactDOM.render(
   <React.StrictMode>
@@ -16,6 +17,7 @@ ReactDOM.render(
         {/* <Route path="/upload" element={<UploadOptionsPage />} /> */}
         {/* <Route path="/upload/:type" element={<UploadPage />} /> */}
         <Route path="/:type/*" element={<MetadataPage />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </Router>
   </React.StrictMode>,

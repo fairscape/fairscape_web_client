@@ -9,7 +9,7 @@ import SerializationComponent from "../components/MetadataViewer/SerializationCo
 import EvidenceGraphComponent from "../components/MetadataViewer/EvidenceGraphComponent";
 
 const API_URL =
-  process.env.REACT_APP_FAIRSCAPE_API_URL || "http://fairscape.net";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://fairscape.net";
 
 const MetadataPage = () => {
   const { type: rawType } = useParams();
@@ -53,8 +53,15 @@ const MetadataPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Get the token from localStorage
+        const token = localStorage.getItem("token");
+
+        // Create headers object with the token if it exists
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
         const metadataResponse = await axios.get(
-          `${API_URL}/${rawType}/${ark}`
+          `${API_URL}/${rawType}/${ark}`,
+          { headers }
         );
         const metadataData = metadataResponse.data;
         console.log("Fetched metadata:", metadataData);
@@ -91,7 +98,8 @@ const MetadataPage = () => {
 
         try {
           const evidenceGraphResponse = await axios.get(
-            `${API_URL}/evidencegraph/${ark}`
+            `${API_URL}/evidencegraph/${ark}`,
+            { headers }
           );
           setEvidenceGraph(evidenceGraphResponse.data);
           console.log("Evidence Graph:", evidenceGraphResponse.data);
