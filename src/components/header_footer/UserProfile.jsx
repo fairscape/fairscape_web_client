@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import "./UserProfile.css";
 
 const UserProfile = () => {
@@ -8,26 +9,28 @@ const UserProfile = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchUserData();
+    decodeUserToken();
   }, []);
 
-  const fetchUserData = async () => {
+  const decodeUserToken = () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/user", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+      if (token) {
+        const decodedToken = jwtDecode(token);
+        setUser({
+          givenName: decodedToken.name.split(" ")[0],
+          surname: decodedToken.name.split(" ")[1],
+          email: decodedToken.email,
+          organization: decodedToken.iss
+            .replace("https://", "")
+            .replace("/", ""),
+        });
       } else {
-        // Handle error or logout if the token is invalid
         handleLogout();
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.error("Error decoding token:", error);
+      handleLogout();
     }
   };
 
