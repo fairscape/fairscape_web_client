@@ -12,13 +12,7 @@ export const ROCrateUploadProperties = [
     name: "File",
     key: "metadataGraph",
     type: "list:file",
-    required: false,
-  },
-  {
-    name: "Distributions",
-    key: "distributions",
-    type: "text",
-    required: false,
+    required: true,
   },
 ];
 

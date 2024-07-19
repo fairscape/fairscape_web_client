@@ -33,10 +33,11 @@ h3 {
 
 .container {
   background-color: #ffffff;
-  padding: 20px;
+  padding: 10px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
+  margin-bottom: 10px;
 }
 
 .accordion-button {
@@ -50,7 +51,7 @@ h3 {
 }
 
 .table {
-  margin-top: 20px;
+  margin-top: 10px;
   table-layout: fixed; /* Add this line */
   width: 100%; /* Ensure the table takes the full width */
 }

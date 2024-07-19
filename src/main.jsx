@@ -15,7 +15,7 @@ ReactDOM.render(
       <Routes>
         <Route path="/" element={<HomePage />} />
         {/* <Route path="/upload" element={<UploadOptionsPage />} /> */}
-        {/* <Route path="/upload/:type" element={<UploadPage />} /> */}
+        <Route path="/upload/:type" element={<UploadPage />} />
         <Route path="/:type/*" element={<MetadataPage />} />
         <Route path="/login" element={<Login />} />
       </Routes>
