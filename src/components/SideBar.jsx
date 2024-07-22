@@ -6,6 +6,7 @@ import {
   SidebarItem,
   SidebarFooter,
 } from "./StyledComponents";
+import logoSvg from "../assets/logo.svg";
 
 const accentColor = "#007bff";
 
@@ -20,9 +21,13 @@ function SidebarComponent({
   return (
     <Sidebar>
       <SidebarContent>
-        <h3 style={{ marginBottom: "20px", color: accentColor }}>
-          FAIRSCAPE ROCrate Repository
-        </h3>
+        <div style={{ marginBottom: "20px", textAlign: "center" }}>
+          <img
+            src={logoSvg}
+            alt="FAIRSCAPE ROCrate Repository"
+            style={{ maxWidth: "100%", height: "auto" }}
+          />
+        </div>
         {Object.keys(commands).map((command) => (
           <SidebarItem
             key={command}
