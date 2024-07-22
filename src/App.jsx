@@ -16,6 +16,12 @@ function App() {
   const [schemaFile, setSchemaFile] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [previousPaths, setPreviousPaths] = useState([]);
+
+  useEffect(() => {
+    const storedPaths = JSON.parse(localStorage.getItem("previousPaths")) || [];
+    setPreviousPaths(storedPaths);
+  }, []);
 
   const handleCommandSelect = (command) => {
     setSelectedCommand(command);
@@ -62,7 +68,14 @@ function App() {
   };
 
   const handleRocratePathChange = (e) => {
-    setRocratePath(e.target.value);
+    const newPath = e.target.value;
+    setRocratePath(newPath);
+
+    if (newPath && !previousPaths.includes(newPath)) {
+      const updatedPaths = [newPath, ...previousPaths.slice(0, 4)]; // Keep only the last 5 paths
+      setPreviousPaths(updatedPaths);
+      localStorage.setItem("previousPaths", JSON.stringify(updatedPaths));
+    }
   };
 
   const handleSchemaFileChange = (e) => {
@@ -149,7 +162,7 @@ function App() {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`, // Add the token to the headers
+            Authorization: `Bearer ${token}`,
           },
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round(
@@ -241,6 +254,7 @@ function App() {
         handleSubmit={handleSubmit}
         handleUpload={handleUpload}
         isExecuteDisabled={isExecuteDisabled}
+        previousPaths={previousPaths}
       />
     </AppContainer>
   );

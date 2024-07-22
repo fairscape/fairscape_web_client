@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Form } from "react-bootstrap";
 import path from "path";
+import fs from "fs";
 import {
   StyledForm,
   StyledFormGroup,
@@ -22,8 +23,10 @@ function CommandForm({
   handleSubmit,
   handleUpload,
   isExecuteDisabled,
+  previousPaths,
 }) {
   const [sourceFilePath, setSourceFilePath] = useState("");
+  const [roCrateIds, setRoCrateIds] = useState([]);
 
   useEffect(() => {
     if (sourceFilePath && rocratePath) {
@@ -33,12 +36,41 @@ function CommandForm({
     }
   }, [sourceFilePath, rocratePath]);
 
+  useEffect(() => {
+    if (rocratePath) {
+      const metadataPath = path.join(rocratePath, "ro-crate-metadata.json");
+      fs.readFile(metadataPath, "utf8", (err, data) => {
+        if (err) {
+          console.error(
+            `Error reading ro-crate-metadata.json from ${metadataPath}:`,
+            err
+          );
+          return;
+        }
+        try {
+          const metadata = JSON.parse(data);
+          const ids = metadata["@graph"].map((item) => item["@id"]);
+          setRoCrateIds(ids);
+        } catch (parseErr) {
+          console.error("Error parsing ro-crate-metadata.json:", parseErr);
+        }
+      });
+    }
+  }, [rocratePath]);
+
   const handleFileChange = (option, file) => {
     if (file) {
       const filePath = file.path;
       setSourceFilePath(filePath);
       handleOptionChange(option, filePath);
     }
+  };
+
+  const shouldUseIdList = (option) => {
+    return (
+      option.toLowerCase().includes("used") ||
+      option.toLowerCase().includes("generated")
+    );
   };
 
   const renderOptions = () => {
@@ -61,12 +93,20 @@ function CommandForm({
         {selectedCommand === "rocrate" && (
           <Form.Group className="mb-3">
             <Form.Label style={{ color: "#ff9800" }}>ROCRATE_PATH *</Form.Label>
-            <Form.Control
-              type="text"
-              value={rocratePath}
-              onChange={handleRocratePathChange}
-              required
-            />
+            <div className="input-group">
+              <Form.Control
+                type="text"
+                value={rocratePath}
+                onChange={handleRocratePathChange}
+                list="previousPaths"
+                required
+              />
+              <datalist id="previousPaths">
+                {previousPaths.map((path, index) => (
+                  <option key={index} value={path} />
+                ))}
+              </datalist>
+            </div>
           </Form.Group>
         )}
         {selectedCommand === "schema" && (
@@ -116,6 +156,27 @@ function CommandForm({
                   currentOptions.required.includes(option)
                 }
               />
+            ) : option === "guid" ? (
+              <Form.Control
+                type="text"
+                value={options[option] || "ark:59852/"}
+                onChange={(e) => handleOptionChange(option, e.target.value)}
+                required={
+                  currentOptions.required &&
+                  currentOptions.required.includes(option)
+                }
+              />
+            ) : shouldUseIdList(option) ? (
+              <Form.Control
+                type="text"
+                value={options[option] || ""}
+                onChange={(e) => handleOptionChange(option, e.target.value)}
+                list={`${option}List`}
+                required={
+                  currentOptions.required &&
+                  currentOptions.required.includes(option)
+                }
+              />
             ) : (
               <Form.Control
                 type="text"
@@ -126,6 +187,13 @@ function CommandForm({
                   currentOptions.required.includes(option)
                 }
               />
+            )}
+            {shouldUseIdList(option) && (
+              <datalist id={`${option}List`}>
+                {roCrateIds.map((id, index) => (
+                  <option key={index} value={id} />
+                ))}
+              </datalist>
             )}
           </Form.Group>
         ))}

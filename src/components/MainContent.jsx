@@ -26,6 +26,7 @@ function MainContentComponent({
   handleSubmit,
   handleUpload,
   isExecuteDisabled,
+  previousPaths,
 }) {
   return (
     <MainContent>
@@ -86,6 +87,7 @@ function MainContentComponent({
               handleSubmit={handleSubmit}
               handleUpload={handleUpload}
               isExecuteDisabled={isExecuteDisabled}
+              previousPaths={previousPaths}
             />
           </LargerCol>
         </Row>

@@ -11,6 +11,7 @@ const commands = {
           "keywords",
         ],
         required: [
+          "guid",
           "name",
           "organization-name",
           "project-name",
@@ -40,6 +41,7 @@ const commands = {
           "additional-documentation",
         ],
         required: [
+          "guid",
           "name",
           "author",
           "version",
@@ -69,6 +71,7 @@ const commands = {
           "additional-documentation",
         ],
         required: [
+          "guid",
           "name",
           "author",
           "version",
@@ -95,7 +98,14 @@ const commands = {
           "used-dataset",
           "generated",
         ],
-        required: ["name", "run-by", "date-created", "description", "keywords"],
+        required: [
+          "guid",
+          "name",
+          "run-by",
+          "date-created",
+          "description",
+          "keywords",
+        ],
       },
       dataset: {
         options: [
@@ -116,6 +126,7 @@ const commands = {
           "additional-documentation",
         ],
         required: [
+          "guid",
           "name",
           "author",
           "version",
@@ -143,6 +154,7 @@ const commands = {
           "additional-documentation",
         ],
         required: [
+          "guid",
           "name",
           "author",
           "version",
@@ -209,56 +221,8 @@ const commands = {
   upload: {
     rocrate: {
       rocrate: {
-        options: ["name", "file"],
-        required: ["name", "file"],
-      },
-    },
-    dataset: {
-      dataset: {
-        options: [
-          "name",
-          "author",
-          "version",
-          "date-published",
-          "description",
-          "keywords",
-          "data-format",
-          "file",
-        ],
-        required: [
-          "name",
-          "author",
-          "version",
-          "date-published",
-          "description",
-          "keywords",
-          "data-format",
-          "file",
-        ],
-      },
-    },
-    software: {
-      software: {
-        options: [
-          "name",
-          "author",
-          "version",
-          "description",
-          "keywords",
-          "file-format",
-          "date-modified",
-          "file",
-        ],
-        required: [
-          "name",
-          "author",
-          "version",
-          "description",
-          "keywords",
-          "file-format",
-          "date-modified",
-          "file",
-        ],
+        options: ["file"],
+        required: ["file"],
       },
     },
   },
