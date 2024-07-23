@@ -7,6 +7,7 @@ import { AppContainer } from "./components/StyledComponents";
 import commandsData from "./data/commandsData";
 
 function App() {
+  const archiver = require("archiver");
   const [selectedCommand, setSelectedCommand] = useState("");
   const [selectedSubCommand, setSelectedSubCommand] = useState("");
   const [selectedSubSubCommand, setSelectedSubSubCommand] = useState("");

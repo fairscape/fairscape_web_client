@@ -15,20 +15,33 @@ function createWindow() {
       enableRemoteModule: true,
     },
   });
-  win.loadFile("index.html");
+
+  // Use app.isPackaged to determine the correct path
+  const indexPath = app.isPackaged
+    ? path.join(process.resourcesPath, "app.asar", "index.html")
+    : path.join(__dirname, "index.html");
+
+  win.loadFile(indexPath);
+
+  // Open DevTools in development mode
+  if (!app.isPackaged) {
+    win.webContents.openDevTools();
+  }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
-  }
-});
-
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
   }
 });
 
@@ -55,10 +68,8 @@ ipcMain.on("execute-command", (event, command) => {
 ipcMain.on("zip-rocrate", (event, rocratePath) => {
   // Get the name of the input folder
   const folderName = path.basename(rocratePath);
-
   // Create the output zip file path
   const outputPath = path.join(path.dirname(rocratePath), `${folderName}.zip`);
-
   const output = fs.createWriteStream(outputPath);
   const archive = archiver("zip", {
     zlib: { level: 9 }, // Sets the compression level.
@@ -77,6 +88,5 @@ ipcMain.on("zip-rocrate", (event, rocratePath) => {
   // Add the contents of the folder to the zip file,
   // using the folder name as the root in the zip
   archive.directory(rocratePath, folderName);
-
   archive.finalize();
 });
