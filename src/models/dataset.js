@@ -70,10 +70,14 @@ function generateDataset({
     additionalDocumentation: additionalDocumentation,
     format: dataFormat,
     schema: schema,
-    derivedFrom: derivedFrom
-      ? derivedFrom.map((derived) => derived.trim())
-      : [],
-    usedBy: usedBy ? usedBy.map((used) => used.trim()) : [],
+    derivedFrom:
+      typeof derivedFrom === "string"
+        ? derivedFrom.split(",").map((item) => item.trim())
+        : [],
+    usedBy:
+      typeof usedBy === "string"
+        ? usedBy.split(",").map((item) => item.trim())
+        : [],
   };
 
   if (filepath) {

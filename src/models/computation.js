@@ -56,21 +56,15 @@ function generateComputation({
     runBy: runBy,
     command: command,
     dateCreated: dateCreated,
-    usedSoftware: usedSoftware
-      ? usedSoftware.map((software) =>
-          typeof software === "string" ? software.trim() : software["@id"]
-        )
-      : [],
-    usedDataset: usedDataset
-      ? usedDataset.map((dataset) =>
-          typeof dataset === "string" ? dataset.trim() : dataset["@id"]
-        )
-      : [],
-    generated: generated
-      ? generated.map((output) =>
-          typeof output === "string" ? output.trim() : output["@id"]
-        )
-      : [],
+    usedSoftware: usedSoftware,
+    usedDataset:
+      typeof usedDataset === "string"
+        ? usedDataset.split(",").map((item) => item.trim())
+        : [],
+    generated:
+      typeof generated === "string"
+        ? generated.split(",").map((item) => item.trim())
+        : [],
   };
 
   return computationMetadata;

@@ -64,9 +64,10 @@ function generateSoftware({
     associatedPublication: associatedPublication,
     additionalDocumentation: additionalDocumentation,
     format: fileFormat,
-    usedByComputation: usedByComputation
-      ? usedByComputation.map((comp) => comp.trim())
-      : [],
+    usedByComputation:
+      typeof usedByComputation === "string"
+        ? usedByComputation.split(",").map((item) => item.trim())
+        : [],
   };
 
   if (filepath) {
