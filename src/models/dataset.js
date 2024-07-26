@@ -54,6 +54,10 @@ function generateDataset({
 
   const datasetMetadata = {
     "@id": guid,
+    "@context": {
+      "@vocab": "https://schema.org/",
+      EVI: "https://w3id.org/EVI#",
+    },
     "@type": "https://w3id.org/EVI#Dataset",
     url: url,
     author: author,

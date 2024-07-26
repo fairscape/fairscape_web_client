@@ -155,11 +155,11 @@ function App() {
             options["file_format"],
             options.guid,
             options.url,
-            options.date_modified,
-            options.source_filepath,
-            options.used_by_computation,
-            options.associated_publication,
-            options.additional_documentation
+            options["date-modified"],
+            options["source-filepath"],
+            options["used-by-computation"],
+            options["associated-publication"],
+            options["additional-documentation"]
           );
           break;
         case "rocrate_register_dataset":
@@ -168,32 +168,32 @@ function App() {
             options.name,
             options.author,
             options.version,
-            options.date_published,
+            options["date-published"],
             options.description,
             options.keywords,
             options.data_format,
-            options.source_filepath,
+            options["source-filepath"],
             options.guid,
             options.url,
-            options.used_by,
-            options.derived_from,
+            options["used-by"],
+            options["derived-from"],
             options.schema,
-            options.associated_publication,
-            options.additional_documentation
+            options["associated-publication"],
+            options["additional-documentation"]
           );
           break;
         case "rocrate_register_computation":
           result = register_computation(
             rocratePath,
             options.name,
-            options.run_by,
-            options.date_created,
+            options["run-by"],
+            options["date-created"],
             options.description,
             options.keywords,
             options.guid,
             options.command,
-            options.used_software,
-            options.used_dataset,
+            options["used-software"],
+            options["used-dataset"],
             options.generated
           );
           break;
@@ -205,15 +205,15 @@ function App() {
             options.version,
             options.description,
             options.keywords,
-            options.file_format,
-            options.source_filepath,
-            options.destination_filepath,
-            options.date_modified,
+            options["file-format"],
+            options["source-filepath"],
+            options["destination-filepath"],
+            options["date-modified"],
             options.guid,
             options.url,
-            options.used_by_computation,
-            options.associated_publication,
-            options.additional_documentation
+            options["used-by-computation"],
+            options["associated-publication"],
+            options["additional-documentation"]
           );
           break;
         case "rocrate_add_dataset":
@@ -226,12 +226,12 @@ function App() {
             options.description,
             options.keywords,
             options.data_format,
-            options.source_filepath,
-            options.destination_filepath,
+            options["source-filepath"],
+            options["destination-filepath"],
             options.guid,
             options.url,
-            options.used_by,
-            options.derived_from,
+            options["used-by"],
+            options["derived-from"],
             options.schema,
             options.associated_publication,
             options.additional_documentation

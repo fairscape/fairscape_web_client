@@ -237,6 +237,7 @@ function add_dataset(
   additional_documentation = null
 ) {
   try {
+    console.log("File path rocrate: ", source_filepath);
     const crateInstance = readROCrateMetadata(rocrate_path);
     copyToROCrate(source_filepath, destination_filepath);
     const dataset_instance = generateDataset({

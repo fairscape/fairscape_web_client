@@ -49,6 +49,10 @@ function generateSoftware({
 
   const softwareMetadata = {
     "@id": guid,
+    "@context": {
+      "@vocab": "https://schema.org/",
+      EVI: "https://w3id.org/EVI#",
+    },
     "@type": "https://w3id.org/EVI#Software",
     url: url,
     name: name,
