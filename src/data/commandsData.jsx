@@ -5,16 +5,16 @@ const commands = {
         options: [
           "guid",
           "name",
-          "organization-name",
-          "project-name",
+          "organization_name",
+          "project_name",
           "description",
           "keywords",
         ],
         required: [
           "guid",
           "name",
-          "organization-name",
-          "project-name",
+          "organization_name",
+          "project_name",
           "description",
           "keywords",
         ],
@@ -32,7 +32,7 @@ const commands = {
           "description",
           "keywords",
           "data-format",
-          "source-filepath",
+          "source_filepath",
           "destination-filepath",
           "used-by",
           "derived-from",
@@ -49,7 +49,7 @@ const commands = {
           "description",
           "keywords",
           "data-format",
-          "source-filepath",
+          "source_filepath",
           "destination-filepath",
         ],
       },
@@ -63,7 +63,7 @@ const commands = {
           "keywords",
           "file-format",
           "url",
-          "source-filepath",
+          "source_filepath",
           "destination-filepath",
           "date-modified",
           "used-by-computation",
@@ -78,7 +78,7 @@ const commands = {
           "description",
           "keywords",
           "file-format",
-          "source-filepath",
+          "source_filepath",
           "destination-filepath",
           "date-modified",
         ],
@@ -165,51 +165,51 @@ const commands = {
       },
     },
   },
-  schema: {
-    "create-tabular": {
-      create: {
-        options: ["name", "description", "guid", "separator", "header"],
-        required: ["name", "description", "separator"],
-      },
-    },
-    "add-property": {
-      string: {
-        options: ["name", "index", "description", "value-url", "pattern"],
-        required: ["name", "index", "description"],
-      },
-      number: {
-        options: ["name", "index", "description", "value-url"],
-        required: ["name", "index", "description"],
-      },
-      integer: {
-        options: ["name", "index", "description", "value-url"],
-        required: ["name", "index", "description"],
-      },
-      array: {
-        options: [
-          "name",
-          "index",
-          "description",
-          "value-url",
-          "items-datatype",
-          "min-items",
-          "max-items",
-          "unique-items",
-        ],
-        required: ["name", "index", "description", "items-datatype"],
-      },
-      boolean: {
-        options: ["name", "index", "description", "value-url"],
-        required: ["name", "index", "description"],
-      },
-    },
-    validate: {
-      validate: {
-        options: ["data", "schema"],
-        required: ["data", "schema"],
-      },
-    },
-  },
+  // schema: {
+  //   "create-tabular": {
+  //     create: {
+  //       options: ["name", "description", "guid", "separator", "header"],
+  //       required: ["name", "description", "separator"],
+  //     },
+  //   },
+  //   "add-property": {
+  //     string: {
+  //       options: ["name", "index", "description", "value-url", "pattern"],
+  //       required: ["name", "index", "description"],
+  //     },
+  //     number: {
+  //       options: ["name", "index", "description", "value-url"],
+  //       required: ["name", "index", "description"],
+  //     },
+  //     integer: {
+  //       options: ["name", "index", "description", "value-url"],
+  //       required: ["name", "index", "description"],
+  //     },
+  //     array: {
+  //       options: [
+  //         "name",
+  //         "index",
+  //         "description",
+  //         "value-url",
+  //         "items-datatype",
+  //         "min-items",
+  //         "max-items",
+  //         "unique-items",
+  //       ],
+  //       required: ["name", "index", "description", "items-datatype"],
+  //     },
+  //     boolean: {
+  //       options: ["name", "index", "description", "value-url"],
+  //       required: ["name", "index", "description"],
+  //     },
+  //   },
+  //   validate: {
+  //     validate: {
+  //       options: ["data", "schema"],
+  //       required: ["data", "schema"],
+  //     },
+  //   },
+  // },
   zip: {
     zip: {
       zip: {

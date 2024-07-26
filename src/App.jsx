@@ -5,6 +5,15 @@ import SidebarComponent from "./components/Sidebar";
 import MainContentComponent from "./components/MainContent";
 import { AppContainer } from "./components/StyledComponents";
 import commandsData from "./data/commandsData";
+import {
+  rocrate_init,
+  rocrate_create,
+  register_software,
+  register_dataset,
+  register_computation,
+  add_software,
+  add_dataset,
+} from "./rocrate/rocrate";
 
 function App() {
   const archiver = require("archiver");
@@ -109,30 +118,132 @@ function App() {
       return;
     }
 
-    let command = `fairscape-cli ${selectedCommand} ${selectedSubCommand}`;
-    if (selectedSubSubCommand && selectedSubSubCommand !== selectedSubCommand) {
-      command += ` ${selectedSubSubCommand}`;
-    }
-
-    Object.entries(options).forEach(([key, value]) => {
-      if (value) {
-        command += ` --${key} "${value}"`;
+    let result;
+    try {
+      switch (
+        `${selectedCommand}_${selectedSubCommand}_${selectedSubSubCommand}`
+      ) {
+        case "rocrate_init":
+          result = rocrate_init(
+            options.name,
+            options.organization_name,
+            options.project_name,
+            options.description,
+            options.keywords,
+            options.guid
+          );
+          break;
+        case "rocrate_create_create":
+          result = rocrate_create(
+            rocratePath,
+            options.name,
+            options.organization_name,
+            options.project_name,
+            options.description,
+            options.keywords,
+            options.guid
+          );
+          break;
+        case "rocrate_register_software":
+          result = register_software(
+            rocratePath,
+            options.name,
+            options.author,
+            options.version,
+            options.description,
+            options.keywords,
+            options["file_format"],
+            options.guid,
+            options.url,
+            options.date_modified,
+            options.source_filepath,
+            options.used_by_computation,
+            options.associated_publication,
+            options.additional_documentation
+          );
+          break;
+        case "rocrate_register_dataset":
+          result = register_dataset(
+            rocratePath,
+            options.name,
+            options.author,
+            options.version,
+            options.date_published,
+            options.description,
+            options.keywords,
+            options.data_format,
+            options.source_filepath,
+            options.guid,
+            options.url,
+            options.used_by,
+            options.derived_from,
+            options.schema,
+            options.associated_publication,
+            options.additional_documentation
+          );
+          break;
+        case "rocrate_register_computation":
+          result = register_computation(
+            rocratePath,
+            options.name,
+            options.run_by,
+            options.date_created,
+            options.description,
+            options.keywords,
+            options.guid,
+            options.command,
+            options.used_software,
+            options.used_dataset,
+            options.generated
+          );
+          break;
+        case "rocrate_add_software":
+          result = add_software(
+            rocratePath,
+            options.name,
+            options.author,
+            options.version,
+            options.description,
+            options.keywords,
+            options.file_format,
+            options.source_filepath,
+            options.destination_filepath,
+            options.date_modified,
+            options.guid,
+            options.url,
+            options.used_by_computation,
+            options.associated_publication,
+            options.additional_documentation
+          );
+          break;
+        case "rocrate_add_dataset":
+          result = add_dataset(
+            rocratePath,
+            options.name,
+            options.author,
+            options.version,
+            options.date_published,
+            options.description,
+            options.keywords,
+            options.data_format,
+            options.source_filepath,
+            options.destination_filepath,
+            options.guid,
+            options.url,
+            options.used_by,
+            options.derived_from,
+            options.schema,
+            options.associated_publication,
+            options.additional_documentation
+          );
+          break;
+        default:
+          throw new Error("Invalid command combination");
       }
-    });
-
-    if (selectedCommand === "rocrate") {
-      command += ` "${rocratePath}"`;
+      setOutput(JSON.stringify(result, null, 2));
+    } catch (error) {
+      setOutput(`Error: ${error.message}`);
     }
-
-    if (selectedCommand === "schema") {
-      command += ` "${schemaFile}"`;
-    }
-
-    ipcRenderer.send("execute-command", command);
-
-    ipcRenderer.once("command-result", (event, result) => {
-      setOutput(result);
-    });
   };
 
   const handleUpload = async (e) => {

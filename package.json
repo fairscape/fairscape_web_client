@@ -24,7 +24,8 @@
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.4",
     "react-dom": "^18.3.1",
-    "styled-components": "^6.1.11"
+    "styled-components": "^6.1.11",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.7",
@@ -55,7 +56,7 @@
     },
     "linux": {
       "target": [
-        "tar"
+        "AppImage"
       ],
       "icon": "build/icon.png",
       "category": "Development"
