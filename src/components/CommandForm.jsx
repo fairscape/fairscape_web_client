@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Form } from "react-bootstrap";
+import { Form, OverlayTrigger, Tooltip } from "react-bootstrap";
 import path from "path";
 import fs from "fs";
 import { StyledForm, StyledButton } from "./StyledComponents";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
+import helperData from "../data/helper.json";
 
 function CommandForm({
   commands,
@@ -70,6 +73,10 @@ function CommandForm({
     );
   };
 
+  const renderTooltip = (content) => (
+    <Tooltip id="button-tooltip">{content}</Tooltip>
+  );
+
   const renderOptions = () => {
     let currentOptions = commands[selectedCommand];
     if (selectedSubCommand) {
@@ -89,7 +96,21 @@ function CommandForm({
       <>
         {(selectedCommand === "1: Create" || selectedCommand === "2: Add") && (
           <Form.Group className="mb-3">
-            <Form.Label style={{ color: "#ff9800" }}>ROCRATE_PATH *</Form.Label>
+            <Form.Label style={{ color: "#ff9800" }}>
+              ROCRATE_PATH *
+              {helperData["ROCRATE_PATH"] && (
+                <OverlayTrigger
+                  placement="right"
+                  delay={{ show: 250, hide: 400 }}
+                  overlay={renderTooltip(helperData["ROCRATE_PATH"])}
+                >
+                  <FontAwesomeIcon
+                    icon={faQuestionCircle}
+                    style={{ marginLeft: "5px", cursor: "pointer" }}
+                  />
+                </OverlayTrigger>
+              )}
+            </Form.Label>
             <div className="input-group">
               <Form.Control
                 type="text"
@@ -108,7 +129,21 @@ function CommandForm({
         )}
         {selectedCommand === "schema" && (
           <Form.Group className="mb-3">
-            <Form.Label style={{ color: "#ff9800" }}>SCHEMA_FILE *</Form.Label>
+            <Form.Label style={{ color: "#ff9800" }}>
+              SCHEMA_FILE *
+              {helperData["SCHEMA_FILE"] && (
+                <OverlayTrigger
+                  placement="right"
+                  delay={{ show: 250, hide: 400 }}
+                  overlay={renderTooltip(helperData["SCHEMA_FILE"])}
+                >
+                  <FontAwesomeIcon
+                    icon={faQuestionCircle}
+                    style={{ marginLeft: "5px", cursor: "pointer" }}
+                  />
+                </OverlayTrigger>
+              )}
+            </Form.Label>
             <Form.Control
               type="text"
               value={schemaFile}
@@ -133,6 +168,18 @@ function CommandForm({
               currentOptions.required.includes(option)
                 ? "*"
                 : ""}
+              {helperData[option] && (
+                <OverlayTrigger
+                  placement="right"
+                  delay={{ show: 250, hide: 400 }}
+                  overlay={renderTooltip(helperData[option])}
+                >
+                  <FontAwesomeIcon
+                    icon={faQuestionCircle}
+                    style={{ marginLeft: "5px", cursor: "pointer" }}
+                  />
+                </OverlayTrigger>
+              )}
             </Form.Label>
             {option === "file" || option === "source-filepath" ? (
               <Form.Control

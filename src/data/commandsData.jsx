@@ -90,7 +90,6 @@ const commands = {
           "file-format",
           "source-filepath",
           "destination-filepath",
-          "date-modified",
         ],
       },
     },
@@ -150,7 +149,6 @@ const commands = {
           "description",
           "keywords",
           "data-format",
-          "filepath",
         ],
       },
       software: {
