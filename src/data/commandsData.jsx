@@ -18,12 +18,17 @@ const commands = {
           "description",
           "keywords",
         ],
+        description: "Creates an empty RO-Crate at the path you select.",
       },
     },
   },
   "2: Add": {
     add: {
+      description:
+        "Copies a local file to the recently created RO-Crate with metadata.",
       dataset: {
+        description:
+          "Copies a local file to the recently created RO-Crate with metadata.",
         options: [
           "guid",
           "name",
@@ -56,6 +61,8 @@ const commands = {
         ],
       },
       software: {
+        description:
+          "Copies a local file to the recently created RO-Crate with metadata.",
         options: [
           "guid",
           "name",

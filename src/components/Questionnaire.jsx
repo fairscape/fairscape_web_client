@@ -1,10 +1,14 @@
 import React from "react";
-import { Button, Card } from "react-bootstrap";
+import { Button, Card, Row, Col } from "react-bootstrap";
 
 const steps = [
   {
     text: "Create an RO-Crate",
-    action: { command: "1: Create" },
+    action: {
+      command: "1: Create",
+      subCommand: "create",
+      subsubCommand: "create",
+    },
   },
   {
     text: "Add datasets or software to an RO-Crate",
@@ -16,11 +20,15 @@ const steps = [
   },
   {
     text: "Package an RO-Crate for upload",
-    action: { command: "3: Package" },
+    action: { command: "3: Package", subCommand: "zip", subsubCommand: "zip" },
   },
   {
     text: "Upload an RO-Crate",
-    action: { command: "4: Upload" },
+    action: {
+      command: "4: Upload",
+      subCommand: "rocrate",
+      subsubCommand: "rocrate",
+    },
   },
 ];
 
@@ -32,10 +40,21 @@ function Questionnaire({ onStepSelect }) {
       {steps.map((step, index) => (
         <Card key={index} style={{ marginBottom: "10px" }}>
           <Card.Body>
-            <Card.Title>{`Step ${index + 1}: ${step.text}`}</Card.Title>
-            <Button variant="primary" onClick={() => onStepSelect(step.action)}>
-              Select this step
-            </Button>
+            <Row className="align-items-center">
+              <Col xs={9}>
+                <Card.Title style={{ margin: 0 }}>{`Step ${index + 1}: ${
+                  step.text
+                }`}</Card.Title>
+              </Col>
+              <Col xs={3} className="text-right">
+                <Button
+                  variant="primary"
+                  onClick={() => onStepSelect(step.action)}
+                >
+                  Select
+                </Button>
+              </Col>
+            </Row>
           </Card.Body>
         </Card>
       ))}

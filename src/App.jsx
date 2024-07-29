@@ -93,6 +93,9 @@ function App() {
     if (action.subCommand) {
       setSelectedSubCommand(action.subCommand);
     }
+    if (action.subsubCommand) {
+      setSelectedSubSubCommand(action.subsubCommand);
+    }
     setShowQuestionnaire(false);
   };
 

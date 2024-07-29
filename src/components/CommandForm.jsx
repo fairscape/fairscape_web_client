@@ -207,7 +207,7 @@ function CommandForm({
     >
       {renderOptions()}
       <StyledButton type="submit" disabled={isExecuteDisabled()}>
-        {selectedCommand === "upload" ? "Upload" : "Execute"}
+        {selectedCommand === "4: Upload" ? "Upload" : "Execute"}
       </StyledButton>
     </StyledForm>
   );

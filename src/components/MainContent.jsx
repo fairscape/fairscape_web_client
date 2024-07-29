@@ -28,25 +28,57 @@ function MainContentComponent({
   isExecuteDisabled,
   previousPaths,
 }) {
+  const getDescription = () => {
+    if (selectedCommand && commands[selectedCommand]) {
+      const commandObj = commands[selectedCommand];
+      if (selectedSubCommand && commandObj[selectedSubCommand]) {
+        const subCommandObj = commandObj[selectedSubCommand];
+        if (selectedSubSubCommand && subCommandObj[selectedSubSubCommand]) {
+          return (
+            subCommandObj[selectedSubSubCommand].description ||
+            "No description available."
+          );
+        }
+        return subCommandObj.description || "No description available.";
+      }
+      return commandObj.description || "No description available.";
+    }
+    return "Please select a command to see its description.";
+  };
+
+  const getOptionsWithoutDescription = (obj) => {
+    return Object.keys(obj).filter((key) => key !== "description");
+  };
+
   return (
     <Container
       fluid
       style={{ height: "100%", display: "flex", flexDirection: "column" }}
     >
+      {selectedCommand && (
+        <Row>
+          <Col>
+            <h4>{selectedCommand}</h4>
+            <p>{getDescription()}</p>
+          </Col>
+        </Row>
+      )}
       <Row style={{ flexGrow: 1, minHeight: 0 }}>
         <SmallerCol>
           {selectedCommand && (
             <div>
               <h5 style={{ marginBottom: "15px" }}>Subcommands</h5>
-              {Object.keys(commands[selectedCommand]).map((subCommand) => (
-                <SidebarItem
-                  key={subCommand}
-                  active={selectedSubCommand === subCommand}
-                  onClick={() => handleSubCommandSelect(subCommand)}
-                >
-                  {subCommand}
-                </SidebarItem>
-              ))}
+              {getOptionsWithoutDescription(commands[selectedCommand]).map(
+                (subCommand) => (
+                  <SidebarItem
+                    key={subCommand}
+                    active={selectedSubCommand === subCommand}
+                    onClick={() => handleSubCommandSelect(subCommand)}
+                  >
+                    {subCommand}
+                  </SidebarItem>
+                )
+              )}
             </div>
           )}
         </SmallerCol>
@@ -57,17 +89,17 @@ function MainContentComponent({
               "object" && (
               <div>
                 <h5 style={{ marginBottom: "15px" }}>Options</h5>
-                {Object.keys(commands[selectedCommand][selectedSubCommand]).map(
-                  (subSubCommand) => (
-                    <SidebarItem
-                      key={subSubCommand}
-                      active={selectedSubSubCommand === subSubCommand}
-                      onClick={() => handleSubSubCommandSelect(subSubCommand)}
-                    >
-                      {subSubCommand}
-                    </SidebarItem>
-                  )
-                )}
+                {getOptionsWithoutDescription(
+                  commands[selectedCommand][selectedSubCommand]
+                ).map((subSubCommand) => (
+                  <SidebarItem
+                    key={subSubCommand}
+                    active={selectedSubSubCommand === subSubCommand}
+                    onClick={() => handleSubSubCommandSelect(subSubCommand)}
+                  >
+                    {subSubCommand}
+                  </SidebarItem>
+                ))}
               </div>
             )}
         </SmallerCol>
