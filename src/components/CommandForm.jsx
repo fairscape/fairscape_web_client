@@ -2,12 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Form } from "react-bootstrap";
 import path from "path";
 import fs from "fs";
-import {
-  StyledForm,
-  StyledFormGroup,
-  StyledFormControl,
-  StyledButton,
-} from "./StyledComponents";
+import { StyledForm, StyledButton } from "./StyledComponents";
 
 function CommandForm({
   commands,
@@ -25,6 +20,7 @@ function CommandForm({
   isExecuteDisabled,
   previousPaths,
   onSuccessfulExecution,
+  onAddAnother,
 }) {
   const [sourceFilePath, setSourceFilePath] = useState("");
   const [roCrateIds, setRoCrateIds] = useState([]);
@@ -202,7 +198,7 @@ function CommandForm({
     );
   };
 
-  const handleFormSubmit = async (e) => {
+  const handleFormSubmit = async (e, action) => {
     e.preventDefault();
     let result;
     if (selectedCommand === "4: Upload") {
@@ -212,16 +208,59 @@ function CommandForm({
     }
 
     if (result && result.success) {
-      onSuccessfulExecution(selectedCommand);
+      if (selectedCommand === "2: Add" && action === "addAnother") {
+        onAddAnother();
+      } else {
+        onSuccessfulExecution(selectedCommand);
+      }
+    }
+  };
+
+  const renderButtons = () => {
+    if (selectedCommand === "2: Add") {
+      return (
+        <>
+          <StyledButton
+            type="button"
+            disabled={isExecuteDisabled()}
+            onClick={(e) => handleFormSubmit(e, "addAnother")}
+          >
+            Add Another
+          </StyledButton>
+          <StyledButton
+            type="button"
+            disabled={isExecuteDisabled()}
+            onClick={(e) => handleFormSubmit(e, "finish")}
+          >
+            Finish Adding
+          </StyledButton>
+        </>
+      );
+    } else {
+      return (
+        <StyledButton
+          type="button"
+          disabled={isExecuteDisabled()}
+          onClick={(e) => handleFormSubmit(e)}
+        >
+          {selectedCommand === "4: Upload" ? "Upload" : "Execute"}
+        </StyledButton>
+      );
     }
   };
 
   return (
-    <StyledForm onSubmit={handleFormSubmit}>
+    <StyledForm onSubmit={(e) => e.preventDefault()}>
       {renderOptions()}
-      <StyledButton type="submit" disabled={isExecuteDisabled()}>
-        {selectedCommand === "4: Upload" ? "Upload" : "Execute"}
-      </StyledButton>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: "20px",
+        }}
+      >
+        {renderButtons()}
+      </div>
     </StyledForm>
   );
 }

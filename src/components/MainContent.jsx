@@ -28,6 +28,7 @@ function MainContentComponent({
   isExecuteDisabled,
   previousPaths,
   onSuccessfulExecution,
+  onAddAnother,
 }) {
   const getDescription = () => {
     if (selectedCommand && commands[selectedCommand]) {
@@ -121,6 +122,7 @@ function MainContentComponent({
             isExecuteDisabled={isExecuteDisabled}
             previousPaths={previousPaths}
             onSuccessfulExecution={onSuccessfulExecution}
+            onAddAnother={onAddAnother}
           />
         </LargerCol>
       </Row>
