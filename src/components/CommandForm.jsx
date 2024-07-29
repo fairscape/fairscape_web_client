@@ -90,7 +90,7 @@ function CommandForm({
     const allOptions = currentOptions.options || currentOptions.required;
     return (
       <>
-        {selectedCommand === "rocrate" && (
+        {(selectedCommand === "1: Create" || selectedCommand === "2: Add") && (
           <Form.Group className="mb-3">
             <Form.Label style={{ color: "#ff9800" }}>ROCRATE_PATH *</Form.Label>
             <div className="input-group">

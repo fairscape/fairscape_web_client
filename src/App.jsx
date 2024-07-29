@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { ipcRenderer } from "electron";
 import axios from "axios";
 import SidebarComponent from "./components/Sidebar";
+import Questionnaire from "./components/Questionnaire";
 import MainContentComponent from "./components/MainContent";
-import { AppContainer } from "./components/StyledComponents";
+import { AppContainer, MainContent } from "./components/StyledComponents";
 import commandsData from "./data/commandsData";
 import {
   rocrate_init,
@@ -27,6 +28,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
   const [previousPaths, setPreviousPaths] = useState([]);
+  const [showQuestionnaire, setShowQuestionnaire] = useState(true);
 
   useEffect(() => {
     const storedPaths = JSON.parse(localStorage.getItem("previousPaths")) || [];
@@ -45,7 +47,7 @@ function App() {
     if (subCommands.length === 1) {
       handleSubCommandSelect(subCommands[0]);
     }
-    if (command === "zip") {
+    if (command === "3: Package") {
       handleSubCommandSelect("zip");
     }
   };
@@ -55,7 +57,7 @@ function App() {
     setSelectedSubSubCommand("");
     setOptions({});
 
-    if (selectedCommand === "zip") {
+    if (selectedCommand === "3: Package") {
       setSelectedSubSubCommand("zip");
       return;
     }
@@ -75,6 +77,24 @@ function App() {
 
   const handleOptionChange = (option, value) => {
     setOptions({ ...options, [option]: value });
+  };
+
+  const handleQuestionnaireComplete = (action) => {
+    if (action) {
+      setSelectedCommand(action.command);
+      if (action.subCommand) {
+        setSelectedSubCommand(action.subCommand);
+      }
+    }
+    setShowQuestionnaire(false);
+  };
+
+  const handleStepSelect = (action) => {
+    setSelectedCommand(action.command);
+    if (action.subCommand) {
+      setSelectedSubCommand(action.subCommand);
+    }
+    setShowQuestionnaire(false);
   };
 
   const handleRocratePathChange = (e) => {
@@ -113,7 +133,7 @@ function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (selectedCommand === "zip") {
+    if (selectedCommand === "3: Package") {
       handleZip(e);
       return;
     }
@@ -123,17 +143,7 @@ function App() {
       switch (
         `${selectedCommand}_${selectedSubCommand}_${selectedSubSubCommand}`
       ) {
-        case "rocrate_init":
-          result = rocrate_init(
-            options.name,
-            options.organization_name,
-            options.project_name,
-            options.description,
-            options.keywords,
-            options.guid
-          );
-          break;
-        case "rocrate_create_create":
+        case "1: Create_create_create":
           result = rocrate_create(
             rocratePath,
             options.name,
@@ -144,7 +154,7 @@ function App() {
             options.guid
           );
           break;
-        case "rocrate_register_software":
+        case "2: Add_register_software":
           result = register_software(
             rocratePath,
             options.name,
@@ -162,7 +172,7 @@ function App() {
             options["additional-documentation"]
           );
           break;
-        case "rocrate_register_dataset":
+        case "2: Add_register_dataset":
           result = register_dataset(
             rocratePath,
             options.name,
@@ -182,7 +192,7 @@ function App() {
             options["additional-documentation"]
           );
           break;
-        case "rocrate_register_computation":
+        case "2: Add_register_computation":
           result = register_computation(
             rocratePath,
             options.name,
@@ -197,7 +207,7 @@ function App() {
             options.generated
           );
           break;
-        case "rocrate_add_software":
+        case "2: Add_add_software":
           result = add_software(
             rocratePath,
             options.name,
@@ -216,7 +226,7 @@ function App() {
             options["additional-documentation"]
           );
           break;
-        case "rocrate_add_dataset":
+        case "2: Add_add_dataset":
           result = add_dataset(
             rocratePath,
             options.name,
@@ -349,25 +359,31 @@ function App() {
         userData={userData}
         onLogin={handleLogin}
       />
-      <MainContentComponent
-        commands={commandsData}
-        selectedCommand={selectedCommand}
-        selectedSubCommand={selectedSubCommand}
-        selectedSubSubCommand={selectedSubSubCommand}
-        options={options}
-        output={output}
-        rocratePath={rocratePath}
-        schemaFile={schemaFile}
-        handleSubCommandSelect={handleSubCommandSelect}
-        handleSubSubCommandSelect={handleSubSubCommandSelect}
-        handleOptionChange={handleOptionChange}
-        handleRocratePathChange={handleRocratePathChange}
-        handleSchemaFileChange={handleSchemaFileChange}
-        handleSubmit={handleSubmit}
-        handleUpload={handleUpload}
-        isExecuteDisabled={isExecuteDisabled}
-        previousPaths={previousPaths}
-      />
+      <MainContent>
+        {showQuestionnaire ? (
+          <Questionnaire onStepSelect={handleStepSelect} />
+        ) : (
+          <MainContentComponent
+            commands={commandsData}
+            selectedCommand={selectedCommand}
+            selectedSubCommand={selectedSubCommand}
+            selectedSubSubCommand={selectedSubSubCommand}
+            options={options}
+            output={output}
+            rocratePath={rocratePath}
+            schemaFile={schemaFile}
+            handleSubCommandSelect={handleSubCommandSelect}
+            handleSubSubCommandSelect={handleSubSubCommandSelect}
+            handleOptionChange={handleOptionChange}
+            handleRocratePathChange={handleRocratePathChange}
+            handleSchemaFileChange={handleSchemaFileChange}
+            handleSubmit={handleSubmit}
+            handleUpload={handleUpload}
+            isExecuteDisabled={isExecuteDisabled}
+            previousPaths={previousPaths}
+          />
+        )}
+      </MainContent>
     </AppContainer>
   );
 }

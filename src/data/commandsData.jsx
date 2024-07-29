@@ -1,5 +1,5 @@
 const commands = {
-  rocrate: {
+  "1: Create": {
     create: {
       create: {
         options: [
@@ -20,6 +20,8 @@ const commands = {
         ],
       },
     },
+  },
+  "2: Add": {
     add: {
       dataset: {
         options: [
@@ -210,7 +212,7 @@ const commands = {
   //     },
   //   },
   // },
-  zip: {
+  "3: Package": {
     zip: {
       zip: {
         options: ["path"],
@@ -218,7 +220,7 @@ const commands = {
       },
     },
   },
-  upload: {
+  "4: Upload": {
     rocrate: {
       rocrate: {
         options: ["file"],
