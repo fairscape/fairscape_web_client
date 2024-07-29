@@ -23,6 +23,8 @@ const commands = {
     },
   },
   "2: Add": {
+    description:
+      "Add a file with metadata or register metadata without copying files over to the RO-Crate. Add/register as many files as you need.",
     add: {
       description:
         "Copies a local file to the recently created RO-Crate with metadata.",

@@ -410,26 +410,14 @@ function App() {
   };
 
   const onAddAnother = () => {
-    // Reset options state
     setOptions({});
 
-    // Reset specific fields while keeping others (like rocratePath) intact
     setCommandState((prevState) => ({
       ...prevState,
       subSubCommand: "", // Reset sub-sub-command if applicable
     }));
-
-    // You may want to keep some fields, like rocratePath, unchanged
-    // setRocratePath(""); // Uncomment if you want to reset rocratePath
-
-    // Reset source file path in CommandForm
-    // You might need to pass this down as a prop or use a ref
-    // setSourceFilePath("");
-
-    // Optionally scroll to the top of the form
     window.scrollTo(0, 0);
 
-    // Optionally show a success message
     setOutput("Item added successfully. You can now add another.");
   };
 
