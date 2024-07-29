@@ -36,7 +36,7 @@ function SidebarComponent({
           onClick={onQuestionnaireSelect}
           active={selectedCommand === ""}
         >
-          Questionnaire
+          Steps
         </SidebarItem>
         <SidebarItem onClick={toggleSidebar}>
           Commands {expanded ? "▼" : "▶"}
