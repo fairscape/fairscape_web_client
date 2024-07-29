@@ -27,6 +27,7 @@ function MainContentComponent({
   handleUpload,
   isExecuteDisabled,
   previousPaths,
+  onSuccessfulExecution,
 }) {
   const getDescription = () => {
     if (selectedCommand && commands[selectedCommand]) {
@@ -119,6 +120,7 @@ function MainContentComponent({
             handleUpload={handleUpload}
             isExecuteDisabled={isExecuteDisabled}
             previousPaths={previousPaths}
+            onSuccessfulExecution={onSuccessfulExecution}
           />
         </LargerCol>
       </Row>

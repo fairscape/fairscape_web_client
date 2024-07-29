@@ -61,8 +61,7 @@ const commands = {
         ],
       },
       software: {
-        description:
-          "Copies a local file to the recently created RO-Crate with metadata.",
+        description: "Copy local files to the RO-Crate with metadata.",
         options: [
           "guid",
           "name",
@@ -94,7 +93,11 @@ const commands = {
       },
     },
     register: {
+      description:
+        "Add metadata describing a computation, dataset or software without copying the file to the RO-Crate.",
       computation: {
+        description:
+          "Add metadata describing a computation, dataset or software without copying the file to the RO-Crate.",
         options: [
           "guid",
           "name",
@@ -117,6 +120,8 @@ const commands = {
         ],
       },
       dataset: {
+        description:
+          "Add metadata describing a computation, dataset or software without copying the file to the RO-Crate.",
         options: [
           "guid",
           "name",
@@ -147,6 +152,8 @@ const commands = {
         ],
       },
       software: {
+        description:
+          "Add metadata describing a computation, dataset or software without copying the file to the RO-Crate.",
         options: [
           "guid",
           "name",
@@ -220,16 +227,23 @@ const commands = {
   //   },
   // },
   "3: Package": {
+    description: "Reformat the RO-Crate to make a zip file ready for upload.",
     zip: {
+      description: "Reformat the RO-Crate to make a zip file ready for upload.",
       zip: {
+        description:
+          "Reformat the RO-Crate to make a zip file ready for upload.",
         options: ["path"],
         required: ["path"],
       },
     },
   },
   "4: Upload": {
+    description: "Upload a packaged RO-Crate to Fairscape.",
     rocrate: {
+      description: "Upload a packaged RO-Crate to Fairscape.",
       rocrate: {
+        description: "Upload a packaged RO-Crate to Fairscape.",
         options: ["file"],
         required: ["file"],
       },

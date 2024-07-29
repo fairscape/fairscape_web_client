@@ -24,6 +24,7 @@ function CommandForm({
   handleUpload,
   isExecuteDisabled,
   previousPaths,
+  onSuccessfulExecution,
 }) {
   const [sourceFilePath, setSourceFilePath] = useState("");
   const [roCrateIds, setRoCrateIds] = useState([]);
@@ -201,10 +202,22 @@ function CommandForm({
     );
   };
 
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    let result;
+    if (selectedCommand === "4: Upload") {
+      result = await handleUpload(e);
+    } else {
+      result = await handleSubmit(e);
+    }
+
+    if (result && result.success) {
+      onSuccessfulExecution(selectedCommand);
+    }
+  };
+
   return (
-    <StyledForm
-      onSubmit={selectedCommand === "upload" ? handleUpload : handleSubmit}
-    >
+    <StyledForm onSubmit={handleFormSubmit}>
       {renderOptions()}
       <StyledButton type="submit" disabled={isExecuteDisabled()}>
         {selectedCommand === "4: Upload" ? "Upload" : "Execute"}

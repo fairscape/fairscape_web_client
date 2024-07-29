@@ -18,9 +18,11 @@ import {
 
 function App() {
   const archiver = require("archiver");
-  const [selectedCommand, setSelectedCommand] = useState("");
-  const [selectedSubCommand, setSelectedSubCommand] = useState("");
-  const [selectedSubSubCommand, setSelectedSubSubCommand] = useState("");
+  const [commandState, setCommandState] = useState({
+    command: "",
+    subCommand: "",
+    subSubCommand: "",
+  });
   const [options, setOptions] = useState({});
   const [output, setOutput] = useState("");
   const [rocratePath, setRocratePath] = useState("");
@@ -36,10 +38,18 @@ function App() {
     setPreviousPaths(storedPaths);
   }, []);
 
+  useEffect(() => {
+    // This effect will run whenever commandState changes
+    // You can put any logic here that needs to happen after both command and subcommand are updated
+    // For example, you might want to reset options or fetch new data based on the new command/subcommand
+  }, [commandState]);
+
   const handleCommandSelect = (command) => {
-    setSelectedCommand(command);
-    setSelectedSubCommand("");
-    setSelectedSubSubCommand("");
+    setCommandState({
+      command: command,
+      subCommand: "",
+      subSubCommand: "",
+    });
     setOptions({});
     setRocratePath("");
     setSchemaFile("");
@@ -55,16 +65,22 @@ function App() {
   };
 
   const handleSubCommandSelect = (subCommand) => {
-    setSelectedSubCommand(subCommand);
-    setSelectedSubSubCommand("");
+    setCommandState((prevState) => ({
+      ...prevState,
+      subCommand: subCommand,
+      subSubCommand: "",
+    }));
     setOptions({});
 
-    if (selectedCommand === "3: Package") {
-      setSelectedSubSubCommand("zip");
+    if (commandState.command === "3: Package") {
+      setCommandState((prevState) => ({
+        ...prevState,
+        subSubCommand: "zip",
+      }));
       return;
     }
     const subSubCommands = Object.keys(
-      (commandsData[selectedCommand] || {})[subCommand] || {}
+      (commandsData[commandState.command] || {})[subCommand] || {}
     );
     console.log("Available sub-subcommands:", subSubCommands);
     if (subSubCommands.length === 1) {
@@ -73,7 +89,10 @@ function App() {
   };
 
   const handleSubSubCommandSelect = (subSubCommand) => {
-    setSelectedSubSubCommand(subSubCommand);
+    setCommandState((prevState) => ({
+      ...prevState,
+      subSubCommand: subSubCommand,
+    }));
     setOptions({});
   };
 
@@ -83,19 +102,19 @@ function App() {
 
   const handleQuestionnaireSelect = () => {
     setShowQuestionnaire(true);
-    setSelectedCommand("");
-    setSelectedSubCommand("");
-    setSelectedSubSubCommand("");
+    setCommandState({
+      command: "",
+      subCommand: "",
+      subSubCommand: "",
+    });
   };
 
   const handleStepSelect = (action) => {
-    setSelectedCommand(action.command);
-    if (action.subCommand) {
-      setSelectedSubCommand(action.subCommand);
-    }
-    if (action.subsubCommand) {
-      setSelectedSubSubCommand(action.subsubCommand);
-    }
+    setCommandState({
+      command: action.command,
+      subCommand: action.subCommand || "",
+      subSubCommand: action.subsubCommand || "",
+    });
     setShowQuestionnaire(false);
   };
 
@@ -104,7 +123,7 @@ function App() {
     setRocratePath(newPath);
 
     if (newPath && !previousPaths.includes(newPath)) {
-      const updatedPaths = [newPath, ...previousPaths.slice(0, 4)]; // Keep only the last 5 paths
+      const updatedPaths = [newPath, ...previousPaths.slice(0, 4)];
       setPreviousPaths(updatedPaths);
       localStorage.setItem("previousPaths", JSON.stringify(updatedPaths));
     }
@@ -119,31 +138,34 @@ function App() {
     const path = options.path;
     if (!path) {
       setOutput("Error: Path is required for zipping.");
-      return;
+      return { success: false };
     }
 
     ipcRenderer.send("zip-rocrate", path);
 
-    ipcRenderer.once("zip-result", (event, result) => {
-      if (result.success) {
-        setOutput(`RO-Crate successfully zipped at: ${result.zipPath}`);
-      } else {
-        setOutput(`Error zipping RO-Crate: ${result.error}`);
-      }
+    return new Promise((resolve) => {
+      ipcRenderer.once("zip-result", (event, result) => {
+        if (result.success) {
+          setOutput(`RO-Crate successfully zipped at: ${result.zipPath}`);
+          resolve({ success: true });
+        } else {
+          setOutput(`Error zipping RO-Crate: ${result.error}`);
+          resolve({ success: false });
+        }
+      });
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (selectedCommand === "3: Package") {
-      handleZip(e);
-      return;
+    if (commandState.command === "3: Package") {
+      return handleZip(e);
     }
 
     let result;
     try {
       switch (
-        `${selectedCommand}_${selectedSubCommand}_${selectedSubSubCommand}`
+        `${commandState.command}_${commandState.subCommand}_${commandState.subSubCommand}`
       ) {
         case "1: Create_create_create":
           result = rocrate_create(
@@ -253,8 +275,10 @@ function App() {
           throw new Error("Invalid command combination");
       }
       setOutput(JSON.stringify(result, null, 2));
+      return { success: true };
     } catch (error) {
       setOutput(`Error: ${error.message}`);
+      return { success: false };
     }
   };
 
@@ -275,13 +299,13 @@ function App() {
     try {
       console.log(
         "Sending request to:",
-        `http://fairscape.net/${selectedSubCommand}/upload`
+        `http://fairscape.net/${commandState.subCommand}/upload`
       );
       console.log("Form data:", Object.fromEntries(formData));
 
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        `http://fairscape.net/${selectedSubCommand}/upload`,
+        `http://fairscape.net/${commandState.subCommand}/upload`,
         formData,
         {
           headers: {
@@ -299,6 +323,7 @@ function App() {
 
       console.log("Response received:", response);
       setOutput(JSON.stringify(response.data, null, 2));
+      return { success: true };
     } catch (error) {
       console.error("Upload error:", error);
       setOutput(
@@ -308,18 +333,17 @@ function App() {
           2
         )}`
       );
-    } finally {
-      console.log("Upload attempt completed");
+      return { success: false };
     }
   };
 
   const isExecuteDisabled = () => {
-    let currentOptions = commandsData[selectedCommand];
-    if (selectedSubCommand && currentOptions) {
-      currentOptions = currentOptions[selectedSubCommand];
+    let currentOptions = commandsData[commandState.command];
+    if (commandState.subCommand && currentOptions) {
+      currentOptions = currentOptions[commandState.subCommand];
     }
-    if (selectedSubSubCommand && currentOptions) {
-      currentOptions = currentOptions[selectedSubSubCommand];
+    if (commandState.subSubCommand && currentOptions) {
+      currentOptions = currentOptions[commandState.subSubCommand];
     }
 
     if (!currentOptions || !currentOptions.required) {
@@ -337,11 +361,12 @@ function App() {
     });
 
     const rocratePathFilled =
-      selectedCommand !== "rocrate" ||
+      commandState.command !== "rocrate" ||
       (rocratePath && rocratePath.trim() !== "");
 
     const schemaFileFilled =
-      selectedCommand !== "schema" || (schemaFile && schemaFile.trim() !== "");
+      commandState.command !== "schema" ||
+      (schemaFile && schemaFile.trim() !== "");
 
     return !(requiredFieldsFilled && rocratePathFilled && schemaFileFilled);
   };
@@ -355,11 +380,40 @@ function App() {
     setSidebarExpanded(!sidebarExpanded);
   };
 
+  const handleSuccessfulExecution = (command) => {
+    switch (command) {
+      case "1: Create":
+        setCommandState({
+          command: "2: Add",
+          subCommand: "add",
+          subSubCommand: "dataset",
+        });
+        break;
+      case "2: Add":
+        setCommandState({
+          command: "3: Package",
+          subCommand: "zip",
+          subSubCommand: "zip",
+        });
+        break;
+      case "3: Package":
+        setCommandState({
+          command: "4: Upload",
+          subCommand: "rocrate",
+          subSubCommand: "rocrate",
+        });
+        break;
+      default:
+        // Do nothing or reset to initial state
+        break;
+    }
+  };
+
   return (
     <AppContainer>
       <SidebarComponent
         commands={commandsData}
-        selectedCommand={selectedCommand}
+        selectedCommand={commandState.command}
         handleCommandSelect={handleCommandSelect}
         isLoggedIn={isLoggedIn}
         userData={userData}
@@ -374,9 +428,9 @@ function App() {
         ) : (
           <MainContentComponent
             commands={commandsData}
-            selectedCommand={selectedCommand}
-            selectedSubCommand={selectedSubCommand}
-            selectedSubSubCommand={selectedSubSubCommand}
+            selectedCommand={commandState.command}
+            selectedSubCommand={commandState.subCommand}
+            selectedSubSubCommand={commandState.subSubCommand}
             options={options}
             output={output}
             rocratePath={rocratePath}
@@ -390,6 +444,7 @@ function App() {
             handleUpload={handleUpload}
             isExecuteDisabled={isExecuteDisabled}
             previousPaths={previousPaths}
+            onSuccessfulExecution={handleSuccessfulExecution}
           />
         )}
       </MainContent>
