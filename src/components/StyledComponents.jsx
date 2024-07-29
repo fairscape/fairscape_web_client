@@ -51,6 +51,18 @@ const SidebarItem = styled.div`
   `}
 `;
 
+const SidebarSubItem = styled.div`
+  padding: 10px 20px 10px 40px;
+  cursor: pointer;
+  background-color: ${(props) => (props.active ? accentColor : "transparent")};
+  color: ${(props) => (props.active ? "#ffffff" : "inherit")};
+  &:hover {
+    background-color: ${(props) =>
+      props.active ? accentColorHover : "#333333"};
+    color: #ffffff;
+  }
+`;
+
 const MainContent = styled.div`
   flex-grow: 1;
   padding: 20px;
@@ -122,6 +134,7 @@ export {
   SidebarItem,
   SidebarContent,
   SidebarFooter,
+  SidebarSubItem,
   StyledForm,
   StyledFormGroup,
   StyledFormControl,

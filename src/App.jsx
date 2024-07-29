@@ -29,6 +29,7 @@ function App() {
   const [userData, setUserData] = useState(null);
   const [previousPaths, setPreviousPaths] = useState([]);
   const [showQuestionnaire, setShowQuestionnaire] = useState(true);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
   useEffect(() => {
     const storedPaths = JSON.parse(localStorage.getItem("previousPaths")) || [];
@@ -42,6 +43,7 @@ function App() {
     setOptions({});
     setRocratePath("");
     setSchemaFile("");
+    setShowQuestionnaire(false);
 
     const subCommands = Object.keys(commandsData[command] || {});
     if (subCommands.length === 1) {
@@ -79,14 +81,11 @@ function App() {
     setOptions({ ...options, [option]: value });
   };
 
-  const handleQuestionnaireComplete = (action) => {
-    if (action) {
-      setSelectedCommand(action.command);
-      if (action.subCommand) {
-        setSelectedSubCommand(action.subCommand);
-      }
-    }
-    setShowQuestionnaire(false);
+  const handleQuestionnaireSelect = () => {
+    setShowQuestionnaire(true);
+    setSelectedCommand("");
+    setSelectedSubCommand("");
+    setSelectedSubSubCommand("");
   };
 
   const handleStepSelect = (action) => {
@@ -349,6 +348,10 @@ function App() {
     setUserData(data);
   };
 
+  const toggleSidebar = () => {
+    setSidebarExpanded(!sidebarExpanded);
+  };
+
   return (
     <AppContainer>
       <SidebarComponent
@@ -358,6 +361,9 @@ function App() {
         isLoggedIn={isLoggedIn}
         userData={userData}
         onLogin={handleLogin}
+        onQuestionnaireSelect={handleQuestionnaireSelect}
+        expanded={sidebarExpanded}
+        toggleSidebar={toggleSidebar}
       />
       <MainContent>
         {showQuestionnaire ? (

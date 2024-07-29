@@ -5,6 +5,7 @@ import {
   SidebarContent,
   SidebarItem,
   SidebarFooter,
+  SidebarSubItem,
 } from "./StyledComponents";
 import logoSvg from "../assets/logo.svg";
 
@@ -17,6 +18,9 @@ function SidebarComponent({
   isLoggedIn,
   userData,
   onLogin,
+  onQuestionnaireSelect,
+  expanded,
+  toggleSidebar,
 }) {
   return (
     <Sidebar>
@@ -28,15 +32,25 @@ function SidebarComponent({
             style={{ maxWidth: "100%", height: "auto" }}
           />
         </div>
-        {Object.keys(commands).map((command) => (
-          <SidebarItem
-            key={command}
-            active={selectedCommand === command}
-            onClick={() => handleCommandSelect(command)}
-          >
-            {command}
-          </SidebarItem>
-        ))}
+        <SidebarItem
+          onClick={onQuestionnaireSelect}
+          active={selectedCommand === ""}
+        >
+          Questionnaire
+        </SidebarItem>
+        <SidebarItem onClick={toggleSidebar}>
+          Commands {expanded ? "▼" : "▶"}
+        </SidebarItem>
+        {expanded &&
+          Object.keys(commands).map((command) => (
+            <SidebarSubItem
+              key={command}
+              active={selectedCommand === command}
+              onClick={() => handleCommandSelect(command)}
+            >
+              {command}
+            </SidebarSubItem>
+          ))}
       </SidebarContent>
       <SidebarFooter>
         {isLoggedIn ? (
