@@ -77,6 +77,10 @@ function CommandForm({
     );
   };
 
+  const isDateField = (option) => {
+    return option.toLowerCase().includes("date");
+  };
+
   const renderTooltip = (content) => (
     <Tooltip id="button-tooltip">{content}</Tooltip>
   );
@@ -181,6 +185,16 @@ function CommandForm({
               <Form.Control
                 type="text"
                 value={options[option] || "ark:59852/"}
+                onChange={(e) => handleOptionChange(option, e.target.value)}
+                required={
+                  currentOptions.required &&
+                  currentOptions.required.includes(option)
+                }
+              />
+            ) : isDateField(option) ? (
+              <Form.Control
+                type="date"
+                value={options[option] || ""}
                 onChange={(e) => handleOptionChange(option, e.target.value)}
                 required={
                   currentOptions.required &&
