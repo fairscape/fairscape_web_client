@@ -59,7 +59,14 @@ function CommandForm({
     if (file) {
       const filePath = file.path;
       setSourceFilePath(filePath);
-      handleOptionChange(option, filePath);
+
+      if (selectedCommand === "4: Upload" && selectedSubCommand === "rocrate") {
+        // For upload, store the File object
+        handleOptionChange(option, file);
+      } else {
+        // For all other cases, store the file path
+        handleOptionChange(option, filePath);
+      }
     }
   };
 

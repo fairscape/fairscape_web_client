@@ -221,8 +221,14 @@ function App() {
     const formData = new FormData();
 
     Object.entries(options).forEach(([key, value]) => {
-      if (value instanceof File) {
-        formData.append(key, value);
+      if (key === "file") {
+        if (value instanceof File) {
+          formData.append(key, value, value.name);
+        } else if (typeof value === "string") {
+          // If it's a file path, we need to read the file
+          const file = new File([fs.readFileSync(value)], path.basename(value));
+          formData.append(key, file, file.name);
+        }
       } else {
         formData.append(key, value);
       }
@@ -278,19 +284,22 @@ function App() {
 
     const requiredFieldsFilled = currentSubCommand.required.every((option) => {
       const value = options[option];
-      if (value instanceof File) {
-        return true;
+      if (option === "file") {
+        if (
+          commandState.command === "4: Upload" &&
+          commandState.subCommand === "rocrate"
+        ) {
+          return value instanceof File;
+        } else {
+          return typeof value === "string" && value.trim() !== "";
+        }
       } else if (typeof value === "string") {
         return value.trim() !== "";
       }
       return false;
     });
 
-    const rocratePathFilled =
-      commandState.command !== "4: Upload" ||
-      (rocratePath && rocratePath.trim() !== "");
-
-    return !(requiredFieldsFilled && rocratePathFilled);
+    return !requiredFieldsFilled;
   };
 
   const handleLogin = (data) => {
