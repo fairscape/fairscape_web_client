@@ -22,7 +22,8 @@ const commands = {
     },
   },
   "2: Register": {
-    description: "Register files in your RO-Crate metadata.",
+    description:
+      "Register each file in your RO-Crate with descriptive metadata.",
     computation: {
       description:
         "Add metadata describing a computation, dataset or software to the RO-Crate.",
