@@ -3,7 +3,13 @@ import { Button, Card, Row, Col } from "react-bootstrap";
 
 const steps = [
   {
-    text: "Create an RO-Crate",
+    text: "Prep Folder for RO-Crate Initialization",
+    description:
+      "Copy all files you want included in the RO-Crate to the same directory before starting.",
+    action: null,
+  },
+  {
+    text: "Initialize an RO-Crate",
     action: {
       command: "1: Create",
       subCommand: "create",
@@ -11,11 +17,7 @@ const steps = [
     },
   },
   {
-    text: "Add datasets or software to an RO-Crate",
-    action: { command: "2: Add", subCommand: "add" },
-  },
-  {
-    text: "Register a computation, dataset, or software",
+    text: "Register computations, datasets, or software",
     action: { command: "2: Add", subCommand: "register" },
   },
   {
@@ -42,17 +44,24 @@ function Questionnaire({ onStepSelect }) {
           <Card.Body>
             <Row className="align-items-center">
               <Col xs={9}>
-                <Card.Title style={{ margin: 0 }}>{`Step ${index + 1}: ${
-                  step.text
-                }`}</Card.Title>
+                <Card.Title
+                  style={{ margin: 0 }}
+                >{`Step ${index}: ${step.text}`}</Card.Title>
+                {step.description && <Card.Text>{step.description}</Card.Text>}
               </Col>
               <Col xs={3} className="text-right">
-                <Button
-                  variant="primary"
-                  onClick={() => onStepSelect(step.action)}
-                >
-                  Select
-                </Button>
+                {step.action ? (
+                  <Button
+                    variant="primary"
+                    onClick={() => onStepSelect(step.action)}
+                  >
+                    Select
+                  </Button>
+                ) : (
+                  <Button variant="secondary" disabled>
+                    Prep Step
+                  </Button>
+                )}
               </Col>
             </Row>
           </Card.Body>

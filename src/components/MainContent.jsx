@@ -69,7 +69,6 @@ function MainContentComponent({
         <SmallerCol>
           {selectedCommand && (
             <div>
-              <h5 style={{ marginBottom: "15px" }}>Subcommands</h5>
               {getOptionsWithoutDescription(commands[selectedCommand]).map(
                 (subCommand) => (
                   <SidebarItem
@@ -90,7 +89,6 @@ function MainContentComponent({
             typeof commands[selectedCommand][selectedSubCommand] ===
               "object" && (
               <div>
-                <h5 style={{ marginBottom: "15px" }}>Options</h5>
                 {getOptionsWithoutDescription(
                   commands[selectedCommand][selectedSubCommand]
                 ).map((subSubCommand) => (
