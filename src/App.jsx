@@ -7,7 +7,7 @@ import MainContentComponent from "./components/MainContent";
 import { AppContainer, MainContent } from "./components/StyledComponents";
 import commandsData from "./data/commandsData";
 import {
-  rocrate_init,
+  rocrate_create,
   register_software,
   register_dataset,
   register_computation,
@@ -134,7 +134,7 @@ function App() {
     try {
       switch (commandState.command) {
         case "1: Init":
-          result = rocrate_init(
+          result = rocrate_create(
             rocratePath,
             options.name,
             options.organization_name,

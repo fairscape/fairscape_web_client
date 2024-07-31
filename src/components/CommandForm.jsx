@@ -149,7 +149,9 @@ function CommandForm({
                 </OverlayTrigger>
               )}
             </Form.Label>
-            {option === "file" || option === "source-filepath" ? (
+            {option === "file" ||
+            option === "source-filepath" ||
+            option === "filepath" ? (
               <Form.Control
                 type="file"
                 onChange={(e) => handleFileChange(option, e.target.files[0])}
