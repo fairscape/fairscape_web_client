@@ -8,25 +8,19 @@ import { AppContainer, MainContent } from "./components/StyledComponents";
 import commandsData from "./data/commandsData";
 import {
   rocrate_init,
-  rocrate_create,
   register_software,
   register_dataset,
   register_computation,
-  add_software,
-  add_dataset,
 } from "./rocrate/rocrate";
 
 function App() {
-  const archiver = require("archiver");
   const [commandState, setCommandState] = useState({
     command: "",
     subCommand: "",
-    subSubCommand: "",
   });
   const [options, setOptions] = useState({});
   const [output, setOutput] = useState("");
   const [rocratePath, setRocratePath] = useState("");
-  const [schemaFile, setSchemaFile] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
   const [previousPaths, setPreviousPaths] = useState([]);
@@ -39,28 +33,32 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // This effect will run whenever commandState changes
-    // You can put any logic here that needs to happen after both command and subcommand are updated
-    // For example, you might want to reset options or fetch new data based on the new command/subcommand
-  }, [commandState]);
+    if (commandState.command && commandsData[commandState.command]) {
+      const subCommands = Object.keys(commandsData[commandState.command]);
+      if (subCommands.length === 1) {
+        setCommandState((prevState) => ({
+          ...prevState,
+          subCommand: subCommands[0],
+        }));
+      }
+    }
+  }, [commandState.command]);
 
   const handleCommandSelect = (command) => {
     setCommandState({
       command: command,
       subCommand: "",
-      subSubCommand: "",
     });
     setOptions({});
     setRocratePath("");
-    setSchemaFile("");
     setShowQuestionnaire(false);
 
-    const subCommands = Object.keys(commandsData[command] || {});
+    // Automatically select the subCommand if there's only one
+    const subCommands = Object.keys(commandsData[command]).filter(
+      (key) => key !== "description"
+    );
     if (subCommands.length === 1) {
       handleSubCommandSelect(subCommands[0]);
-    }
-    if (command === "3: Package") {
-      handleSubCommandSelect("zip");
     }
   };
 
@@ -68,30 +66,6 @@ function App() {
     setCommandState((prevState) => ({
       ...prevState,
       subCommand: subCommand,
-      subSubCommand: "",
-    }));
-    setOptions({});
-
-    if (commandState.command === "3: Package") {
-      setCommandState((prevState) => ({
-        ...prevState,
-        subSubCommand: "zip",
-      }));
-      return;
-    }
-    const subSubCommands = Object.keys(
-      (commandsData[commandState.command] || {})[subCommand] || {}
-    );
-    console.log("Available sub-subcommands:", subSubCommands);
-    if (subSubCommands.length === 1) {
-      handleSubSubCommandSelect(subSubCommands[0]);
-    }
-  };
-
-  const handleSubSubCommandSelect = (subSubCommand) => {
-    setCommandState((prevState) => ({
-      ...prevState,
-      subSubCommand: subSubCommand,
     }));
     setOptions({});
   };
@@ -105,7 +79,6 @@ function App() {
     setCommandState({
       command: "",
       subCommand: "",
-      subSubCommand: "",
     });
   };
 
@@ -113,7 +86,6 @@ function App() {
     setCommandState({
       command: action.command,
       subCommand: action.subCommand || "",
-      subSubCommand: action.subsubCommand || "",
     });
     setShowQuestionnaire(false);
   };
@@ -127,10 +99,6 @@ function App() {
       setPreviousPaths(updatedPaths);
       localStorage.setItem("previousPaths", JSON.stringify(updatedPaths));
     }
-  };
-
-  const handleSchemaFileChange = (e) => {
-    setSchemaFile(e.target.value);
   };
 
   const handleZip = (e) => {
@@ -164,11 +132,9 @@ function App() {
 
     let result;
     try {
-      switch (
-        `${commandState.command}_${commandState.subCommand}_${commandState.subSubCommand}`
-      ) {
-        case "1: Create_create_create":
-          result = rocrate_create(
+      switch (commandState.command) {
+        case "1: Init":
+          result = rocrate_init(
             rocratePath,
             options.name,
             options.organization_name,
@@ -178,101 +144,67 @@ function App() {
             options.guid
           );
           break;
-        case "2: Add_register_software":
-          result = register_software(
-            rocratePath,
-            options.name,
-            options.author,
-            options.version,
-            options.description,
-            options.keywords,
-            options["file_format"],
-            options.guid,
-            options.url,
-            options["date-modified"],
-            options["source-filepath"],
-            options["used-by-computation"],
-            options["associated-publication"],
-            options["additional-documentation"]
-          );
-          break;
-        case "2: Add_register_dataset":
-          result = register_dataset(
-            rocratePath,
-            options.name,
-            options.author,
-            options.version,
-            options["date-published"],
-            options.description,
-            options.keywords,
-            options.data_format,
-            options["source-filepath"],
-            options.guid,
-            options.url,
-            options["used-by"],
-            options["derived-from"],
-            options.schema,
-            options["associated-publication"],
-            options["additional-documentation"]
-          );
-          break;
-        case "2: Add_register_computation":
-          result = register_computation(
-            rocratePath,
-            options.name,
-            options["run-by"],
-            options["date-created"],
-            options.description,
-            options.keywords,
-            options.guid,
-            options.command,
-            options["used-software"],
-            options["used-dataset"],
-            options.generated
-          );
-          break;
-        case "2: Add_add_software":
-          result = add_software(
-            rocratePath,
-            options.name,
-            options.author,
-            options.version,
-            options.description,
-            options.keywords,
-            options["file-format"],
-            options["source-filepath"],
-            options["destination-filepath"],
-            options["date-modified"],
-            options.guid,
-            options.url,
-            options["used-by-computation"],
-            options["associated-publication"],
-            options["additional-documentation"]
-          );
-          break;
-        case "2: Add_add_dataset":
-          result = add_dataset(
-            rocratePath,
-            options.name,
-            options.author,
-            options.version,
-            options.date_published,
-            options.description,
-            options.keywords,
-            options.data_format,
-            options["source-filepath"],
-            options["destination-filepath"],
-            options.guid,
-            options.url,
-            options["used-by"],
-            options["derived-from"],
-            options.schema,
-            options.associated_publication,
-            options.additional_documentation
-          );
+        case "2: Register":
+          switch (commandState.subCommand) {
+            case "software":
+              result = register_software(
+                rocratePath,
+                options.name,
+                options.author,
+                options.version,
+                options.description,
+                options.keywords,
+                options["file-format"],
+                options.guid,
+                options.url,
+                options["date-modified"],
+                options["filepath"],
+                options["used-by-computation"],
+                options["associated-publication"],
+                options["additional-documentation"]
+              );
+              break;
+            case "dataset":
+              result = register_dataset(
+                rocratePath,
+                options.name,
+                options.author,
+                options.version,
+                options["date-published"],
+                options.description,
+                options.keywords,
+                options.data_format,
+                options["filepath"],
+                options.guid,
+                options.url,
+                options["used-by"],
+                options["derived-from"],
+                options.schema,
+                options["associated-publication"],
+                options["additional-documentation"]
+              );
+              break;
+            case "computation":
+              result = register_computation(
+                rocratePath,
+                options.name,
+                options["run-by"],
+                options["date-created"],
+                options.description,
+                options.keywords,
+                options.guid,
+                options.command,
+                options["used-software"],
+                options["used-dataset"],
+                options.generated
+              );
+              break;
+            default:
+              throw new Error("Invalid sub-command");
+          }
           break;
         default:
-          throw new Error("Invalid command combination");
+          throw new Error("Invalid command");
       }
       setOutput(JSON.stringify(result, null, 2));
       return { success: true };
@@ -338,19 +270,13 @@ function App() {
   };
 
   const isExecuteDisabled = () => {
-    let currentOptions = commandsData[commandState.command];
-    if (commandState.subCommand && currentOptions) {
-      currentOptions = currentOptions[commandState.subCommand];
-    }
-    if (commandState.subSubCommand && currentOptions) {
-      currentOptions = currentOptions[commandState.subSubCommand];
-    }
+    const currentCommand = commandsData[commandState.command];
+    if (!currentCommand) return true;
 
-    if (!currentOptions || !currentOptions.required) {
-      return true;
-    }
+    const currentSubCommand = currentCommand[commandState.subCommand];
+    if (!currentSubCommand || !currentSubCommand.required) return true;
 
-    const requiredFieldsFilled = currentOptions.required.every((option) => {
+    const requiredFieldsFilled = currentSubCommand.required.every((option) => {
       const value = options[option];
       if (value instanceof File) {
         return true;
@@ -361,14 +287,10 @@ function App() {
     });
 
     const rocratePathFilled =
-      commandState.command !== "rocrate" ||
+      commandState.command !== "4: Upload" ||
       (rocratePath && rocratePath.trim() !== "");
 
-    const schemaFileFilled =
-      commandState.command !== "schema" ||
-      (schemaFile && schemaFile.trim() !== "");
-
-    return !(requiredFieldsFilled && rocratePathFilled && schemaFileFilled);
+    return !(requiredFieldsFilled && rocratePathFilled);
   };
 
   const handleLogin = (data) => {
@@ -382,25 +304,21 @@ function App() {
 
   const handleSuccessfulExecution = (command) => {
     switch (command) {
-      case "1: Create":
+      case "1: Init":
         setCommandState({
-          command: "2: Add",
-          subCommand: "add",
-          subSubCommand: "dataset",
+          command: "2: Register",
         });
         break;
-      case "2: Add":
+      case "2: Register":
         setCommandState({
           command: "3: Package",
           subCommand: "zip",
-          subSubCommand: "zip",
         });
         break;
       case "3: Package":
         setCommandState({
           command: "4: Upload",
           subCommand: "rocrate",
-          subSubCommand: "rocrate",
         });
         break;
       default:
@@ -411,13 +329,11 @@ function App() {
 
   const onAddAnother = () => {
     setOptions({});
-
     setCommandState((prevState) => ({
       ...prevState,
-      subSubCommand: "", // Reset sub-sub-command if applicable
+      subCommand: "", // Reset sub-command if applicable
     }));
     window.scrollTo(0, 0);
-
     setOutput("Item added successfully. You can now add another.");
   };
 
@@ -442,16 +358,12 @@ function App() {
             commands={commandsData}
             selectedCommand={commandState.command}
             selectedSubCommand={commandState.subCommand}
-            selectedSubSubCommand={commandState.subSubCommand}
             options={options}
             output={output}
             rocratePath={rocratePath}
-            schemaFile={schemaFile}
             handleSubCommandSelect={handleSubCommandSelect}
-            handleSubSubCommandSelect={handleSubSubCommandSelect}
             handleOptionChange={handleOptionChange}
             handleRocratePathChange={handleRocratePathChange}
-            handleSchemaFileChange={handleSchemaFileChange}
             handleSubmit={handleSubmit}
             handleUpload={handleUpload}
             isExecuteDisabled={isExecuteDisabled}

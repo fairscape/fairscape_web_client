@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { Form, Button, Col } from "react-bootstrap";
+import { Form, Button, Col, Container, Row } from "react-bootstrap";
 
 const accentColor = "#1976D2";
 const accentColorHover = "#2196F3";
@@ -125,6 +125,37 @@ const SmallerCol = styled(Col)`
 const LargerCol = styled(Col)`
   flex: 0 0 60%;
   max-width: 60%;
+`;
+
+export const StyledContainer = styled(Container)`
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const ScrollableRow = styled(Row)`
+  flex: 1;
+  overflow: hidden;
+`;
+
+export const SidebarCol = styled(Col)`
+  padding-right: 15px;
+  border-right: 1px solid #ddd;
+  height: 100%;
+  overflow-y: auto;
+`;
+
+export const ContentCol = styled(Col)`
+  padding-left: 15px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const StyledOutputBox = styled.div`
+  margin-top: 20px;
+  flex: 1;
+  overflow-y: auto;
 `;
 
 export {

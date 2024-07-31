@@ -11,25 +11,23 @@ const steps = [
   {
     text: "Initialize an RO-Crate",
     action: {
-      command: "1: Create",
-      subCommand: "create",
-      subsubCommand: "create",
+      command: "1: Init",
+      subCommand: "init",
     },
   },
   {
     text: "Register computations, datasets, or software",
-    action: { command: "2: Add", subCommand: "register" },
+    action: { command: "2: Register" },
   },
   {
     text: "Package an RO-Crate for upload",
-    action: { command: "3: Package", subCommand: "zip", subsubCommand: "zip" },
+    action: { command: "3: Package", subCommand: "zip" },
   },
   {
     text: "Upload an RO-Crate",
     action: {
       command: "4: Upload",
       subCommand: "rocrate",
-      subsubCommand: "rocrate",
     },
   },
 ];

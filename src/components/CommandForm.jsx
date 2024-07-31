@@ -11,13 +11,10 @@ function CommandForm({
   commands,
   selectedCommand,
   selectedSubCommand,
-  selectedSubSubCommand,
   options,
   rocratePath,
-  schemaFile,
   handleOptionChange,
   handleRocratePathChange,
-  handleSchemaFileChange,
   handleSubmit,
   handleUpload,
   isExecuteDisabled,
@@ -78,23 +75,19 @@ function CommandForm({
   );
 
   const renderOptions = () => {
-    let currentOptions = commands[selectedCommand];
-    if (selectedSubCommand) {
-      currentOptions = currentOptions[selectedSubCommand];
-    }
-    if (selectedSubSubCommand) {
-      currentOptions = currentOptions[selectedSubSubCommand];
-    }
-    if (
-      !currentOptions ||
-      (!currentOptions.options && !currentOptions.required)
-    ) {
-      return null;
-    }
-    const allOptions = currentOptions.options || currentOptions.required;
+    if (!selectedCommand || !commands[selectedCommand]) return null;
+
+    const commandOptions = commands[selectedCommand];
+    const currentOptions = selectedSubCommand
+      ? commandOptions[selectedSubCommand]
+      : commandOptions;
+
+    if (!currentOptions || !currentOptions.options) return null;
+
     return (
       <>
-        {(selectedCommand === "1: Create" || selectedCommand === "2: Add") && (
+        {(selectedCommand === "1: Init" ||
+          selectedCommand === "2: Register") && (
           <Form.Group className="mb-3">
             <Form.Label style={{ color: "#ff9800" }}>
               ROCRATE_PATH *
@@ -127,32 +120,7 @@ function CommandForm({
             </div>
           </Form.Group>
         )}
-        {selectedCommand === "schema" && (
-          <Form.Group className="mb-3">
-            <Form.Label style={{ color: "#ff9800" }}>
-              SCHEMA_FILE *
-              {helperData["SCHEMA_FILE"] && (
-                <OverlayTrigger
-                  placement="right"
-                  delay={{ show: 250, hide: 400 }}
-                  overlay={renderTooltip(helperData["SCHEMA_FILE"])}
-                >
-                  <FontAwesomeIcon
-                    icon={faQuestionCircle}
-                    style={{ marginLeft: "5px", cursor: "pointer" }}
-                  />
-                </OverlayTrigger>
-              )}
-            </Form.Label>
-            <Form.Control
-              type="text"
-              value={schemaFile}
-              onChange={handleSchemaFileChange}
-              required
-            />
-          </Form.Group>
-        )}
-        {allOptions.map((option) => (
+        {currentOptions.options.map((option) => (
           <Form.Group key={option} className="mb-3">
             <Form.Label
               style={{
@@ -255,7 +223,7 @@ function CommandForm({
     }
 
     if (result && result.success) {
-      if (selectedCommand === "2: Add" && action === "addAnother") {
+      if (selectedCommand === "2: Register" && action === "addAnother") {
         onAddAnother();
       } else {
         onSuccessfulExecution(selectedCommand);
@@ -264,7 +232,7 @@ function CommandForm({
   };
 
   const renderButtons = () => {
-    if (selectedCommand === "2: Add") {
+    if (selectedCommand === "2: Register") {
       return (
         <>
           <StyledButton
