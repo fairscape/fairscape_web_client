@@ -16,8 +16,8 @@ const steps = [
     },
   },
   {
-    text: "Register computations, datasets, or software",
-    action: { command: "2: Register" },
+    text: "Register files in your RO-Crate",
+    action: { command: "2: Register", subCommand: "dataset" },
   },
   {
     text: "Package an RO-Crate for upload",

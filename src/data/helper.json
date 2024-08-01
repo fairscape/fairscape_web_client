@@ -1,7 +1,7 @@
 {
   "ROCRATE_PATH": "Path to the folder you have an existing crate or the location you want to crate a crate.",
   "name": "The name of the item you're adding or creating.",
-  "author": "The creator or author of the item.",
+  "author": "The creator or author of the item. First Last",
   "version": "The version number of the item.",
   "description": "A brief description of the item.",
   "keywords": "Comma-separated list of keywords related to the item.",
