@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 const { exec } = require("child_process");
 const fs = require("fs");
@@ -65,28 +65,40 @@ ipcMain.on("execute-command", (event, command) => {
 });
 
 // Add IPC handler for zipping RO-Crate
-ipcMain.on("zip-rocrate", (event, rocratePath) => {
-  // Get the name of the input folder
-  const folderName = path.basename(rocratePath);
-  // Create the output zip file path
-  const outputPath = path.join(path.dirname(rocratePath), `${folderName}.zip`);
-  const output = fs.createWriteStream(outputPath);
-  const archive = archiver("zip", {
-    zlib: { level: 9 }, // Sets the compression level.
+// Replace the existing ipcMain.on("zip-rocrate", ...) with this:
+ipcMain.handle("zip-rocrate", async (event, rocratePath) => {
+  return new Promise((resolve, reject) => {
+    // Get the name of the input folder
+    const folderName = path.basename(rocratePath);
+    // Create the output zip file path
+    const outputPath = path.join(
+      path.dirname(rocratePath),
+      `${folderName}.zip`
+    );
+    const output = fs.createWriteStream(outputPath);
+    const archive = archiver("zip", {
+      zlib: { level: 9 }, // Sets the compression level.
+    });
+
+    output.on("close", function () {
+      resolve({ success: true, zipPath: output.path });
+    });
+
+    archive.on("error", function (err) {
+      reject({ success: false, error: err.message });
+    });
+
+    archive.pipe(output);
+    // Add the contents of the folder to the zip file,
+    // using the folder name as the root in the zip
+    archive.directory(rocratePath, folderName);
+    archive.finalize();
   });
+});
 
-  output.on("close", function () {
-    event.reply("zip-result", { success: true, zipPath: output.path });
+ipcMain.handle("open-directory-dialog", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory"],
   });
-
-  archive.on("error", function (err) {
-    event.reply("zip-result", { success: false, error: err.message });
-  });
-
-  archive.pipe(output);
-
-  // Add the contents of the folder to the zip file,
-  // using the folder name as the root in the zip
-  archive.directory(rocratePath, folderName);
-  archive.finalize();
+  return result;
 });

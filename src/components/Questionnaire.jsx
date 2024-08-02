@@ -10,25 +10,19 @@ const steps = [
   },
   {
     text: "Initialize an RO-Crate",
-    action: {
-      command: "1: Init",
-      subCommand: "init",
-    },
+    action: "init",
   },
   {
     text: "Register files in your RO-Crate",
-    action: { command: "2: Register", subCommand: "dataset" },
+    action: "register",
   },
   {
     text: "Package an RO-Crate for upload",
-    action: { command: "3: Package", subCommand: "zip" },
+    action: "package",
   },
   {
     text: "Upload an RO-Crate",
-    action: {
-      command: "4: Upload",
-      subCommand: "rocrate",
-    },
+    action: "upload",
   },
 ];
 
@@ -42,9 +36,9 @@ function Questionnaire({ onStepSelect }) {
           <Card.Body>
             <Row className="align-items-center">
               <Col xs={9}>
-                <Card.Title
-                  style={{ margin: 0 }}
-                >{`Step ${index}: ${step.text}`}</Card.Title>
+                <Card.Title style={{ margin: 0 }}>
+                  {`Step ${index}: ${step.text}`}
+                </Card.Title>
                 {step.description && <Card.Text>{step.description}</Card.Text>}
               </Col>
               <Col xs={3} className="text-right">

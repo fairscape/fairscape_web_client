@@ -158,7 +158,16 @@ export const StyledOutputBox = styled.div`
   overflow-y: auto;
 `;
 
+const MainContentWrapper = styled.div`
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto;
+  margin-left: 200px; // This should match the width of your Sidebar
+  background-color: #121212;
+  color: #ffffff;
+`;
 export {
+  MainContentWrapper,
   AppContainer,
   Sidebar,
   MainContent,

@@ -12,16 +12,19 @@ import logoSvg from "../assets/logo.svg";
 const accentColor = "#007bff";
 
 function SidebarComponent({
-  commands,
-  selectedCommand,
-  handleCommandSelect,
+  selectedView,
+  handleViewSelect,
   isLoggedIn,
   userData,
   onLogin,
-  onQuestionnaireSelect,
-  expanded,
-  toggleSidebar,
 }) {
+  const steps = [
+    { id: "init", label: "1: Init" },
+    { id: "register", label: "2: Register" },
+    { id: "package", label: "3: Package" },
+    { id: "upload", label: "4: Upload" },
+  ];
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -33,24 +36,20 @@ function SidebarComponent({
           />
         </div>
         <SidebarItem
-          onClick={onQuestionnaireSelect}
-          active={selectedCommand === ""}
+          onClick={() => handleViewSelect("questionnaire")}
+          active={selectedView === "questionnaire"}
         >
           Steps
         </SidebarItem>
-        <SidebarItem onClick={toggleSidebar}>
-          Commands {expanded ? "▼" : "▶"}
-        </SidebarItem>
-        {expanded &&
-          Object.keys(commands).map((command) => (
-            <SidebarSubItem
-              key={command}
-              active={selectedCommand === command}
-              onClick={() => handleCommandSelect(command)}
-            >
-              {command}
-            </SidebarSubItem>
-          ))}
+        {steps.map((step) => (
+          <SidebarItem
+            key={step.id}
+            onClick={() => handleViewSelect(step.id)}
+            active={selectedView === step.id}
+          >
+            {step.label}
+          </SidebarItem>
+        ))}
       </SidebarContent>
       <SidebarFooter>
         {isLoggedIn ? (

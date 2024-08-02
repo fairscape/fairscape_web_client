@@ -40,7 +40,7 @@ function generateComputation({
     const sq = generateDatetimeSquid();
     guid = `ark:${NAAN}/computation-${name
       .toLowerCase()
-      .replace(" ", "-")}-${sq}`;
+      .replace(/\s+/g, "-")}-${sq}`;
   }
 
   const computationMetadata = {
@@ -56,15 +56,21 @@ function generateComputation({
     runBy: runBy,
     command: command,
     dateCreated: dateCreated,
-    usedSoftware: usedSoftware,
-    usedDataset:
-      typeof usedDataset === "string"
-        ? usedDataset.split(",").map((item) => item.trim())
-        : [],
-    generated:
-      typeof generated === "string"
-        ? generated.split(",").map((item) => item.trim())
-        : [],
+    usedSoftware: Array.isArray(usedSoftware)
+      ? usedSoftware
+      : typeof usedSoftware === "string"
+      ? usedSoftware.split(",").map((item) => item.trim())
+      : [],
+    usedDataset: Array.isArray(usedDataset)
+      ? usedDataset
+      : typeof usedDataset === "string"
+      ? usedDataset.split(",").map((item) => item.trim())
+      : [],
+    generated: Array.isArray(generated)
+      ? generated
+      : typeof generated === "string"
+      ? generated.split(",").map((item) => item.trim())
+      : [],
   };
 
   return computationMetadata;
