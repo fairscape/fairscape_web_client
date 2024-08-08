@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Row, Col } from "react-bootstrap";
 import { rocrate_create } from "../rocrate/rocrate";
 import { ipcRenderer } from "electron";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { vs2015 } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 const StyledForm = styled(Form)`
   background-color: #282828;
@@ -69,6 +71,20 @@ const BrowseButton = styled(Button)`
   margin-top: 10px;
 `;
 
+const PreviewContainer = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 5px;
+  height: 100%;
+  overflow-y: auto;
+  padding: 10px;
+`;
+
+const PreviewTitle = styled.h4`
+  color: #ffffff;
+  margin-bottom: 15px;
+  text-align: center;
+`;
+
 function InitForm({ rocratePath, setRocratePath, onSuccess }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -78,8 +94,14 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
     keywords: "",
   });
 
+  const [jsonLdPreview, setJsonLdPreview] = useState({});
+
   const organizations = ["UVA", "UCSB", "Stanford", "USF"];
   const projects = ["CM4AI", "Chorus", "PreMo"];
+
+  useEffect(() => {
+    updateJsonLdPreview();
+  }, [formData]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -95,6 +117,47 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
     return `ark:${NAAN}/rocrate-${name
       .toLowerCase()
       .replace(/\s+/g, "-")}-${sq}`;
+  };
+
+  const updateJsonLdPreview = () => {
+    const guid = generateGuid(formData.name);
+    const preview = {
+      "@id": guid,
+      "@context": {
+        "@vocab": "https://schema.org/",
+        EVI: "https://w3id.org/EVI#",
+      },
+      "@type": "https://w3id.org/EVI#ROCrate",
+      name: formData.name,
+      isPartOf: [],
+      keywords: formData.keywords.split(",").map((k) => k.trim()),
+      description: formData.description,
+      "@graph": [],
+    };
+
+    if (formData.organization_name) {
+      const organizationGuid = `ark:59852/organization-${formData.organization_name
+        .toLowerCase()
+        .replace(/\s+/g, "-")}-${new Date().getTime()}`;
+      preview.isPartOf.push({
+        "@id": organizationGuid,
+        "@type": "Organization",
+        name: formData.organization_name,
+      });
+    }
+
+    if (formData.project_name) {
+      const projectGuid = `ark:59852/project-${formData.project_name
+        .toLowerCase()
+        .replace(/\s+/g, "-")}-${new Date().getTime()}`;
+      preview.isPartOf.push({
+        "@id": projectGuid,
+        "@type": "Project",
+        name: formData.project_name,
+      });
+    }
+
+    setJsonLdPreview(preview);
   };
 
   const handleSubmit = (e) => {
@@ -133,90 +196,110 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
   return (
     <StyledForm onSubmit={handleSubmit}>
       <FormTitle>Initialize an RO-Crate</FormTitle>
+      <Row>
+        <Col md={6}>
+          <StyledFormGroup className="mb-3">
+            <StyledLabel>RO-Crate Path</StyledLabel>
+            <StyledInput
+              type="text"
+              value={rocratePath}
+              onChange={(e) => setRocratePath(e.target.value)}
+              required
+            />
+            <BrowseButton variant="secondary" onClick={handleBrowse}>
+              Browse
+            </BrowseButton>
+          </StyledFormGroup>
 
-      <StyledFormGroup className="mb-3">
-        <StyledLabel>RO-Crate Path</StyledLabel>
-        <StyledInput
-          type="text"
-          value={rocratePath}
-          onChange={(e) => setRocratePath(e.target.value)}
-          required
-        />
-        <BrowseButton variant="secondary" onClick={handleBrowse}>
-          Browse
-        </BrowseButton>
-      </StyledFormGroup>
+          <StyledFormGroup className="mb-3">
+            <StyledLabel>RO-Crate Name</StyledLabel>
+            <StyledInput
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup className="mb-3">
-        <StyledLabel>RO-Crate Name</StyledLabel>
-        <StyledInput
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
-      </StyledFormGroup>
+          <StyledFormGroup className="mb-3">
+            <StyledLabel>Organization Name</StyledLabel>
+            <StyledSelect
+              name="organization_name"
+              value={formData.organization_name}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select an organization</option>
+              {organizations.map((org) => (
+                <option key={org} value={org}>
+                  {org}
+                </option>
+              ))}
+            </StyledSelect>
+          </StyledFormGroup>
 
-      <StyledFormGroup className="mb-3">
-        <StyledLabel>Organization Name</StyledLabel>
-        <StyledSelect
-          name="organization_name"
-          value={formData.organization_name}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Select an organization</option>
-          {organizations.map((org) => (
-            <option key={org} value={org}>
-              {org}
-            </option>
-          ))}
-        </StyledSelect>
-      </StyledFormGroup>
+          <StyledFormGroup className="mb-3">
+            <StyledLabel>Project Name</StyledLabel>
+            <StyledSelect
+              name="project_name"
+              value={formData.project_name}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select a project</option>
+              {projects.map((project) => (
+                <option key={project} value={project}>
+                  {project}
+                </option>
+              ))}
+            </StyledSelect>
+          </StyledFormGroup>
 
-      <StyledFormGroup className="mb-3">
-        <StyledLabel>Project Name</StyledLabel>
-        <StyledSelect
-          name="project_name"
-          value={formData.project_name}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Select a project</option>
-          {projects.map((project) => (
-            <option key={project} value={project}>
-              {project}
-            </option>
-          ))}
-        </StyledSelect>
-      </StyledFormGroup>
+          <StyledFormGroup className="mb-3">
+            <StyledLabel>Description</StyledLabel>
+            <StyledTextArea
+              as="textarea"
+              rows={3}
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup className="mb-3">
-        <StyledLabel>Description</StyledLabel>
-        <StyledTextArea
-          as="textarea"
-          rows={3}
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          required
-        />
-      </StyledFormGroup>
+          <StyledFormGroup className="mb-3">
+            <StyledLabel>Keywords</StyledLabel>
+            <StyledInput
+              type="text"
+              name="keywords"
+              value={formData.keywords}
+              onChange={handleChange}
+              placeholder="Enter keywords separated by commas"
+              required
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup className="mb-3">
-        <StyledLabel>Keywords</StyledLabel>
-        <StyledInput
-          type="text"
-          name="keywords"
-          value={formData.keywords}
-          onChange={handleChange}
-          placeholder="Enter keywords separated by commas"
-          required
-        />
-      </StyledFormGroup>
-
-      <StyledButton type="submit">Initialize RO-Crate</StyledButton>
+          <StyledButton type="submit">Initialize RO-Crate</StyledButton>
+        </Col>
+        <Col md={6}>
+          <PreviewContainer>
+            <PreviewTitle>JSON-LD Preview</PreviewTitle>
+            <SyntaxHighlighter
+              language="json"
+              style={vs2015}
+              customStyle={{
+                backgroundColor: "transparent",
+                padding: "0",
+                margin: "0",
+                fontSize: "0.9em",
+              }}
+            >
+              {JSON.stringify(jsonLdPreview, null, 2)}
+            </SyntaxHighlighter>
+          </PreviewContainer>
+        </Col>
+      </Row>
     </StyledForm>
   );
 }

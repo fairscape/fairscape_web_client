@@ -337,7 +337,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
                   name="run-by"
                   value={formData["run-by"]}
                   onChange={handleInputChange}
-                  placeholder="Last, First"
+                  placeholder="First Last, First Last..."
                   required
                 />
               </StyledFormGroup>
