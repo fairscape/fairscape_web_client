@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Row, Col } from "react-bootstrap";
 import { register_software } from "../../rocrate/rocrate";
 import path from "path";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { vs2015 } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 const StyledForm = styled(Form)`
   background-color: #282828;
@@ -54,6 +56,19 @@ const StyledButton = styled(Button)`
   margin-right: 10px;
 `;
 
+const PreviewContainer = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 15px;
+  height: 100%;
+  overflow-y: auto;
+`;
+
+const PreviewTitle = styled.h3`
+  color: #ffffff;
+  margin-bottom: 15px;
+  text-align: center;
+`;
+
 function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -69,10 +84,10 @@ function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
     "additional-documentation": "",
   });
 
+  const [jsonLdPreview, setJsonLdPreview] = useState({});
+
   useEffect(() => {
-    // Extract the file name without extension and replace underscores with spaces
     const fileName = path.basename(file, path.extname(file)).replace(/_/g, " ");
-    // Get the file extension (without the dot) and convert to uppercase
     const fileExtension = path.extname(file).slice(1).toUpperCase();
 
     setFormData((prevState) => ({
@@ -80,7 +95,13 @@ function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
       name: fileName,
       "file-format": fileExtension,
     }));
+
+    updateJsonLdPreview();
   }, [file]);
+
+  useEffect(() => {
+    updateJsonLdPreview();
+  }, [formData]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -96,6 +117,33 @@ function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
     return `ark:${NAAN}/software-${name
       .toLowerCase()
       .replace(/\s+/g, "-")}-${sq}`;
+  };
+
+  const updateJsonLdPreview = () => {
+    const guid = generateGuid(formData.name);
+    const preview = {
+      "@context": {
+        "@vocab": "https://schema.org/",
+        EVI: "https://w3id.org/EVI#",
+      },
+      "@id": guid,
+      "@type": "https://w3id.org/EVI#Software",
+      name: formData.name,
+      author: formData.author,
+      dateModified: formData["date-modified"],
+      description: formData.description,
+      keywords: formData.keywords.split(",").map((k) => k.trim()),
+      version: formData.version,
+      associatedPublication: formData["associated-publication"] || undefined,
+      additionalDocumentation:
+        formData["additional-documentation"] || undefined,
+      format: formData["file-format"],
+      usedByComputation: formData["used-by-computation"]
+        ? formData["used-by-computation"].split(",").map((item) => item.trim())
+        : undefined,
+      url: formData.url || undefined,
+    };
+    setJsonLdPreview(preview);
   };
 
   const handleSubmit = (e) => {
@@ -121,110 +169,128 @@ function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
       );
       console.log(result);
       onSuccess();
-      // Handle success (e.g., show success message, navigate back to file selector)
     } catch (error) {
       console.error("Error registering software:", error);
-      // Handle error (e.g., show error message to user)
     }
   };
 
   return (
     <StyledForm onSubmit={handleSubmit}>
       <FormTitle>Register Software: {file}</FormTitle>
+      <Row>
+        <Col md={6}>
+          <StyledFormGroup>
+            <StyledLabel>Name *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>Name *</StyledLabel>
-        <StyledInput
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
-      </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Author *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="author"
+              value={formData.author}
+              onChange={handleChange}
+              placeholder="1st Author First Last, 2nd Author First Last, ..."
+              required
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>Author *</StyledLabel>
-        <StyledInput
-          type="text"
-          name="author"
-          value={formData.author}
-          onChange={handleChange}
-          placeholder="1st Author First Last, 2nd Author First Last, ..."
-          required
-        />
-      </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Version *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="version"
+              value={formData.version}
+              onChange={handleChange}
+              placeholder="Examples: 1.0.1, 1.0"
+              required
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>Version *</StyledLabel>
-        <StyledInput
-          type="text"
-          name="version"
-          value={formData.version}
-          onChange={handleChange}
-          placeholder="Examples: 1.0.1, 1.0"
-          required
-        />
-      </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Description *</StyledLabel>
+            <StyledTextArea
+              as="textarea"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>Description *</StyledLabel>
-        <StyledTextArea
-          as="textarea"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          required
-        />
-      </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Keywords *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="keywords"
+              value={formData.keywords}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>Keywords *</StyledLabel>
-        <StyledInput
-          type="text"
-          name="keywords"
-          value={formData.keywords}
-          onChange={handleChange}
-          required
-        />
-      </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>File Format *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="file-format"
+              value={formData["file-format"]}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>File Format *</StyledLabel>
-        <StyledInput
-          type="text"
-          name="file-format"
-          value={formData["file-format"]}
-          onChange={handleChange}
-          required
-        />
-      </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>URL</StyledLabel>
+            <StyledInput
+              type="text"
+              name="url"
+              value={formData.url}
+              onChange={handleChange}
+              placeholder="http://github/link-to-repo"
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>URL</StyledLabel>
-        <StyledInput
-          type="text"
-          name="url"
-          value={formData.url}
-          onChange={handleChange}
-          placeholder="http://github/link-to-repo"
-        />
-      </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Associated Publication</StyledLabel>
+            <StyledInput
+              type="text"
+              name="associated-publication"
+              value={formData["associated-publication"]}
+              onChange={handleChange}
+            />
+          </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>Associated Publication</StyledLabel>
-        <StyledInput
-          type="text"
-          name="associated-publication"
-          value={formData["associated-publication"]}
-          onChange={handleChange}
-        />
-      </StyledFormGroup>
-
-      <StyledButton type="submit">Register Software</StyledButton>
-      <StyledButton onClick={onBack} variant="secondary">
-        Back
-      </StyledButton>
+          <StyledButton type="submit">Register Software</StyledButton>
+          <StyledButton onClick={onBack} variant="secondary">
+            Back
+          </StyledButton>
+        </Col>
+        <Col md={6}>
+          <PreviewContainer>
+            <PreviewTitle>JSON-LD Preview</PreviewTitle>
+            <SyntaxHighlighter
+              language="json"
+              style={vs2015}
+              customStyle={{
+                backgroundColor: "transparent",
+                padding: "0",
+                margin: "0",
+                fontSize: "0.9em",
+              }}
+            >
+              {JSON.stringify(jsonLdPreview, null, 2)}
+            </SyntaxHighlighter>
+          </PreviewContainer>
+        </Col>
+      </Row>
     </StyledForm>
   );
 }
