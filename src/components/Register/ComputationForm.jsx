@@ -296,10 +296,14 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="row">
           <div className="col-md-3">
-            {renderColumn("allFiles", "All Files")}
+            {renderColumn("allFiles", "All Avilable Objects")}
           </div>
-          <div className="col-md-3">{renderColumn("inputs", "Inputs")}</div>
-          <div className="col-md-3">{renderColumn("outputs", "Outputs")}</div>
+          <div className="col-md-3">
+            {renderColumn("inputs", "Input Datasets")}
+          </div>
+          <div className="col-md-3">
+            {renderColumn("outputs", "Output Datasets")}
+          </div>
           <div className="col-md-3">
             {renderColumn("software", "Software Used")}
           </div>

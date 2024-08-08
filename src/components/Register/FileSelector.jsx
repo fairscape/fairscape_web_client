@@ -228,7 +228,7 @@ function FileSelector({
 
   return (
     <StyledContainer>
-      <StyledTitle>Register Files</StyledTitle>
+      <StyledTitle>Register Objects</StyledTitle>
       {!rocratePath ? (
         <Row>
           <Col>

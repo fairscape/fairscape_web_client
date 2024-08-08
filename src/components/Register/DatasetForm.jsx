@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { Form, Button } from "react-bootstrap";
 import { register_dataset } from "../../rocrate/rocrate";
@@ -71,6 +71,19 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
     "additional-documentation": "",
   });
 
+  useEffect(() => {
+    // Extract the file name without extension and replace underscores with spaces
+    const fileName = path.basename(file, path.extname(file)).replace(/_/g, " ");
+    // Get the file extension (without the dot) and convert to uppercase
+    const fileExtension = path.extname(file).slice(1).toUpperCase();
+
+    setFormData((prevState) => ({
+      ...prevState,
+      name: fileName,
+      "data-format": fileExtension,
+    }));
+  }, [file]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -136,7 +149,7 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
           name="author"
           value={formData.author}
           onChange={handleChange}
-          placeholder="Last, First"
+          placeholder="1st Author First Last, 2nd Author First Last, ..."
           required
         />
       </StyledFormGroup>
@@ -148,7 +161,7 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
           name="version"
           value={formData.version}
           onChange={handleChange}
-          placeholder="1.0.1"
+          placeholder="Examples: 1.0.1, 1.0"
           required
         />
       </StyledFormGroup>
