@@ -57,7 +57,7 @@ const OutputContainer = styled.div`
   color: #ffffff;
 `;
 
-function PackageForm({ rocratePath, setRocratePath }) {
+function PackageForm({ rocratePath, setRocratePath, onComplete }) {
   const [output, setOutput] = useState("");
 
   const handleSubmit = async (e) => {
@@ -67,6 +67,8 @@ function PackageForm({ rocratePath, setRocratePath }) {
       const result = await ipcRenderer.invoke("zip-rocrate", rocratePath);
       if (result.success) {
         setOutput(`RO-Crate successfully zipped at: ${result.zipPath}`);
+        // Call onComplete after successful packaging
+        onComplete(result.zipPath);
       } else {
         setOutput(`Error zipping RO-Crate: ${result.error}`);
       }
@@ -91,7 +93,6 @@ function PackageForm({ rocratePath, setRocratePath }) {
   return (
     <StyledForm onSubmit={handleSubmit}>
       <FormTitle>Package RO-Crate</FormTitle>
-
       <StyledFormGroup className="mb-3">
         <StyledLabel>RO-Crate Path</StyledLabel>
         <StyledInput
@@ -104,7 +105,6 @@ function PackageForm({ rocratePath, setRocratePath }) {
           Browse
         </BrowseButton>
       </StyledFormGroup>
-
       <StyledButton type="submit">Package RO-Crate</StyledButton>
       {output && <OutputContainer>{output}</OutputContainer>}
     </StyledForm>

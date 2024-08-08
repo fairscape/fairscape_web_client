@@ -14,6 +14,7 @@ import {
 function App() {
   const [currentView, setCurrentView] = useState("questionnaire");
   const [rocratePath, setRocratePath] = useState("");
+  const [packagedPath, setPackagedPath] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
   const [registeredFiles, setRegisteredFiles] = useState([]);
@@ -32,6 +33,11 @@ function App() {
 
   const handleSkipComputation = () => {
     setCurrentView("package");
+  };
+
+  const handlePackageComplete = (zipPath) => {
+    setPackagedPath(zipPath);
+    setCurrentView("upload");
   };
 
   const handleLogin = (data) => {
@@ -78,10 +84,11 @@ function App() {
           <PackageForm
             rocratePath={rocratePath}
             setRocratePath={setRocratePath}
+            onComplete={handlePackageComplete}
           />
         );
       case "upload":
-        return <UploadForm />;
+        return <UploadForm packagedPath={packagedPath} />;
       default:
         return <div>Select a step from the sidebar</div>;
     }

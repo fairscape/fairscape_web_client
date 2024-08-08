@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Form, Button, ListGroup } from "react-bootstrap";
+import { Form, Button, ListGroup, Row, Col } from "react-bootstrap";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import {
   register_computation,
   get_registered_files,
 } from "../../rocrate/rocrate";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { vs2015 } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 const StyledForm = styled(Form)`
   background-color: #282828;
@@ -43,7 +45,6 @@ const StyledInput = styled(Form.Control)`
 
 const StyledTextArea = styled(StyledInput)`
   resize: vertical;
-  min-height: 100px;
   width: 100%;
   padding: 5px;
 `;
@@ -80,6 +81,37 @@ const ColumnHeader = styled.h4`
   margin-bottom: 10px;
 `;
 
+const PreviewContainer = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 5px;
+  height: 350px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+`;
+
+const PreviewTitle = styled.h4`
+  color: #ffffff;
+  margin-bottom: 15px;
+  text-align: center;
+`;
+
+const PreviewContent = styled.div`
+  flex-grow: 1;
+  overflow: auto;
+  transform-origin: top left;
+`;
+
+const FullHeightCol = styled(Col)`
+  display: flex;
+  flex-direction: column;
+`;
+
+const FullHeightTextArea = styled(StyledTextArea)`
+  flex-grow: 1;
+  height: auto;
+`;
+
 function ComputationForm({ rocratePath, onComplete, onSkip }) {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -95,6 +127,8 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     outputs: [],
     software: [],
   });
+  const [jsonLdPreview, setJsonLdPreview] = useState({});
+  const [previewScale, setPreviewScale] = useState(1);
 
   useEffect(() => {
     const loadRegisteredFiles = async () => {
@@ -106,6 +140,10 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     };
     loadRegisteredFiles();
   }, [rocratePath]);
+
+  useEffect(() => {
+    updateJsonLdPreview();
+  }, [formData, fileColumns]);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -139,6 +177,37 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
         [destination.droppableId]: destItems,
       });
     }
+  };
+
+  const handlePreviewWheel = (e) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      const newScale = previewScale - e.deltaY * 0.01;
+      setPreviewScale(Math.min(Math.max(newScale, 0.5), 2));
+    }
+  };
+
+  const updateJsonLdPreview = () => {
+    const guid = `computation-${formData.name
+      .toLowerCase()
+      .replace(/\s+/g, "-")}-${Date.now()}`;
+    const preview = {
+      "@context": {
+        "@vocab": "https://schema.org/",
+        EVI: "https://w3id.org/EVI#",
+      },
+      "@id": guid,
+      "@type": "https://w3id.org/EVI#Computation",
+      name: formData.name,
+      description: formData.description,
+      keywords: formData.keywords.split(",").map((k) => k.trim()),
+      runBy: formData["run-by"],
+      dateCreated: formData["date-created"],
+      usedSoftware: fileColumns.software.map((file) => file.guid),
+      usedDataset: fileColumns.inputs.map((file) => file.guid),
+      generated: fileColumns.outputs.map((file) => file.guid),
+    };
+    setJsonLdPreview(preview);
   };
 
   const handleSubmit = () => {
@@ -235,79 +304,100 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
   return (
     <StyledForm>
       <FormTitle>Record Computation</FormTitle>
+      <Row>
+        <Col md={8}>
+          <Row>
+            <Col md={6}>
+              <StyledFormGroup>
+                <StyledLabel>Computation Name</StyledLabel>
+                <StyledInput
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>Computation Name</StyledLabel>
-        <StyledInput
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleInputChange}
-          required
-        />
-      </StyledFormGroup>
+              <StyledFormGroup>
+                <StyledLabel>Date Created</StyledLabel>
+                <StyledInput
+                  type="date"
+                  name="date-created"
+                  value={formData["date-created"]}
+                  onChange={handleInputChange}
+                  required
+                />
+              </StyledFormGroup>
 
-      <StyledFormGroup>
-        <StyledLabel>Date Created</StyledLabel>
-        <StyledInput
-          type="date"
-          name="date-created"
-          value={formData["date-created"]}
-          onChange={handleInputChange}
-          required
-        />
-      </StyledFormGroup>
-
-      <StyledFormGroup>
-        <StyledLabel>Run By</StyledLabel>
-        <StyledInput
-          type="text"
-          name="run-by"
-          value={formData["run-by"]}
-          onChange={handleInputChange}
-          placeholder="Last, First"
-          required
-        />
-      </StyledFormGroup>
-
-      <StyledFormGroup>
-        <StyledLabel>Description</StyledLabel>
-        <StyledTextArea
-          as="textarea"
-          name="description"
-          value={formData.description}
-          onChange={handleInputChange}
-          required
-        />
-      </StyledFormGroup>
-
-      <StyledFormGroup>
-        <StyledLabel>Keywords</StyledLabel>
-        <StyledInput
-          type="text"
-          name="keywords"
-          value={formData.keywords}
-          onChange={handleInputChange}
-          placeholder="python, machine learning, genetics"
-          required
-        />
-      </StyledFormGroup>
+              <StyledFormGroup>
+                <StyledLabel>Run By</StyledLabel>
+                <StyledInput
+                  type="text"
+                  name="run-by"
+                  value={formData["run-by"]}
+                  onChange={handleInputChange}
+                  placeholder="Last, First"
+                  required
+                />
+              </StyledFormGroup>
+              <StyledFormGroup>
+                <StyledLabel>Keywords</StyledLabel>
+                <StyledInput
+                  type="text"
+                  name="keywords"
+                  value={formData.keywords}
+                  onChange={handleInputChange}
+                  placeholder="python, machine learning, genetics"
+                  required
+                />
+              </StyledFormGroup>
+            </Col>
+            <FullHeightCol md={6}>
+              <StyledFormGroup style={{ height: "100%" }}>
+                <StyledLabel>Description</StyledLabel>
+                <FullHeightTextArea
+                  as="textarea"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  required
+                />
+              </StyledFormGroup>
+            </FullHeightCol>
+          </Row>
+        </Col>
+        <Col md={4}>
+          <PreviewContainer>
+            <PreviewTitle>JSON-LD Preview</PreviewTitle>
+            <PreviewContent
+              onWheel={handlePreviewWheel}
+              style={{ transform: `scale(${previewScale})` }}
+            >
+              <SyntaxHighlighter
+                language="json"
+                style={vs2015}
+                customStyle={{
+                  backgroundColor: "transparent",
+                  padding: "0",
+                  margin: "0",
+                  fontSize: "0.9em",
+                }}
+              >
+                {JSON.stringify(jsonLdPreview, null, 2)}
+              </SyntaxHighlighter>
+            </PreviewContent>
+          </PreviewContainer>
+        </Col>
+      </Row>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="row">
-          <div className="col-md-3">
-            {renderColumn("allFiles", "All Avilable Objects")}
-          </div>
-          <div className="col-md-3">
-            {renderColumn("inputs", "Input Datasets")}
-          </div>
-          <div className="col-md-3">
-            {renderColumn("outputs", "Output Datasets")}
-          </div>
-          <div className="col-md-3">
-            {renderColumn("software", "Software Used")}
-          </div>
-        </div>
+        <Row>
+          <Col md={3}>{renderColumn("allFiles", "All Available Objects")}</Col>
+          <Col md={3}>{renderColumn("inputs", "Input Datasets")}</Col>
+          <Col md={3}>{renderColumn("outputs", "Output Datasets")}</Col>
+          <Col md={3}>{renderColumn("software", "Software Used")}</Col>
+        </Row>
       </DragDropContext>
 
       <StyledButton onClick={handleSubmit}>Register Computation</StyledButton>

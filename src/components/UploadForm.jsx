@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Form, Button } from "react-bootstrap";
 import axios from "axios";
@@ -23,17 +23,26 @@ const StyledFormGroup = styled(Form.Group)`
 const StyledLabel = styled(Form.Label)`
   color: #ffffff;
   font-weight: bold;
+  display: flex;
+  align-items: center;
 `;
 
-const StyledFileInput = styled(Form.Control)`
+const FileNameDisplay = styled.span`
+  color: #ffffff;
+  margin-left: 10px;
+`;
+
+const HiddenFileInput = styled.input`
+  display: none;
+`;
+
+const FileSelectionButton = styled(Button)`
   background-color: #3e3e3e;
   border: 1px solid #555;
   color: #ffffff;
-  &:focus {
-    background-color: #3e3e3e;
-    color: #ffffff;
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  margin-top: 10px;
+  &:hover {
+    background-color: #4e4e4e;
   }
 `;
 
@@ -55,23 +64,46 @@ const OutputContainer = styled.pre`
   word-wrap: break-word;
 `;
 
-function UploadForm() {
+function UploadForm({ packagedPath }) {
   const [file, setFile] = useState(null);
   const [output, setOutput] = useState("");
+  const [fileName, setFileName] = useState("");
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (packagedPath) {
+      const fileName = packagedPath.split("/").pop();
+      setFileName(fileName);
+      setOutput(`File selected: ${fileName}`);
+    }
+  }, [packagedPath]);
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile);
+    setFileName(selectedFile ? selectedFile.name : "");
+    setOutput(selectedFile ? `File selected: ${selectedFile.name}` : "");
+  };
+
+  const handleFileButtonClick = () => {
+    fileInputRef.current.click();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) {
+    if (!file && !packagedPath) {
       setOutput("Please select a file to upload.");
       return;
     }
     setOutput("Starting upload...");
     const formData = new FormData();
-    formData.append("file", file);
+
+    if (file) {
+      formData.append("file", file);
+    } else if (packagedPath) {
+      formData.append("filePath", packagedPath);
+    }
+
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
@@ -107,8 +139,18 @@ function UploadForm() {
     <StyledForm onSubmit={handleSubmit}>
       <FormTitle>Upload RO-Crate</FormTitle>
       <StyledFormGroup>
-        <StyledLabel>Select RO-Crate File</StyledLabel>
-        <StyledFileInput type="file" onChange={handleFileChange} required />
+        <StyledLabel>
+          Select RO-Crate File:
+          {fileName && <FileNameDisplay>{fileName}</FileNameDisplay>}
+        </StyledLabel>
+        <HiddenFileInput
+          type="file"
+          onChange={handleFileChange}
+          ref={fileInputRef}
+        />
+        <FileSelectionButton type="button" onClick={handleFileButtonClick}>
+          {fileName ? "Change File" : "Select File"}
+        </FileSelectionButton>
       </StyledFormGroup>
       <StyledButton type="submit">Upload RO-Crate</StyledButton>
       {output && <OutputContainer>{output}</OutputContainer>}
