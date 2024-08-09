@@ -85,6 +85,28 @@ const PreviewTitle = styled.h4`
   text-align: center;
 `;
 
+const organizations = [
+  { name: "UVA", guid: "ark:59852/organization-uva" },
+  { name: "UCSD", guid: "ark:59852/organization-ucsd" },
+  { name: "Stanford", guid: "ark:59852/organization-stanford" },
+  { name: "USF", guid: "ark:59852/organization-usf" },
+  { name: "UCSF", guid: "ark:59852/organization-ucsf" },
+  { name: "Yale", guid: "ark:59852/organization-yale" },
+  { name: "SFU", guid: "ark:59852/organization-sfu" },
+  { name: "Texas", guid: "ark:59852/organization-texas" },
+  { name: "UA", guid: "ark:59852/organization-ua" },
+  {
+    name: "Université de Montréal",
+    guid: "ark:59852/organization-universite-de-montreal",
+  },
+];
+
+const projects = [
+  { name: "CM4AI", guid: "ark:59852/project-cm4ai" },
+  { name: "CHORUS", guid: "ark:59852/project-chorus" },
+  { name: "PreMo", guid: "ark:59852/project-premo" },
+];
+
 function InitForm({ rocratePath, setRocratePath, onSuccess }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -95,9 +117,6 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
   });
 
   const [jsonLdPreview, setJsonLdPreview] = useState({});
-
-  const organizations = ["UVA", "UCSB", "Stanford", "USF"];
-  const projects = ["CM4AI", "Chorus", "PreMo"];
 
   useEffect(() => {
     updateJsonLdPreview();
@@ -136,25 +155,29 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
     };
 
     if (formData.organization_name) {
-      const organizationGuid = `ark:59852/organization-${formData.organization_name
-        .toLowerCase()
-        .replace(/\s+/g, "-")}-${new Date().getTime()}`;
-      preview.isPartOf.push({
-        "@id": organizationGuid,
-        "@type": "Organization",
-        name: formData.organization_name,
-      });
+      const organization = organizations.find(
+        (org) => org.name === formData.organization_name
+      );
+      if (organization) {
+        preview.isPartOf.push({
+          "@id": organization.guid,
+          "@type": "Organization",
+          name: organization.name,
+        });
+      }
     }
 
     if (formData.project_name) {
-      const projectGuid = `ark:59852/project-${formData.project_name
-        .toLowerCase()
-        .replace(/\s+/g, "-")}-${new Date().getTime()}`;
-      preview.isPartOf.push({
-        "@id": projectGuid,
-        "@type": "Project",
-        name: formData.project_name,
-      });
+      const project = projects.find(
+        (proj) => proj.name === formData.project_name
+      );
+      if (project) {
+        preview.isPartOf.push({
+          "@id": project.guid,
+          "@type": "Project",
+          name: project.name,
+        });
+      }
     }
 
     setJsonLdPreview(preview);
@@ -232,8 +255,8 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
             >
               <option value="">Select an organization</option>
               {organizations.map((org) => (
-                <option key={org} value={org}>
-                  {org}
+                <option key={org.guid} value={org.name}>
+                  {org.name}
                 </option>
               ))}
             </StyledSelect>
@@ -249,8 +272,8 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
             >
               <option value="">Select a project</option>
               {projects.map((project) => (
-                <option key={project} value={project}>
-                  {project}
+                <option key={project.guid} value={project.name}>
+                  {project.name}
                 </option>
               ))}
             </StyledSelect>
@@ -284,7 +307,7 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
         </Col>
         <Col md={6}>
           <PreviewContainer>
-            <PreviewTitle>JSON-LD Preview</PreviewTitle>
+            <PreviewTitle>Preview metadata in JSON-LD </PreviewTitle>
             <SyntaxHighlighter
               language="json"
               style={vs2015}

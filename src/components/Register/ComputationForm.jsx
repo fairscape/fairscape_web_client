@@ -369,7 +369,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
         </Col>
         <Col md={4}>
           <PreviewContainer>
-            <PreviewTitle>JSON-LD Preview</PreviewTitle>
+            <PreviewTitle>Preview metadata in JSON-LD</PreviewTitle>
             <PreviewContent
               onWheel={handlePreviewWheel}
               style={{ transform: `scale(${previewScale})` }}

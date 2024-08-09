@@ -275,7 +275,7 @@ function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
         </Col>
         <Col md={6}>
           <PreviewContainer>
-            <PreviewTitle>JSON-LD Preview</PreviewTitle>
+            <PreviewTitle>Preview metadata in JSON-LD</PreviewTitle>
             <SyntaxHighlighter
               language="json"
               style={vs2015}
