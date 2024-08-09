@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Modal } from "react-bootstrap";
 import axios from "axios";
+import LoginComponent from "./LoginComponent"; // Make sure this path is correct
 
 const StyledForm = styled(Form)`
   background-color: #282828;
@@ -64,10 +65,19 @@ const OutputContainer = styled.pre`
   word-wrap: break-word;
 `;
 
+const StyledModal = styled(Modal)`
+  .modal-content {
+    background-color: #282828;
+    color: #ffffff;
+  }
+`;
+
 function UploadForm({ packagedPath }) {
   const [file, setFile] = useState(null);
   const [output, setOutput] = useState("");
   const [fileName, setFileName] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -76,7 +86,13 @@ function UploadForm({ packagedPath }) {
       setFileName(fileName);
       setOutput(`File selected: ${fileName}`);
     }
+    checkLoginStatus();
   }, [packagedPath]);
+
+  const checkLoginStatus = () => {
+    const token = localStorage.getItem("authToken");
+    setIsLoggedIn(!!token);
+  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -91,6 +107,10 @@ function UploadForm({ packagedPath }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
     if (!file && !packagedPath) {
       setOutput("Please select a file to upload.");
       return;
@@ -135,26 +155,48 @@ function UploadForm({ packagedPath }) {
     }
   };
 
+  const handleCloseLoginModal = () => {
+    setShowLoginModal(false);
+  };
+
+  const handleLogin = (userData) => {
+    setIsLoggedIn(true);
+    handleCloseLoginModal();
+    // You might want to do something with the userData here
+    console.log("User logged in:", userData);
+  };
+
   return (
-    <StyledForm onSubmit={handleSubmit}>
-      <FormTitle>Upload RO-Crate</FormTitle>
-      <StyledFormGroup>
-        <StyledLabel>
-          Select RO-Crate File:
-          {fileName && <FileNameDisplay>{fileName}</FileNameDisplay>}
-        </StyledLabel>
-        <HiddenFileInput
-          type="file"
-          onChange={handleFileChange}
-          ref={fileInputRef}
-        />
-        <FileSelectionButton type="button" onClick={handleFileButtonClick}>
-          {fileName ? "Change File" : "Select File"}
-        </FileSelectionButton>
-      </StyledFormGroup>
-      <StyledButton type="submit">Upload RO-Crate</StyledButton>
-      {output && <OutputContainer>{output}</OutputContainer>}
-    </StyledForm>
+    <>
+      <StyledForm onSubmit={handleSubmit}>
+        <FormTitle>Upload RO-Crate</FormTitle>
+        <StyledFormGroup>
+          <StyledLabel>
+            Select RO-Crate File:
+            {fileName && <FileNameDisplay>{fileName}</FileNameDisplay>}
+          </StyledLabel>
+          <HiddenFileInput
+            type="file"
+            onChange={handleFileChange}
+            ref={fileInputRef}
+          />
+          <FileSelectionButton type="button" onClick={handleFileButtonClick}>
+            {fileName ? "Change File" : "Select File"}
+          </FileSelectionButton>
+        </StyledFormGroup>
+        <StyledButton type="submit">Upload RO-Crate</StyledButton>
+        {output && <OutputContainer>{output}</OutputContainer>}
+      </StyledForm>
+
+      <StyledModal show={showLoginModal} onHide={handleCloseLoginModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Login Required</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <LoginComponent onLogin={handleLogin} />
+        </Modal.Body>
+      </StyledModal>
+    </>
   );
 }
 
