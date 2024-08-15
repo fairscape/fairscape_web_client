@@ -78,9 +78,9 @@ function LoginComponent({ onLogin }) {
         const data = await response.json();
         if (data.token) {
           // Store the token in localStorage
-          localStorage.setItem("authToken", data.token);
+          localStorage.setItem("authToken", data.access_token);
           // Call onLogin with the user data and token
-          onLogin({ ...data, token: data.token });
+          onLogin({ ...data, token: data.access_token });
           setIsOpen(false);
         } else {
           setError("Login successful, but no token received.");
