@@ -127,7 +127,7 @@ function UploadForm({ packagedPath }) {
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        "http://fairscape.net/api/rocrate/upload",
+        "https://fairscape.net/api/rocrate/upload",
         formData,
         {
           headers: {
