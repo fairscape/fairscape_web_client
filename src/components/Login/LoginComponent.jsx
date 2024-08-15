@@ -4,7 +4,7 @@ import Header from "../header_footer/Header";
 import "./Login.css";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://fairscape.net/api";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/api";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -16,17 +16,14 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("password", password);
+
     try {
       const response = await fetch(`${API_URL}/login`, {
-        // Fixed string interpolation
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          username: username,
-          password: password,
-        }),
+        body: formData,
       });
 
       console.log("Response status:", response.status);
@@ -43,7 +40,7 @@ const Login = () => {
       }
     } catch (error) {
       setError("An error occurred. Please try again.");
-      console.error("Login error:", error);
+      console.error("Login error:", error.message, error.stack);
     }
   };
 
