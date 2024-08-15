@@ -21,7 +21,6 @@ const Input = styled.input`
   border: 1px solid #444;
   border-radius: 4px;
   color: white;
-
   &::placeholder {
     color: #888;
   }
@@ -35,11 +34,9 @@ const Button = styled.button`
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
-
   &:hover {
     background-color: ${accentColorHover};
   }
-
   &:disabled {
     background-color: #444;
     cursor: not-allowed;
@@ -67,7 +64,7 @@ function LoginComponent({ onLogin }) {
     e.preventDefault();
     setError("");
     try {
-      const response = await fetch(`http://fairscape.net/login`, {
+      const response = await fetch(`https://fairscape.net/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
