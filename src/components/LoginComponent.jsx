@@ -76,7 +76,7 @@ function LoginComponent({ onLogin }) {
       });
       if (response.ok) {
         const data = await response.json();
-        if (data.token) {
+        if (data.access_token) {
           // Store the token in localStorage
           localStorage.setItem("authToken", data.access_token);
           // Call onLogin with the user data and token

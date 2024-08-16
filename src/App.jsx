@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import InitForm from "./components/InitForm";
 import FileSelector from "./components/Register/FileSelector";
 import ComputationForm from "./components/Register/ComputationForm";
 import PackageForm from "./components/PackageForm";
 import UploadForm from "./components/UploadForm";
-import SidebarComponent from "./components/Sidebar";
+import SidebarComponent from "./components/SideBar";
 import Questionnaire from "./components/Questionnaire";
 import {
   AppContainer,
@@ -18,6 +18,16 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
   const [registeredFiles, setRegisteredFiles] = useState([]);
+
+  useEffect(() => {
+    // Check for existing auth token on component mount
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      // You might want to validate the token here
+      setIsLoggedIn(true);
+      // You might want to fetch user data here based on the token
+    }
+  }, []);
 
   const handleViewSelect = (view) => {
     setCurrentView(view);
@@ -43,6 +53,14 @@ function App() {
   const handleLogin = (data) => {
     setIsLoggedIn(true);
     setUserData(data);
+    localStorage.setItem("authToken", data.token);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUserData(null);
+    localStorage.removeItem("authToken");
+    setCurrentView("questionnaire"); // Reset to initial view
   };
 
   const handleFileRegister = (newFiles) => {
@@ -102,6 +120,7 @@ function App() {
         isLoggedIn={isLoggedIn}
         userData={userData}
         onLogin={handleLogin}
+        onLogout={handleLogout}
       />
       <MainContentWrapper>{renderMainContent()}</MainContentWrapper>
     </AppContainer>

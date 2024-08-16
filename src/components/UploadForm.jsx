@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Form, Button, Modal } from "react-bootstrap";
 import axios from "axios";
-import LoginComponent from "./LoginComponent"; // Make sure this path is correct
+import LoginComponent from "./LoginComponent";
 
 const StyledForm = styled(Form)`
   background-color: #282828;
@@ -28,16 +28,16 @@ const StyledLabel = styled(Form.Label)`
   align-items: center;
 `;
 
-const FileNameDisplay = styled.span`
+const CrateNameDisplay = styled.span`
   color: #ffffff;
   margin-left: 10px;
 `;
 
-const HiddenFileInput = styled.input`
+const HiddenCrateInput = styled.input`
   display: none;
 `;
 
-const FileSelectionButton = styled(Button)`
+const CrateSelectionButton = styled(Button)`
   background-color: #3e3e3e;
   border: 1px solid #555;
   color: #ffffff;
@@ -73,18 +73,18 @@ const StyledModal = styled(Modal)`
 `;
 
 function UploadForm({ packagedPath }) {
-  const [file, setFile] = useState(null);
+  const [crate, setCrate] = useState(null);
   const [output, setOutput] = useState("");
-  const [fileName, setFileName] = useState("");
+  const [crateName, setCrateName] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const fileInputRef = useRef(null);
+  const crateInputRef = useRef(null);
 
   useEffect(() => {
     if (packagedPath) {
       const fileName = packagedPath.split("/").pop();
-      setFileName(fileName);
-      setOutput(`File selected: ${fileName}`);
+      setCrateName(fileName);
+      setOutput(`RO-Crate selected: ${fileName}`);
     }
     checkLoginStatus();
   }, [packagedPath]);
@@ -94,15 +94,15 @@ function UploadForm({ packagedPath }) {
     setIsLoggedIn(!!token);
   };
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    setFile(selectedFile);
-    setFileName(selectedFile ? selectedFile.name : "");
-    setOutput(selectedFile ? `File selected: ${selectedFile.name}` : "");
+  const handleCrateChange = (e) => {
+    const selectedCrate = e.target.files[0];
+    setCrate(selectedCrate);
+    setCrateName(selectedCrate ? selectedCrate.name : "");
+    setOutput(selectedCrate ? `RO-Crate selected: ${selectedCrate.name}` : "");
   };
 
-  const handleFileButtonClick = () => {
-    fileInputRef.current.click();
+  const handleCrateButtonClick = () => {
+    crateInputRef.current.click();
   };
 
   const handleSubmit = async (e) => {
@@ -111,23 +111,23 @@ function UploadForm({ packagedPath }) {
       setShowLoginModal(true);
       return;
     }
-    if (!file && !packagedPath) {
-      setOutput("Please select a file to upload.");
+    if (!crate && !packagedPath) {
+      setOutput("Please select an RO-Crate to upload.");
       return;
     }
     setOutput("Starting upload...");
     const formData = new FormData();
 
-    if (file) {
-      formData.append("file", file);
+    if (crate) {
+      formData.append("crate", crate);
     } else if (packagedPath) {
-      formData.append("filePath", packagedPath);
+      formData.append("cratePath", packagedPath);
     }
 
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        "https://fairscape.net/api/rocrate/upload",
+        "https://fairscape.net/api/rocrate/upload-async",
         formData,
         {
           headers: {
@@ -162,7 +162,6 @@ function UploadForm({ packagedPath }) {
   const handleLogin = (userData) => {
     setIsLoggedIn(true);
     handleCloseLoginModal();
-    // You might want to do something with the userData here
     console.log("User logged in:", userData);
   };
 
@@ -172,17 +171,18 @@ function UploadForm({ packagedPath }) {
         <FormTitle>Upload RO-Crate</FormTitle>
         <StyledFormGroup>
           <StyledLabel>
-            Select RO-Crate File:
-            {fileName && <FileNameDisplay>{fileName}</FileNameDisplay>}
+            Select RO-Crate:
+            {crateName && <CrateNameDisplay>{crateName}</CrateNameDisplay>}
           </StyledLabel>
-          <HiddenFileInput
+          <HiddenCrateInput
             type="file"
-            onChange={handleFileChange}
-            ref={fileInputRef}
+            onChange={handleCrateChange}
+            ref={crateInputRef}
+            accept=".zip"
           />
-          <FileSelectionButton type="button" onClick={handleFileButtonClick}>
-            {fileName ? "Change File" : "Select File"}
-          </FileSelectionButton>
+          <CrateSelectionButton type="button" onClick={handleCrateButtonClick}>
+            {crateName ? "Change RO-Crate" : "Select RO-Crate"}
+          </CrateSelectionButton>
         </StyledFormGroup>
         <StyledButton type="submit">Upload RO-Crate</StyledButton>
         {output && <OutputContainer>{output}</OutputContainer>}
