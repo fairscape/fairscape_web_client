@@ -10,6 +10,41 @@ import {
 import { generateSoftware } from "../models/software";
 import { generateDataset } from "../models/dataset";
 import { generateComputation } from "../models/computation";
+import { generateSchema } from "../models/schema"; // Assume this is implemented similarly to generateDataset
+
+export function register_schema(
+  rocrate_path,
+  name,
+  description,
+  properties,
+  required,
+  separator,
+  header,
+  guid = null,
+  url = null,
+  additionalProperties = true,
+  examples = []
+) {
+  try {
+    const crateInstance = readROCrateMetadata(rocrate_path);
+    const schema_instance = generateSchema({
+      guid,
+      url,
+      name,
+      description,
+      properties,
+      required,
+      separator,
+      header,
+      additionalProperties,
+      examples
+    });
+    appendCrate(rocrate_path, [schema_instance]);
+    return schema_instance["@id"];
+  } catch (error) {
+    throw new Error(`Error registering schema: ${error.message}`);
+  }
+}
 
 export async function get_registered_files(rocratePath) {
   try {
