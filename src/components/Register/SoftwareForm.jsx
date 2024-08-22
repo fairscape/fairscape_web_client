@@ -1,73 +1,15 @@
 import React, { useState, useEffect } from "react";
-import styled from "styled-components";
-import { Form, Button, Row, Col } from "react-bootstrap";
+import { Row, Col } from "react-bootstrap";
 import { register_software } from "../../rocrate/rocrate";
 import path from "path";
-import SyntaxHighlighter from "react-syntax-highlighter";
-import { vs2015 } from "react-syntax-highlighter/dist/esm/styles/hljs";
-
-const StyledForm = styled(Form)`
-  background-color: #282828;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-`;
-
-const FormTitle = styled.h2`
-  color: #ffffff;
-  margin-bottom: 30px;
-  text-align: center;
-`;
-
-const StyledFormGroup = styled(Form.Group)`
-  margin-bottom: 20px;
-`;
-
-const StyledLabel = styled(Form.Label)`
-  color: #ffffff;
-  font-weight: bold;
-`;
-
-const StyledInput = styled(Form.Control)`
-  background-color: #3e3e3e;
-  border: 1px solid #555;
-  color: #ffffff;
-  &:focus {
-    background-color: #3e3e3e;
-    color: #ffffff;
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-  }
-`;
-
-const StyledTextArea = styled(StyledInput)`
-  resize: vertical;
-  min-height: 100px;
-  width: 100%;
-  padding: 10px;
-`;
-
-const StyledButton = styled(Button)`
-  background-color: #007bff;
-  border: none;
-  &:hover {
-    background-color: #0056b3;
-  }
-  margin-right: 10px;
-`;
-
-const PreviewContainer = styled.div`
-  background-color: #1e1e1e;
-  border-radius: 15px;
-  height: 100%;
-  overflow-y: auto;
-`;
-
-const PreviewTitle = styled.h3`
-  color: #ffffff;
-  margin-bottom: 15px;
-  text-align: center;
-`;
+import {
+  StyledForm,
+  FormTitle,
+  StyledButton,
+  FormField,
+  TextAreaField,
+  JsonLdPreview,
+} from "./SharedComponents";
 
 function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -179,94 +121,82 @@ function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
       <FormTitle>Register Software: {file}</FormTitle>
       <Row>
         <Col md={6}>
-          <StyledFormGroup>
-            <StyledLabel>Name *</StyledLabel>
-            <StyledInput
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </StyledFormGroup>
-
-          <StyledFormGroup>
-            <StyledLabel>Author *</StyledLabel>
-            <StyledInput
-              type="text"
-              name="author"
-              value={formData.author}
-              onChange={handleChange}
-              placeholder="1st Author First Last, 2nd Author First Last, ..."
-              required
-            />
-          </StyledFormGroup>
-
-          <StyledFormGroup>
-            <StyledLabel>Version *</StyledLabel>
-            <StyledInput
-              type="text"
-              name="version"
-              value={formData.version}
-              onChange={handleChange}
-              placeholder="Examples: 1.0.1, 1.0"
-              required
-            />
-          </StyledFormGroup>
-
-          <StyledFormGroup>
-            <StyledLabel>Description *</StyledLabel>
-            <StyledTextArea
-              as="textarea"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-            />
-          </StyledFormGroup>
-
-          <StyledFormGroup>
-            <StyledLabel>Keywords *</StyledLabel>
-            <StyledInput
-              type="text"
-              name="keywords"
-              value={formData.keywords}
-              onChange={handleChange}
-              required
-            />
-          </StyledFormGroup>
-
-          <StyledFormGroup>
-            <StyledLabel>File Format *</StyledLabel>
-            <StyledInput
-              type="text"
-              name="file-format"
-              value={formData["file-format"]}
-              onChange={handleChange}
-              required
-            />
-          </StyledFormGroup>
-
-          <StyledFormGroup>
-            <StyledLabel>URL</StyledLabel>
-            <StyledInput
-              type="text"
-              name="url"
-              value={formData.url}
-              onChange={handleChange}
-              placeholder="http://github/link-to-repo"
-            />
-          </StyledFormGroup>
-
-          <StyledFormGroup>
-            <StyledLabel>Associated Publication</StyledLabel>
-            <StyledInput
-              type="text"
-              name="associated-publication"
-              value={formData["associated-publication"]}
-              onChange={handleChange}
-            />
-          </StyledFormGroup>
+          <FormField
+            label="Name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+          <FormField
+            label="Author"
+            name="author"
+            value={formData.author}
+            onChange={handleChange}
+            required
+            placeholder="1st Author First Last, 2nd Author First Last, ..."
+          />
+          <FormField
+            label="Version"
+            name="version"
+            value={formData.version}
+            onChange={handleChange}
+            required
+            placeholder="Examples: 1.0.1, 1.0"
+          />
+          <TextAreaField
+            label="Description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            required
+          />
+          <FormField
+            label="Keywords"
+            name="keywords"
+            value={formData.keywords}
+            onChange={handleChange}
+            required
+          />
+          <FormField
+            label="File Format"
+            name="file-format"
+            value={formData["file-format"]}
+            onChange={handleChange}
+            required
+          />
+          <FormField
+            label="URL"
+            name="url"
+            value={formData.url}
+            onChange={handleChange}
+            placeholder="http://github/link-to-repo"
+          />
+          <FormField
+            label="Date Modified"
+            name="date-modified"
+            type="date"
+            value={formData["date-modified"]}
+            onChange={handleChange}
+          />
+          <FormField
+            label="Used By Computation"
+            name="used-by-computation"
+            value={formData["used-by-computation"]}
+            onChange={handleChange}
+          />
+          <FormField
+            label="Associated Publication"
+            name="associated-publication"
+            value={formData["associated-publication"]}
+            onChange={handleChange}
+          />
+          <FormField
+            label="Additional Documentation"
+            name="additional-documentation"
+            value={formData["additional-documentation"]}
+            onChange={handleChange}
+          />
 
           <StyledButton type="submit">Register Software</StyledButton>
           <StyledButton onClick={onBack} variant="secondary">
@@ -274,21 +204,7 @@ function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
           </StyledButton>
         </Col>
         <Col md={6}>
-          <PreviewContainer>
-            <PreviewTitle>Preview metadata in JSON-LD</PreviewTitle>
-            <SyntaxHighlighter
-              language="json"
-              style={vs2015}
-              customStyle={{
-                backgroundColor: "transparent",
-                padding: "0",
-                margin: "0",
-                fontSize: "0.9em",
-              }}
-            >
-              {JSON.stringify(jsonLdPreview, null, 2)}
-            </SyntaxHighlighter>
-          </PreviewContainer>
+          <JsonLdPreview jsonLdData={jsonLdPreview} />
         </Col>
       </Row>
     </StyledForm>

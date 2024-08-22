@@ -1,116 +1,21 @@
 import React, { useState, useEffect } from "react";
-import styled from "styled-components";
-import { Form, Button, ListGroup, Row, Col } from "react-bootstrap";
+import { Row, Col } from "react-bootstrap";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import {
   register_computation,
   get_registered_files,
 } from "../../rocrate/rocrate";
-import SyntaxHighlighter from "react-syntax-highlighter";
-import { vs2015 } from "react-syntax-highlighter/dist/esm/styles/hljs";
-
-const StyledForm = styled(Form)`
-  background-color: #282828;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-`;
-
-const FormTitle = styled.h3`
-  color: #ffffff;
-  margin-bottom: 10px;
-  text-align: center;
-`;
-
-const StyledFormGroup = styled(Form.Group)`
-  margin-bottom: 20px;
-`;
-
-const StyledLabel = styled(Form.Label)`
-  color: #ffffff;
-  font-weight: bold;
-`;
-
-const StyledInput = styled(Form.Control)`
-  background-color: #3e3e3e;
-  border: 1px solid #555;
-  color: #ffffff;
-  &:focus {
-    background-color: #3e3e3e;
-    color: #ffffff;
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-  }
-`;
-
-const StyledTextArea = styled(StyledInput)`
-  resize: vertical;
-  width: 100%;
-  padding: 5px;
-`;
-
-const StyledButton = styled(Button)`
-  background-color: #007bff;
-  margin-top: 10px;
-  border: none;
-  &:hover {
-    background-color: #0056b3;
-  }
-  margin-right: 10px;
-`;
-
-const StyledListGroup = styled(ListGroup)`
-  background-color: #3e3e3e;
-  height: 300px;
-  overflow-y: auto;
-  border: 1px solid #555;
-  border-radius: 4px;
-`;
-
-const StyledListItem = styled(ListGroup.Item)`
-  background-color: #3e3e3e;
-  color: #ffffff;
-  border-color: #555;
-  &:hover {
-    background-color: #4e4e4e;
-  }
-`;
-
-const ColumnHeader = styled.h4`
-  color: #ffffff;
-  margin-bottom: 10px;
-`;
-
-const PreviewContainer = styled.div`
-  background-color: #1e1e1e;
-  border-radius: 5px;
-  height: 350px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-`;
-
-const PreviewTitle = styled.h4`
-  color: #ffffff;
-  margin-bottom: 15px;
-  text-align: center;
-`;
-
-const PreviewContent = styled.div`
-  flex-grow: 1;
-  overflow: auto;
-  transform-origin: top left;
-`;
-
-const FullHeightCol = styled(Col)`
-  display: flex;
-  flex-direction: column;
-`;
-
-const FullHeightTextArea = styled(StyledTextArea)`
-  flex-grow: 1;
-  height: auto;
-`;
+import {
+  StyledForm,
+  FormTitle,
+  StyledButton,
+  FormField,
+  TextAreaField,
+  JsonLdPreview,
+  StyledListGroup,
+  StyledListItem,
+  ColumnHeader,
+} from "./SharedComponents";
 
 function ComputationForm({ rocratePath, onComplete, onSkip }) {
   const [showForm, setShowForm] = useState(false);
@@ -128,7 +33,6 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     software: [],
   });
   const [jsonLdPreview, setJsonLdPreview] = useState({});
-  const [previewScale, setPreviewScale] = useState(1);
 
   useEffect(() => {
     const loadRegisteredFiles = async () => {
@@ -145,7 +49,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     updateJsonLdPreview();
   }, [formData, fileColumns]);
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -179,14 +83,6 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     }
   };
 
-  const handlePreviewWheel = (e) => {
-    if (e.ctrlKey) {
-      e.preventDefault();
-      const newScale = previewScale - e.deltaY * 0.01;
-      setPreviewScale(Math.min(Math.max(newScale, 0.5), 2));
-    }
-  };
-
   const updateJsonLdPreview = () => {
     const guid = `computation-${formData.name
       .toLowerCase()
@@ -216,15 +112,11 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
       guid: `computation-${formData.name
         .toLowerCase()
         .replace(/\s+/g, "-")}-${Date.now()}`,
-      command: "", // You might want to add this to the form if needed
+      command: "",
       "used-software": fileColumns.software.map((file) => file.guid),
       "used-dataset": fileColumns.inputs.map((file) => file.guid),
       generated: fileColumns.outputs.map((file) => file.guid),
     };
-
-    console.log("used-software:", options["used-software"]);
-    console.log("used-dataset:", options["used-dataset"]);
-    console.log("generated:", options.generated);
 
     const result = register_computation(
       rocratePath,
@@ -241,7 +133,6 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     );
 
     console.log(result);
-    // Reset form and file columns
     setFormData({
       name: "",
       "date-created": "",
@@ -308,86 +199,51 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
         <Col md={8}>
           <Row>
             <Col md={6}>
-              <StyledFormGroup>
-                <StyledLabel>Computation Name</StyledLabel>
-                <StyledInput
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </StyledFormGroup>
-
-              <StyledFormGroup>
-                <StyledLabel>Date Created</StyledLabel>
-                <StyledInput
-                  type="date"
-                  name="date-created"
-                  value={formData["date-created"]}
-                  onChange={handleInputChange}
-                  required
-                />
-              </StyledFormGroup>
-
-              <StyledFormGroup>
-                <StyledLabel>Run By</StyledLabel>
-                <StyledInput
-                  type="text"
-                  name="run-by"
-                  value={formData["run-by"]}
-                  onChange={handleInputChange}
-                  placeholder="First Last, First Last..."
-                  required
-                />
-              </StyledFormGroup>
-              <StyledFormGroup>
-                <StyledLabel>Keywords</StyledLabel>
-                <StyledInput
-                  type="text"
-                  name="keywords"
-                  value={formData.keywords}
-                  onChange={handleInputChange}
-                  placeholder="python, machine learning, genetics"
-                  required
-                />
-              </StyledFormGroup>
+              <FormField
+                label="Computation Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+              <FormField
+                label="Date Created"
+                name="date-created"
+                value={formData["date-created"]}
+                onChange={handleChange}
+                type="date"
+                required
+              />
+              <FormField
+                label="Run By"
+                name="run-by"
+                value={formData["run-by"]}
+                onChange={handleChange}
+                placeholder="First Last, First Last..."
+                required
+              />
+              <FormField
+                label="Keywords"
+                name="keywords"
+                value={formData.keywords}
+                onChange={handleChange}
+                placeholder="python, machine learning, genetics"
+                required
+              />
             </Col>
-            <FullHeightCol md={6}>
-              <StyledFormGroup style={{ height: "100%" }}>
-                <StyledLabel>Description</StyledLabel>
-                <FullHeightTextArea
-                  as="textarea"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  required
-                />
-              </StyledFormGroup>
-            </FullHeightCol>
+            <Col md={6}>
+              <TextAreaField
+                label="Description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+              />
+            </Col>
           </Row>
         </Col>
         <Col md={4}>
-          <PreviewContainer>
-            <PreviewTitle>Preview metadata in JSON-LD</PreviewTitle>
-            <PreviewContent
-              onWheel={handlePreviewWheel}
-              style={{ transform: `scale(${previewScale})` }}
-            >
-              <SyntaxHighlighter
-                language="json"
-                style={vs2015}
-                customStyle={{
-                  backgroundColor: "transparent",
-                  padding: "0",
-                  margin: "0",
-                  fontSize: "0.9em",
-                }}
-              >
-                {JSON.stringify(jsonLdPreview, null, 2)}
-              </SyntaxHighlighter>
-            </PreviewContent>
-          </PreviewContainer>
+          <JsonLdPreview jsonLdData={jsonLdPreview} />
         </Col>
       </Row>
 
