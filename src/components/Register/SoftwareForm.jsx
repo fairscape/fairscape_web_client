@@ -172,32 +172,6 @@ function SoftwareForm({ file, onBack, rocratePath, onSuccess }) {
             onChange={handleChange}
             placeholder="http://github/link-to-repo"
           />
-          <FormField
-            label="Date Modified"
-            name="date-modified"
-            type="date"
-            value={formData["date-modified"]}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Used By Computation"
-            name="used-by-computation"
-            value={formData["used-by-computation"]}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Associated Publication"
-            name="associated-publication"
-            value={formData["associated-publication"]}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Additional Documentation"
-            name="additional-documentation"
-            value={formData["additional-documentation"]}
-            onChange={handleChange}
-          />
-
           <StyledButton type="submit">Register Software</StyledButton>
           <StyledButton onClick={onBack} variant="secondary">
             Back

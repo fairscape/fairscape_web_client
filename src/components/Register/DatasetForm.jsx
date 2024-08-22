@@ -288,37 +288,6 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
             onChange={handleChange}
             required
           />
-          <FormField
-            label="URL"
-            name="url"
-            value={formData.url}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Used By"
-            name="used-by"
-            value={formData["used-by"]}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Derived From"
-            name="derived-from"
-            value={formData["derived-from"]}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Associated Publication"
-            name="associated-publication"
-            value={formData["associated-publication"]}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Additional Documentation"
-            name="additional-documentation"
-            value={formData["additional-documentation"]}
-            onChange={handleChange}
-          />
-
           <StyledButton type="submit">
             {pendingRegistration ? "Registering..." : "Register Dataset"}
           </StyledButton>
