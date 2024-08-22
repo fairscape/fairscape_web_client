@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Form, Button, Row, Col, Modal } from "react-bootstrap";
+import { Form, Button, Row, Col, Card } from "react-bootstrap";
 import { register_dataset } from "../../rocrate/rocrate";
 import path from "path";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { vs2015 } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import SchemaForm from "./SchemaForm";
+import SchemaSelector from "./SchemaSelector";
 
 const StyledForm = styled(Form)`
   background-color: #282828;
@@ -70,6 +71,34 @@ const PreviewTitle = styled.h3`
   text-align: center;
 `;
 
+const SchemaOptionsContainer = styled.div`
+  padding: 20px;
+  background-color: #282828;
+  border-radius: 10px;
+`;
+
+const SchemaOptionCard = styled(Card)`
+  margin-bottom: 10px;
+  background-color: #3e3e3e;
+  border: 1px solid #555;
+  color: #ffffff;
+`;
+
+const SchemaOptionCardBody = styled(Card.Body)`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const SchemaOptionCardTitle = styled(Card.Title)`
+  margin: 0;
+  color: #ffffff;
+`;
+
+const SchemaOptionCardText = styled(Card.Text)`
+  color: #ffffff;
+`;
+
 function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -88,11 +117,30 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   });
 
   const [jsonLdPreview, setJsonLdPreview] = useState({});
-  const [showSchemaPrompt, setShowSchemaPrompt] = useState(false);
+  const [showSchemaOptions, setShowSchemaOptions] = useState(false);
+  const [showSchemaSelector, setShowSchemaSelector] = useState(false);
   const [showSchemaForm, setShowSchemaForm] = useState(false);
   const [datasetRegistered, setDatasetRegistered] = useState(false);
   const [pendingRegistration, setPendingRegistration] = useState(false);
   const [schemaGuid, setSchemaGuid] = useState(null);
+
+  const schemaOptions = [
+    {
+      text: "Select Existing Schema",
+      action: "select",
+      description: "Choose from a list of pre-defined schemas.",
+    },
+    {
+      text: "Create New Schema",
+      action: "create",
+      description: "Define a custom schema for your dataset.",
+    },
+    {
+      text: "Skip Schema",
+      action: "skip",
+      description: "Continue without adding a schema to your dataset.",
+    },
+  ];
 
   useEffect(() => {
     const fileName = path.basename(file, path.extname(file)).replace(/_/g, " ");
@@ -157,12 +205,14 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     setPendingRegistration(true);
-    setShowSchemaPrompt(true);
+    setShowSchemaOptions(true);
   };
 
-  const handleSchemaPromptResponse = (addSchema) => {
-    setShowSchemaPrompt(false);
-    if (addSchema) {
+  const handleSchemaOptionSelect = (action) => {
+    setShowSchemaOptions(false);
+    if (action === "select") {
+      setShowSchemaSelector(true);
+    } else if (action === "create") {
       setShowSchemaForm(true);
     } else {
       registerDataset();
@@ -199,14 +249,50 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
     setDatasetRegistered(true);
     setPendingRegistration(false);
     setShowSchemaForm(false);
+    setShowSchemaSelector(false);
   };
+
+  if (showSchemaOptions) {
+    return (
+      <SchemaOptionsContainer>
+        <FormTitle>Would you like to add a schema for this dataset?</FormTitle>
+        {schemaOptions.map((option, index) => (
+          <SchemaOptionCard key={index}>
+            <SchemaOptionCardBody>
+              <div>
+                <SchemaOptionCardTitle>{option.text}</SchemaOptionCardTitle>
+                <SchemaOptionCardText>
+                  {option.description}
+                </SchemaOptionCardText>
+              </div>
+              <StyledButton
+                onClick={() => handleSchemaOptionSelect(option.action)}
+              >
+                Select
+              </StyledButton>
+            </SchemaOptionCardBody>
+          </SchemaOptionCard>
+        ))}
+      </SchemaOptionsContainer>
+    );
+  }
+
+  if (showSchemaSelector) {
+    return (
+      <SchemaSelector
+        onSchemaSelect={handleSchemaRegistration}
+        onCancel={() => setShowSchemaOptions(true)}
+        rocratePath={rocratePath}
+      />
+    );
+  }
 
   if (showSchemaForm) {
     return (
       <SchemaForm
         datasetName={formData.name}
         onSubmit={handleSchemaRegistration}
-        onCancel={() => registerDataset()}
+        onCancel={() => setShowSchemaOptions(true)}
         rocratePath={rocratePath}
       />
     );
@@ -222,141 +308,115 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   }
 
   return (
-    <>
-      <StyledForm onSubmit={handleSubmit}>
-        <FormTitle>Register Dataset: {file}</FormTitle>
-        <Row>
-          <Col md={6}>
-            <StyledFormGroup>
-              <StyledLabel>Dataset Name *</StyledLabel>
-              <StyledInput
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </StyledFormGroup>
+    <StyledForm onSubmit={handleSubmit}>
+      <FormTitle>Register Dataset: {file}</FormTitle>
+      <Row>
+        <Col md={6}>
+          <StyledFormGroup>
+            <StyledLabel>Dataset Name *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
 
-            <StyledFormGroup>
-              <StyledLabel>Author *</StyledLabel>
-              <StyledInput
-                type="text"
-                name="author"
-                value={formData.author}
-                onChange={handleChange}
-                placeholder="1st Author First Last, 2nd Author First Last, ..."
-                required
-              />
-            </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Author *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="author"
+              value={formData.author}
+              onChange={handleChange}
+              placeholder="1st Author First Last, 2nd Author First Last, ..."
+              required
+            />
+          </StyledFormGroup>
 
-            <StyledFormGroup>
-              <StyledLabel>Version *</StyledLabel>
-              <StyledInput
-                type="text"
-                name="version"
-                value={formData.version}
-                onChange={handleChange}
-                placeholder="Examples: 1.0.1, 1.0"
-                required
-              />
-            </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Version *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="version"
+              value={formData.version}
+              onChange={handleChange}
+              placeholder="Examples: 1.0.1, 1.0"
+              required
+            />
+          </StyledFormGroup>
 
-            <StyledFormGroup>
-              <StyledLabel>Date Published *</StyledLabel>
-              <StyledInput
-                type="date"
-                name="date-published"
-                value={formData["date-published"]}
-                onChange={handleChange}
-                required
-              />
-            </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Date Published *</StyledLabel>
+            <StyledInput
+              type="date"
+              name="date-published"
+              value={formData["date-published"]}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
 
-            <StyledFormGroup>
-              <StyledLabel>Description *</StyledLabel>
-              <StyledTextArea
-                as="textarea"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-              />
-            </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Description *</StyledLabel>
+            <StyledTextArea
+              as="textarea"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
 
-            <StyledFormGroup>
-              <StyledLabel>Keywords *</StyledLabel>
-              <StyledInput
-                type="text"
-                name="keywords"
-                value={formData.keywords}
-                onChange={handleChange}
-                placeholder="genetics, vital signs, heart rate"
-                required
-              />
-            </StyledFormGroup>
+          <StyledFormGroup>
+            <StyledLabel>Keywords *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="keywords"
+              value={formData.keywords}
+              onChange={handleChange}
+              placeholder="genetics, vital signs, heart rate"
+              required
+            />
+          </StyledFormGroup>
 
-            <StyledFormGroup>
-              <StyledLabel>Data Format *</StyledLabel>
-              <StyledInput
-                type="text"
-                name="data-format"
-                value={formData["data-format"]}
-                onChange={handleChange}
-                required
-              />
-            </StyledFormGroup>
-
-            <StyledButton type="submit">
-              {pendingRegistration ? "Registering..." : "Register Dataset"}
-            </StyledButton>
-            <StyledButton onClick={onBack} variant="secondary">
-              Back
-            </StyledButton>
-          </Col>
-          <Col md={6}>
-            <PreviewContainer>
-              <PreviewTitle>Preview metadata in JSON-LD </PreviewTitle>
-              <SyntaxHighlighter
-                language="json"
-                style={vs2015}
-                customStyle={{
-                  backgroundColor: "transparent",
-                  padding: "0",
-                  margin: "0",
-                  fontSize: "0.9em",
-                }}
-              >
-                {JSON.stringify(jsonLdPreview, null, 2)}
-              </SyntaxHighlighter>
-            </PreviewContainer>
-          </Col>
-        </Row>
-      </StyledForm>
-
-      <Modal show={showSchemaPrompt} onHide={() => setShowSchemaPrompt(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Add Schema</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Would you like to add a schema for this dataset?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => handleSchemaPromptResponse(false)}
-          >
-            No, Skip Schema
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => handleSchemaPromptResponse(true)}
-          >
-            Yes, Add Schema
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </>
+          <StyledFormGroup>
+            <StyledLabel>Data Format *</StyledLabel>
+            <StyledInput
+              type="text"
+              name="data-format"
+              value={formData["data-format"]}
+              onChange={handleChange}
+              required
+            />
+          </StyledFormGroup>
+          <StyledButton type="submit">
+            {pendingRegistration ? "Registering..." : "Register Dataset"}
+          </StyledButton>
+          <StyledButton onClick={onBack} variant="secondary">
+            Back
+          </StyledButton>
+        </Col>
+        <Col md={6}>
+          <PreviewContainer>
+            <PreviewTitle>Preview metadata in JSON-LD </PreviewTitle>
+            <SyntaxHighlighter
+              language="json"
+              style={vs2015}
+              customStyle={{
+                backgroundColor: "transparent",
+                padding: "0",
+                margin: "0",
+                fontSize: "0.9em",
+              }}
+            >
+              {JSON.stringify(jsonLdPreview, null, 2)}
+            </SyntaxHighlighter>
+          </PreviewContainer>
+        </Col>
+      </Row>
+    </StyledForm>
   );
 }
 
