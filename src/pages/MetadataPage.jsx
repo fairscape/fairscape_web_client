@@ -7,6 +7,8 @@ import ButtonGroupComponent from "../components/MetadataViewer/ButtonGroupCompon
 import MetadataComponent from "../components/MetadataViewer/MetadataComponent";
 import SerializationComponent from "../components/MetadataViewer/SerializationComponent";
 import EvidenceGraphComponent from "../components/MetadataViewer/EvidenceGraphComponent";
+import Header from "../components/header_footer/Header";
+import Footer from "../components/header_footer/Footer";
 
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
@@ -31,6 +33,7 @@ const MetadataPage = () => {
       dataset: "Dataset",
       software: "Software",
       schema: "Schema",
+      computation: "Computation",
     };
     return typeMap[rawType.toLowerCase()] || rawType;
   };
@@ -174,24 +177,28 @@ const MetadataPage = () => {
   const json = JSON.stringify(metadata, null, 2);
 
   return (
-    <div className="container">
-      <h3>
-        {mapType(type)} Metadata: {metadata.guid}
-      </h3>
-      <ButtonGroupComponent
-        showMetadata={showMetadata}
-        showJSON={showJSON}
-        showEvidenceGraph={showEvidenceGraph}
-      />
-      {view === "metadata" && (
-        <MetadataComponent metadata={metadata} type={mapType(type)} />
-      )}
-      {view === "serialization" && (
-        <SerializationComponent json={json} rdfXml={rdfXml} turtle={turtle} />
-      )}
-      {view === "evidenceGraph" && !evidenceGraphLoading && (
-        <EvidenceGraphComponent evidenceGraph={evidenceGraph} />
-      )}
+    <div>
+      <Header />
+      <div className="container">
+        <h3>
+          {mapType(type)} Metadata: {metadata.guid}
+        </h3>
+        <ButtonGroupComponent
+          showMetadata={showMetadata}
+          showJSON={showJSON}
+          showEvidenceGraph={showEvidenceGraph}
+        />
+        {view === "metadata" && (
+          <MetadataComponent metadata={metadata} type={mapType(type)} />
+        )}
+        {view === "serialization" && (
+          <SerializationComponent json={json} rdfXml={rdfXml} turtle={turtle} />
+        )}
+        {view === "evidenceGraph" && !evidenceGraphLoading && (
+          <EvidenceGraphComponent evidenceGraph={evidenceGraph} />
+        )}
+      </div>
+      <Footer />
     </div>
   );
 };

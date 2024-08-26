@@ -20,6 +20,17 @@ export const DatasetProperties = [
   { name: "Distributions", key: "distribution" },
 ];
 
+export const ComputationProperties = [
+  { name: "Name", key: "name" },
+  { name: "Persistent Identifier", key: "@id" },
+  { name: "Description", key: "description" },
+  { name: "Author", key: "author" },
+  { name: "Owner", key: "owner" },
+  { name: "Used Datasets", key: "usedDataset" },
+  { name: "Used Software", key: "usedSoftware" },
+  { name: "Keywords", key: "keywords" },
+];
+
 export const SoftwareProperties = [
   { name: "Name", key: "title" },
   { name: "Persistent Identifier", key: "@id" },

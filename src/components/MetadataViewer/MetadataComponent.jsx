@@ -6,6 +6,7 @@ import {
   DatasetProperties,
   SoftwareProperties,
   SchemaProperties,
+  ComputationProperties,
 } from "./metadataProperties";
 
 const getPropertyList = (type) => {
@@ -18,6 +19,8 @@ const getPropertyList = (type) => {
       return SoftwareProperties;
     case "Schema":
       return SchemaProperties;
+    case "Computation":
+      return ComputationProperties;
     default:
       return [];
   }
