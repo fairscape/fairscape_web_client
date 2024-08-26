@@ -22,10 +22,13 @@ const Header = () => {
               <Link to="/">Home</Link>
             </li>
             <li>
-              <a href="#">Documentation</a>
-            </li>
-            <li>
-              <a href="#">Contact</a>
+              <a
+                href="https://github.com/fairscape/mds_python"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Documentation
+              </a>
             </li>
             {!isLoggedIn && (
               <li>
