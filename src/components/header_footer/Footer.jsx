@@ -8,14 +8,6 @@ const Footer = () => {
         <div className="footer-meta__inner">
           <div className="copyright">
             <div className="highlight">Copyright © University of Virginia</div>
-            Made with
-            <a
-              href="https://squidfunk.github.io/mkdocs-material/"
-              target="_blank"
-              rel="noopener"
-            >
-              Material for MkDocs
-            </a>
           </div>
           <div className="social">
             <a
