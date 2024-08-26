@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import jsonld from "jsonld";
 import N3 from "n3";
@@ -9,12 +9,14 @@ import SerializationComponent from "../components/MetadataViewer/SerializationCo
 import EvidenceGraphComponent from "../components/MetadataViewer/EvidenceGraphComponent";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/api";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 
 const MetadataPage = () => {
   const { type: rawType } = useParams();
   const location = useLocation();
-  const ark = location.pathname.split("/").slice(2).join("/");
+  const navigate = useNavigate();
+  const [type, setType] = useState(rawType);
+  const [ark, setArk] = useState("");
   const [view, setView] = useState("metadata");
   const [metadata, setMetadata] = useState(null);
   const [evidenceGraph, setEvidenceGraph] = useState(null);
@@ -33,7 +35,19 @@ const MetadataPage = () => {
     return typeMap[rawType.toLowerCase()] || rawType;
   };
 
-  const type = mapType(rawType);
+  const extractRawType = (type) => {
+    if (typeof type === "string") {
+      if (type.startsWith("http://") || type.startsWith("https://")) {
+        const parts = type.split(/[/#]/);
+        return parts[parts.length - 1].toLowerCase();
+      }
+      return type.toLowerCase();
+    }
+    if (Array.isArray(type) && type.length > 0) {
+      return extractRawType(type[0]);
+    }
+    return null;
+  };
 
   function filter_nonprov(d, keys_to_keep) {
     if (typeof d === "object" && d !== null) {
@@ -52,33 +66,48 @@ const MetadataPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        // Get the token from localStorage
         const token = localStorage.getItem("token");
-
-        // Create headers object with the token if it exists
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-        const metadataResponse = await axios.get(
-          `${API_URL}/${rawType}/${ark}`,
-          { headers }
-        );
+        let currentType = type;
+        let currentArk = location.pathname.split("/").slice(2).join("/");
+
+        // Check if the type is actually an ARK
+        if (/^ark:\d{5}/.test(rawType)) {
+          currentArk = location.pathname.slice(1);
+          const response = await axios.get(`${API_URL}/${currentArk}`, {
+            headers,
+          });
+          const data = response.data;
+          if (data && data["@type"]) {
+            currentType = extractRawType(data["@type"]);
+            setType(currentType);
+            navigate(`/${currentType}/${currentArk}`, { replace: true });
+          } else {
+            throw new Error("Unable to determine the type of the metadata");
+          }
+        }
+
+        setArk(currentArk);
+
+        const metadataResponse = await axios.get(`${API_URL}/${currentArk}`, {
+          headers,
+        });
         const metadataData = metadataResponse.data;
-        console.log("Fetched metadata:", metadataData);
 
         if (!metadataData || typeof metadataData !== "object") {
-          console.error("Invalid metadata format:", metadataData);
-          return;
+          throw new Error("Invalid metadata format");
         }
 
         setMetadata(metadataData);
-        document.title = `Fairscape ${type} Metadata`;
+        document.title = `Fairscape ${mapType(currentType)} Metadata`;
 
         try {
           const nquads = await jsonld.toRDF(metadataData, {
             format: "application/n-quads",
           });
-          console.log("Successfully converted to N-Quads");
 
           const parser = new N3.Parser();
           const writer = new N3.Writer({ format: "text/turtle" });
@@ -93,16 +122,14 @@ const MetadataPage = () => {
           setRdfXml(rdfXmlData);
         } catch (error) {
           console.error("Error converting JSON-LD to RDF:", error);
-          console.log("Metadata data:", metadataData);
         }
 
         try {
           const evidenceGraphResponse = await axios.get(
-            `${API_URL}/evidencegraph/${ark}`,
+            `${API_URL}/evidencegraph/${currentArk}`,
             { headers }
           );
           setEvidenceGraph(evidenceGraphResponse.data);
-          console.log("Evidence Graph:", evidenceGraphResponse.data);
         } catch (error) {
           console.error("Error fetching evidence graph:", error);
           const keys_to_keep = [
@@ -119,7 +146,6 @@ const MetadataPage = () => {
           ];
           const filteredMetadata = filter_nonprov(metadataData, keys_to_keep);
           setEvidenceGraph(filteredMetadata);
-          console.log("Evidence Graph:", filteredMetadata);
         } finally {
           setEvidenceGraphLoading(false);
         }
@@ -131,7 +157,7 @@ const MetadataPage = () => {
     };
 
     fetchData();
-  }, [rawType, ark, type]);
+  }, [rawType, location.pathname, navigate]);
 
   const showMetadata = () => setView("metadata");
   const showJSON = () => setView("serialization");
@@ -150,7 +176,7 @@ const MetadataPage = () => {
   return (
     <div className="container">
       <h3>
-        {type} Metadata: {metadata.guid}
+        {mapType(type)} Metadata: {metadata.guid}
       </h3>
       <ButtonGroupComponent
         showMetadata={showMetadata}
@@ -158,7 +184,7 @@ const MetadataPage = () => {
         showEvidenceGraph={showEvidenceGraph}
       />
       {view === "metadata" && (
-        <MetadataComponent metadata={metadata} type={type} />
+        <MetadataComponent metadata={metadata} type={mapType(type)} />
       )}
       {view === "serialization" && (
         <SerializationComponent json={json} rdfXml={rdfXml} turtle={turtle} />

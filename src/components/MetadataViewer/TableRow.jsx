@@ -1,19 +1,24 @@
 import React, { useState } from "react";
 
-const FAIRSCAPE_URL = "http://example.com/"; // Replace with your actual URL
+const API_URL =
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:5173/"; // Replace with your actual URL
 const urlPattern = /^(http|https):\/\/[^\s]+/;
 const identifierPattern = /^ark:[0-9]{5}\/.*$/;
+const arkInUrlPattern = /ark:[0-9]{5}\/[^\s/]+/;
 
 const Link = ({ value, download = false }) => {
   if (download) {
     return (
-      <a href={`${FAIRSCAPE_URL}rocrate/archived/download/${value}`}>
-        Download Link
-      </a>
+      <a href={`${API_URL}rocrate/archived/download/${value}`}>Download Link</a>
     );
   } else if (identifierPattern.test(value)) {
-    return <a href={`${FAIRSCAPE_URL}${value}`}>{value}</a>;
+    return <a href={`${API_URL}${value}`}>{value}</a>;
   } else if (urlPattern.test(value)) {
+    const arkMatch = value.match(arkInUrlPattern);
+    if (arkMatch) {
+      const ark = arkMatch[0];
+      return <a href={`${API_URL}${ark}`}>{value}</a>;
+    }
     return <a href={value}>{value}</a>;
   }
   return value;
