@@ -1,29 +1,98 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 const API_URL =
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api/";
+const FE_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:5173/"; // Replace with your actual URL
+
 const urlPattern = /^(http|https):\/\/[^\s]+/;
 const identifierPattern = /^ark:[0-9]{5}\/.*$/;
 const arkInUrlPattern = /ark:[0-9]{5}\/[^\s/]+/;
+const rocrateDowloadPattern = new RegExp(`^${API_URL}rocrate/download/`);
 
-const Link = ({ value, download = false }) => {
-  if (download) {
+//This function adds hyperlinks to properties that match various patterns
+//Also for download links it adds handling to perform the downlaod with the right token
+const Link = ({ value }) => {
+  const getToken = () => {
+    return localStorage.getItem("token") || "";
+  };
+
+  const handleDownload = async (downloadUrl) => {
+    try {
+      const token = getToken();
+      const response = await axios({
+        url: downloadUrl,
+        method: "GET",
+        responseType: "blob",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Try to get filename from Content-Disposition header
+      const contentDisposition = response.headers["content-disposition"];
+      let filename = null;
+      if (contentDisposition) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, "");
+        }
+      }
+
+      // If filename not found in header, extract from URL
+      if (!filename) {
+        const urlParts = downloadUrl.split("/");
+        filename = urlParts[urlParts.length - 1];
+        // Add .zip extension if it's not already there
+        if (!filename.toLowerCase().endsWith(".zip")) {
+          filename += ".zip";
+        }
+      }
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response data:", error.response.data);
+      }
+      alert(`Download failed. Please try again. Error: ${error.message}`);
+    }
+  };
+
+  if (rocrateDowloadPattern.test(value)) {
     return (
-      <a href={`${API_URL}rocrate/archived/download/${value}`}>Download Link</a>
+      <a
+        href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          handleDownload(value);
+        }}
+      >
+        Download Link
+      </a>
     );
   } else if (identifierPattern.test(value)) {
-    return <a href={`${API_URL}${value}`}>{value}</a>;
+    return <a href={`${FE_URL}${value}`}>{value}</a>;
   } else if (urlPattern.test(value)) {
     const arkMatch = value.match(arkInUrlPattern);
     if (arkMatch) {
       const ark = arkMatch[0];
-      return <a href={`${API_URL}${ark}`}>{value}</a>;
+      return <a href={`${FE_URL}${ark}`}>{value}</a>;
     }
     return <a href={value}>{value}</a>;
   }
   return value;
 };
-
 const Accordion = ({
   title,
   children,

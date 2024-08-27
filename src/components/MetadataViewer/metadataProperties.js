@@ -5,7 +5,7 @@ export const ROCrateProperties = [
   { name: "Description", key: "description" },
   { name: "Source Organization", key: "sourceOrganization" },
   { name: "Contains", key: "@graph" },
-  { name: "Distributions", key: "distribution" },
+  { name: "Download Link", key: "download" },
 ];
 
 export const DatasetProperties = [

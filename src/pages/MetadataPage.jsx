@@ -67,6 +67,8 @@ const MetadataPage = () => {
     return d;
   }
 
+  //This part is confusing so it can handle type/ark and just ark/
+  //if it's just ark/ it reroutes it to type/ark based on the metadata type
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -98,10 +100,15 @@ const MetadataPage = () => {
         const metadataResponse = await axios.get(`${API_URL}/${currentArk}`, {
           headers,
         });
-        const metadataData = metadataResponse.data;
+        let metadataData = metadataResponse.data;
 
         if (!metadataData || typeof metadataData !== "object") {
           throw new Error("Invalid metadata format");
+        }
+
+        // Add download property for ROCrate
+        if (currentType.toLowerCase() === "rocrate") {
+          metadataData.download = `${API_URL}/rocrate/download/${currentArk}`;
         }
 
         setMetadata(metadataData);
@@ -128,25 +135,25 @@ const MetadataPage = () => {
         }
 
         try {
-          const evidenceGraphResponse = await axios.get(
-            `${API_URL}/evidencegraph/${currentArk}`,
-            { headers }
-          );
-          setEvidenceGraph(evidenceGraphResponse.data);
-        } catch (error) {
-          console.error("Error fetching evidence graph:", error);
-          const keys_to_keep = [
-            "@id",
-            "name",
-            "description",
-            "@type",
-            "generatedBy",
-            "isPartOf",
-            "@graph",
-            "usedByComputation",
-            "usedSoftware",
-            "usedDataset",
-          ];
+          //   const evidenceGraphResponse = await axios.get(
+          //     `${API_URL}/evidencegraph/${currentArk}`,
+          //     { headers }
+          //   );
+          //   setEvidenceGraph(evidenceGraphResponse.data);
+          // } catch (error) {
+          //   console.error("Error fetching evidence graph:", error);
+          //   const keys_to_keep = [
+          //     "@id",
+          //     "name",
+          //     "description",
+          //     "@type",
+          //     "generatedBy",
+          //     "isPartOf",
+          //     "@graph",
+          //     "usedByComputation",
+          //     "usedSoftware",
+          //     "usedDataset",
+          //   ];
           const filteredMetadata = filter_nonprov(metadataData, keys_to_keep);
           setEvidenceGraph(filteredMetadata);
         } finally {
@@ -177,26 +184,32 @@ const MetadataPage = () => {
   const json = JSON.stringify(metadata, null, 2);
 
   return (
-    <div>
+    <div id="root">
       <Header />
-      <div className="container">
-        <h3>
-          {mapType(type)} Metadata: {metadata.guid}
-        </h3>
-        <ButtonGroupComponent
-          showMetadata={showMetadata}
-          showJSON={showJSON}
-          showEvidenceGraph={showEvidenceGraph}
-        />
-        {view === "metadata" && (
-          <MetadataComponent metadata={metadata} type={mapType(type)} />
-        )}
-        {view === "serialization" && (
-          <SerializationComponent json={json} rdfXml={rdfXml} turtle={turtle} />
-        )}
-        {view === "evidenceGraph" && !evidenceGraphLoading && (
-          <EvidenceGraphComponent evidenceGraph={evidenceGraph} />
-        )}
+      <div className="page-content">
+        <div className="container">
+          <h3>
+            {mapType(type)} Metadata: {metadata.guid}
+          </h3>
+          <ButtonGroupComponent
+            showMetadata={showMetadata}
+            showJSON={showJSON}
+            showEvidenceGraph={showEvidenceGraph}
+          />
+          {view === "metadata" && (
+            <MetadataComponent metadata={metadata} type={mapType(type)} />
+          )}
+          {view === "serialization" && (
+            <SerializationComponent
+              json={json}
+              rdfXml={rdfXml}
+              turtle={turtle}
+            />
+          )}
+          {view === "evidenceGraph" && !evidenceGraphLoading && (
+            <EvidenceGraphComponent evidenceGraph={evidenceGraph} />
+          )}
+        </div>
       </div>
       <Footer />
     </div>
