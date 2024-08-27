@@ -142,18 +142,18 @@ const MetadataPage = () => {
           //   setEvidenceGraph(evidenceGraphResponse.data);
           // } catch (error) {
           //   console.error("Error fetching evidence graph:", error);
-          //   const keys_to_keep = [
-          //     "@id",
-          //     "name",
-          //     "description",
-          //     "@type",
-          //     "generatedBy",
-          //     "isPartOf",
-          //     "@graph",
-          //     "usedByComputation",
-          //     "usedSoftware",
-          //     "usedDataset",
-          //   ];
+          const keys_to_keep = [
+            "@id",
+            "name",
+            "description",
+            "@type",
+            "generatedBy",
+            "isPartOf",
+            "@graph",
+            "usedByComputation",
+            "usedSoftware",
+            "usedDataset",
+          ];
           const filteredMetadata = filter_nonprov(metadataData, keys_to_keep);
           setEvidenceGraph(filteredMetadata);
         } finally {
