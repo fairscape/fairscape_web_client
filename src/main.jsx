@@ -5,6 +5,7 @@ import MetadataPage from "./pages/MetadataPage";
 import UploadOptionsPage from "./pages/UploadOptionsPage";
 import UploadPage from "./pages/UploadPage";
 import HomePage from "./pages/HomePage";
+import MyDashboard from "./pages/MyDashboard";
 import "./global.css";
 import "./components/header_footer/Header.css";
 import Login from "./components/Login/LoginComponent";
@@ -18,6 +19,7 @@ ReactDOM.render(
         <Route path="/upload/:type" element={<UploadPage />} />
         <Route path="/:type/*" element={<MetadataPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<MyDashboard />} />
       </Routes>
     </Router>
   </React.StrictMode>,

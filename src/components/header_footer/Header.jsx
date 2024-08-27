@@ -22,6 +22,9 @@ const Header = () => {
               <Link to="/">Home</Link>
             </li>
             <li>
+              <Link to="/dashboard">Dashboard</Link>
+            </li>
+            <li>
               <a
                 href="https://github.com/fairscape/mds_python"
                 target="_blank"

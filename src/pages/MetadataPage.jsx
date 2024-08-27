@@ -75,7 +75,6 @@ const MetadataPage = () => {
       try {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
         let currentType = type;
         let currentArk = location.pathname.split("/").slice(2).join("/");
 
@@ -96,12 +95,10 @@ const MetadataPage = () => {
         }
 
         setArk(currentArk);
-
         const metadataResponse = await axios.get(`${API_URL}/${currentArk}`, {
           headers,
         });
         let metadataData = metadataResponse.data;
-
         if (!metadataData || typeof metadataData !== "object") {
           throw new Error("Invalid metadata format");
         }
@@ -110,7 +107,6 @@ const MetadataPage = () => {
         if (currentType.toLowerCase() === "rocrate") {
           metadataData.download = `${API_URL}/rocrate/download/${currentArk}`;
         }
-
         setMetadata(metadataData);
         document.title = `Fairscape ${mapType(currentType)} Metadata`;
 
@@ -118,14 +114,12 @@ const MetadataPage = () => {
           const nquads = await jsonld.toRDF(metadataData, {
             format: "application/n-quads",
           });
-
           const parser = new N3.Parser();
           const writer = new N3.Writer({ format: "text/turtle" });
           parser.parse(nquads, (error, quad, prefixes) => {
             if (quad) writer.addQuad(quad);
             else writer.end((error, result) => setTurtle(result));
           });
-
           const rdfXmlData = await jsonld.toRDF(metadataData, {
             format: "application/rdf+xml",
           });
@@ -135,13 +129,7 @@ const MetadataPage = () => {
         }
 
         try {
-          //   const evidenceGraphResponse = await axios.get(
-          //     `${API_URL}/evidencegraph/${currentArk}`,
-          //     { headers }
-          //   );
-          //   setEvidenceGraph(evidenceGraphResponse.data);
-          // } catch (error) {
-          //   console.error("Error fetching evidence graph:", error);
+          let evidenceGraphData;
           const keys_to_keep = [
             "@id",
             "name",
@@ -153,7 +141,24 @@ const MetadataPage = () => {
             "usedByComputation",
             "usedSoftware",
             "usedDataset",
+            "evidence",
           ];
+
+          if (metadataData.hasEvidenceGraph) {
+            const evidenceGraphResponse = await axios.get(
+              `${API_URL}/${metadataData.hasEvidenceGraph}`,
+              { headers }
+            );
+            evidenceGraphData = filter_nonprov(
+              evidenceGraphResponse.data,
+              keys_to_keep
+            );
+          } else {
+            evidenceGraphData = filter_nonprov(metadataData, keys_to_keep);
+          }
+          setEvidenceGraph(evidenceGraphData);
+        } catch (error) {
+          console.error("Error fetching evidence graph:", error);
           const filteredMetadata = filter_nonprov(metadataData, keys_to_keep);
           setEvidenceGraph(filteredMetadata);
         } finally {
@@ -165,7 +170,6 @@ const MetadataPage = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [rawType, location.pathname, navigate]);
 
