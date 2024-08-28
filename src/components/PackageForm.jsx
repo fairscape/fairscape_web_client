@@ -62,19 +62,37 @@ function PackageForm({ rocratePath, setRocratePath, onComplete }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setOutput("Starting to zip RO-Crate...");
+    setOutput("Starting to process RO-Crate...");
     try {
-      const result = await ipcRenderer.invoke("zip-rocrate", rocratePath);
-      if (result.success) {
-        setOutput(`RO-Crate successfully zipped at: ${result.zipPath}`);
-        // Call onComplete after successful packaging
-        onComplete(result.zipPath);
+      // First, generate evidence graphs
+      const evidenceGraphResult = await ipcRenderer.invoke(
+        "generate-evidence-graphs",
+        rocratePath
+      );
+      if (evidenceGraphResult.success) {
+        setOutput(
+          (prevOutput) =>
+            prevOutput + "\nEvidence graphs generated successfully."
+        );
       } else {
-        setOutput(`Error zipping RO-Crate: ${result.error}`);
+        throw new Error(evidenceGraphResult.error);
+      }
+
+      // Then, zip the updated RO-Crate
+      const zipResult = await ipcRenderer.invoke("zip-rocrate", rocratePath);
+      if (zipResult.success) {
+        setOutput(
+          (prevOutput) =>
+            prevOutput +
+            `\nRO-Crate successfully zipped at: ${zipResult.zipPath}`
+        );
+        onComplete(zipResult.zipPath);
+      } else {
+        throw new Error(zipResult.error);
       }
     } catch (error) {
-      console.error("Error zipping RO-Crate:", error);
-      setOutput(`Error: ${error.message}`);
+      console.error("Error processing RO-Crate:", error);
+      setOutput((prevOutput) => prevOutput + `\nError: ${error.message}`);
     }
   };
 
@@ -105,7 +123,7 @@ function PackageForm({ rocratePath, setRocratePath, onComplete }) {
           Browse
         </BrowseButton>
       </StyledFormGroup>
-      <StyledButton type="submit">Package RO-Crate</StyledButton>
+      <StyledButton type="submit">Process and Package RO-Crate</StyledButton>
       {output && <OutputContainer>{output}</OutputContainer>}
     </StyledForm>
   );

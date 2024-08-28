@@ -92,7 +92,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
         "@vocab": "https://schema.org/",
         EVI: "https://w3id.org/EVI#",
       },
-      "@id": guid,
+      "@id": null,
       "@type": "https://w3id.org/EVI#Computation",
       name: formData.name,
       description: formData.description,
@@ -109,9 +109,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
   const handleSubmit = () => {
     const options = {
       ...formData,
-      guid: `computation-${formData.name
-        .toLowerCase()
-        .replace(/\s+/g, "-")}-${Date.now()}`,
+      guid: null,
       command: "",
       "used-software": fileColumns.software.map((file) => file.guid),
       "used-dataset": fileColumns.inputs.map((file) => file.guid),

@@ -3,6 +3,9 @@ const path = require("path");
 const { exec } = require("child_process");
 const fs = require("fs");
 const archiver = require("archiver");
+const {
+  generateEvidenceGraphs,
+} = require("./src/rocrate/evidence_graph_builder");
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -20,7 +23,6 @@ function createWindow() {
   const indexPath = app.isPackaged
     ? path.join(process.resourcesPath, "app.asar", "index.html")
     : path.join(__dirname, "index.html");
-
   win.loadFile(indexPath);
 
   // Open DevTools in development mode
@@ -31,7 +33,6 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
-
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -64,8 +65,29 @@ ipcMain.on("execute-command", (event, command) => {
   });
 });
 
+// Add IPC handler for generating evidence graphs
+ipcMain.handle("generate-evidence-graphs", async (event, rocratePath) => {
+  try {
+    const metadataPath = path.join(rocratePath, "ro-crate-metadata.json");
+    const metadata = JSON.parse(
+      await fs.promises.readFile(metadataPath, "utf8")
+    );
+
+    const updatedMetadata = generateEvidenceGraphs(metadata);
+
+    await fs.promises.writeFile(
+      metadataPath,
+      JSON.stringify(updatedMetadata, null, 2)
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error generating evidence graphs:", error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Add IPC handler for zipping RO-Crate
-// Replace the existing ipcMain.on("zip-rocrate", ...) with this:
 ipcMain.handle("zip-rocrate", async (event, rocratePath) => {
   return new Promise((resolve, reject) => {
     // Get the name of the input folder
@@ -79,15 +101,12 @@ ipcMain.handle("zip-rocrate", async (event, rocratePath) => {
     const archive = archiver("zip", {
       zlib: { level: 9 }, // Sets the compression level.
     });
-
     output.on("close", function () {
       resolve({ success: true, zipPath: output.path });
     });
-
     archive.on("error", function (err) {
       reject({ success: false, error: err.message });
     });
-
     archive.pipe(output);
     // Add the contents of the folder to the zip file,
     // using the folder name as the root in the zip
@@ -102,3 +121,5 @@ ipcMain.handle("open-directory-dialog", async () => {
   });
   return result;
 });
+
+module.exports = { createWindow };
