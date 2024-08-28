@@ -4,7 +4,7 @@ import Header from "../header_footer/Header";
 import "./Login.css";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/api";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -15,7 +15,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
     const formData = new FormData();
     formData.append("username", username);
     formData.append("password", password);
@@ -25,7 +24,6 @@ const Login = () => {
         method: "POST",
         body: formData,
       });
-
       console.log("Response status:", response.status);
       const responseData = await response.json();
       console.log("Response data:", responseData);
@@ -33,7 +31,7 @@ const Login = () => {
       if (response.ok) {
         localStorage.setItem("token", responseData.access_token);
         console.log("Login successful, token stored");
-        navigate("/"); // Redirect to home page after successful login
+        navigate("/dashboard"); // Redirect to dashboard after successful login
       } else {
         setError(responseData.message || "Login failed");
         console.error("Login failed:", responseData.message);

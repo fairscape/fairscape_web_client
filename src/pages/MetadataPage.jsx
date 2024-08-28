@@ -11,7 +11,7 @@ import Header from "../components/header_footer/Header";
 import Footer from "../components/header_footer/Footer";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/api";
 
 const MetadataPage = () => {
   const { type: rawType } = useParams();
