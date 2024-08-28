@@ -84,7 +84,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
   };
 
   const updateJsonLdPreview = () => {
-    const guid = `computation-${formData.name
+    const guid = `ark:59852/computation-${formData.name
       .toLowerCase()
       .replace(/\s+/g, "-")}-${Date.now()}`;
     const preview = {
@@ -92,7 +92,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
         "@vocab": "https://schema.org/",
         EVI: "https://w3id.org/EVI#",
       },
-      "@id": null,
+      "@id": guid,
       "@type": "https://w3id.org/EVI#Computation",
       name: formData.name,
       description: formData.description,
@@ -107,9 +107,12 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
   };
 
   const handleSubmit = () => {
+    const guid = `ark:59852/computation-${formData.name
+      .toLowerCase()
+      .replace(/\s+/g, "-")}-${Date.now()}`;
     const options = {
       ...formData,
-      guid: null,
+      guid,
       command: "",
       "used-software": fileColumns.software.map((file) => file.guid),
       "used-dataset": fileColumns.inputs.map((file) => file.guid),
