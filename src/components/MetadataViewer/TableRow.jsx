@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import axios from "axios";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/api/";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/api/"; //end with slash
 const FE_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/"; 
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/"; //end with a slash
 
 const urlPattern = /^(http|https):\/\/[^\s]+/;
 const identifierPattern = /^ark:[0-9]{5}\/.*$/;
