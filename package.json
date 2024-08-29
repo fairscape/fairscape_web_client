@@ -73,7 +73,8 @@
       "dist/**/*",
       "node_modules/**/*",
       "package.json",
-      "index.html"
+      "index.html",
+      "src/**/*"
     ],
     "directories": {
       "output": "release"

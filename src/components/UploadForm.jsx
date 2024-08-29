@@ -121,7 +121,18 @@ function UploadForm({ packagedPath }) {
     if (crate) {
       formData.append("crate", crate);
     } else if (packagedPath) {
-      formData.append("cratePath", packagedPath);
+      // Create a new File object from the packagedPath
+      try {
+        const response = await fetch(packagedPath);
+        const blob = await response.blob();
+        const file = new File([blob], packagedPath.split("/").pop(), {
+          type: "application/zip",
+        });
+        formData.append("crate", file);
+      } catch (error) {
+        setOutput(`Error creating File from packagedPath: ${error.message}`);
+        return;
+      }
     }
 
     try {
