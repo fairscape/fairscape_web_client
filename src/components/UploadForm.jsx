@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Form, Button, Modal } from "react-bootstrap";
 import axios from "axios";
 import LoginComponent from "./LoginComponent";
+import StatusTracker from "./StatusTracker";
 
 const StyledForm = styled(Form)`
   background-color: #282828;
@@ -55,16 +56,6 @@ const StyledButton = styled(Button)`
   }
 `;
 
-const OutputContainer = styled.pre`
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #3e3e3e;
-  border-radius: 5px;
-  color: #ffffff;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-`;
-
 const StyledModal = styled(Modal)`
   .modal-content {
     background-color: #282828;
@@ -74,17 +65,16 @@ const StyledModal = styled(Modal)`
 
 function UploadForm({ packagedPath }) {
   const [crate, setCrate] = useState(null);
-  const [output, setOutput] = useState("");
   const [crateName, setCrateName] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [submissionUUID, setSubmissionUUID] = useState(null);
   const crateInputRef = useRef(null);
 
   useEffect(() => {
     if (packagedPath) {
       const fileName = packagedPath.split("/").pop();
       setCrateName(fileName);
-      setOutput(`RO-Crate selected: ${fileName}`);
     }
     checkLoginStatus();
   }, [packagedPath]);
@@ -98,7 +88,6 @@ function UploadForm({ packagedPath }) {
     const selectedCrate = e.target.files[0];
     setCrate(selectedCrate);
     setCrateName(selectedCrate ? selectedCrate.name : "");
-    setOutput(selectedCrate ? `RO-Crate selected: ${selectedCrate.name}` : "");
   };
 
   const handleCrateButtonClick = () => {
@@ -115,16 +104,15 @@ function UploadForm({ packagedPath }) {
     }
 
     if (!crate && !packagedPath) {
-      setOutput("Please select an RO-Crate to upload.");
+      console.error("Please select an RO-Crate to upload.");
       return;
     }
-    setOutput("Starting upload...");
+
     const formData = new FormData();
 
     if (crate) {
       formData.append("crate", crate);
     } else if (packagedPath) {
-      // Create a new File object from the packagedPath
       try {
         const response = await fetch(packagedPath);
         const blob = await response.blob();
@@ -133,7 +121,9 @@ function UploadForm({ packagedPath }) {
         });
         formData.append("crate", file);
       } catch (error) {
-        setOutput(`Error creating File from packagedPath: ${error.message}`);
+        console.error(
+          `Error creating File from packagedPath: ${error.message}`
+        );
         return;
       }
     }
@@ -148,24 +138,11 @@ function UploadForm({ packagedPath }) {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            setOutput(`Upload progress: ${percentCompleted}%`);
-          },
         }
       );
-      setOutput(JSON.stringify(response.data, null, 2));
+      setSubmissionUUID(response.data.transactionFolder);
     } catch (error) {
       console.error("Upload error:", error);
-      setOutput(
-        `Error: ${error.message}\n\nResponse data: ${JSON.stringify(
-          error.response?.data,
-          null,
-          2
-        )}`
-      );
     }
   };
 
@@ -199,7 +176,7 @@ function UploadForm({ packagedPath }) {
           </CrateSelectionButton>
         </StyledFormGroup>
         <StyledButton type="submit">Upload RO-Crate</StyledButton>
-        {output && <OutputContainer>{output}</OutputContainer>}
+        {submissionUUID && <StatusTracker submissionUUID={submissionUUID} />}
       </StyledForm>
 
       <StyledModal show={showLoginModal} onHide={handleCloseLoginModal}>
