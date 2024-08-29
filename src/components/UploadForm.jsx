@@ -107,10 +107,13 @@ function UploadForm({ packagedPath }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    checkLoginStatus();
     if (!isLoggedIn) {
       setShowLoginModal(true);
       return;
     }
+
     if (!crate && !packagedPath) {
       setOutput("Please select an RO-Crate to upload.");
       return;
