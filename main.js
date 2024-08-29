@@ -24,11 +24,6 @@ function createWindow() {
     ? path.join(process.resourcesPath, "app.asar", "index.html")
     : path.join(__dirname, "index.html");
   win.loadFile(indexPath);
-
-  // Open DevTools in development mode
-  if (!app.isPackaged) {
-    win.webContents.openDevTools();
-  }
 }
 
 app.whenReady().then(() => {
