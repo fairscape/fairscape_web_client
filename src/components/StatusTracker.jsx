@@ -28,9 +28,10 @@ const ProgressBar = styled.div`
   left: 0;
   top: 0;
   height: 100%;
-  background: linear-gradient(to right, #007bff, #28a745);
+  background: ${(props) =>
+    props.failed ? "#dc3545" : "linear-gradient(to right, #007bff, #28a745)"};
   width: ${(props) => props.progress}%;
-  transition: width 0.5s ease-in-out;
+  transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
 `;
 
 const StepContainer = styled.div`
@@ -67,6 +68,7 @@ const StatusTracker = ({ submissionUUID }) => {
   const [status, setStatus] = useState("in progress");
   const [error, setError] = useState(null);
   const [details, setDetails] = useState(null);
+  const [success, setSuccess] = useState(true);
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -95,15 +97,22 @@ const StatusTracker = ({ submissionUUID }) => {
       console.log("Status response:", response.data);
       setStatus(response.data.status);
       setDetails(response.data);
+      setSuccess(response.data.success);
       if (response.data.error) {
         setError(response.data.error);
       }
-      if (response.data.completed || response.data.error) {
+      if (
+        response.data.completed ||
+        response.data.error ||
+        !response.data.success
+      ) {
         clearInterval(intervalRef.current);
       }
     } catch (error) {
       console.error("Status check error:", error);
       setError("Failed to check upload status");
+      setStatus("failed");
+      setSuccess(false);
       clearInterval(intervalRef.current);
     }
   };
@@ -122,7 +131,11 @@ const StatusTracker = ({ submissionUUID }) => {
       progress = 66;
       break;
     case "Finished":
-      currentStep = 3;
+      currentStep = success ? 3 : -1;
+      progress = 100;
+      break;
+    case "failed":
+      currentStep = -1;
       progress = 100;
       break;
     default:
@@ -130,15 +143,13 @@ const StatusTracker = ({ submissionUUID }) => {
       progress = 0;
   }
 
-  if (error) {
-    progress = 100;
-  }
+  const isFailed = status === "Failed" || error || !success;
 
   return (
     <StatusContainer>
       <StatusTitle>RO-Crate Upload Progress</StatusTitle>
       <ProgressBarContainer>
-        <ProgressBar progress={progress} />
+        <ProgressBar progress={progress} failed={isFailed} />
         <StepContainer>
           {steps.map((step, index) => (
             <Step key={index} active={index <= currentStep}>
@@ -147,8 +158,8 @@ const StatusTracker = ({ submissionUUID }) => {
           ))}
         </StepContainer>
       </ProgressBarContainer>
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-      {details && (
+      {isFailed && <ErrorMessage>{error || "Upload failed"}</ErrorMessage>}
+      {details && !isFailed && (
         <StatusDetails>
           <p>Status: {status}</p>
           <p>Completed: {details.completed ? "Yes" : "No"}</p>
