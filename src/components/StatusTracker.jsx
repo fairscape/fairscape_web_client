@@ -29,7 +29,9 @@ const ProgressBar = styled.div`
   top: 0;
   height: 100%;
   background: ${(props) =>
-    props.failed ? "#dc3545" : "linear-gradient(to right, #007bff, #28a745)"};
+    props.failed === "true"
+      ? "#dc3545"
+      : "linear-gradient(to right, #007bff, #28a745)"};
   width: ${(props) => props.progress}%;
   transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
 `;
@@ -64,15 +66,21 @@ const StatusDetails = styled.div`
   margin-top: 15px;
 `;
 
-const StatusTracker = ({ submissionUUID }) => {
+const StatusTracker = ({ submissionUUID, uploadError }) => {
   const [status, setStatus] = useState("in progress");
   const [error, setError] = useState(null);
   const [details, setDetails] = useState(null);
-  const [success, setSuccess] = useState(true);
+  const [success, setSuccess] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    if (submissionUUID) {
+    if (uploadError) {
+      setStatus("Failed");
+      setError(`Upload Failed: Status ${uploadError.status} - ${uploadError.message}`);
+      setSuccess(false);
+      setCompleted(true);
+    } else if (submissionUUID) {
       checkUploadStatus();
       intervalRef.current = setInterval(checkUploadStatus, 2000);
     }
@@ -81,13 +89,15 @@ const StatusTracker = ({ submissionUUID }) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [submissionUUID]);
+  }, [submissionUUID, uploadError]);
 
   const checkUploadStatus = async () => {
+    if (!submissionUUID) return;
+
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.get(
-        `https://fairscape.net/api/rocrate/upload/status/${submissionUUID}`,
+        `http://localhost:8080/api/rocrate/upload/status/${submissionUUID}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -98,21 +108,20 @@ const StatusTracker = ({ submissionUUID }) => {
       setStatus(response.data.status);
       setDetails(response.data);
       setSuccess(response.data.success);
+      setCompleted(response.data.completed);
       if (response.data.error) {
         setError(response.data.error);
       }
-      if (
-        response.data.completed ||
-        response.data.error ||
-        !response.data.success
-      ) {
+
+      if (response.data.completed || response.data.error) {
         clearInterval(intervalRef.current);
       }
     } catch (error) {
       console.error("Status check error:", error);
-      setError("Failed to check upload status");
-      setStatus("failed");
+      setError(`Failed to check upload status: ${error.message}`);
+      setStatus("Failed");
       setSuccess(false);
+      setCompleted(true);
       clearInterval(intervalRef.current);
     }
   };
@@ -134,7 +143,7 @@ const StatusTracker = ({ submissionUUID }) => {
       currentStep = success ? 3 : -1;
       progress = 100;
       break;
-    case "failed":
+    case "Failed":
       currentStep = -1;
       progress = 100;
       break;
@@ -143,13 +152,13 @@ const StatusTracker = ({ submissionUUID }) => {
       progress = 0;
   }
 
-  const isFailed = status === "Failed" || error || !success;
+  const isFailed = status === "Failed" || error || (completed && !success);
 
   return (
     <StatusContainer>
       <StatusTitle>RO-Crate Upload Progress</StatusTitle>
       <ProgressBarContainer>
-        <ProgressBar progress={progress} failed={isFailed} />
+        <ProgressBar progress={progress} failed={isFailed.toString()} />
         <StepContainer>
           {steps.map((step, index) => (
             <Step key={index} active={index <= currentStep}>
@@ -159,12 +168,13 @@ const StatusTracker = ({ submissionUUID }) => {
         </StepContainer>
       </ProgressBarContainer>
       {isFailed && <ErrorMessage>{error || "Upload failed"}</ErrorMessage>}
-      {details && !isFailed && (
+      {details && (
         <StatusDetails>
           <p>Status: {status}</p>
-          <p>Completed: {details.completed ? "Yes" : "No"}</p>
-          <p>Identifiers Minted: {details.identifiersMinted.length}</p>
-          <p>Files Processed: {details.processedFiles.length}</p>
+          <p>Success: {success ? "Yes" : "No"}</p>
+          {details.identifiersMinted && (
+            <p>Identifiers Minted: {details.identifiersMinted.length}</p>
+          )}
         </StatusDetails>
       )}
     </StatusContainer>

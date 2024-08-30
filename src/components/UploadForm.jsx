@@ -69,6 +69,7 @@ function UploadForm({ packagedPath }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [submissionUUID, setSubmissionUUID] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
   const crateInputRef = useRef(null);
 
   useEffect(() => {
@@ -131,7 +132,7 @@ function UploadForm({ packagedPath }) {
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        "https://fairscape.net/api/rocrate/upload-async",
+        "http://localhost:8080/api/rocrate/upload-async",
         formData,
         {
           headers: {
@@ -141,8 +142,14 @@ function UploadForm({ packagedPath }) {
         }
       );
       setSubmissionUUID(response.data.transactionFolder);
+      setUploadError(null);
     } catch (error) {
       console.error("Upload error:", error);
+      setUploadError({
+        status: error.response ? error.response.status : "Unknown",
+        message: error.response ? error.response.data.message : error.message,
+      });
+      setSubmissionUUID(null);
     }
   };
 
@@ -176,7 +183,10 @@ function UploadForm({ packagedPath }) {
           </CrateSelectionButton>
         </StyledFormGroup>
         <StyledButton type="submit">Upload RO-Crate</StyledButton>
-        {submissionUUID && <StatusTracker submissionUUID={submissionUUID} />}
+        <StatusTracker
+          submissionUUID={submissionUUID}
+          uploadError={uploadError}
+        />
       </StyledForm>
 
       <StyledModal show={showLoginModal} onHide={handleCloseLoginModal}>
