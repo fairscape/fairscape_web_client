@@ -70,6 +70,7 @@ function UploadForm({ packagedPath }) {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [submissionUUID, setSubmissionUUID] = useState(null);
   const [uploadError, setUploadError] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const crateInputRef = useRef(null);
 
   useEffect(() => {
@@ -89,6 +90,10 @@ function UploadForm({ packagedPath }) {
     const selectedCrate = e.target.files[0];
     setCrate(selectedCrate);
     setCrateName(selectedCrate ? selectedCrate.name : "");
+    // Reset status when a new file is selected
+    setSubmissionUUID(null);
+    setUploadError(null);
+    setIsUploading(false);
   };
 
   const handleCrateButtonClick = () => {
@@ -109,6 +114,11 @@ function UploadForm({ packagedPath }) {
       return;
     }
 
+    // Reset status and set uploading to true
+    setSubmissionUUID(null);
+    setUploadError(null);
+    setIsUploading(true);
+
     const formData = new FormData();
 
     if (crate) {
@@ -125,6 +135,7 @@ function UploadForm({ packagedPath }) {
         console.error(
           `Error creating File from packagedPath: ${error.message}`
         );
+        setIsUploading(false);
         return;
       }
     }
@@ -150,6 +161,8 @@ function UploadForm({ packagedPath }) {
         message: error.response ? error.response.data.message : error.message,
       });
       setSubmissionUUID(null);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -186,6 +199,7 @@ function UploadForm({ packagedPath }) {
         <StatusTracker
           submissionUUID={submissionUUID}
           uploadError={uploadError}
+          isUploading={isUploading}
         />
       </StyledForm>
 

@@ -66,8 +66,8 @@ const StatusDetails = styled.div`
   margin-top: 15px;
 `;
 
-const StatusTracker = ({ submissionUUID, uploadError }) => {
-  const [status, setStatus] = useState("in progress");
+const StatusTracker = ({ submissionUUID, uploadError, isUploading }) => {
+  const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const [details, setDetails] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -77,19 +77,37 @@ const StatusTracker = ({ submissionUUID, uploadError }) => {
   useEffect(() => {
     if (uploadError) {
       setStatus("Failed");
-      setError(`Upload Failed: Status ${uploadError.status} - ${uploadError.message}`);
+      setError(
+        `Upload Failed: Status ${uploadError.status} - ${uploadError.message}`
+      );
       setSuccess(false);
       setCompleted(true);
+    } else if (isUploading) {
+      setStatus("In Queue");
+      setError(null);
+      setSuccess(false);
+      setCompleted(false);
     } else if (submissionUUID) {
+      setStatus("in progress");
+      setError(null);
+      setSuccess(false);
+      setCompleted(false);
       checkUploadStatus();
       intervalRef.current = setInterval(checkUploadStatus, 2000);
+    } else {
+      // Reset status when there's no upload in progress
+      setStatus(null);
+      setError(null);
+      setSuccess(false);
+      setCompleted(false);
     }
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [submissionUUID, uploadError]);
+  }, [submissionUUID, uploadError, isUploading]);
 
   const checkUploadStatus = async () => {
     if (!submissionUUID) return;
@@ -131,13 +149,17 @@ const StatusTracker = ({ submissionUUID, uploadError }) => {
   let progress;
 
   switch (status) {
+    case "In Queue":
+      currentStep = 0;
+      progress = 25;
+      break;
     case "in progress":
       currentStep = 1;
-      progress = 33;
+      progress = 50;
       break;
     case "minting identifiers":
       currentStep = 2;
-      progress = 66;
+      progress = 75;
       break;
     case "Finished":
       currentStep = success ? 3 : -1;
@@ -148,11 +170,15 @@ const StatusTracker = ({ submissionUUID, uploadError }) => {
       progress = 100;
       break;
     default:
-      currentStep = 0;
+      currentStep = -1;
       progress = 0;
   }
 
   const isFailed = status === "Failed" || error || (completed && !success);
+
+  if (!status) {
+    return null; // Don't render anything if there's no status
+  }
 
   return (
     <StatusContainer>
