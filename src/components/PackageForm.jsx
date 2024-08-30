@@ -57,14 +57,73 @@ const OutputContainer = styled.div`
   color: #ffffff;
 `;
 
+const StatusContainer = styled.div`
+  margin-top: 20px;
+  background-color: #3e3e3e;
+  border-radius: 10px;
+  padding: 20px;
+  color: #ffffff;
+`;
+
+const StatusTitle = styled.h4`
+  margin-bottom: 15px;
+`;
+
+const ProgressBarContainer = styled.div`
+  background-color: #282828;
+  border-radius: 25px;
+  height: 30px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20px;
+`;
+
+const ProgressBar = styled.div`
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: ${(props) =>
+    props.failed ? "#dc3545" : "linear-gradient(to right, #007bff, #28a745)"};
+  width: ${(props) => props.progress}%;
+  transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
+`;
+
+const StepContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+`;
+
+const Step = styled.div`
+  flex: 1;
+  text-align: center;
+  font-weight: ${(props) => (props.active ? "bold" : "normal")};
+  color: ${(props) => (props.active ? "#ffffff" : "#aaaaaa")};
+`;
+
 function PackageForm({ rocratePath, setRocratePath, onComplete }) {
   const [output, setOutput] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const steps = [
+    "Idle",
+    "Generating Evidence Graphs",
+    "Zipping File",
+    "Completed",
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsProcessing(true);
+    setCurrentStep(1);
     setOutput("Starting to process RO-Crate...");
+    setError(null);
+
     try {
-      // First, generate evidence graphs
+      // Generate evidence graphs
+      setCurrentStep(1);
       const evidenceGraphResult = await ipcRenderer.invoke(
         "generate-evidence-graphs",
         rocratePath
@@ -78,7 +137,8 @@ function PackageForm({ rocratePath, setRocratePath, onComplete }) {
         throw new Error(evidenceGraphResult.error);
       }
 
-      // Then, zip the updated RO-Crate
+      // Zip the updated RO-Crate
+      setCurrentStep(2);
       const zipResult = await ipcRenderer.invoke("zip-rocrate", rocratePath);
       if (zipResult.success) {
         setOutput(
@@ -86,6 +146,7 @@ function PackageForm({ rocratePath, setRocratePath, onComplete }) {
             prevOutput +
             `\nRO-Crate successfully zipped at: ${zipResult.zipPath}`
         );
+        setCurrentStep(3);
         onComplete(zipResult.zipPath);
       } else {
         throw new Error(zipResult.error);
@@ -93,6 +154,10 @@ function PackageForm({ rocratePath, setRocratePath, onComplete }) {
     } catch (error) {
       console.error("Error processing RO-Crate:", error);
       setOutput((prevOutput) => prevOutput + `\nError: ${error.message}`);
+      setError(error.message);
+      setCurrentStep(3);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -106,6 +171,10 @@ function PackageForm({ rocratePath, setRocratePath, onComplete }) {
       console.error("Failed to open directory dialog:", error);
       setOutput("Error: Failed to open directory dialog");
     }
+  };
+
+  const getProgressPercentage = () => {
+    return (currentStep / (steps.length - 1)) * 100;
   };
 
   return (
@@ -123,7 +192,24 @@ function PackageForm({ rocratePath, setRocratePath, onComplete }) {
           Browse
         </BrowseButton>
       </StyledFormGroup>
-      <StyledButton type="submit">Process and Package RO-Crate</StyledButton>
+      <StyledButton type="submit" disabled={isProcessing}>
+        {isProcessing ? "Processing..." : "Process and Package RO-Crate"}
+      </StyledButton>
+
+      <StatusContainer>
+        <StatusTitle>Packaging Progress</StatusTitle>
+        <ProgressBarContainer>
+          <ProgressBar progress={getProgressPercentage()} failed={!!error} />
+        </ProgressBarContainer>
+        <StepContainer>
+          {steps.map((step, index) => (
+            <Step key={index} active={index === currentStep}>
+              {step}
+            </Step>
+          ))}
+        </StepContainer>
+      </StatusContainer>
+
       {output && <OutputContainer>{output}</OutputContainer>}
     </StyledForm>
   );
