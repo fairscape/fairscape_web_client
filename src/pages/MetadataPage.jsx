@@ -11,7 +11,7 @@ import Header from "../components/header_footer/Header";
 import Footer from "../components/header_footer/Footer";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/api";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 
 const MetadataPage = () => {
   const { type: rawType } = useParams();
@@ -106,6 +106,8 @@ const MetadataPage = () => {
         // Add download property for ROCrate
         if (currentType.toLowerCase() === "rocrate") {
           metadataData.download = `${API_URL}/rocrate/download/${currentArk}`;
+        } else {
+          metadataData.download = `${API_URL}/dataset/download/${currentArk}`;
         }
         setMetadata(metadataData);
         document.title = `Fairscape ${mapType(currentType)} Metadata`;

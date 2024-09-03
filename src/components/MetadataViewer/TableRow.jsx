@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import axios from "axios";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/api/"; //end with slash
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api/"; //end with slash
 const FE_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/"; //end with a slash
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:5173/"; //end with a slash
 
 const urlPattern = /^(http|https):\/\/[^\s]+/;
 const identifierPattern = /^ark:[0-9]{5}\/.*$/;
 const arkInUrlPattern = /ark:[0-9]{5}\/[^\s/]+/;
-const rocrateDowloadPattern = new RegExp(`^${API_URL}rocrate/download/`);
+const rocrateDowloadPattern = new RegExp(`^${API_URL}.*?/download/`);
 
 //This function adds hyperlinks to properties that match various patterns
 //Also for download links it adds handling to perform the downlaod with the right token
