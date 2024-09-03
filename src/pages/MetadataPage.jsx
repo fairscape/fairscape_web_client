@@ -28,16 +28,15 @@ const MetadataPage = () => {
   const [turtle, setTurtle] = useState("");
   const [rdfXml, setRdfXml] = useState("");
 
-  const mapType = (rawType) => {
-    const typeMap = {
-      rocrate: "ROCrate",
-      dataset: "Dataset",
-      software: "Software",
-      schema: "Schema",
-      computation: "Computation",
-    };
-    return typeMap[rawType.toLowerCase()] || rawType;
+  const typeMap = {
+    rocrate: "ROCrate",
+    dataset: "Dataset",
+    software: "Software",
+    schema: "Schema",
+    computation: "Computation",
   };
+
+  const mapType = (rawType) => typeMap[rawType.toLowerCase()] || rawType;
 
   const extractRawType = (type) => {
     if (typeof type === "string") {
@@ -53,50 +52,38 @@ const MetadataPage = () => {
     return null;
   };
 
-  function filter_nonprov(d, keys_to_keep) {
-    if (typeof d === "object" && d !== null) {
-      if (Array.isArray(d)) {
-        return d.map((item) => filter_nonprov(item, keys_to_keep));
-      } else {
-        return Object.fromEntries(
-          Object.entries(d)
-            .filter(([k]) => keys_to_keep.includes(k))
-            .map(([k, v]) => [k, filter_nonprov(v, keys_to_keep)])
-        );
-      }
-    }
-    return d;
-  }
+  const filterNonProv = (data, keysToKeep) => {
+    if (typeof data !== "object" || data === null) return data;
+    if (Array.isArray(data))
+      return data.map((item) => filterNonProv(item, keysToKeep));
+    return Object.fromEntries(
+      Object.entries(data)
+        .filter(([k]) => keysToKeep.includes(k))
+        .map(([k, v]) => [k, filterNonProv(v, keysToKeep)])
+    );
+  };
 
-  //This part is confusing so it can handle type/ark and just ark/
-  //if it's just ark/ it reroutes it to type/ark based on the metadata type
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+
+      //Weird handling so that users can visit /ark:... and rocrate/ark:...
       try {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         let currentType = type;
         let currentArk = location.pathname.split("/").slice(2).join("/");
 
-        console.log("Initial currentType:", currentType);
-        console.log("Initial currentArk:", currentArk);
-
-        // Check if the type is actually an ARK
         if (/^ark:\d{5}/.test(rawType)) {
           currentArk = location.pathname.slice(1);
-          console.log("ARK detected, updated currentArk:", currentArk);
-
           const response = await axios.get(`${API_URL}/${currentArk}`, {
             headers,
           });
           const data = response.data;
-          console.log("Fetched data for ARK:", data);
 
           if (data && data["@type"]) {
             currentType = extractRawType(data["@type"]);
             setType(currentType);
-            console.log("Extracted type:", currentType);
             navigate(`/${currentType}/${currentArk}`, { replace: true });
           } else {
             throw new Error("Unable to determine the type of the metadata");
@@ -108,97 +95,21 @@ const MetadataPage = () => {
           headers,
         });
         let metadataData = metadataResponse.data;
-        console.log("Fetched metadata:", metadataData);
 
         if (!metadataData || typeof metadataData !== "object") {
           throw new Error("Invalid metadata format");
         }
 
-        // Add download property for ROCrate
-        if (currentType.toLowerCase() === "rocrate") {
-          metadataData.download = `${API_URL}/rocrate/download/${currentArk}`;
-        } else {
-          metadataData.download = `${API_URL}/dataset/download/${currentArk}`;
-        }
-        console.log("Metadata with download property:", metadataData);
+        metadataData.download =
+          currentType.toLowerCase() === "rocrate"
+            ? `${API_URL}/rocrate/download/${currentArk}`
+            : `${API_URL}/dataset/download/${currentArk}`;
 
         setMetadata(metadataData);
         document.title = `Fairscape ${mapType(currentType)} Metadata`;
 
-        try {
-          const nquads = await jsonld.toRDF(metadataData, {
-            format: "application/n-quads",
-          });
-          console.log("Generated N-Quads:", nquads);
-
-          const parser = new N3.Parser();
-          const writer = new N3.Writer({ format: "text/turtle" });
-          parser.parse(nquads, (error, quad, prefixes) => {
-            if (error) console.error("Error parsing N-Quads:", error);
-            if (quad) writer.addQuad(quad);
-            else
-              writer.end((error, result) => {
-                if (error) console.error("Error generating Turtle:", error);
-                else {
-                  console.log("Generated Turtle:", result);
-                  setTurtle(result);
-                }
-              });
-          });
-
-          const rdfXml = await convertToRdfXml(nquads);
-          console.log("Generated RDF/XML:", rdfXml);
-          setRdfXml(rdfXml);
-        } catch (error) {
-          console.error("Error converting RDF:", error);
-        }
-
-        try {
-          let evidenceGraphData;
-          const keys_to_keep = [
-            "@id",
-            "name",
-            "description",
-            "@type",
-            "generatedBy",
-            "isPartOf",
-            "@graph",
-            "usedByComputation",
-            "usedSoftware",
-            "usedDataset",
-            "evidence",
-          ];
-
-          if (metadataData.hasEvidenceGraph) {
-            console.log(
-              "Fetching evidence graph from:",
-              metadataData.hasEvidenceGraph
-            );
-            const evidenceGraphResponse = await axios.get(
-              `${API_URL}/${metadataData.hasEvidenceGraph}`,
-              { headers }
-            );
-            evidenceGraphData = filter_nonprov(
-              evidenceGraphResponse.data,
-              keys_to_keep
-            );
-          } else {
-            console.log("No separate evidence graph, filtering metadata");
-            evidenceGraphData = filter_nonprov(metadataData, keys_to_keep);
-          }
-          console.log("Evidence graph data:", evidenceGraphData);
-          setEvidenceGraph(evidenceGraphData);
-        } catch (error) {
-          console.error("Error fetching evidence graph:", error);
-          const filteredMetadata = filter_nonprov(metadataData, keys_to_keep);
-          console.log(
-            "Filtered metadata for evidence graph:",
-            filteredMetadata
-          );
-          setEvidenceGraph(filteredMetadata);
-        } finally {
-          setEvidenceGraphLoading(false);
-        }
+        await generateRdfFormats(metadataData);
+        await fetchEvidenceGraph(metadataData, headers);
       } catch (error) {
         console.error("Error fetching metadata:", error);
       } finally {
@@ -208,17 +119,78 @@ const MetadataPage = () => {
 
     fetchData();
   }, [rawType, location.pathname, navigate]);
+
+  const generateRdfFormats = async (metadataData) => {
+    try {
+      const nquads = await jsonld.toRDF(metadataData, {
+        format: "application/n-quads",
+      });
+      const parser = new N3.Parser();
+      const writer = new N3.Writer({ format: "text/turtle" });
+
+      parser.parse(nquads, (error, quad, prefixes) => {
+        if (error) console.error("Error parsing N-Quads:", error);
+        if (quad) writer.addQuad(quad);
+        else {
+          writer.end((error, result) => {
+            if (error) console.error("Error generating Turtle:", error);
+            else setTurtle(result);
+          });
+        }
+      });
+
+      const rdfXml = await convertToRdfXml(nquads);
+      setRdfXml(rdfXml);
+    } catch (error) {
+      console.error("Error converting RDF:", error);
+    }
+  };
+
+  const fetchEvidenceGraph = async (metadataData, headers) => {
+    try {
+      const keysToKeep = [
+        "@id",
+        "name",
+        "description",
+        "@type",
+        "generatedBy",
+        "isPartOf",
+        "@graph",
+        "usedByComputation",
+        "usedSoftware",
+        "usedDataset",
+        "evidence",
+      ];
+      let evidenceGraphData;
+
+      if (metadataData.hasEvidenceGraph) {
+        const evidenceGraphResponse = await axios.get(
+          `${API_URL}/${metadataData.hasEvidenceGraph}`,
+          { headers }
+        );
+        evidenceGraphData = filterNonProv(
+          evidenceGraphResponse.data,
+          keysToKeep
+        );
+      } else {
+        evidenceGraphData = filterNonProv(metadataData, keysToKeep);
+      }
+
+      setEvidenceGraph(evidenceGraphData);
+    } catch (error) {
+      console.error("Error fetching evidence graph:", error);
+      setEvidenceGraph(filterNonProv(metadataData, keysToKeep));
+    } finally {
+      setEvidenceGraphLoading(false);
+    }
+  };
+
   const showMetadata = () => setView("metadata");
   const showJSON = () => setView("serialization");
   const showEvidenceGraph = () => setView("evidenceGraph");
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!metadata) {
-    return <div>Error loading metadata</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (!metadata) return <div>Error loading metadata</div>;
 
   const json = JSON.stringify(metadata, null, 2);
 
