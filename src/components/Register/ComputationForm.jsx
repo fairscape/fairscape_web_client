@@ -26,8 +26,8 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     description: "",
     keywords: "",
   });
+  const [allFiles, setAllFiles] = useState([]);
   const [fileColumns, setFileColumns] = useState({
-    allFiles: [],
     inputs: [],
     outputs: [],
     software: [],
@@ -37,10 +37,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
   useEffect(() => {
     const loadRegisteredFiles = async () => {
       const files = await get_registered_files(rocratePath);
-      setFileColumns((prevState) => ({
-        ...prevState,
-        allFiles: files,
-      }));
+      setAllFiles(files);
     };
     loadRegisteredFiles();
   }, [rocratePath]);
@@ -57,17 +54,29 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     if (!result.destination) return;
 
     const { source, destination } = result;
-    const sourceColumn = fileColumns[source.droppableId];
+    const sourceColumn =
+      source.droppableId === "allFiles"
+        ? allFiles
+        : fileColumns[source.droppableId];
     const destColumn = fileColumns[destination.droppableId];
 
     if (source.droppableId === destination.droppableId) {
-      const newColumn = Array.from(sourceColumn);
+      const newColumn = Array.from(destColumn);
       const [reorderedItem] = newColumn.splice(source.index, 1);
       newColumn.splice(destination.index, 0, reorderedItem);
 
       setFileColumns({
         ...fileColumns,
-        [source.droppableId]: newColumn,
+        [destination.droppableId]: newColumn,
+      });
+    } else if (source.droppableId === "allFiles") {
+      const newDestColumn = Array.from(destColumn);
+      const movedItem = allFiles[source.index];
+      newDestColumn.splice(destination.index, 0, movedItem);
+
+      setFileColumns({
+        ...fileColumns,
+        [destination.droppableId]: newDestColumn,
       });
     } else {
       const sourceItems = Array.from(sourceColumn);
@@ -141,12 +150,11 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
       description: "",
       keywords: "",
     });
-    setFileColumns((prevState) => ({
-      ...prevState,
+    setFileColumns({
       inputs: [],
       outputs: [],
       software: [],
-    }));
+    });
     setShowForm(false);
     onComplete();
   };
@@ -157,19 +165,25 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
         <div>
           <ColumnHeader>{columnName}</ColumnHeader>
           <StyledListGroup {...provided.droppableProps} ref={provided.innerRef}>
-            {fileColumns[columnId].map((file, index) => (
-              <Draggable key={file.guid} draggableId={file.guid} index={index}>
-                {(provided) => (
-                  <StyledListItem
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                  >
-                    {file.name}
-                  </StyledListItem>
-                )}
-              </Draggable>
-            ))}
+            {(columnId === "allFiles" ? allFiles : fileColumns[columnId]).map(
+              (file, index) => (
+                <Draggable
+                  key={file.guid}
+                  draggableId={file.guid}
+                  index={index}
+                >
+                  {(provided) => (
+                    <StyledListItem
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                    >
+                      {file.name}
+                    </StyledListItem>
+                  )}
+                </Draggable>
+              )
+            )}
             {provided.placeholder}
           </StyledListGroup>
         </div>
