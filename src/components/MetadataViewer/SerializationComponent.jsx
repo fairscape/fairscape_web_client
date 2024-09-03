@@ -1,10 +1,48 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 
 const SerializationComponent = ({ json, rdfXml, turtle }) => {
-  const [serializationType, setSerializationType] = React.useState("json");
+  const [serializationType, setSerializationType] = useState("json");
 
   const showSerialization = (type) => {
     setSerializationType(type);
+  };
+
+  const getSerializationContent = () => {
+    switch (serializationType) {
+      case "json":
+        return json;
+      case "rdfXml":
+        return rdfXml;
+      case "turtle":
+        return turtle;
+      default:
+        return "";
+    }
+  };
+
+  const copyToClipboard = useCallback(() => {
+    const content = getSerializationContent();
+    navigator.clipboard
+      .writeText(content)
+      .then(() => {
+        alert(`${serializationType.toUpperCase()} copied to clipboard!`);
+      })
+      .catch((err) => {
+        console.error("Failed to copy: ", err);
+      });
+  }, [serializationType, json, rdfXml, turtle]);
+
+  const getCopyButtonLabel = () => {
+    switch (serializationType) {
+      case "json":
+        return "Copy JSON-LD";
+      case "rdfXml":
+        return "Copy RDF/XML";
+      case "turtle":
+        return "Copy Turtle";
+      default:
+        return "Copy";
+    }
   };
 
   return (
@@ -34,7 +72,6 @@ const SerializationComponent = ({ json, rdfXml, turtle }) => {
           >
             JSON-LD
           </label>
-
           <input
             type="radio"
             onClick={() => showSerialization("rdfXml")}
@@ -49,7 +86,6 @@ const SerializationComponent = ({ json, rdfXml, turtle }) => {
           >
             RDF/XML
           </label>
-
           <input
             type="radio"
             onClick={() => showSerialization("turtle")}
@@ -67,11 +103,13 @@ const SerializationComponent = ({ json, rdfXml, turtle }) => {
         </div>
       </div>
       <div className="json-wrapper">
-        {serializationType === "json" && <pre>{json}</pre>}
-        {serializationType === "rdfXml" && <pre>{rdfXml}</pre>}
-        {serializationType === "turtle" && <pre>{turtle}</pre>}
-        <button className="copy-btn" title="Copy JSON-LD">
-          <i className="fas fa-copy"></i> Copy JSON-LD
+        <pre>{getSerializationContent()}</pre>
+        <button
+          className="copy-btn"
+          onClick={copyToClipboard}
+          title={getCopyButtonLabel()}
+        >
+          <i className="fas fa-copy"></i> {getCopyButtonLabel()}
         </button>
       </div>
     </div>

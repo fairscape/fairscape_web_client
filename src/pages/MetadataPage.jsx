@@ -9,6 +9,7 @@ import SerializationComponent from "../components/MetadataViewer/SerializationCo
 import EvidenceGraphComponent from "../components/MetadataViewer/EvidenceGraphComponent";
 import Header from "../components/header_footer/Header";
 import Footer from "../components/header_footer/Footer";
+import convertToRdfXml from "./helper";
 
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
@@ -78,16 +79,24 @@ const MetadataPage = () => {
         let currentType = type;
         let currentArk = location.pathname.split("/").slice(2).join("/");
 
+        console.log("Initial currentType:", currentType);
+        console.log("Initial currentArk:", currentArk);
+
         // Check if the type is actually an ARK
         if (/^ark:\d{5}/.test(rawType)) {
           currentArk = location.pathname.slice(1);
+          console.log("ARK detected, updated currentArk:", currentArk);
+
           const response = await axios.get(`${API_URL}/${currentArk}`, {
             headers,
           });
           const data = response.data;
+          console.log("Fetched data for ARK:", data);
+
           if (data && data["@type"]) {
             currentType = extractRawType(data["@type"]);
             setType(currentType);
+            console.log("Extracted type:", currentType);
             navigate(`/${currentType}/${currentArk}`, { replace: true });
           } else {
             throw new Error("Unable to determine the type of the metadata");
@@ -99,6 +108,8 @@ const MetadataPage = () => {
           headers,
         });
         let metadataData = metadataResponse.data;
+        console.log("Fetched metadata:", metadataData);
+
         if (!metadataData || typeof metadataData !== "object") {
           throw new Error("Invalid metadata format");
         }
@@ -109,6 +120,8 @@ const MetadataPage = () => {
         } else {
           metadataData.download = `${API_URL}/dataset/download/${currentArk}`;
         }
+        console.log("Metadata with download property:", metadataData);
+
         setMetadata(metadataData);
         document.title = `Fairscape ${mapType(currentType)} Metadata`;
 
@@ -116,18 +129,28 @@ const MetadataPage = () => {
           const nquads = await jsonld.toRDF(metadataData, {
             format: "application/n-quads",
           });
+          console.log("Generated N-Quads:", nquads);
+
           const parser = new N3.Parser();
           const writer = new N3.Writer({ format: "text/turtle" });
           parser.parse(nquads, (error, quad, prefixes) => {
+            if (error) console.error("Error parsing N-Quads:", error);
             if (quad) writer.addQuad(quad);
-            else writer.end((error, result) => setTurtle(result));
+            else
+              writer.end((error, result) => {
+                if (error) console.error("Error generating Turtle:", error);
+                else {
+                  console.log("Generated Turtle:", result);
+                  setTurtle(result);
+                }
+              });
           });
-          const rdfXmlData = await jsonld.toRDF(metadataData, {
-            format: "application/rdf+xml",
-          });
-          setRdfXml(rdfXmlData);
+
+          const rdfXml = await convertToRdfXml(nquads);
+          console.log("Generated RDF/XML:", rdfXml);
+          setRdfXml(rdfXml);
         } catch (error) {
-          console.error("Error converting JSON-LD to RDF:", error);
+          console.error("Error converting RDF:", error);
         }
 
         try {
@@ -147,6 +170,10 @@ const MetadataPage = () => {
           ];
 
           if (metadataData.hasEvidenceGraph) {
+            console.log(
+              "Fetching evidence graph from:",
+              metadataData.hasEvidenceGraph
+            );
             const evidenceGraphResponse = await axios.get(
               `${API_URL}/${metadataData.hasEvidenceGraph}`,
               { headers }
@@ -156,12 +183,18 @@ const MetadataPage = () => {
               keys_to_keep
             );
           } else {
+            console.log("No separate evidence graph, filtering metadata");
             evidenceGraphData = filter_nonprov(metadataData, keys_to_keep);
           }
+          console.log("Evidence graph data:", evidenceGraphData);
           setEvidenceGraph(evidenceGraphData);
         } catch (error) {
           console.error("Error fetching evidence graph:", error);
           const filteredMetadata = filter_nonprov(metadataData, keys_to_keep);
+          console.log(
+            "Filtered metadata for evidence graph:",
+            filteredMetadata
+          );
           setEvidenceGraph(filteredMetadata);
         } finally {
           setEvidenceGraphLoading(false);
@@ -172,9 +205,9 @@ const MetadataPage = () => {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [rawType, location.pathname, navigate]);
-
   const showMetadata = () => setView("metadata");
   const showJSON = () => setView("serialization");
   const showEvidenceGraph = () => setView("evidenceGraph");
