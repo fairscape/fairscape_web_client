@@ -2,25 +2,68 @@ import React, { useState } from "react";
 import axios from "axios";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api/"; //end with slash
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api/";
 const FE_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:5173/"; //end with a slash
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:5173/";
 
 const urlPattern = /^(http|https):\/\/[^\s]+/;
 const identifierPattern = /^ark:[0-9]{5}\/.*$/;
 const arkInUrlPattern = /ark:[0-9]{5}\/[^\s/]+/;
 const rocrateDowloadPattern = new RegExp(`^${API_URL}.*?/download/`);
 
-//This function adds hyperlinks to properties that match various patterns
-//Also for download links it adds handling to perform the downlaod with the right token
+const CustomAlert = ({ message, onClose }) => (
+  <div
+    style={{
+      position: "fixed",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      backgroundColor: "#f8d7da",
+      color: "#721c24",
+      padding: "20px",
+      borderRadius: "5px",
+      boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+      zIndex: 1000,
+      maxWidth: "80%",
+      textAlign: "center",
+    }}
+  >
+    <div>{message}</div>
+    <button
+      onClick={onClose}
+      style={{
+        marginTop: "10px",
+        background: "none",
+        border: "1px solid #721c24",
+        color: "#721c24",
+        padding: "5px 10px",
+        borderRadius: "3px",
+        cursor: "pointer",
+      }}
+    >
+      Close
+    </button>
+  </div>
+);
+
 const Link = ({ value }) => {
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+
   const getToken = () => {
     return localStorage.getItem("token") || "";
   };
 
   const handleDownload = async (downloadUrl) => {
+    const token = getToken();
+
+    if (!token) {
+      setAlertMessage("You must be logged in to download files.");
+      setShowAlert(true);
+      return;
+    }
+
     try {
-      const token = getToken();
       const response = await axios({
         url: downloadUrl,
         method: "GET",
@@ -61,25 +104,38 @@ const Link = ({ value }) => {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Download failed:", error);
-      if (error.response) {
-        console.error("Response status:", error.response.status);
-        console.error("Response data:", error.response.data);
+      if (error.response && error.response.status === 401) {
+        setAlertMessage(
+          "You must be a member of the group to download this data."
+        );
+      } else {
+        setAlertMessage(
+          `Download failed. Please try again. Error: ${error.message}`
+        );
       }
-      alert(`Download failed. Please try again. Error: ${error.message}`);
+      setShowAlert(true);
     }
   };
 
   if (rocrateDowloadPattern.test(value)) {
     return (
-      <a
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          handleDownload(value);
-        }}
-      >
-        Download Link
-      </a>
+      <>
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            handleDownload(value);
+          }}
+        >
+          Download Link
+        </a>
+        {showAlert && (
+          <CustomAlert
+            message={alertMessage}
+            onClose={() => setShowAlert(false)}
+          />
+        )}
+      </>
     );
   } else if (identifierPattern.test(value)) {
     return <a href={`${FE_URL}${value}`}>{value}</a>;
