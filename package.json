@@ -5,9 +5,11 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "webpack --config webpack.config.js",
-    "package": "electron-builder",
-    "dev": "webpack --config webpack.config.js --watch & electron ."
+    "build": "webpack --config webpack.config.js --env ENVIRONMENT=production",
+    "build:dev": "webpack --config webpack.config.js --env ENVIRONMENT=development",
+    "build:prod": "webpack --config webpack.config.js --env ENVIRONMENT=production",
+    "package": "npm run build:prod && electron-builder",
+    "dev": "webpack --config webpack.config.js --env ENVIRONMENT=development --watch & electron ."
   },
   "keywords": [],
   "author": {
