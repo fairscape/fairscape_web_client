@@ -16,6 +16,8 @@ module.exports = (env, argv) => {
   // Check if the file exists, otherwise fall back to the production .env
   const finalPath = fs.existsSync(envPath) ? envPath : basePath;
 
+  console.log("Using environment file:", finalPath);
+
   // Set the path parameter in the dotenv config
   const fileEnv = dotenv.config({ path: finalPath }).parsed;
 

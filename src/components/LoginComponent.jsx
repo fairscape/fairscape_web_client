@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 
 const accentColor = "#007bff";
@@ -59,12 +59,18 @@ function LoginComponent({ onLogin }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [apiUrl, setApiUrl] = useState("");
+
+  useEffect(() => {
+    // Set the API URL from environment variable
+    setApiUrl(process.env.REACT_APP_API_URL || "http://localhost:8080/api");
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      const response = await fetch(`http://localhost:8080/api/login`, {
+      const response = await fetch(`${apiUrl}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -90,6 +96,7 @@ function LoginComponent({ onLogin }) {
       }
     } catch (error) {
       setError("An error occurred. Please try again.");
+      console.error("Login error:", error);
     }
   };
 
