@@ -1,10 +1,11 @@
 function generateEvidenceGraphs(data) {
   const graph = data["@graph"];
   const idToElement = new Map();
+  const idToDepth = new Map();
 
   // Function to extract ARK prefix
   const getArkPrefix = (id) => {
-    const match = id.match(/^(ark:\d+)\//);
+    const match = id.match(/^(ark:\d+)\/.*/);
     return match ? match[1] : "ark:59852"; // Default to 'ark:59852' if no match
   };
 
@@ -39,51 +40,58 @@ function generateEvidenceGraphs(data) {
     }
   });
 
-  // Function to recursively expand references
-  function expandReferences(references, visited = new Set()) {
+  // Function to recursively expand references and calculate depth
+  function expandReferences(references, visited = new Set(), depth = 0) {
     return references.map((ref) => {
       if (visited.has(ref)) return { "@id": ref }; // Prevent circular references
       visited.add(ref);
       const element = idToElement.get(ref);
       if (!element) return { "@id": ref };
+
       const expanded = { ...element };
+      let maxChildDepth = depth;
+
       if (expanded["generatedBy"]) {
         expanded["generatedBy"] = expandReferences(
           Array.isArray(expanded["generatedBy"])
             ? expanded["generatedBy"]
             : [expanded["generatedBy"]],
-          new Set(visited)
+          new Set(visited),
+          depth + 1
         );
+        maxChildDepth = Math.max(maxChildDepth, depth + 1);
       }
       if (expanded["usedDataset"]) {
         expanded["usedDataset"] = expandReferences(
           expanded["usedDataset"],
-          new Set(visited)
+          new Set(visited),
+          depth + 1
         );
+        maxChildDepth = Math.max(maxChildDepth, depth + 1);
       }
       if (expanded["usedSoftware"]) {
         expanded["usedSoftware"] = expandReferences(
           expanded["usedSoftware"],
-          new Set(visited)
+          new Set(visited),
+          depth + 1
         );
+        maxChildDepth = Math.max(maxChildDepth, depth + 1);
       }
+
+      idToDepth.set(ref, maxChildDepth);
       return expanded;
     });
   }
 
   // Second pass: create evidence graphs
   const evidenceGraphs = graph.map((element) => {
-    const evidenceGraphId = createEvidenceGraphId(
-      element["@id"] || element["guid"]
-    );
-
+    const elementId = element["@id"] || element["guid"];
+    const evidenceGraphId = createEvidenceGraphId(elementId);
     let evidenceGraph = {
       "@id": evidenceGraphId,
       "@type": "EVI:EvidenceGraph",
-      name: `Evidence Graph: ${element["@id"] || element["guid"]}`,
-      description: `Evidence graph for ${
-        element["name"] || element["@id"] || element["guid"]
-      }`,
+      name: `Evidence Graph: ${elementId}`,
+      description: `Evidence graph for ${element["name"] || elementId}`,
       evidence: {},
     };
 
@@ -109,6 +117,21 @@ function generateEvidenceGraphs(data) {
     element["hasEvidenceGraph"] = evidenceGraphId;
     return evidenceGraph;
   });
+
+  // Find the deepest evidence graph
+  let deepestGraphId = null;
+  let maxDepth = -1;
+  idToDepth.forEach((depth, id) => {
+    if (depth > maxDepth) {
+      maxDepth = depth;
+      deepestGraphId = id;
+    }
+  });
+
+  // Add the deepest evidence graph to the RO-Crate metadata (data object)
+  if (deepestGraphId) {
+    data["hasEvidenceGraph"] = createEvidenceGraphId(deepestGraphId);
+  }
 
   // Add evidence graphs to the main graph
   data["@graph"] = [...graph, ...evidenceGraphs];
