@@ -40,9 +40,14 @@ const MetadataPage = () => {
 
   const extractRawType = (type) => {
     if (typeof type === "string") {
+      // Handle URLs
       if (type.startsWith("http://") || type.startsWith("https://")) {
         const parts = type.split(/[/#]/);
         return parts[parts.length - 1].toLowerCase();
+      }
+      // Handle general case with colons (including "evi:type")
+      if (type.includes(":")) {
+        return type.split(":").pop().toLowerCase();
       }
       return type.toLowerCase();
     }
