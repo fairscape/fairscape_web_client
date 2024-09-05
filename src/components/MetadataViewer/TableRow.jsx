@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import axios from "axios";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api/";
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 const FE_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:5173/";
+  import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/";
 
 const urlPattern = /^(http|https):\/\/[^\s]+/;
 const identifierPattern = /^ark:[0-9]{5}\/.*$/;
 const arkInUrlPattern = /ark:[0-9]{5}\/[^\s/]+/;
-const rocrateDowloadPattern = new RegExp(`^${API_URL}.*?/download/`);
+const rocrateDowloadPattern = new RegExp(`^${API_URL}.*?download/`);
 
 const CustomAlert = ({ message, onClose }) => (
   <div
