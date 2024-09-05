@@ -73,6 +73,8 @@ function UploadForm({ packagedPath }) {
   const [isUploading, setIsUploading] = useState(false);
   const crateInputRef = useRef(null);
 
+  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
+
   useEffect(() => {
     if (packagedPath) {
       const fileName = packagedPath.split("/").pop();
@@ -139,11 +141,11 @@ function UploadForm({ packagedPath }) {
         return;
       }
     }
-
+    console.log();
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        "http://localhost:8080/api/rocrate/upload-async",
+        `${apiUrl}/rocrate/upload-async`,
         formData,
         {
           headers: {

@@ -66,6 +66,14 @@ const StatusDetails = styled.div`
   margin-top: 15px;
 `;
 
+const Link = styled.a`
+  color: #007bff;
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 const StatusTracker = ({ submissionUUID, uploadError, isUploading }) => {
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
@@ -73,6 +81,9 @@ const StatusTracker = ({ submissionUUID, uploadError, isUploading }) => {
   const [success, setSuccess] = useState(false);
   const [completed, setCompleted] = useState(false);
   const intervalRef = useRef(null);
+
+  const baseUrl = process.env.REACT_APP_BASE_URL || "http://localhost:5173";
+  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
 
   useEffect(() => {
     if (uploadError) {
@@ -115,7 +126,7 @@ const StatusTracker = ({ submissionUUID, uploadError, isUploading }) => {
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.get(
-        `http://localhost:8080/api/rocrate/upload/status/${submissionUUID}`,
+        `${apiUrl}/rocrate/upload/status/${submissionUUID}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -199,7 +210,25 @@ const StatusTracker = ({ submissionUUID, uploadError, isUploading }) => {
           <p>Status: {status}</p>
           <p>Success: {success ? "Yes" : "No"}</p>
           {details.identifiersMinted && (
-            <p>Identifiers Minted: {details.identifiersMinted.length}</p>
+            <>
+              <p>Identifiers Minted: {details.identifiersMinted.length}</p>
+              {success && details.identifiersMinted.length > 0 && (
+                <p>
+                  View Result:{" "}
+                  <Link
+                    href={`${baseUrl}/${
+                      details.identifiersMinted[
+                        details.identifiersMinted.length - 1
+                      ]
+                    }`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open
+                  </Link>
+                </p>
+              )}
+            </>
           )}
         </StatusDetails>
       )}
