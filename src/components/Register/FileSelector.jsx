@@ -26,10 +26,13 @@ const StyledListGroup = styled(ListGroup)`
 
 const StyledListGroupItem = styled(ListGroup.Item)`
   background-color: #3e3e3e;
-  color: #ffffff;
+  color: ${(props) => (props.isRegistered ? "#888" : "#ffffff")};
   border-color: #555;
+  cursor: ${(props) => (props.isRegistered ? "not-allowed" : "pointer")};
+  pointer-events: ${(props) => (props.isRegistered ? "none" : "auto")};
   &:hover {
-    background-color: #4e4e4e;
+    background-color: ${(props) =>
+      props.isRegistered ? "#3e3e3e" : "#4e4e4e"};
   }
 `;
 
@@ -269,6 +272,9 @@ function FileSelector({
                       key={file}
                       action
                       onClick={() => handleFileSelect(file)}
+                      isRegistered={registeredFiles.includes(
+                        normalizePath(file)
+                      )}
                     >
                       {file}
                       {registeredFiles.includes(normalizePath(file)) && (
