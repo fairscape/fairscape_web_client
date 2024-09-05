@@ -26,6 +26,7 @@ export function register_schema(
   examples = []
 ) {
   try {
+    const crateInstance = readROCrateMetadata(rocrate_path);
     const schema_instance = generateSchema({
       guid,
       url,
@@ -38,15 +39,7 @@ export function register_schema(
       additionalProperties,
       examples,
     });
-
-    // Extract the filename from the @id
-    const schemaId = schema_instance["@id"];
-    const schemaFileName = `${schemaId.split("/").pop()}.json`;
-    const schemaFilePath = path.join(rocrate_path, schemaFileName);
-
-    // Write the schema to a separate JSON file
-    fs.writeFileSync(schemaFilePath, JSON.stringify(schema_instance, null, 2));
-
+    appendCrate(rocrate_path, [schema_instance]);
     return schema_instance["@id"];
   } catch (error) {
     throw new Error(`Error registering schema: ${error.message}`);

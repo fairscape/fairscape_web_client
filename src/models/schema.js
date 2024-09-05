@@ -1,6 +1,6 @@
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
-const NAAN = "59852"; 
+const NAAN = "59852";
 
 function generateDatetimeSquid() {
   return uuidv4().split("-")[0];
@@ -8,12 +8,12 @@ function generateDatetimeSquid() {
 
 class Schema {
   constructor(data) {
-    this.guid = data["@id"] || null;
-    this.context = data["@context"] || {
+    this["@id"] = data["@id"] || null; // Changed from this.guid to this["@id"]
+    this["@context"] = data["@context"] || {
       "@vocab": "https://schema.org/",
       EVI: "https://w3,org/EVI#",
     };
-    this.metadataType = data["@type"] || "EVI:Schema";
+    this["@type"] = data["@type"] || "EVI:Schema";
     this.schema = data.schema || "https://json-schema.org/draft/2020-12/schema";
     this.name = data.name;
     this.description = data.description;
