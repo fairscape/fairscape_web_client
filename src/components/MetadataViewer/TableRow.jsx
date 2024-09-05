@@ -280,13 +280,18 @@ const TableRow = ({ property, value }) => {
       Array.isArray(value) &&
       value.every((item) => typeof item === "object" && item !== null)
     ) {
+      // Filter out items with name "Evidence Graph"
+      const filteredValue = value.filter(
+        (item) => !(item.name && item.name.includes("Evidence Graph"))
+      );
+
       return (
         <Accordion
-          title={`${property} (${value.length} items)`}
+          title={`${property} (${filteredValue.length} items)`}
           isExpanded={isMainExpanded}
           onToggle={() => setIsMainExpanded(!isMainExpanded)}
         >
-          {value.map((item, index) => (
+          {filteredValue.map((item, index) => (
             <Accordion
               key={index}
               title={item.name || `Item ${index + 1}`}
