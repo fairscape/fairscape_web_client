@@ -86,6 +86,7 @@ function UploadForm({ packagedPath }) {
   const checkLoginStatus = () => {
     const token = localStorage.getItem("authToken");
     setIsLoggedIn(!!token);
+    return !!token;
   };
 
   const handleCrateChange = (e) => {
@@ -105,8 +106,8 @@ function UploadForm({ packagedPath }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    checkLoginStatus();
-    if (!isLoggedIn) {
+    const isUserLoggedIn = checkLoginStatus();
+    if (!isUserLoggedIn) {
       setShowLoginModal(true);
       return;
     }
@@ -141,7 +142,7 @@ function UploadForm({ packagedPath }) {
         return;
       }
     }
-    console.log();
+
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
