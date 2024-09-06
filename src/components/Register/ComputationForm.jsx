@@ -26,7 +26,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     description: "",
     keywords: "",
   });
-  const [allFiles, setAllFiles] = useState([]);
+  const [availableFiles, setAvailableFiles] = useState([]);
   const [fileColumns, setFileColumns] = useState({
     inputs: [],
     outputs: [],
@@ -34,11 +34,12 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
   });
   const [jsonLdPreview, setJsonLdPreview] = useState({});
 
+  const loadRegisteredFiles = async () => {
+    const files = await get_registered_files(rocratePath);
+    setAvailableFiles(files);
+  };
+
   useEffect(() => {
-    const loadRegisteredFiles = async () => {
-      const files = await get_registered_files(rocratePath);
-      setAllFiles(files);
-    };
     loadRegisteredFiles();
   }, [rocratePath]);
 
@@ -55,8 +56,8 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
 
     const { source, destination } = result;
     const sourceColumn =
-      source.droppableId === "allFiles"
-        ? allFiles
+      source.droppableId === "availableFiles"
+        ? availableFiles
         : fileColumns[source.droppableId];
     const destColumn = fileColumns[destination.droppableId];
 
@@ -69,11 +70,13 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
         ...fileColumns,
         [destination.droppableId]: newColumn,
       });
-    } else if (source.droppableId === "allFiles") {
+    } else if (source.droppableId === "availableFiles") {
+      const newAvailableFiles = Array.from(availableFiles);
       const newDestColumn = Array.from(destColumn);
-      const movedItem = allFiles[source.index];
+      const [movedItem] = newAvailableFiles.splice(source.index, 1);
       newDestColumn.splice(destination.index, 0, movedItem);
 
+      setAvailableFiles(newAvailableFiles);
       setFileColumns({
         ...fileColumns,
         [destination.droppableId]: newDestColumn,
@@ -82,12 +85,20 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
       const sourceItems = Array.from(sourceColumn);
       const destItems = Array.from(destColumn);
       const [movedItem] = sourceItems.splice(source.index, 1);
-      destItems.splice(destination.index, 0, movedItem);
+
+      if (destination.droppableId === "availableFiles") {
+        setAvailableFiles([...availableFiles, movedItem]);
+      } else {
+        destItems.splice(destination.index, 0, movedItem);
+        setFileColumns({
+          ...fileColumns,
+          [destination.droppableId]: destItems,
+        });
+      }
 
       setFileColumns({
         ...fileColumns,
         [source.droppableId]: sourceItems,
-        [destination.droppableId]: destItems,
       });
     }
   };
@@ -156,6 +167,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
       software: [],
     });
     setShowForm(false);
+    loadRegisteredFiles(); // Refresh the list of available files
     onComplete();
   };
 
@@ -165,25 +177,22 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
         <div>
           <ColumnHeader>{columnName}</ColumnHeader>
           <StyledListGroup {...provided.droppableProps} ref={provided.innerRef}>
-            {(columnId === "allFiles" ? allFiles : fileColumns[columnId]).map(
-              (file, index) => (
-                <Draggable
-                  key={file.guid}
-                  draggableId={file.guid}
-                  index={index}
-                >
-                  {(provided) => (
-                    <StyledListItem
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                    >
-                      {file.name}
-                    </StyledListItem>
-                  )}
-                </Draggable>
-              )
-            )}
+            {(columnId === "availableFiles"
+              ? availableFiles
+              : fileColumns[columnId]
+            ).map((file, index) => (
+              <Draggable key={file.guid} draggableId={file.guid} index={index}>
+                {(provided) => (
+                  <StyledListItem
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                  >
+                    {file.name}
+                  </StyledListItem>
+                )}
+              </Draggable>
+            ))}
             {provided.placeholder}
           </StyledListGroup>
         </div>
@@ -199,7 +208,14 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
           Would you like to record any computations that were run to create the
           files?
         </p>
-        <StyledButton onClick={() => setShowForm(true)}>Yes</StyledButton>
+        <StyledButton
+          onClick={() => {
+            setShowForm(true);
+            loadRegisteredFiles(); // Refresh the list of available files when showing the form
+          }}
+        >
+          Yes
+        </StyledButton>
         <StyledButton onClick={onSkip} variant="secondary">
           No
         </StyledButton>
@@ -264,7 +280,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <Row>
-          <Col md={3}>{renderColumn("allFiles", "All Available Objects")}</Col>
+          <Col md={3}>{renderColumn("availableFiles", "Available Files")}</Col>
           <Col md={3}>{renderColumn("inputs", "Input Datasets")}</Col>
           <Col md={3}>{renderColumn("outputs", "Output Datasets")}</Col>
           <Col md={3}>{renderColumn("software", "Software Used")}</Col>
@@ -272,7 +288,13 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
       </DragDropContext>
 
       <StyledButton onClick={handleSubmit}>Register Computation</StyledButton>
-      <StyledButton onClick={onSkip} variant="secondary">
+      <StyledButton
+        onClick={() => {
+          setShowForm(false);
+          loadRegisteredFiles(); // Refresh the list of available files when canceling
+        }}
+        variant="secondary"
+      >
         Cancel
       </StyledButton>
     </StyledForm>
