@@ -9,6 +9,7 @@
     "build:dev": "webpack --config webpack.config.js --env ENVIRONMENT=development",
     "build:prod": "webpack --config webpack.config.js --env ENVIRONMENT=production",
     "package": "npm run build:prod && electron-builder",
+    "package:linux": "npm run build:prod && electron-builder --linux AppImage",
     "dev": "webpack --config webpack.config.js --env ENVIRONMENT=development --watch & electron ."
   },
   "keywords": [],
