@@ -12,6 +12,19 @@ import { generateDataset } from "../models/dataset";
 import { generateComputation } from "../models/computation";
 import { generateSchema } from "../models/schema"; // Assume this is implemented similarly to generateDataset
 
+export function get_ro_crate_metadata(rocratePath) {
+  const metadataPath = path.join(rocratePath, "ro-crate-metadata.json");
+
+  try {
+    const rawData = fs.readFileSync(metadataPath, "utf8");
+    const metadata = JSON.parse(rawData);
+    return metadata;
+  } catch (error) {
+    console.error("Error reading RO-Crate metadata:", error);
+    return null;
+  }
+}
+
 export function register_schema(
   rocrate_path,
   name,

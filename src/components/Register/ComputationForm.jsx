@@ -4,6 +4,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import {
   register_computation,
   get_registered_files,
+  get_ro_crate_metadata,
 } from "../../rocrate/rocrate";
 import {
   StyledForm,
@@ -33,14 +34,25 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
     software: [],
   });
   const [jsonLdPreview, setJsonLdPreview] = useState({});
+  const [hasExistingComputations, setHasExistingComputations] = useState(false);
 
   const loadRegisteredFiles = async () => {
     const files = await get_registered_files(rocratePath);
     setAvailableFiles(files);
   };
 
+  const checkExistingComputations = async () => {
+    const metadata = await get_ro_crate_metadata(rocratePath);
+    console.log(metadata);
+    const computations = metadata["@graph"].filter(
+      (item) => item["@type"] === "https://w3id.org/EVI#Computation"
+    );
+    setHasExistingComputations(computations.length > 0);
+  };
+
   useEffect(() => {
     loadRegisteredFiles();
+    checkExistingComputations();
   }, [rocratePath]);
 
   useEffect(() => {
@@ -167,7 +179,8 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
       software: [],
     });
     setShowForm(false);
-    loadRegisteredFiles(); // Refresh the list of available files
+    loadRegisteredFiles();
+    checkExistingComputations();
     onComplete();
   };
 
@@ -205,13 +218,14 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
       <StyledForm>
         <FormTitle>Record Computations</FormTitle>
         <p style={{ color: "#ffffff" }}>
-          Would you like to record any computations that were run to create the
-          files?
+          {hasExistingComputations
+            ? "Would you like to register another computation?"
+            : "Would you like to record any computations that were run to create the files?"}
         </p>
         <StyledButton
           onClick={() => {
             setShowForm(true);
-            loadRegisteredFiles(); // Refresh the list of available files when showing the form
+            loadRegisteredFiles();
           }}
         >
           Yes
@@ -291,7 +305,7 @@ function ComputationForm({ rocratePath, onComplete, onSkip }) {
       <StyledButton
         onClick={() => {
           setShowForm(false);
-          loadRegisteredFiles(); // Refresh the list of available files when canceling
+          loadRegisteredFiles();
         }}
         variant="secondary"
       >
