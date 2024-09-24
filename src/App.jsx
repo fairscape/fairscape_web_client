@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import InitForm from "./components/InitForm";
 import FileSelector from "./components/Register/FileSelector";
 import ComputationForm from "./components/Register/ComputationForm";
+import Review from "./components/Review"; // Import the new Review component
 import PackageForm from "./components/PackageForm";
 import UploadForm from "./components/UploadForm";
 import SidebarComponent from "./components/SideBar";
@@ -41,7 +42,11 @@ function App() {
     setCurrentView("computation");
   };
 
-  const handleSkipComputation = () => {
+  const handleComputationComplete = () => {
+    setCurrentView("review"); // Change to review step after computation
+  };
+
+  const handleReviewComplete = () => {
     setCurrentView("package");
   };
 
@@ -85,7 +90,7 @@ function App() {
             rocratePath={rocratePath}
             setRocratePath={setRocratePath}
             onDoneRegistering={handleDoneRegistering}
-            onFileRegister={handleInitSuccess}
+            onFileRegister={handleFileRegister}
           />
         );
       case "computation":
@@ -93,8 +98,16 @@ function App() {
           <ComputationForm
             rocratePath={rocratePath}
             registeredFiles={registeredFiles}
-            onComplete={handleFileRegister}
-            onSkip={handleSkipComputation}
+            onComplete={handleComputationComplete}
+            onSkip={handleComputationComplete}
+          />
+        );
+      case "review":
+        return (
+          <Review
+            rocratePath={rocratePath}
+            onContinue={handleReviewComplete}
+            setRocratePath={setRocratePath}
           />
         );
       case "package":

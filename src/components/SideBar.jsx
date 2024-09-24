@@ -127,8 +127,9 @@ function SidebarComponent({
   const steps = [
     { id: "init", label: "1: Init" },
     { id: "register", label: "2: Register" },
-    { id: "package", label: "3: Package" },
-    { id: "upload", label: "4: Upload" },
+    { id: "review", label: "3: Review" },
+    { id: "package", label: "4: Package" },
+    { id: "upload", label: "5: Upload" },
   ];
 
   return (

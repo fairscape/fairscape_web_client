@@ -17,6 +17,10 @@ const steps = [
     action: "register",
   },
   {
+    text: "Review the contents of your RO-Crate",
+    action: "review",
+  },
+  {
     text: "Package an RO-Crate for upload",
     action: "package",
   },
