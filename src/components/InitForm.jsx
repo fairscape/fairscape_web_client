@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Form, Button, Row, Col } from "react-bootstrap";
+import { Form, Button, Row, Col, Modal } from "react-bootstrap";
 import { rocrate_create } from "../rocrate/rocrate";
 import { ipcRenderer } from "electron";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { vs2015 } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import fs from "fs/promises";
 
 const StyledForm = styled(Form)`
   background-color: #282828;
@@ -85,6 +86,17 @@ const PreviewTitle = styled.h4`
   text-align: center;
 `;
 
+const StyledModal = styled(Modal)`
+  .modal-content {
+    background-color: #282828;
+    color: #ffffff;
+  }
+`;
+
+const ModalButton = styled(Button)`
+  margin-right: 10px;
+`;
+
 const organizations = [
   { name: "UVA", guid: "ark:59852/organization-uva" },
   { name: "UCSD", guid: "ark:59852/organization-ucsd" },
@@ -117,6 +129,8 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
   });
 
   const [jsonLdPreview, setJsonLdPreview] = useState({});
+  const [showOverwriteConfirmation, setShowOverwriteConfirmation] =
+    useState(false);
 
   useEffect(() => {
     updateJsonLdPreview();
@@ -183,8 +197,28 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
     setJsonLdPreview(preview);
   };
 
-  const handleSubmit = (e) => {
+  const checkForExistingMetadata = async () => {
+    try {
+      const fileList = await fs.readdir(rocratePath);
+      return fileList.includes("ro-crate-metadata.json");
+    } catch (error) {
+      console.error("Failed to check for existing metadata:", error);
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const metadataExists = await checkForExistingMetadata();
+
+    if (metadataExists) {
+      setShowOverwriteConfirmation(true);
+    } else {
+      createROCrate();
+    }
+  };
+
+  const createROCrate = () => {
     const guid = generateGuid(formData.name);
     try {
       const result = rocrate_create(
@@ -204,6 +238,16 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
     }
   };
 
+  const handleOverwriteConfirm = () => {
+    setShowOverwriteConfirmation(false);
+    createROCrate();
+  };
+
+  const handleOverwriteCancel = () => {
+    setShowOverwriteConfirmation(false);
+    onSuccess(); // Move to the next page without creating a new RO-Crate
+  };
+
   const handleBrowse = async () => {
     try {
       const result = await ipcRenderer.invoke("open-directory-dialog");
@@ -217,113 +261,137 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
   };
 
   return (
-    <StyledForm onSubmit={handleSubmit}>
-      <FormTitle>Initialize an RO-Crate</FormTitle>
-      <Row>
-        <Col md={6}>
-          <StyledFormGroup className="mb-3">
-            <StyledLabel>RO-Crate Path</StyledLabel>
-            <StyledInput
-              type="text"
-              value={rocratePath}
-              onChange={(e) => setRocratePath(e.target.value)}
-              required
-            />
-            <BrowseButton variant="secondary" onClick={handleBrowse}>
-              Browse
-            </BrowseButton>
-          </StyledFormGroup>
+    <>
+      <StyledForm onSubmit={handleSubmit}>
+        <FormTitle>Initialize an RO-Crate</FormTitle>
+        <Row>
+          <Col md={6}>
+            <StyledFormGroup className="mb-3">
+              <StyledLabel>RO-Crate Path</StyledLabel>
+              <StyledInput
+                type="text"
+                value={rocratePath}
+                onChange={(e) => setRocratePath(e.target.value)}
+                required
+              />
+              <BrowseButton variant="secondary" onClick={handleBrowse}>
+                Browse
+              </BrowseButton>
+            </StyledFormGroup>
 
-          <StyledFormGroup className="mb-3">
-            <StyledLabel>RO-Crate Name</StyledLabel>
-            <StyledInput
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </StyledFormGroup>
+            <StyledFormGroup className="mb-3">
+              <StyledLabel>RO-Crate Name</StyledLabel>
+              <StyledInput
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </StyledFormGroup>
 
-          <StyledFormGroup className="mb-3">
-            <StyledLabel>Organization Name</StyledLabel>
-            <StyledSelect
-              name="organization_name"
-              value={formData.organization_name}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select an organization</option>
-              {organizations.map((org) => (
-                <option key={org.guid} value={org.name}>
-                  {org.name}
-                </option>
-              ))}
-            </StyledSelect>
-          </StyledFormGroup>
+            <StyledFormGroup className="mb-3">
+              <StyledLabel>Organization Name</StyledLabel>
+              <StyledSelect
+                name="organization_name"
+                value={formData.organization_name}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select an organization</option>
+                {organizations.map((org) => (
+                  <option key={org.guid} value={org.name}>
+                    {org.name}
+                  </option>
+                ))}
+              </StyledSelect>
+            </StyledFormGroup>
 
-          <StyledFormGroup className="mb-3">
-            <StyledLabel>Project Name</StyledLabel>
-            <StyledSelect
-              name="project_name"
-              value={formData.project_name}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select a project</option>
-              {projects.map((project) => (
-                <option key={project.guid} value={project.name}>
-                  {project.name}
-                </option>
-              ))}
-            </StyledSelect>
-          </StyledFormGroup>
+            <StyledFormGroup className="mb-3">
+              <StyledLabel>Project Name</StyledLabel>
+              <StyledSelect
+                name="project_name"
+                value={formData.project_name}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select a project</option>
+                {projects.map((project) => (
+                  <option key={project.guid} value={project.name}>
+                    {project.name}
+                  </option>
+                ))}
+              </StyledSelect>
+            </StyledFormGroup>
 
-          <StyledFormGroup className="mb-3">
-            <StyledLabel>Description</StyledLabel>
-            <StyledTextArea
-              as="textarea"
-              rows={3}
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-            />
-          </StyledFormGroup>
+            <StyledFormGroup className="mb-3">
+              <StyledLabel>Description</StyledLabel>
+              <StyledTextArea
+                as="textarea"
+                rows={3}
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+              />
+            </StyledFormGroup>
 
-          <StyledFormGroup className="mb-3">
-            <StyledLabel>Keywords</StyledLabel>
-            <StyledInput
-              type="text"
-              name="keywords"
-              value={formData.keywords}
-              onChange={handleChange}
-              placeholder="Enter keywords separated by commas"
-              required
-            />
-          </StyledFormGroup>
+            <StyledFormGroup className="mb-3">
+              <StyledLabel>Keywords</StyledLabel>
+              <StyledInput
+                type="text"
+                name="keywords"
+                value={formData.keywords}
+                onChange={handleChange}
+                placeholder="Enter keywords separated by commas"
+                required
+              />
+            </StyledFormGroup>
 
-          <StyledButton type="submit">Initialize RO-Crate</StyledButton>
-        </Col>
-        <Col md={6}>
-          <PreviewContainer>
-            <PreviewTitle>Preview metadata in JSON-LD </PreviewTitle>
-            <SyntaxHighlighter
-              language="json"
-              style={vs2015}
-              customStyle={{
-                backgroundColor: "transparent",
-                padding: "0",
-                margin: "0",
-                fontSize: "0.9em",
-              }}
-            >
-              {JSON.stringify(jsonLdPreview, null, 2)}
-            </SyntaxHighlighter>
-          </PreviewContainer>
-        </Col>
-      </Row>
-    </StyledForm>
+            <StyledButton type="submit">Initialize RO-Crate</StyledButton>
+          </Col>
+          <Col md={6}>
+            <PreviewContainer>
+              <PreviewTitle>Preview metadata in JSON-LD </PreviewTitle>
+              <SyntaxHighlighter
+                language="json"
+                style={vs2015}
+                customStyle={{
+                  backgroundColor: "transparent",
+                  padding: "0",
+                  margin: "0",
+                  fontSize: "0.9em",
+                }}
+              >
+                {JSON.stringify(jsonLdPreview, null, 2)}
+              </SyntaxHighlighter>
+            </PreviewContainer>
+          </Col>
+        </Row>
+      </StyledForm>
+
+      <StyledModal
+        show={showOverwriteConfirmation}
+        onHide={() => setShowOverwriteConfirmation(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Existing RO-Crate Metadata Found</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          An ro-crate-metadata.json file already exists in the selected
+          directory. Do you want to overwrite it or continue to the registration
+          page?
+        </Modal.Body>
+        <Modal.Footer>
+          <ModalButton variant="secondary" onClick={handleOverwriteCancel}>
+            Continue to Register
+          </ModalButton>
+          <ModalButton variant="primary" onClick={handleOverwriteConfirm}>
+            Overwrite
+          </ModalButton>
+        </Modal.Footer>
+      </StyledModal>
+    </>
   );
 }
 
