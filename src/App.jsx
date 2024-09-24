@@ -95,7 +95,7 @@ function App() {
             rocratePath={rocratePath}
             setRocratePath={setRocratePath}
             onDoneRegistering={handleDoneRegistering}
-            onFileRegister={handleFileRegister}
+            onFileRegister={handleInitSuccess}
             onInitRequired={handleInitRequired}
           />
         );
@@ -104,7 +104,7 @@ function App() {
           <ComputationForm
             rocratePath={rocratePath}
             registeredFiles={registeredFiles}
-            onComplete={handleComputationComplete}
+            onComplete={handleFileRegister}
             onSkip={handleComputationComplete}
           />
         );
