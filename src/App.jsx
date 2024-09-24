@@ -38,6 +38,11 @@ function App() {
     setCurrentView("register");
   };
 
+  const handleInitRequired = (path) => {
+    setRocratePath(path);
+    setCurrentView("init");
+  };
+
   const handleDoneRegistering = () => {
     setCurrentView("computation");
   };
@@ -91,6 +96,7 @@ function App() {
             setRocratePath={setRocratePath}
             onDoneRegistering={handleDoneRegistering}
             onFileRegister={handleFileRegister}
+            onInitRequired={handleInitRequired}
           />
         );
       case "computation":

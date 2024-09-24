@@ -4,6 +4,7 @@ import { Table, Container, Button } from "react-bootstrap";
 import fs from "fs";
 import path from "path";
 import { ipcRenderer } from "electron";
+import InitModal from "./InitModal";
 
 const StyledContainer = styled(Container)`
   background-color: #282828;
@@ -59,9 +60,10 @@ const CheckMark = styled.span`
   color: #28a745;
 `;
 
-function Review({ rocratePath, onContinue, setRocratePath }) {
+function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
+  const [showInitModal, setShowInitModal] = useState(false);
 
   useEffect(() => {
     if (rocratePath) {
@@ -72,15 +74,14 @@ function Review({ rocratePath, onContinue, setRocratePath }) {
   const loadItems = async (dirPath) => {
     try {
       const fileList = await fs.promises.readdir(dirPath);
-      const metadataPath = path.join(dirPath, "ro-crate-metadata.json");
+      const metadataExists = fileList.includes("ro-crate-metadata.json");
 
-      if (!fileList.includes("ro-crate-metadata.json")) {
-        setError(
-          "The selected directory is not a valid RO-Crate. It should contain an ro-crate-metadata.json file."
-        );
+      if (!metadataExists) {
+        setShowInitModal(true);
         return;
       }
 
+      const metadataPath = path.join(dirPath, "ro-crate-metadata.json");
       const metadata = JSON.parse(
         await fs.promises.readFile(metadataPath, "utf8")
       );
@@ -159,6 +160,11 @@ function Review({ rocratePath, onContinue, setRocratePath }) {
     }
   };
 
+  const handleInitialize = () => {
+    setShowInitModal(false);
+    onInitRequired(rocratePath);
+  };
+
   if (!rocratePath) {
     return (
       <StyledContainer>
@@ -223,6 +229,12 @@ function Review({ rocratePath, onContinue, setRocratePath }) {
           </StyledButton>
         </>
       )}
+
+      <InitModal
+        show={showInitModal}
+        onHide={() => setShowInitModal(false)}
+        onInit={handleInitialize}
+      />
     </StyledContainer>
   );
 }

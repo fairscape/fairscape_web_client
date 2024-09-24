@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { ListGroup, Button, Container, Row, Col } from "react-bootstrap";
 import DatasetForm from "./DatasetForm";
 import SoftwareForm from "./SoftwareForm";
+import InitModal from "../InitModal"; // Import the InitModal component
 import fs from "fs";
 import path from "path";
 import { ipcRenderer } from "electron";
@@ -70,12 +71,14 @@ function FileSelector({
   setRocratePath,
   onDoneRegistering,
   onFileRegister,
+  onInitRequired,
 }) {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileType, setFileType] = useState(null);
   const [error, setError] = useState(null);
   const [registeredFiles, setRegisteredFiles] = useState([]);
+  const [showInitModal, setShowInitModal] = useState(false);
 
   const readFilesRecursively = async (dir, baseDir) => {
     let results = [];
@@ -114,9 +117,7 @@ function FileSelector({
         const metadataExists = fileList.includes("ro-crate-metadata.json");
 
         if (!metadataExists) {
-          setError(
-            "The selected directory is not a valid RO-Crate. It should contain an ro-crate-metadata.json file."
-          );
+          setShowInitModal(true);
           return;
         }
 
@@ -201,6 +202,11 @@ function FileSelector({
       console.error("Failed to open directory dialog:", error);
       setError("Failed to open directory dialog. Please try again.");
     }
+  };
+
+  const handleInitialize = () => {
+    setShowInitModal(false);
+    onInitRequired(rocratePath);
   };
 
   if (selectedFile && fileType) {
@@ -305,6 +311,12 @@ function FileSelector({
           </ButtonContainer>
         </>
       )}
+
+      <InitModal
+        show={showInitModal}
+        onHide={() => setShowInitModal(false)}
+        onInit={handleInitialize}
+      />
     </StyledContainer>
   );
 }
