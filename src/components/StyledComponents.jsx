@@ -305,20 +305,33 @@ export const FormField = ({
   type = "text",
   required = false,
   placeholder = "",
+  as = "input",
+  children,
 }) => (
   <StyledFormGroup>
     <StyledLabel>
       {label}
       {required && " *"}
     </StyledLabel>
-    <StyledInput
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      required={required}
-      placeholder={placeholder}
-    />
+    {as === "select" ? (
+      <StyledSelect
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+      >
+        {children}
+      </StyledSelect>
+    ) : (
+      <StyledInput
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+        placeholder={placeholder}
+      />
+    )}
   </StyledFormGroup>
 );
 
