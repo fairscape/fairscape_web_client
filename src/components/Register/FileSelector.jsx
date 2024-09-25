@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { ListGroup, Button, Container, Row, Col } from "react-bootstrap";
 import DatasetForm from "./DatasetForm";
 import SoftwareForm from "./SoftwareForm";
-import InitModal from "../InitModal"; // Import the InitModal component
+import InitModal from "../InitModal";
 import fs from "fs";
 import path from "path";
 import { ipcRenderer } from "electron";
@@ -70,6 +70,7 @@ function FileSelector({
   rocratePath,
   setRocratePath,
   onDoneRegistering,
+  onSkipComputations,
   onFileRegister,
   onInitRequired,
 }) {
@@ -79,6 +80,7 @@ function FileSelector({
   const [error, setError] = useState(null);
   const [registeredFiles, setRegisteredFiles] = useState([]);
   const [showInitModal, setShowInitModal] = useState(false);
+  const [packageType, setPackageType] = useState(null);
 
   const readFilesRecursively = async (dir, baseDir) => {
     let results = [];
@@ -134,7 +136,7 @@ function FileSelector({
           setFiles(filteredFiles);
           setError(null);
 
-          // Load registered files from ro-crate-metadata.json
+          // Load registered files and package type from ro-crate-metadata.json
           const metadataPath = path.join(rocratePath, "ro-crate-metadata.json");
           const metadata = JSON.parse(
             await fs.promises.readFile(metadataPath, "utf8")
@@ -145,6 +147,10 @@ function FileSelector({
               normalizePath(item.contentUrl.replace("file://", ""))
             );
           setRegisteredFiles(registeredFiles);
+
+          // Set package type
+          setPackageType(metadata.packageType || null);
+          console.log(packageType);
         }
       } catch (error) {
         console.error("Error reading directory or metadata:", error);
@@ -160,7 +166,11 @@ function FileSelector({
 
   const handleFileSelect = (file) => {
     setSelectedFile(file);
-    setFileType(null);
+    if (packageType === "dataset") {
+      setFileType("dataset");
+    } else {
+      setFileType(null);
+    }
   };
 
   const handleTypeSelect = (type) => {
@@ -197,6 +207,7 @@ function FileSelector({
         setFiles([]);
         setRegisteredFiles([]);
         setError(null);
+        setPackageType(null);
       }
     } catch (error) {
       console.error("Failed to open directory dialog:", error);
@@ -209,20 +220,18 @@ function FileSelector({
     onInitRequired(rocratePath);
   };
 
+  const handleDoneRegistering = () => {
+    if (packageType === "dataset") {
+      onSkipComputations();
+    } else {
+      onDoneRegistering();
+    }
+  };
+
   if (selectedFile && fileType) {
-    return fileType === "dataset" ? (
-      <DatasetForm
-        file={selectedFile}
-        onBack={handleBack}
-        rocratePath={rocratePath}
-        onSuccess={() => {
-          onFileRegister();
-          setSelectedFile(null);
-          setFileType(null);
-        }}
-      />
-    ) : (
-      <SoftwareForm
+    const FormComponent = fileType === "dataset" ? DatasetForm : SoftwareForm;
+    return (
+      <FormComponent
         file={selectedFile}
         onBack={handleBack}
         rocratePath={rocratePath}
@@ -245,7 +254,7 @@ function FileSelector({
             <StyledButton onClick={handleBrowse}>Browse</StyledButton>
           </Col>
         </Row>
-      ) : selectedFile ? (
+      ) : selectedFile && packageType !== "dataset" ? (
         <Row>
           <Col>
             <h3>Is {selectedFile} a dataset or software?</h3>
@@ -301,7 +310,7 @@ function FileSelector({
           )}
           <ButtonContainer>
             {files.length > 0 && (
-              <DoneButton onClick={onDoneRegistering}>
+              <DoneButton onClick={handleDoneRegistering}>
                 Done Registering
               </DoneButton>
             )}

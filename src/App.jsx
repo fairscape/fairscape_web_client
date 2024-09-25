@@ -95,6 +95,7 @@ function App() {
             rocratePath={rocratePath}
             setRocratePath={setRocratePath}
             onDoneRegistering={handleDoneRegistering}
+            onSkipComputations={handleComputationComplete}
             onFileRegister={handleInitSuccess}
             onInitRequired={handleInitRequired}
           />
