@@ -22,6 +22,7 @@ function generateROCrate({
   keywords,
   organizationName = null,
   projectName = null,
+  packageType = null, // Add packageType parameter
 }) {
   console.log("projectName in models: ", projectName);
   if (!name) {
@@ -46,6 +47,11 @@ function generateROCrate({
     description: description,
     "@graph": [],
   };
+
+  // Add packageType to the metadata if it's provided
+  if (packageType) {
+    roCrateInstanceMetadata.packageType = packageType;
+  }
 
   if (organizationName) {
     const organizationGuid = `ark:${NAAN}/organization-${organizationName
