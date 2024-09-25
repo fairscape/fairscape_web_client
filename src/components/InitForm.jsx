@@ -1,100 +1,70 @@
 import React, { useState, useEffect } from "react";
-import styled from "styled-components";
-import { Form, Button, Row, Col, Modal } from "react-bootstrap";
+import { Row, Col, Modal } from "react-bootstrap";
 import { rocrate_create } from "../rocrate/rocrate";
 import { ipcRenderer } from "electron";
-import SyntaxHighlighter from "react-syntax-highlighter";
-import { vs2015 } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import fs from "fs/promises";
+import styled from "styled-components";
+import {
+  InitStyledForm,
+  FormTitle,
+  StyledButton,
+  BrowseButton,
+  PreviewContainer,
+  PreviewTitle,
+  StyledModal,
+  ModalButton,
+  FormField,
+  TextAreaField,
+  JsonLdPreview,
+  RadioGroupField,
+} from "./StyledComponents";
 
-const StyledForm = styled(Form)`
-  background-color: #282828;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+const PackageTypeContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
 `;
 
-const FormTitle = styled.h3`
-  color: #ffffff;
-  margin-bottom: 10px;
-  text-align: center;
-`;
-
-const StyledFormGroup = styled(Form.Group)`
+const PackageTypeQuestion = styled.h2`
+  font-size: 24px;
   margin-bottom: 20px;
-`;
-
-const StyledLabel = styled(Form.Label)`
-  color: #ffffff;
-  font-weight: bold;
-`;
-
-const StyledInput = styled(Form.Control)`
-  background-color: #3e3e3e;
-  border: 1px solid #555;
-  color: #ffffff;
-  &:focus {
-    background-color: #3e3e3e;
-    color: #ffffff;
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-  }
-`;
-
-const StyledTextArea = styled(StyledInput)`
-  resize: vertical;
-  min-height: 100px;
-  width: 100%;
-  padding: 10px;
-`;
-
-const StyledSelect = styled(Form.Select)`
-  background-color: #3e3e3e;
-  border: 1px solid #555;
-  color: #ffffff;
-  &:focus {
-    background-color: #3e3e3e;
-    color: #ffffff;
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-  }
-`;
-
-const StyledButton = styled(Button)`
-  background-color: #007bff;
-  border: none;
-  &:hover {
-    background-color: #0056b3;
-  }
-`;
-
-const BrowseButton = styled(Button)`
-  margin-top: 10px;
-`;
-
-const PreviewContainer = styled.div`
-  background-color: #1e1e1e;
-  border-radius: 5px;
-  height: 100%;
-  overflow-y: auto;
-  padding: 10px;
-`;
-
-const PreviewTitle = styled.h4`
-  color: #ffffff;
-  margin-bottom: 15px;
   text-align: center;
 `;
 
-const StyledModal = styled(Modal)`
-  .modal-content {
-    background-color: #282828;
-    color: #ffffff;
+const PackageTypeOptions = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  width: 100%;
+`;
+
+const PackageTypeOption = styled.div`
+  background-color: ${(props) => (props.selected ? "#2196F3" : "#3e3e3e")};
+  border-radius: 8px;
+  padding: 20px;
+  width: 300px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: ${(props) => (props.selected ? "#2196F3" : "#4e4e4e")};
   }
 `;
 
-const ModalButton = styled(Button)`
-  margin-right: 10px;
+const OptionTitle = styled.h3`
+  font-size: 20px;
+  margin-bottom: 10px;
+`;
+
+const OptionDescription = styled.p`
+  font-size: 16px;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
 `;
 
 const organizations = [
@@ -120,12 +90,14 @@ const projects = [
 ];
 
 function InitForm({ rocratePath, setRocratePath, onSuccess }) {
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
     organization_name: "",
     project_name: "",
     description: "",
     keywords: "",
+    packageType: "",
   });
 
   const [jsonLdPreview, setJsonLdPreview] = useState({});
@@ -138,6 +110,10 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePackageTypeSelect = (type) => {
+    setFormData({ ...formData, packageType: type });
   };
 
   const generateGuid = (name) => {
@@ -165,6 +141,7 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
       isPartOf: [],
       keywords: formData.keywords.split(",").map((k) => k.trim()),
       description: formData.description,
+      packageType: formData.packageType,
       "@graph": [],
     };
 
@@ -228,13 +205,13 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
         formData.project_name,
         formData.description,
         formData.keywords,
+        formData.packageType,
         guid
       );
       console.log(result);
       onSuccess();
     } catch (error) {
       console.error("Failed to create RO-Crate:", error);
-      // Handle the error (e.g., show an error message to the user)
     }
   };
 
@@ -245,7 +222,7 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
 
   const handleOverwriteCancel = () => {
     setShowOverwriteConfirmation(false);
-    onSuccess(); // Move to the next page without creating a new RO-Crate
+    onSuccess();
   };
 
   const handleBrowse = async () => {
@@ -256,20 +233,64 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
       }
     } catch (error) {
       console.error("Failed to open directory dialog:", error);
-      // Handle the error (e.g., show an error message to the user)
     }
+  };
+
+  const handleNextStep = () => {
+    if (formData.packageType) {
+      setStep(2);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    setStep(1);
   };
 
   return (
     <>
-      <StyledForm onSubmit={handleSubmit}>
+      <InitStyledForm onSubmit={handleSubmit}>
         <FormTitle>Initialize an RO-Crate</FormTitle>
-        <Row>
-          <Col md={6}>
-            <StyledFormGroup className="mb-3">
-              <StyledLabel>RO-Crate Path</StyledLabel>
-              <StyledInput
-                type="text"
+        {step === 1 ? (
+          <PackageTypeContainer>
+            <PackageTypeQuestion>
+              What type of data are you packaging?
+            </PackageTypeQuestion>
+            <PackageTypeOptions>
+              <PackageTypeOption
+                selected={formData.packageType === "dataset"}
+                onClick={() => handlePackageTypeSelect("dataset")}
+              >
+                <OptionTitle>Datasets</OptionTitle>
+                <OptionDescription>
+                  Only Datasets does not include software/computations.
+                </OptionDescription>
+              </PackageTypeOption>
+              <PackageTypeOption
+                selected={formData.packageType === "pipeline"}
+                onClick={() => handlePackageTypeSelect("pipeline")}
+              >
+                <OptionTitle>Full Data Pipeline</OptionTitle>
+                <OptionDescription>
+                  Includes Datasets with software and computations required for
+                  provenance.
+                </OptionDescription>
+              </PackageTypeOption>
+            </PackageTypeOptions>
+            <StyledButton
+              type="button"
+              onClick={handleNextStep}
+              disabled={!formData.packageType}
+              style={{ marginTop: "20px" }}
+            >
+              Next
+            </StyledButton>
+          </PackageTypeContainer>
+        ) : (
+          <Row>
+            <Col md={6}>
+              <FormField
+                label="RO-Crate Path"
+                name="rocratePath"
                 value={rocratePath}
                 onChange={(e) => setRocratePath(e.target.value)}
                 required
@@ -277,26 +298,22 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
               <BrowseButton variant="secondary" onClick={handleBrowse}>
                 Browse
               </BrowseButton>
-            </StyledFormGroup>
 
-            <StyledFormGroup className="mb-3">
-              <StyledLabel>RO-Crate Name</StyledLabel>
-              <StyledInput
-                type="text"
+              <FormField
+                label="RO-Crate Name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
                 required
               />
-            </StyledFormGroup>
 
-            <StyledFormGroup className="mb-3">
-              <StyledLabel>Organization Name</StyledLabel>
-              <StyledSelect
+              <FormField
+                label="Organization Name"
                 name="organization_name"
                 value={formData.organization_name}
                 onChange={handleChange}
                 required
+                as="select"
               >
                 <option value="">Select an organization</option>
                 {organizations.map((org) => (
@@ -304,16 +321,15 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
                     {org.name}
                   </option>
                 ))}
-              </StyledSelect>
-            </StyledFormGroup>
+              </FormField>
 
-            <StyledFormGroup className="mb-3">
-              <StyledLabel>Project Name</StyledLabel>
-              <StyledSelect
+              <FormField
+                label="Project Name"
                 name="project_name"
                 value={formData.project_name}
                 onChange={handleChange}
                 required
+                as="select"
               >
                 <option value="">Select a project</option>
                 {projects.map((project) => (
@@ -321,54 +337,40 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
                     {project.name}
                   </option>
                 ))}
-              </StyledSelect>
-            </StyledFormGroup>
+              </FormField>
 
-            <StyledFormGroup className="mb-3">
-              <StyledLabel>Description</StyledLabel>
-              <StyledTextArea
-                as="textarea"
-                rows={3}
+              <TextAreaField
+                label="Description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 required
               />
-            </StyledFormGroup>
 
-            <StyledFormGroup className="mb-3">
-              <StyledLabel>Keywords</StyledLabel>
-              <StyledInput
-                type="text"
+              <FormField
+                label="Keywords"
                 name="keywords"
                 value={formData.keywords}
                 onChange={handleChange}
                 placeholder="Enter keywords separated by commas"
                 required
               />
-            </StyledFormGroup>
 
-            <StyledButton type="submit">Initialize RO-Crate</StyledButton>
-          </Col>
-          <Col md={6}>
-            <PreviewContainer>
-              <PreviewTitle>Preview metadata in JSON-LD </PreviewTitle>
-              <SyntaxHighlighter
-                language="json"
-                style={vs2015}
-                customStyle={{
-                  backgroundColor: "transparent",
-                  padding: "0",
-                  margin: "0",
-                  fontSize: "0.9em",
-                }}
-              >
-                {JSON.stringify(jsonLdPreview, null, 2)}
-              </SyntaxHighlighter>
-            </PreviewContainer>
-          </Col>
-        </Row>
-      </StyledForm>
+              <ButtonContainer>
+                <StyledButton type="submit">Initialize RO-Crate</StyledButton>
+                <StyledButton type="button" onClick={handlePreviousStep}>
+                  Back to Package Selection
+                </StyledButton>
+              </ButtonContainer>
+            </Col>
+            <Col md={6}>
+              <PreviewContainer>
+                <JsonLdPreview jsonLdData={jsonLdPreview} />
+              </PreviewContainer>
+            </Col>
+          </Row>
+        )}
+      </InitStyledForm>
 
       <StyledModal
         show={showOverwriteConfirmation}

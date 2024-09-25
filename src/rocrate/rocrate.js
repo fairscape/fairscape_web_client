@@ -126,9 +126,9 @@ export function rocrate_create(
   project_name,
   description,
   keywords,
+  packageType,
   guid = ""
 ) {
-  console.log("projectName in rocrate: ", project_name);
   const passed_crate = generateROCrate({
     path: rocrate_path,
     guid,
@@ -137,6 +137,7 @@ export function rocrate_create(
     projectName: project_name,
     description,
     keywords,
+    packageType,
   });
   return passed_crate["@id"];
 }
