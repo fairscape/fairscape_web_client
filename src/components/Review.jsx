@@ -31,6 +31,7 @@ const StyledTable = styled(Table)`
 
   thead th {
     background-color: #4e4e4e;
+    color: #ffffff;
   }
 
   tbody tr:nth-of-type(odd) {
@@ -40,6 +41,17 @@ const StyledTable = styled(Table)`
   tbody tr:hover {
     background-color: #4e4e4e;
   }
+`;
+
+const TableRow = styled.tr`
+  ${(props) =>
+    props.unregistered &&
+    `
+    background-color: rgba(255, 0, 0, 0.1) !important;
+    &:hover {
+      background-color: rgba(255, 0, 0, 0.2) !important;
+    }
+  `}
 `;
 
 const ButtonContainer = styled.div`
@@ -54,10 +66,6 @@ const StyledButton = styled(Button)`
   &:hover {
     background-color: #0056b3;
   }
-`;
-
-const CheckMark = styled.span`
-  color: #28a745;
 `;
 
 function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
@@ -91,7 +99,6 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
           const fileName = item.contentUrl.replace("file:///", "");
           acc[fileName] = item;
         } else if (item["@type"].includes("Computation")) {
-          // Handle Computation items
           acc[item["@id"]] = item;
         }
         return acc;
@@ -107,35 +114,36 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
 
             let type = stats.isDirectory() ? "Directory" : "File";
             let isRegistered = false;
-            let displayName = "";
+            let name = file;
+            let guid = "";
 
             if (file === "ro-crate-metadata.json") {
               type = "Metadata";
               isRegistered = true;
-              displayName = "RO-Crate Metadata";
+              name = "RO-Crate Metadata";
             } else if (graphItem) {
               type = graphItem["@type"].split("#")[1] || graphItem["@type"];
               isRegistered = true;
-              displayName = graphItem.name || "";
+              name = graphItem.name || file;
+              guid = graphItem["@id"] || "";
             }
 
             return {
-              name: file,
-              displayName,
+              name,
               isRegistered,
               type,
+              guid,
             };
           })
       );
 
-      // Add Computation items
       const computationItems = Object.values(graphItems)
         .filter((item) => item["@type"].includes("Computation"))
         .map((item) => ({
-          name: "",
-          displayName: item.name || "",
+          name: item.name || "",
           isRegistered: true,
           type: "Computation",
+          guid: item["@id"] || "",
         }));
 
       setItems([...itemDetails, ...computationItems]);
@@ -179,7 +187,7 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
 
   return (
     <StyledContainer>
-      <StyledTitle>Review Items</StyledTitle>
+      <StyledTitle>Preview RO-Crate Contents</StyledTitle>
       {error ? (
         <>
           <p>{error}</p>
@@ -192,20 +200,20 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
           <StyledTable striped bordered hover>
             <thead>
               <tr>
-                <th>File Name</th>
                 <th>Name</th>
-                <th>Registered</th>
+                <th>Status</th>
                 <th>Type</th>
+                <th>GUID</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
-                <tr key={index}>
+                <TableRow key={index} unregistered={!item.isRegistered}>
                   <td>{item.name}</td>
-                  <td>{item.displayName}</td>
-                  <td>{item.isRegistered ? <CheckMark>✓</CheckMark> : ""}</td>
+                  <td>{item.isRegistered ? "Registered" : "Unregistered"}</td>
                   <td>{item.type}</td>
-                </tr>
+                  <td>{item.guid}</td>
+                </TableRow>
               ))}
             </tbody>
           </StyledTable>
