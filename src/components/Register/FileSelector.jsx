@@ -114,6 +114,7 @@ function FileSelector({
           setError("Please select an RO-Crate directory.");
           return;
         }
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         const fileList = await fs.promises.readdir(rocratePath);
         const metadataExists = fileList.includes("ro-crate-metadata.json");
