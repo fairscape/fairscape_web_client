@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Table, Container, Button } from "react-bootstrap";
+import { Table, Container, Button, Tabs, Tab } from "react-bootstrap";
 import fs from "fs";
 import path from "path";
 import { ipcRenderer } from "electron";
 import InitModal from "./InitModal";
+import { JsonLdPreview } from "./StyledComponents";
 
 const StyledContainer = styled(Container)`
   background-color: #282828;
@@ -12,11 +13,46 @@ const StyledContainer = styled(Container)`
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 60px);
+  overflow: hidden;
 `;
 
 const StyledTitle = styled.h2`
   margin-bottom: 30px;
   text-align: center;
+`;
+
+const ContentWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+`;
+
+const ScrollableContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+
+  /* Customize scrollbar */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #3e3e3e;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #777;
+  }
 `;
 
 const StyledTable = styled(Table)`
@@ -32,6 +68,9 @@ const StyledTable = styled(Table)`
   thead th {
     background-color: #4e4e4e;
     color: #ffffff;
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
   tbody tr:nth-of-type(odd) {
@@ -68,10 +107,16 @@ const StyledButton = styled(Button)`
   }
 `;
 
+const StyledTabs = styled(Tabs)`
+  margin-bottom: 20px;
+`;
+
 function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [showInitModal, setShowInitModal] = useState(false);
+  const [jsonLdData, setJsonLdData] = useState(null);
+  const [activeTab, setActiveTab] = useState("table");
 
   useEffect(() => {
     if (rocratePath) {
@@ -93,6 +138,8 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
       const metadata = JSON.parse(
         await fs.promises.readFile(metadataPath, "utf8")
       );
+
+      setJsonLdData(metadata);
 
       const graphItems = metadata["@graph"].reduce((acc, item) => {
         if (item.contentUrl) {
@@ -173,50 +220,84 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
     onInitRequired(rocratePath);
   };
 
-  if (!rocratePath) {
-    return (
-      <StyledContainer>
-        <StyledTitle>Review Items</StyledTitle>
-        <p>Please select an RO-Crate directory to review.</p>
-        <StyledButton onClick={handleSelectOrChangeCrate}>
-          Select RO-Crate
-        </StyledButton>
-      </StyledContainer>
-    );
-  }
+  const renderTableContent = () => (
+    <StyledTable striped bordered hover>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Type</th>
+          <th>GUID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((item, index) => (
+          <TableRow key={index} unregistered={!item.isRegistered}>
+            <td>{item.name}</td>
+            <td>{item.isRegistered ? "Registered" : "Unregistered"}</td>
+            <td>{item.type}</td>
+            <td>{item.guid}</td>
+          </TableRow>
+        ))}
+      </tbody>
+    </StyledTable>
+  );
 
-  return (
-    <StyledContainer>
-      <StyledTitle>Preview RO-Crate Contents</StyledTitle>
-      {error ? (
+  const renderJsonLdContent = () => <JsonLdPreview jsonLdData={jsonLdData} />;
+
+  const renderContent = () => {
+    if (!rocratePath) {
+      return (
+        <>
+          <p>Please select an RO-Crate directory to review.</p>
+          <StyledButton onClick={handleSelectOrChangeCrate}>
+            Select RO-Crate
+          </StyledButton>
+        </>
+      );
+    }
+
+    if (error) {
+      return (
         <>
           <p>{error}</p>
           <StyledButton onClick={handleSelectOrChangeCrate}>
             Select Different RO-Crate
           </StyledButton>
         </>
-      ) : items.length > 0 ? (
+      );
+    }
+
+    if (items.length === 0) {
+      return (
         <>
-          <StyledTable striped bordered hover>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Type</th>
-                <th>GUID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, index) => (
-                <TableRow key={index} unregistered={!item.isRegistered}>
-                  <td>{item.name}</td>
-                  <td>{item.isRegistered ? "Registered" : "Unregistered"}</td>
-                  <td>{item.type}</td>
-                  <td>{item.guid}</td>
-                </TableRow>
-              ))}
-            </tbody>
-          </StyledTable>
+          <p>No items found in the selected RO-Crate directory.</p>
+          <StyledButton onClick={handleSelectOrChangeCrate}>
+            Select Different RO-Crate
+          </StyledButton>
+        </>
+      );
+    }
+
+    return activeTab === "table" ? renderTableContent() : renderJsonLdContent();
+  };
+
+  return (
+    <StyledContainer>
+      <StyledTitle>Preview RO-Crate Contents</StyledTitle>
+      <ContentWrapper>
+        {rocratePath && items.length > 0 && (
+          <StyledTabs
+            activeKey={activeTab}
+            onSelect={(k) => setActiveTab(k)}
+            className="mb-3"
+          >
+            <Tab eventKey="table" title="Table View" />
+            <Tab eventKey="json-ld" title="JSON-LD View" />
+          </StyledTabs>
+        )}
+        <ScrollableContent>{renderContent()}</ScrollableContent>
+        {rocratePath && items.length > 0 && (
           <ButtonContainer>
             <StyledButton onClick={onContinue}>
               Continue to Package
@@ -228,16 +309,8 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
               Change RO-Crate
             </StyledButton>
           </ButtonContainer>
-        </>
-      ) : (
-        <>
-          <p>No items found in the selected RO-Crate directory.</p>
-          <StyledButton onClick={handleSelectOrChangeCrate}>
-            Select Different RO-Crate
-          </StyledButton>
-        </>
-      )}
-
+        )}
+      </ContentWrapper>
       <InitModal
         show={showInitModal}
         onHide={() => setShowInitModal(false)}
