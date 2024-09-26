@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
-import { Form, Button, Modal } from "react-bootstrap";
+import { Form, Button, Alert } from "react-bootstrap";
 import axios from "axios";
-import LoginComponent from "./LoginComponent";
 import StatusTracker from "./StatusTracker";
 
 const StyledForm = styled(Form)`
@@ -56,21 +55,18 @@ const StyledButton = styled(Button)`
   }
 `;
 
-const StyledModal = styled(Modal)`
-  .modal-content {
-    background-color: #282828;
-    color: #ffffff;
-  }
+const StyledAlert = styled(Alert)`
+  margin-top: 20px;
 `;
 
 function UploadForm({ packagedPath }) {
   const [crate, setCrate] = useState(null);
   const [crateName, setCrateName] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [submissionUUID, setSubmissionUUID] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showLoginWarning, setShowLoginWarning] = useState(false);
   const crateInputRef = useRef(null);
 
   const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
@@ -93,10 +89,10 @@ function UploadForm({ packagedPath }) {
     const selectedCrate = e.target.files[0];
     setCrate(selectedCrate);
     setCrateName(selectedCrate ? selectedCrate.name : "");
-    // Reset status when a new file is selected
     setSubmissionUUID(null);
     setUploadError(null);
     setIsUploading(false);
+    setShowLoginWarning(false);
   };
 
   const handleCrateButtonClick = () => {
@@ -108,7 +104,7 @@ function UploadForm({ packagedPath }) {
 
     const isUserLoggedIn = checkLoginStatus();
     if (!isUserLoggedIn) {
-      setShowLoginModal(true);
+      setShowLoginWarning(true);
       return;
     }
 
@@ -117,10 +113,10 @@ function UploadForm({ packagedPath }) {
       return;
     }
 
-    // Reset status and set uploading to true
     setSubmissionUUID(null);
     setUploadError(null);
     setIsUploading(true);
+    setShowLoginWarning(false);
 
     const formData = new FormData();
 
@@ -169,16 +165,6 @@ function UploadForm({ packagedPath }) {
     }
   };
 
-  const handleCloseLoginModal = () => {
-    setShowLoginModal(false);
-  };
-
-  const handleLogin = (userData) => {
-    setIsLoggedIn(true);
-    handleCloseLoginModal();
-    console.log("User logged in:", userData);
-  };
-
   return (
     <>
       <StyledForm onSubmit={handleSubmit}>
@@ -199,21 +185,17 @@ function UploadForm({ packagedPath }) {
           </CrateSelectionButton>
         </StyledFormGroup>
         <StyledButton type="submit">Upload RO-Crate</StyledButton>
+        {showLoginWarning && (
+          <StyledAlert variant="warning">
+            Please log in using the sidebar before uploading an RO-Crate.
+          </StyledAlert>
+        )}
         <StatusTracker
           submissionUUID={submissionUUID}
           uploadError={uploadError}
           isUploading={isUploading}
         />
       </StyledForm>
-
-      <StyledModal show={showLoginModal} onHide={handleCloseLoginModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Login Required</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <LoginComponent onLogin={handleLogin} />
-        </Modal.Body>
-      </StyledModal>
     </>
   );
 }
