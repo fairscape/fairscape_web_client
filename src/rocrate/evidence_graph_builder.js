@@ -90,27 +90,22 @@ function generateEvidenceGraphs(data) {
     let evidenceGraph = {
       "@id": evidenceGraphId,
       "@type": "EVI:EvidenceGraph",
-      name: `Evidence Graph: ${elementId}`,
-      description: `Evidence graph for ${element["name"] || elementId}`,
-      evidence: {},
+      name: `${element["name"] || elementId}`,
+      description: `${element["name"] || elementId}`,
     };
 
     if (element["generatedBy"]) {
-      evidenceGraph.evidence["generatedBy"] = expandReferences(
+      evidenceGraph["generatedBy"] = expandReferences(
         Array.isArray(element["generatedBy"])
           ? element["generatedBy"]
           : [element["generatedBy"]]
       );
     }
     if (element["usedDataset"]) {
-      evidenceGraph.evidence["usedDataset"] = expandReferences(
-        element["usedDataset"]
-      );
+      evidenceGraph["usedDataset"] = expandReferences(element["usedDataset"]);
     }
     if (element["usedSoftware"]) {
-      evidenceGraph.evidence["usedSoftware"] = expandReferences(
-        element["usedSoftware"]
-      );
+      evidenceGraph["usedSoftware"] = expandReferences(element["usedSoftware"]);
     }
 
     // Add reference to the evidence graph in the original element
