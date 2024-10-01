@@ -198,7 +198,7 @@ const MyDashboard = () => {
                         Upload Date
                       </TableSortLabel>
                     </StyledTableCell>
-                    <StyledTableCell>Graph Length</StyledTableCell>
+                    <StyledTableCell>Items in Crate</StyledTableCell>
                     <StyledTableCell>Actions</StyledTableCell>
                   </TableRow>
                 </TableHead>
