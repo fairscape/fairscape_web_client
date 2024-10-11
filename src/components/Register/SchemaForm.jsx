@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Row, Col, Form } from "react-bootstrap";
 import { register_schema } from "../../rocrate/rocrate";
+import { ipcRenderer } from "electron";
 import {
   StyledForm,
   FormTitle,
@@ -17,7 +18,13 @@ import {
   WhiteText,
 } from "./SharedComponents";
 
-const SchemaForm = ({ datasetName, onSubmit, onCancel, rocratePath }) => {
+const SchemaForm = ({
+  datasetName,
+  onSubmit,
+  onCancel,
+  rocratePath,
+  filePath,
+}) => {
   const [schemaData, setSchemaData] = useState({
     name: "",
     description: "",
@@ -39,6 +46,35 @@ const SchemaForm = ({ datasetName, onSubmit, onCancel, rocratePath }) => {
   useEffect(() => {
     updateJsonLdPreview();
   }, [schemaData]);
+
+  useEffect(() => {
+    if (filePath && filePath.toLowerCase().endsWith(".parquet")) {
+      convertParquetSchema(filePath);
+    }
+  }, [filePath]);
+
+  const convertParquetSchema = async (parquetFilePath) => {
+    try {
+      const schemaJSON = await ipcRenderer.invoke(
+        "convert-parquet-to-schema",
+        rocratePath,
+        parquetFilePath
+      );
+      setSchemaData((prevData) => ({
+        ...prevData,
+        name: schemaJSON.name,
+        description: schemaJSON.description,
+        properties: schemaJSON.properties,
+        separator: schemaJSON.separator,
+        header: schemaJSON.header,
+      }));
+    } catch (error) {
+      console.error("Error converting Parquet schema:", error);
+      alert(
+        "Error converting Parquet schema. Please check the file and try again."
+      );
+    }
+  };
 
   const handleSchemaChange = (e) => {
     const { name, value } = e.target;

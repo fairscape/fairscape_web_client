@@ -226,6 +226,7 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
         onSubmit={handleSchemaRegistration}
         onCancel={() => setShowSchemaOptions(true)}
         rocratePath={rocratePath}
+        filePath={file}
       />
     );
   }
