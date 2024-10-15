@@ -10,41 +10,42 @@ const steps = [
   },
   {
     text: "Initialize an RO-Crate",
-    action: {
-      command: "1: Init",
-      subCommand: "init",
-    },
+    action: "init",
   },
   {
     text: "Register files in your RO-Crate",
-    action: { command: "2: Register", subCommand: "dataset" },
+    action: "register",
+  },
+  {
+    text: "Review the contents of your RO-Crate",
+    action: "review",
   },
   {
     text: "Package an RO-Crate for upload",
-    action: { command: "3: Package", subCommand: "zip" },
+    action: "package",
   },
   {
     text: "Upload an RO-Crate",
-    action: {
-      command: "4: Upload",
-      subCommand: "rocrate",
-    },
+    action: "upload",
   },
 ];
 
 function Questionnaire({ onStepSelect }) {
   return (
     <div className="questionnaire-container" style={{ padding: "20px" }}>
-      <h2>What would you like to do?</h2>
-      <p>Select the step you're currently at:</p>
+      <h2>
+        Package and publish research objects as Research Object Crates
+        (RO-Crate)
+      </h2>
+      <p>Select any of the following steps:</p>
       {steps.map((step, index) => (
         <Card key={index} style={{ marginBottom: "10px" }}>
           <Card.Body>
             <Row className="align-items-center">
               <Col xs={9}>
-                <Card.Title
-                  style={{ margin: 0 }}
-                >{`Step ${index}: ${step.text}`}</Card.Title>
+                <Card.Title style={{ margin: 0 }}>
+                  {`Step ${index}: ${step.text}`}
+                </Card.Title>
                 {step.description && <Card.Text>{step.description}</Card.Text>}
               </Col>
               <Col xs={3} className="text-right">

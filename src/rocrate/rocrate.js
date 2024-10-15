@@ -1,17 +1,105 @@
-const path = require("path");
-
-const {
+import path from "path";
+import fs from "fs";
+import {
   generateROCrate,
   ROCrate,
   readROCrateMetadata,
   appendCrate,
   copyToROCrate,
-} = require("../models/rocrate");
-const { generateSoftware } = require("../models/software");
-const { generateDataset } = require("../models/dataset");
-const { generateComputation } = require("../models/computation");
+} from "../models/rocrate";
+import { generateSoftware } from "../models/software";
+import { generateDataset } from "../models/dataset";
+import { generateComputation } from "../models/computation";
+import { generateSchema } from "../models/schema"; // Assume this is implemented similarly to generateDataset
 
-function rocrate_init(
+export function get_ro_crate_metadata(rocratePath) {
+  const metadataPath = path.join(rocratePath, "ro-crate-metadata.json");
+
+  try {
+    const rawData = fs.readFileSync(metadataPath, "utf8");
+    const metadata = JSON.parse(rawData);
+    return metadata;
+  } catch (error) {
+    console.error("Error reading RO-Crate metadata:", error);
+    return null;
+  }
+}
+
+export function register_schema(
+  rocrate_path,
+  name,
+  description,
+  properties,
+  required,
+  separator,
+  header,
+  guid = null,
+  url = null,
+  additionalProperties = true,
+  examples = []
+) {
+  try {
+    const crateInstance = readROCrateMetadata(rocrate_path);
+    const schema_instance = generateSchema({
+      guid,
+      url,
+      name,
+      description,
+      properties,
+      required,
+      separator,
+      header,
+      additionalProperties,
+      examples,
+    });
+    appendCrate(rocrate_path, [schema_instance]);
+    return schema_instance["@id"];
+  } catch (error) {
+    throw new Error(`Error registering schema: ${error.message}`);
+  }
+}
+
+export async function get_registered_files(rocratePath) {
+  try {
+    if (!rocratePath) {
+      throw new Error("Please select an RO-Crate directory.");
+    }
+
+    const fileList = await fs.promises.readdir(rocratePath);
+    const metadataExists = fileList.includes("ro-crate-metadata.json");
+
+    if (!metadataExists) {
+      throw new Error(
+        "The selected directory is not a valid RO-Crate. It should contain an ro-crate-metadata.json file."
+      );
+    }
+
+    const metadataPath = path.join(rocratePath, "ro-crate-metadata.json");
+    const metadata = JSON.parse(
+      await fs.promises.readFile(metadataPath, "utf8")
+    );
+
+    const registeredFiles = metadata["@graph"]
+      .filter((item) => item.contentUrl && item["@type"] !== "CreativeWork")
+      .map((item) => ({
+        guid: item["@id"],
+        name: normalizePath(item.contentUrl.replace("file://", "")),
+      }));
+
+    return registeredFiles;
+  } catch (error) {
+    console.error("Error reading RO-Crate metadata:", error);
+    throw new Error(
+      "Error reading RO-Crate metadata. Please make sure the path is correct and accessible."
+    );
+  }
+}
+
+function normalizePath(filePath) {
+  return filePath.replace(/^\//, "").replace(/\\/g, "/");
+}
+
+export function rocrate_init(
   name,
   organization_name,
   project_name,
@@ -31,16 +119,16 @@ function rocrate_init(
   return passed_crate.guid;
 }
 
-function rocrate_create(
+export function rocrate_create(
   rocrate_path,
   name,
   organization_name,
   project_name,
   description,
   keywords,
+  packageType,
   guid = ""
 ) {
-  console.log("projectName in rocrate: ", project_name);
   const passed_crate = generateROCrate({
     path: rocrate_path,
     guid,
@@ -49,11 +137,12 @@ function rocrate_create(
     projectName: project_name,
     description,
     keywords,
+    packageType,
   });
   return passed_crate["@id"];
 }
 
-function register_software(
+export function register_software(
   rocrate_path,
   name,
   author,
@@ -94,7 +183,7 @@ function register_software(
   }
 }
 
-function register_dataset(
+export function register_dataset(
   rocrate_path,
   name,
   author,
@@ -139,7 +228,7 @@ function register_dataset(
   }
 }
 
-function register_computation(
+export function register_computation(
   rocrate_path,
   name,
   run_by,
@@ -174,7 +263,7 @@ function register_computation(
   }
 }
 
-function add_software(
+export function add_software(
   rocrate_path,
   name,
   author,
@@ -217,7 +306,7 @@ function add_software(
   }
 }
 
-function add_dataset(
+export function add_dataset(
   rocrate_path,
   name,
   author,
@@ -264,13 +353,3 @@ function add_dataset(
     throw new Error(`Error adding dataset: ${error.message}`);
   }
 }
-
-module.exports = {
-  rocrate_init,
-  rocrate_create,
-  register_software,
-  register_dataset,
-  register_computation,
-  add_software,
-  add_dataset,
-};
