@@ -13,7 +13,7 @@ FAIRSCAPE Electron offers the same functionality as the fairscape-cli, wrapped i
 
 ## Installation
 
-1. Go to the [Releases](https://github.com/yourusername/fairscape-electron/releases) page.
+1. Go to the [Releases](https://github.com/fairscape/FairscapeFrontEnd/tags) page.
 2. Download the latest version for your operating system (Windows, macOS, or Linux).
 3. Install the application following the standard procedure for your OS.
 
