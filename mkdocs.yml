@@ -1,6 +1,6 @@
 # Project Information
-site_name: FAIRSACPE CLI
-site_description: A utility for packaging objects and validating metadata for FAIRSCAPE.
+site_name: FAIRSACPE GUI Client
+site_description: A utility for packaging objects and metadata for FAIRSCAPE.
 site_url: https://github.com/fairscape/fairscape-gui
 
 # Repository
