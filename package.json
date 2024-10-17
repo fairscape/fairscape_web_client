@@ -23,6 +23,8 @@
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "apache-arrow": "^17.0.0",
     "archiver": "^7.0.1",
     "axios": "^1.7.2",
