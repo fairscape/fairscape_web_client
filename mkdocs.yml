@@ -14,6 +14,7 @@ copyright: Copyright &copy; 2023 THE RECTOR AND VISITORS OF THE UNIVERSITY OF VI
 nav:
   - Home: index.md
   - Setup: setup.md
+  - Instructions: instructions.md
 
 theme:
   name: material
