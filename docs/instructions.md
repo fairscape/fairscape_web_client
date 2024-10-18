@@ -1,10 +1,10 @@
-# FAIRSCAPE ROCrate Repository Instructions
+# FAIRSCAPE GUI Client Instructions
 
 ## 1. Getting Started: Package and Publish Research Objects
 
 ![Step 1](../screenshots/1.png)
 
-The FAIRSCAPE ROCrate Repository allows you to package and publish research objects as Research Object Crates (RO-Crate). The opening interface presents the following steps:
+The FAIRSCAPE GUI client allows you to package and publish research objects as Research Object Crates (RO-Crate). The opening interface presents the following steps:
 
 - Step 0: Prep Folder for RO-Crate Initialization
 - Step 1: Initialize an RO-Crate
