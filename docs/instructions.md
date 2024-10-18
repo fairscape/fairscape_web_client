@@ -1,10 +1,10 @@
-# FAIRSCAPE GUI Client Instructions
+# Step-by-step tutorial for creating and publishing an RO-Crate
 
-## 1. Getting Started: Package and Publish Research Objects
+## 1. Getting Started: Preparation and steps
 
 ![Step 1](../screenshots/1.png)
 
-The FAIRSCAPE GUI client allows you to package and publish research objects as Research Object Crates (RO-Crate). The opening interface presents the following steps:
+The client interface contains five interactive steps for creating and publishing RO-Crates. Only authorized users are allowed to publish the RO-Crates to the FAIRSCAPE server after logging in. Creatino and packaing of RO-Crates can be performed in a local machine in isolation. Internet connection is required only when a user is ready to publish. The opening interface shows the following steps:
 
 - Step 0: Prep Folder for RO-Crate Initialization
 - Step 1: Initialize an RO-Crate
@@ -13,7 +13,7 @@ The FAIRSCAPE GUI client allows you to package and publish research objects as R
 - Step 4: Package an RO-Crate for upload
 - Step 5: Upload an RO-Crate
 
-You can select any of these steps to begin the process. For a new RO-Crate, start with Step 0.
+Select any of these steps to begin the process. For creating a new RO-Crate, begin by moving all the data and software you'd like to package to a single folder (step 0).
 
 ## 2. Initializing an RO-Crate
 
@@ -34,7 +34,7 @@ The right panel shows a preview of the metadata in JSON-LD format, which updates
 
 ![Step 3](../screenshots/3.png)
 
-After initialization, you'll see a list of files available for registration in your RO-Crate. In this example, the files are:
+After initialization, a list of files will be available for registration in your RO-Crate. In this example, the files are:
 
 - input_data.csv
 - output_data.csv
@@ -46,7 +46,7 @@ Select a file to add metadata for each object.
 
 ![Step 4](../screenshots/4.png)
 
-For each file, you'll need to provide metadata:
+For each file, the following set of metadata must be provided:
 
 1. Dataset Name (e.g., input data)
 2. Author (e.g., Smith John)
@@ -60,10 +60,10 @@ For each file, you'll need to provide metadata:
 
 ![Step 5](../screenshots/5.png)
 
-After adding metadata to all files:
+Once metadata are provided for all files:
 
-1. You'll see green checkmarks next to each registered file.
-2. Click "Done Registering" to complete the process.
+1. A green checkmark will appear next to each registered file
+2. Complete the registration step by clicking "Done Registering".
 
 ## 6. Recording Computation
 
@@ -77,26 +77,38 @@ To record a computation:
 4. Add relevant Keywords (e.g., python)
 5. Give a Description of the computation (e.g., Simple computation)
 
-Below the form, you'll see sections for:
+There are 4 placeholders:
 
-- Available Files
+- Available Files (registered files only)
 - Input Datasets
 - Output Datasets
 - Software Used
 
-You can drag and drop files from the Available Files section to the appropriate categories.
+Drag and drop files from the `Available Files` section to the appropriate categories.
 
 ## 7. Previewing RO-Crate Contents
 
 ![Step 7](../screenshots/7.png)
 
-After recording all necessary information:
+The `Review` step allows users to examine and verify all the metadata recorded in the previous steps. It offers two viewing options:
 
-1. You'll see a table view of all the contents in your RO-Crate.
-2. The table includes columns for Name, Status, Type, and GUID (Globally Unique Identifier).
-3. All items should have a "Registered" status.
-4. You can switch between "Table View" and "JSON-LD View" to see different representations of your data.
-5. Click "Continue to Package" when you're satisfied with the contents.
+### 1. Table View
+
+This view presents the RO-Crate contents in a tabular format with the following columns:
+
+- **Name**: Displays the name or title of each item in the RO-Crate
+- **Status**: Shows the current status of each item, typically "Registered" if properly added
+- **Type**: Indicates the type of content (e.g., dataset, file, person)
+- **GUID** (Globally Unique Identifier): Presents a unique identifier for each item
+
+### 2. JSON-LD View
+
+This view shows the RO-Crate metadata in JSON-LD format. It provides:
+
+- A machine-readable representation of the RO-Crate metadata
+- Detailed semantic information about the relationships between items
+
+Users can switch between these views to gain different perspectives on their RO-Crate contents. Once satisfied with the review, users can proceed to the RO-Crate packaging step.
 
 ## 8. Packaging RO-Crate
 
@@ -105,7 +117,7 @@ After recording all necessary information:
 To package your RO-Crate:
 
 1. Verify the RO-Crate Path is correct.
-2. Click "Process and Package RO-Crate" to begin the packaging process.
+2. To package the RO-Crate:
 
 ## 9. Uploading RO-Crate
 

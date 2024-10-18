@@ -2,4 +2,6 @@
 
 ---
 
-Download the latest GUI from our [releases page](https://github.com/fairscape/FairscapeFrontEnd/tags) that matches your operating system. Run the exe and you are good to go!
+The GUI client is distributed as a binary application, therefore no installation is required. Download the latest instance of the FAIRSCAPE GUI Client from our releases page that matches your operating system. Simply run the application and you are good to go!
+
+Note: Linux users may need to enable the `Execute` permission from the file properties before running the application.
