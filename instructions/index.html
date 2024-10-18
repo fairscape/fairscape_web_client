@@ -115,7 +115,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fairscape-gui-client-instructions" class="md-skip">
+        <a href="#step-by-step-tutorial-for-creating-and-publishing-an-ro-crate" class="md-skip">
           Skip to content
         </a>
       
@@ -446,9 +446,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-getting-started-package-and-publish-research-objects" class="md-nav__link">
+  <a href="#1-getting-started-preparation-and-steps" class="md-nav__link">
     <span class="md-ellipsis">
-      1. Getting Started: Package and Publish Research Objects
+      1. Getting Started: Preparation and steps
     </span>
   </a>
   
@@ -506,6 +506,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="7. Previewing RO-Crate Contents">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-table-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Table View
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-json-ld-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. JSON-LD View
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -552,10 +576,10 @@
   
 
 
-<h1 id="fairscape-gui-client-instructions">FAIRSCAPE GUI Client Instructions<a class="headerlink" href="#fairscape-gui-client-instructions" title="Permanent link">&para;</a></h1>
-<h2 id="1-getting-started-package-and-publish-research-objects">1. Getting Started: Package and Publish Research Objects<a class="headerlink" href="#1-getting-started-package-and-publish-research-objects" title="Permanent link">&para;</a></h2>
+<h1 id="step-by-step-tutorial-for-creating-and-publishing-an-ro-crate">Step-by-step tutorial for creating and publishing an RO-Crate<a class="headerlink" href="#step-by-step-tutorial-for-creating-and-publishing-an-ro-crate" title="Permanent link">&para;</a></h1>
+<h2 id="1-getting-started-preparation-and-steps">1. Getting Started: Preparation and steps<a class="headerlink" href="#1-getting-started-preparation-and-steps" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 1" src="../screenshots/1.png" /></p>
-<p>The FAIRSCAPE GUI client allows you to package and publish research objects as Research Object Crates (RO-Crate). The opening interface presents the following steps:</p>
+<p>The client interface contains five interactive steps for creating and publishing RO-Crates. Only authorized users are allowed to publish the RO-Crates to the FAIRSCAPE server after logging in. Creatino and packaing of RO-Crates can be performed in a local machine in isolation. Internet connection is required only when a user is ready to publish. The opening interface shows the following steps:</p>
 <ul>
 <li>Step 0: Prep Folder for RO-Crate Initialization</li>
 <li>Step 1: Initialize an RO-Crate</li>
@@ -564,7 +588,7 @@
 <li>Step 4: Package an RO-Crate for upload</li>
 <li>Step 5: Upload an RO-Crate</li>
 </ul>
-<p>You can select any of these steps to begin the process. For a new RO-Crate, start with Step 0.</p>
+<p>Select any of these steps to begin the process. For creating a new RO-Crate, begin by moving all the data and software you'd like to package to a single folder (step 0).</p>
 <h2 id="2-initializing-an-ro-crate">2. Initializing an RO-Crate<a class="headerlink" href="#2-initializing-an-ro-crate" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 2" src="../screenshots/2.png" /></p>
 <p>To initialize a new RO-Crate:</p>
@@ -579,7 +603,7 @@
 <p>The right panel shows a preview of the metadata in JSON-LD format, which updates as you fill in the form.</p>
 <h2 id="3-registering-objects">3. Registering Objects<a class="headerlink" href="#3-registering-objects" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 3" src="../screenshots/3.png" /></p>
-<p>After initialization, you'll see a list of files available for registration in your RO-Crate. In this example, the files are:</p>
+<p>After initialization, a list of files will be available for registration in your RO-Crate. In this example, the files are:</p>
 <ul>
 <li>input_data.csv</li>
 <li>output_data.csv</li>
@@ -588,7 +612,7 @@
 <p>Select a file to add metadata for each object.</p>
 <h2 id="4-adding-metadata-to-objects">4. Adding Metadata to Objects<a class="headerlink" href="#4-adding-metadata-to-objects" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 4" src="../screenshots/4.png" /></p>
-<p>For each file, you'll need to provide metadata:</p>
+<p>For each file, the following set of metadata must be provided:</p>
 <ol>
 <li>Dataset Name (e.g., input data)</li>
 <li>Author (e.g., Smith John)</li>
@@ -600,10 +624,10 @@
 </ol>
 <h2 id="5-completing-object-registration">5. Completing Object Registration<a class="headerlink" href="#5-completing-object-registration" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 5" src="../screenshots/5.png" /></p>
-<p>After adding metadata to all files:</p>
+<p>Once metadata are provided for all files:</p>
 <ol>
-<li>You'll see green checkmarks next to each registered file.</li>
-<li>Click "Done Registering" to complete the process.</li>
+<li>A green checkmark will appear next to each registered file</li>
+<li>Complete the registration step by clicking "Done Registering".</li>
 </ol>
 <h2 id="6-recording-computation">6. Recording Computation<a class="headerlink" href="#6-recording-computation" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 6" src="../screenshots/6.png" /></p>
@@ -615,30 +639,38 @@
 <li>Add relevant Keywords (e.g., python)</li>
 <li>Give a Description of the computation (e.g., Simple computation)</li>
 </ol>
-<p>Below the form, you'll see sections for:</p>
+<p>There are 4 placeholders:</p>
 <ul>
-<li>Available Files</li>
+<li>Available Files (registered files only)</li>
 <li>Input Datasets</li>
 <li>Output Datasets</li>
 <li>Software Used</li>
 </ul>
-<p>You can drag and drop files from the Available Files section to the appropriate categories.</p>
+<p>Drag and drop files from the <code>Available Files</code> section to the appropriate categories.</p>
 <h2 id="7-previewing-ro-crate-contents">7. Previewing RO-Crate Contents<a class="headerlink" href="#7-previewing-ro-crate-contents" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 7" src="../screenshots/7.png" /></p>
-<p>After recording all necessary information:</p>
-<ol>
-<li>You'll see a table view of all the contents in your RO-Crate.</li>
-<li>The table includes columns for Name, Status, Type, and GUID (Globally Unique Identifier).</li>
-<li>All items should have a "Registered" status.</li>
-<li>You can switch between "Table View" and "JSON-LD View" to see different representations of your data.</li>
-<li>Click "Continue to Package" when you're satisfied with the contents.</li>
-</ol>
+<p>The <code>Review</code> step allows users to examine and verify all the metadata recorded in the previous steps. It offers two viewing options:</p>
+<h3 id="1-table-view">1. Table View<a class="headerlink" href="#1-table-view" title="Permanent link">&para;</a></h3>
+<p>This view presents the RO-Crate contents in a tabular format with the following columns:</p>
+<ul>
+<li><strong>Name</strong>: Displays the name or title of each item in the RO-Crate</li>
+<li><strong>Status</strong>: Shows the current status of each item, typically "Registered" if properly added</li>
+<li><strong>Type</strong>: Indicates the type of content (e.g., dataset, file, person)</li>
+<li><strong>GUID</strong> (Globally Unique Identifier): Presents a unique identifier for each item</li>
+</ul>
+<h3 id="2-json-ld-view">2. JSON-LD View<a class="headerlink" href="#2-json-ld-view" title="Permanent link">&para;</a></h3>
+<p>This view shows the RO-Crate metadata in JSON-LD format. It provides:</p>
+<ul>
+<li>A machine-readable representation of the RO-Crate metadata</li>
+<li>Detailed semantic information about the relationships between items</li>
+</ul>
+<p>Users can switch between these views to gain different perspectives on their RO-Crate contents. Once satisfied with the review, users can proceed to the RO-Crate packaging step.</p>
 <h2 id="8-packaging-ro-crate">8. Packaging RO-Crate<a class="headerlink" href="#8-packaging-ro-crate" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 8" src="../screenshots/8.png" /></p>
 <p>To package your RO-Crate:</p>
 <ol>
 <li>Verify the RO-Crate Path is correct.</li>
-<li>Click "Process and Package RO-Crate" to begin the packaging process.</li>
+<li>To package the RO-Crate:</li>
 </ol>
 <h2 id="9-uploading-ro-crate">9. Uploading RO-Crate<a class="headerlink" href="#9-uploading-ro-crate" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 9" src="../screenshots/9.png" /></p>
