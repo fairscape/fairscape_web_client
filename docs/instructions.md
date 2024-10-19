@@ -4,7 +4,7 @@
 
 ![Step 1](../screenshots/1.png)
 
-The client interface contains five interactive steps for creating and publishing RO-Crates. Only authorized users are allowed to publish the RO-Crates to the FAIRSCAPE server after logging in. Creatino and packaing of RO-Crates can be performed in a local machine in isolation. Internet connection is required only when a user is ready to publish. The opening interface shows the following steps:
+The client interface contains five interactive steps for creating and publishing RO-Crates. Only authorized users are allowed to publish the RO-Crates to the FAIRSCAPE server after logging in. While RO-Crates can be created and packaged in a local machine in isolation, internet connection is required when a user is ready to connect to the server and publish them. Internet connection is required only when a user is ready to publish. The opening interface shows the following steps:
 
 - Step 0: Prep Folder for RO-Crate Initialization
 - Step 1: Initialize an RO-Crate
