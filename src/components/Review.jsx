@@ -6,6 +6,7 @@ import path from "path";
 import { ipcRenderer } from "electron";
 import InitModal from "./InitModal";
 import { JsonLdPreview } from "./StyledComponents";
+import DatasetValidator from "./DatasetValidator";
 
 const StyledContainer = styled(Container)`
   background-color: #282828;
@@ -36,7 +37,6 @@ const ScrollableContent = styled.div`
   overflow-y: auto;
   padding-right: 10px;
 
-  /* Customize scrollbar */
   &::-webkit-scrollbar {
     width: 8px;
   }
@@ -111,6 +111,62 @@ const StyledTabs = styled(Tabs)`
   margin-bottom: 20px;
 `;
 
+const TableRowComponent = ({ item, rocratePath, jsonLdData }) => {
+  const hasSchema =
+    jsonLdData &&
+    jsonLdData["@graph"].find(
+      (entry) =>
+        entry["@id"] === item.guid &&
+        entry.schema &&
+        entry["@type"].includes("Dataset")
+    );
+
+  const handleValidate = async (datasetId, schemaId) => {
+    try {
+      const dataset = jsonLdData["@graph"].find(
+        (entry) => entry["@id"] === datasetId
+      );
+
+      if (!dataset || !dataset.contentUrl) {
+        throw new Error("Dataset or contentUrl not found");
+      }
+
+      const filePath = dataset.contentUrl.replace("file:///", "");
+
+      const errors = await ipcRenderer.invoke("validate-dataset", {
+        rocratePath,
+        datasetId,
+        schemaId,
+        filePath,
+      });
+
+      return errors;
+    } catch (error) {
+      console.error("Validation error:", error);
+      throw new Error(`Validation failed: ${error.message}`);
+    }
+  };
+
+  return (
+    <TableRow unregistered={!item.isRegistered}>
+      <td>{item.name}</td>
+      <td>{item.isRegistered ? "Registered" : "Unregistered"}</td>
+      <td>{item.type}</td>
+      <td>{item.guid}</td>
+      <td>
+        {hasSchema && (
+          <DatasetValidator
+            datasetId={item.guid}
+            schemaId={item.schema}
+            fileName={item.name}
+            onValidate={handleValidate}
+          />
+        )}
+      </td>
+    </TableRow>
+  );
+};
+
 function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
@@ -147,6 +203,8 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
           acc[fileName] = item;
         } else if (item["@type"].includes("Computation")) {
           acc[item["@id"]] = item;
+        } else if (item["@type"].includes("Schema")) {
+          acc[item["@id"]] = item;
         }
         return acc;
       }, {});
@@ -163,6 +221,7 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
             let isRegistered = false;
             let name = file;
             let guid = "";
+            let schema = "";
 
             if (file === "ro-crate-metadata.json") {
               type = "Metadata";
@@ -173,6 +232,7 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
               isRegistered = true;
               name = graphItem.name || file;
               guid = graphItem["@id"] || "";
+              schema = graphItem["schema"] || "";
             }
 
             return {
@@ -180,6 +240,7 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
               isRegistered,
               type,
               guid,
+              schema,
             };
           })
       );
@@ -228,16 +289,17 @@ function Review({ rocratePath, onContinue, setRocratePath, onInitRequired }) {
           <th>Status</th>
           <th>Type</th>
           <th>GUID</th>
+          <th>Validation</th>
         </tr>
       </thead>
       <tbody>
         {items.map((item, index) => (
-          <TableRow key={index} unregistered={!item.isRegistered}>
-            <td>{item.name}</td>
-            <td>{item.isRegistered ? "Registered" : "Unregistered"}</td>
-            <td>{item.type}</td>
-            <td>{item.guid}</td>
-          </TableRow>
+          <TableRowComponent
+            key={index}
+            item={item}
+            rocratePath={rocratePath}
+            jsonLdData={jsonLdData}
+          />
         ))}
       </tbody>
     </StyledTable>

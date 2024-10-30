@@ -170,6 +170,63 @@ class TabularValidationSchema {
       });
     });
   }
+
+  async validateFile(filepath) {
+    const fileType = FileType.fromExtension(filepath);
+    const separator = fileType === FileType.TSV ? "\t" : this.separator;
+
+    return new Promise((resolve, reject) => {
+      const db = new duckdb.Database(":memory:");
+      const query =
+        fileType === FileType.PARQUET
+          ? `SELECT * FROM read_parquet('${filepath}')`
+          : `SELECT * FROM read_csv('${filepath}', AUTO_DETECT=TRUE, SEP='${separator}', HEADER=${this.header})`;
+
+      db.all(query, (err, data) => {
+        if (err) {
+          db.close();
+          reject(err);
+          return;
+        }
+
+        try {
+          const ajv = new Ajv2020({ strict: false });
+          const validate = ajv.compile(this.toJsonSchema());
+          const errors = [];
+
+          data.forEach((row, index) => {
+            if (!validate(row)) {
+              validate.errors.forEach((error) => {
+                errors.push({
+                  message: error.message,
+                  row: index,
+                  field: error.instancePath.slice(1),
+                  type: "ValidationError",
+                  failedKeyword: error.keyword,
+                });
+              });
+            }
+          });
+
+          db.close();
+          resolve(errors);
+        } catch (error) {
+          db.close();
+          reject(new Error(`Error validating file: ${error.message}`));
+        }
+      });
+    });
+  }
+
+  toJsonSchema() {
+    return {
+      $schema: this.schema,
+      type: this.type,
+      properties: this.properties,
+      required: this.required,
+      additionalProperties: true,
+    };
+  }
 }
 
 function mapDuckDBTypeToJsonSchema(duckDBType) {
