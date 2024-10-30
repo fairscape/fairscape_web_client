@@ -255,7 +255,7 @@ const SchemaForm = ({
         []
       );
       console.log("Schema registration result:", result);
-      onSubmit(jsonLdPreview);
+      onSubmit(result);
     } catch (error) {
       console.error("Error registering schema:", error);
       alert(`Error registering schema: ${error.message}`);

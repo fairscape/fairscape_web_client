@@ -8,7 +8,7 @@ function generateDatetimeSquid() {
 
 class Schema {
   constructor(data) {
-    this["@id"] = data["@id"] || null; // Changed from this.guid to this["@id"]
+    this["@id"] = data["@id"] || null;
     this["@context"] = data["@context"] || {
       "@vocab": "https://schema.org/",
       EVI: "https://w3,org/EVI#",
@@ -61,11 +61,6 @@ function generateSchema({
   });
 
   return schemaMetadata;
-}
-
-function validateProperty(property) {
-  // Add validation logic here if needed
-  return true;
 }
 
 function addProperty(schema, propertyName, propertyData) {

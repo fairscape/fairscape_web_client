@@ -148,7 +148,7 @@ const SchemaSelector = ({ onSchemaSelect, onCancel, rocratePath }) => {
 
       console.log("Prepared JSON-LD preview:", jsonLdPreview);
 
-      onSchemaSelect(jsonLdPreview);
+      onSchemaSelect(result);
     } catch (err) {
       console.error("Error in handleSchemaSelect:", err);
       setError(

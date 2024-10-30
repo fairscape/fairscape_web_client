@@ -136,8 +136,9 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   };
 
   const handleSchemaRegistration = (schemaData) => {
-    setSchemaGuid(schemaData["@id"]);
-    registerDataset(schemaData["@id"]);
+    console.log("Schema ID:", schemaData);
+    setSchemaGuid(schemaData);
+    registerDataset(schemaData);
   };
 
   const registerDataset = (schemaGuid = null) => {
