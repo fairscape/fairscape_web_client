@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { Button, Alert, Spinner } from "react-bootstrap";
 
+const MAX_DISPLAYED_ERRORS = 3;
+
 const ValidatorContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -22,7 +24,6 @@ const ValidationButton = styled(Button)`
   gap: 0.5rem;
   background-color: #007bff;
   border: none;
-
   &:hover {
     background-color: #0056b3;
   }
@@ -43,6 +44,26 @@ const ErrorDetail = styled.div`
   color: #dc3545;
 `;
 
+const DownloadLink = styled.a`
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: block;
+
+  &:hover {
+    color: #0056b3;
+  }
+`;
+
+const RemainingErrors = styled.div`
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 0.5rem;
+  font-style: italic;
+`;
+
 const DatasetValidator = ({ datasetId, schemaId, fileName, onValidate }) => {
   const [validating, setValidating] = useState(false);
   const [validationResults, setValidationResults] = useState(null);
@@ -52,7 +73,6 @@ const DatasetValidator = ({ datasetId, schemaId, fileName, onValidate }) => {
     setValidating(true);
     setError(null);
     setValidationResults(null);
-
     try {
       const results = await onValidate(datasetId, schemaId);
       setValidationResults(results);
@@ -61,6 +81,31 @@ const DatasetValidator = ({ datasetId, schemaId, fileName, onValidate }) => {
     } finally {
       setValidating(false);
     }
+  };
+
+  const downloadErrorReport = () => {
+    if (!validationResults) return;
+
+    const errorReport = validationResults
+      .map((error) => {
+        const parts = [];
+        if (error.path) parts.push(`Path: ${error.path}`);
+        if (error.row !== undefined) parts.push(`Row: ${error.row}`);
+        if (error.field) parts.push(`Field: ${error.field}`);
+        parts.push(`Error: ${error.message}`);
+        return parts.join(" | ");
+      })
+      .join("\n");
+
+    const blob = new Blob([errorReport], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `validation-errors-${fileName}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -81,11 +126,13 @@ const DatasetValidator = ({ datasetId, schemaId, fileName, onValidate }) => {
           "Validate Dataset"
         )}
       </ValidationButton>
+
       {error && (
         <ValidationAlert variant="danger">
           <strong>Validation Error:</strong> {error}
         </ValidationAlert>
       )}
+
       {validationResults && (
         <ValidationAlert
           variant={validationResults.length === 0 ? "success" : "danger"}
@@ -99,15 +146,30 @@ const DatasetValidator = ({ datasetId, schemaId, fileName, onValidate }) => {
             <>
               <strong>Validation Failed</strong>
               <ErrorList>
-                {validationResults.map((error, index) => (
-                  <ErrorItem key={index}>
-                    {error.path && <span>Path: {error.path}</span>}
-                    {error.row !== undefined && <span> Row: {error.row}</span>}
-                    {error.field && <span> Field: {error.field}</span>}
-                    <ErrorDetail>{error.message}</ErrorDetail>
-                  </ErrorItem>
-                ))}
+                {validationResults
+                  .slice(0, MAX_DISPLAYED_ERRORS)
+                  .map((error, index) => (
+                    <ErrorItem key={index}>
+                      {error.path && <span>Path: {error.path}</span>}
+                      {error.row !== undefined && (
+                        <span> Row: {error.row}</span>
+                      )}
+                      {error.field && <span> Field: {error.field}</span>}
+                      <ErrorDetail>{error.message}</ErrorDetail>
+                    </ErrorItem>
+                  ))}
               </ErrorList>
+              {validationResults.length > MAX_DISPLAYED_ERRORS && (
+                <>
+                  <RemainingErrors>
+                    ... and {validationResults.length - MAX_DISPLAYED_ERRORS}{" "}
+                    more errors
+                  </RemainingErrors>
+                  <DownloadLink onClick={downloadErrorReport}>
+                    Download complete error report
+                  </DownloadLink>
+                </>
+              )}
             </>
           )}
         </ValidationAlert>
