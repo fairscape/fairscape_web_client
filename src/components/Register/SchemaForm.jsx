@@ -19,7 +19,6 @@ import {
   WhiteText,
 } from "./SharedComponents";
 
-// Add these new styled components
 const ButtonGroup = styled.div`
   display: flex;
   gap: 10px;
@@ -71,10 +70,38 @@ const SchemaForm = ({
   }, [schemaData]);
 
   useEffect(() => {
-    if (filePath && filePath.toLowerCase().endsWith(".parquet")) {
-      convertParquetSchema(filePath);
+    if (filePath) {
+      const fileExtension = filePath.toLowerCase().split(".").pop();
+      if (fileExtension === "parquet") {
+        convertParquetSchema(filePath);
+      } else if (["csv", "tsv"].includes(fileExtension)) {
+        convertCSVSchema(filePath);
+      }
     }
   }, [filePath]);
+
+  const convertCSVSchema = async (csvFilePath) => {
+    try {
+      const schemaJSON = await ipcRenderer.invoke(
+        "convert-csv-to-schema",
+        rocratePath,
+        csvFilePath
+      );
+      setSchemaData((prevData) => ({
+        ...prevData,
+        name: schemaJSON.name,
+        description: schemaJSON.description,
+        properties: schemaJSON.properties,
+        separator: schemaJSON.separator,
+        header: schemaJSON.header,
+      }));
+    } catch (error) {
+      console.error("Error converting CSV schema:", error);
+      alert(
+        "Error converting CSV schema. Please check the file and try again."
+      );
+    }
+  };
 
   const convertParquetSchema = async (parquetFilePath) => {
     try {

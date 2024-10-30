@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const { exec } = require("child_process");
 const archiver = require("archiver");
-const duckdb = require("duckdb");
+const { TabularValidationSchema } = require("./src/models/tabularSchema");
 const {
   generateEvidenceGraphs,
 } = require("./src/rocrate/evidence_graph_builder");
@@ -19,70 +19,46 @@ function createWindow() {
       enableRemoteModule: true,
     },
   });
-  // Use app.isPackaged to determine the correct path
   const indexPath = app.isPackaged
     ? path.join(process.resourcesPath, "app.asar", "index.html")
     : path.join(__dirname, "index.html");
   win.loadFile(indexPath);
 }
 
-async function getParquetSchema(filePath) {
-  return new Promise((resolve, reject) => {
-    const db = new duckdb.Database(":memory:");
-    db.all(
-      `DESCRIBE SELECT * FROM read_parquet('${filePath}')`,
-      (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          const properties = result.map((column, index) => ({
-            name: column.column_name,
-            description: `Column ${column.column_name}`,
-            index: index.toString(),
-            valueURL: "",
-            type: mapDuckDBTypeToJsonSchema(column.column_type),
-          }));
-          resolve(properties);
-        }
-        db.close();
-      }
-    );
-  });
-}
-
-function mapDuckDBTypeToJsonSchema(duckDBType) {
-  const typeMap = {
-    INTEGER: "integer",
-    BIGINT: "integer",
-    DOUBLE: "number",
-    VARCHAR: "string",
-    BOOLEAN: "boolean",
-    // Add more mappings as needed
-  };
-  return typeMap[duckDBType.toUpperCase()] || "string";
-}
-
-async function convertParquetToSchemaJSON(rocratePath, parquetFilePath) {
-  const fullPath = path.join(rocratePath, parquetFilePath);
+async function convertFileToSchemaJSON(rocratePath, filePath) {
+  const fullPath = path.join(rocratePath, filePath);
 
   if (!fs.existsSync(fullPath)) {
     throw new Error(`File not found: ${fullPath}`);
   }
 
   try {
-    const properties = await getParquetSchema(fullPath);
-    const schemaJSON = {
-      name: `Schema for ${path.basename(parquetFilePath, ".parquet")}`,
-      description: `Auto-generated schema for Parquet file: ${path.basename(
-        parquetFilePath
-      )}`,
-      properties: properties,
-      separator: ",",
-      header: true,
+    const fileExtension = path.extname(filePath);
+    const fileName = path.basename(filePath, fileExtension);
+    const fileType = fileExtension.slice(1).toUpperCase();
+
+    const schema = await TabularValidationSchema.inferFromFile(
+      fullPath,
+      fileName,
+      `Auto-generated schema for ${fileType} file: ${fileName}`
+    );
+
+    // Convert schema to the format expected by the frontend
+    return {
+      name: schema.name,
+      description: schema.description,
+      properties: Object.entries(schema.properties).map(([name, prop]) => ({
+        name,
+        description: prop.description,
+        index: prop.index,
+        valueURL: prop.valueURL || "",
+        type: prop.type,
+      })),
+      separator: schema.separator,
+      header: schema.header,
     };
-    return schemaJSON;
   } catch (error) {
-    console.error("Error reading Parquet file:", error);
+    console.error(`Error reading ${path.basename(filePath)}:`, error);
     throw error;
   }
 }
@@ -106,7 +82,7 @@ if (process.platform === "darwin") {
   app.dock.setIcon(path.join(__dirname, "build", "icon.png"));
 }
 
-// Add IPC handler for executing commands
+// IPC Handlers
 ipcMain.on("execute-command", (event, command) => {
   exec(command, (error, stdout, stderr) => {
     if (error) {
@@ -121,7 +97,6 @@ ipcMain.on("execute-command", (event, command) => {
   });
 });
 
-// Add IPC handler for generating evidence graphs
 ipcMain.handle("generate-evidence-graphs", async (event, rocratePath) => {
   try {
     const metadataPath = path.join(rocratePath, "ro-crate-metadata.json");
@@ -140,29 +115,27 @@ ipcMain.handle("generate-evidence-graphs", async (event, rocratePath) => {
   }
 });
 
-// Add IPC handler for zipping RO-Crate
 ipcMain.handle("zip-rocrate", async (event, rocratePath) => {
   return new Promise((resolve, reject) => {
-    // Get the name of the input folder
     const folderName = path.basename(rocratePath);
-    // Create the output zip file path
     const outputPath = path.join(
       path.dirname(rocratePath),
       `${folderName}.zip`
     );
     const output = fs.createWriteStream(outputPath);
     const archive = archiver("zip", {
-      zlib: { level: 9 }, // Sets the compression level.
+      zlib: { level: 9 },
     });
+
     output.on("close", function () {
       resolve({ success: true, zipPath: output.path });
     });
+
     archive.on("error", function (err) {
       reject({ success: false, error: err.message });
     });
+
     archive.pipe(output);
-    // Add the contents of the folder to the zip file,
-    // using the folder name as the root in the zip
     archive.directory(rocratePath, folderName);
     archive.finalize();
   });
@@ -175,18 +148,74 @@ ipcMain.handle("open-directory-dialog", async () => {
   return result;
 });
 
-// Add IPC handler for Parquet to Schema conversion
 ipcMain.handle(
   "convert-parquet-to-schema",
   async (event, rocratePath, parquetFilePath) => {
     try {
-      const schemaJSON = await convertParquetToSchemaJSON(
+      const schemaJSON = await convertFileToSchemaJSON(
         rocratePath,
         parquetFilePath
       );
       return schemaJSON;
     } catch (error) {
       console.error("Error converting Parquet to Schema:", error);
+      throw error;
+    }
+  }
+);
+
+ipcMain.handle(
+  "convert-csv-to-schema",
+  async (event, rocratePath, csvFilePath) => {
+    try {
+      const schemaJSON = await convertFileToSchemaJSON(
+        rocratePath,
+        csvFilePath
+      );
+      return schemaJSON;
+    } catch (error) {
+      console.error("Error converting CSV to Schema:", error);
+      throw error;
+    }
+  }
+);
+
+ipcMain.handle(
+  "validate-dataset",
+  async (event, { rocratePath, datasetId, schemaId }) => {
+    try {
+      const metadataPath = path.join(rocratePath, "ro-crate-metadata.json");
+      const metadata = JSON.parse(
+        await fs.promises.readFile(metadataPath, "utf8")
+      );
+
+      // Find dataset and schema in the graph
+      const graph = metadata["@graph"];
+      const dataset = graph.find((item) => item["@id"] === datasetId);
+      const schema = graph.find((item) => item["@id"] === schemaId);
+
+      if (!dataset || !schema) {
+        throw new Error("Dataset or schema not found");
+      }
+
+      // Get the file path from the dataset's contentUrl
+      const filePath = dataset.contentUrl.replace("file:///", "");
+      const fullPath = path.join(rocratePath, filePath);
+
+      // Create schema instance and validate
+      const schemaInstance = new TabularValidationSchema({
+        name: schema.name,
+        description: schema.description,
+        properties: schema.properties,
+        required: schema.required || [],
+        separator: schema.separator,
+        header: schema.header,
+      });
+
+      const errors = await schemaInstance.validateFile(fullPath);
+      return errors;
+    } catch (error) {
+      console.error("Validation error:", error);
       throw error;
     }
   }
