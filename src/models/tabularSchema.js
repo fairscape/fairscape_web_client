@@ -191,19 +191,72 @@ class TabularValidationSchema {
 
         try {
           const ajv = new Ajv2020({ strict: false });
-          const validate = ajv.compile(this.toJsonSchema());
+          const schema = this.toJsonSchema();
+
+          // Helper function to make a field nullable
+          const makeNullable = (schema) => {
+            if (typeof schema !== "object" || !schema) return schema;
+
+            const newSchema = { ...schema };
+
+            // Handle properties
+            if (newSchema.properties) {
+              Object.keys(newSchema.properties).forEach((key) => {
+                const prop = newSchema.properties[key];
+                if (prop.type === "number" || prop.type === "integer") {
+                  newSchema.properties[key] = {
+                    ...prop,
+                    type: [prop.type, "null"],
+                  };
+                }
+              });
+            }
+
+            return newSchema;
+          };
+
+          // Make all number/integer fields nullable
+          const nullableSchema = makeNullable(schema);
+          const validate = ajv.compile(nullableSchema);
           const errors = [];
 
           data.forEach((row, index) => {
             if (!validate(row)) {
               validate.errors.forEach((error) => {
-                errors.push({
-                  message: error.message,
-                  row: index,
-                  field: error.instancePath.slice(1),
-                  type: "ValidationError",
-                  failedKeyword: error.keyword,
-                });
+                // Helper function to check if a property has a pattern constraint
+                const hasPatternConstraint = (path) => {
+                  let currentSchema = schema;
+                  const parts = path.split("/").filter(Boolean);
+
+                  for (const part of parts) {
+                    currentSchema = currentSchema.properties?.[part];
+                  }
+
+                  return currentSchema?.pattern !== undefined;
+                };
+
+                // Only include errors that are:
+                // 1. Not type errors for strings
+                // 2. Or string errors with pattern validation
+                // 3. Or any other kind of error
+                const isStringTypeError =
+                  error.keyword === "type" && error.params.type === "string";
+
+                const shouldIncludeError =
+                  !isStringTypeError ||
+                  (isStringTypeError &&
+                    hasPatternConstraint(error.instancePath));
+
+                if (shouldIncludeError) {
+                  errors.push({
+                    message: error.message,
+                    row: index,
+                    field: error.instancePath.slice(1),
+                    type: "ValidationError",
+                    failedKeyword: error.keyword,
+                    value: row[error.instancePath.slice(1)],
+                  });
+                }
               });
             }
           });
