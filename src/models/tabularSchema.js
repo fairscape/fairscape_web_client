@@ -1,15 +1,17 @@
 const duckdb = require("duckdb");
 const Ajv2020 = require("ajv/dist/2020");
-const path = require("path");
-const fs = require("fs");
+import h5wasm from "h5wasm";
+import { readFileSync, existsSync } from "fs";
+import { resolve } from "path";
 
-let hdf5;
+let h5wasm;
 
 async function initHDF5() {
-  if (!hdf5) {
-    hdf5 = await import("hdf5-io");
+  if (!h5wasm) {
+    h5wasm = await import("h5wasm/node");
+    await h5wasm.ready;
   }
-  return hdf5;
+  return h5wasm;
 }
 
 const FileType = {
@@ -282,196 +284,159 @@ class TabularValidationSchema {
   }
 }
 
-function mapDuckDBTypeToJsonSchema(duckDBType) {
-  const typeMap = {
-    INTEGER: "integer",
-    BIGINT: "string", // Changed to avoid BigInt issues
-    DOUBLE: "number",
-    FLOAT: "number",
-    VARCHAR: "string",
-    BOOLEAN: "boolean",
-    DATE: "string",
-    TIMESTAMP: "string",
-    TIME: "string",
-    DECIMAL: "number",
-  };
-  return typeMap[duckDBType.toUpperCase()] || "string";
-}
-
 class HDF5Schema {
-  constructor({ name, description, properties = {} }) {
+  constructor({
+    name,
+    description,
+    properties = {},
+    required = [],
+    identifier = "",
+  }) {
     this.name = name;
     this.description = description;
     this.properties = properties;
-    this.required = Object.keys(properties);
+    this.required = required;
+    this.identifier = identifier;
+    this.type = "object";
+    this.schema = "https://json-schema.org/draft/2020-12/schema";
+    this["@context"] = DEFAULT_CONTEXT;
+    this["@type"] = DEFAULT_SCHEMA_TYPE;
   }
 
-  static async inferFromFile(
-    filepath,
-    name,
-    description,
-    includeMinMax = false
-  ) {
-    const h5module = await initHDF5();
-    const h5 = new h5module.File(filepath, "r");
-    const properties = {};
+  static async inferFromFile(filepath, name, description) {
+    if (!existsSync(filepath)) {
+      throw new Error(`File not found: ${filepath}`);
+    }
 
-    await this.processGroup(
-      h5,
-      "",
-      properties,
-      name,
-      description,
-      includeMinMax
-    );
+    const h5 = await initHDF5();
+    const { FS } = h5;
 
-    h5.close();
-    return new HDF5Schema({
-      name,
-      description,
-      properties,
+    try {
+      // Create temporary file in WASM filesystem
+      const fileBuffer = readFileSync(filepath);
+      const tempFileName = "temp_data.h5";
+      FS.writeFile(tempFileName, new Uint8Array(fileBuffer));
+
+      // Process file
+      const f = new h5.File(tempFileName, "r");
+      const properties = {};
+      const required = [];
+
+      // Helper function to explore groups recursively
+      const exploreGroup = (group, prefix = "") => {
+        const keys = group.keys();
+
+        for (const key of keys) {
+          try {
+            const item = group.get(key);
+            const fullPath = prefix ? `${prefix}/${key}` : key;
+
+            if (item.constructor.name === "Dataset") {
+              const property = createDatasetProperty(item, fullPath);
+              properties[fullPath] = property;
+              required.push(fullPath);
+            } else if (item.constructor.name === "Group") {
+              exploreGroup(item, fullPath);
+            }
+          } catch (error) {
+            console.error(`Error processing key ${key}:`, error);
+          }
+        }
+      };
+
+      // Start exploration from root
+      exploreGroup(f);
+
+      f.close();
+      FS.unlink(tempFileName);
+
+      return new HDF5Schema({
+        name,
+        description,
+        properties,
+        required,
+        identifier: name.toLowerCase().replace(/\s+/g, "-"),
+      });
+    } catch (error) {
+      throw new Error(`Error creating schema: ${error.message}`);
+    }
+  }
+
+  toJsonSchema() {
+    return {
+      $schema: this.schema,
+      type: this.type,
+      properties: this.properties,
+      required: this.required,
+      additionalProperties: true,
+    };
+  }
+}
+
+// Helper function to create property schema for a dataset
+function createDatasetProperty(dataset, path) {
+  if (!dataset.dtype.compound_type) {
+    return new StringProperty({
+      description: `Dataset at ${path}`,
+      index: "0",
+      type: "string",
     });
   }
 
-  static async processGroup(
-    group,
-    parentPath,
-    properties,
-    name,
-    description,
-    includeMinMax
-  ) {
-    const h5module = await initHDF5();
-    const groupInfo = group.getGroupInfo();
+  const properties = {};
+  const required = [];
 
-    for (const item of groupInfo.links) {
-      const path = parentPath ? `${parentPath}/${item.name}` : item.name;
+  dataset.dtype.compound_type.members.forEach((member, index) => {
+    const propertyName = member.name;
+    required.push(propertyName);
 
-      if (item.type === h5module.H5L.TYPE.DATASET) {
-        try {
-          const dataset = group.openDataset(item.name);
-          const data = await this.datasetToArray(dataset);
-          const db = new duckdb.Database(":memory:");
-
-          const schema = await new Promise((resolve, reject) => {
-            db.all("SELECT * FROM data", (err, result) => {
-              if (err) {
-                reject(err);
-                return;
-              }
-              const schemaInstance = new TabularValidationSchema({
-                name: `${name}_${path.replace("/", "_")}`,
-                description: `Dataset at ${path}`,
-                properties: {},
-                required: [],
-                separator: ",",
-                header: true,
-              });
-              resolve(schemaInstance);
-              db.close();
-            });
-          });
-
-          properties[path] = schema;
-          dataset.close();
-        } catch (e) {
-          console.warn(`Could not convert dataset ${path}: ${e.message}`);
-        }
-      } else if (item.type === h5module.H5L.TYPE.GROUP) {
-        const subgroup = group.openGroup(item.name);
-        await this.processGroup(
-          subgroup,
-          path,
-          properties,
-          name,
-          description,
-          includeMinMax
-        );
-        subgroup.close();
-      }
-    }
-  }
-
-  static async datasetToArray(dataset) {
-    const h5module = await initHDF5();
-    const space = dataset.getSpace();
-    const dims = space.getSimpleExtentDims();
-    const data = await dataset.read();
-
-    if (dataset.getType().getClass() === h5module.H5T.CLASS.COMPOUND) {
-      return data;
-    }
-
-    if (dims.length > 1) {
-      const cols = dims[1] || 1;
-      return Array.from({ length: cols }, (_, i) => ({
-        [`column_${i}`]: data.map((row) => row[i]),
-      }));
-    }
-
-    return data.map((value) => ({ value }));
-  }
-
-  async validateFile(filepath) {
-    const h5module = await initHDF5();
-    const h5 = new h5module.File(filepath, "r");
-    const errors = [];
-
-    for (const [path, schema] of Object.entries(this.properties)) {
-      try {
-        const dataset = h5.openDataset(path);
-        if (dataset) {
-          const data = await HDF5Schema.datasetToArray(dataset);
-          const db = new duckdb.Database(":memory:");
-
-          const datasetErrors = await new Promise((resolve, reject) => {
-            db.all("SELECT * FROM data", (err, result) => {
-              if (err) {
-                reject(err);
-                return;
-              }
-              const ajv = new Ajv2020({ strict: false });
-              const validate = ajv.compile(schema.toJsonSchema());
-              const errors = [];
-
-              result.forEach((row, index) => {
-                if (!validate(row)) {
-                  validate.errors.forEach((error) => {
-                    errors.push({
-                      message: error.message,
-                      row: index,
-                      field: error.instancePath.slice(1),
-                      type: "ValidationError",
-                      failedKeyword: error.keyword,
-                    });
-                  });
-                }
-              });
-
-              resolve(errors);
-              db.close();
-            });
-          });
-
-          datasetErrors.forEach((error) => {
-            error.path = path;
-          });
-          errors.push(...datasetErrors);
-          dataset.close();
-        }
-      } catch (e) {
-        errors.push({
-          message: `Error validating dataset ${path}: ${e.message}`,
-          path,
-          type: "ValidationError",
-          failedKeyword: "format",
+    switch (member.type) {
+      case 0: // Integer
+        properties[propertyName] = new BaseProperty({
+          description: `Column ${propertyName}`,
+          index: index.toString(),
+          type: "integer",
         });
-      }
+        break;
+      case 1: // Float
+        properties[propertyName] = new NumberProperty({
+          description: `Column ${propertyName}`,
+          index: index.toString(),
+        });
+        break;
+      case 3: // String
+        properties[propertyName] = new StringProperty({
+          description: `Column ${propertyName}`,
+          index: index.toString(),
+        });
+        break;
+      case 8: // Boolean
+        if (member.enum_type) {
+          properties[propertyName] = new BaseProperty({
+            description: `Column ${propertyName}`,
+            index: index.toString(),
+            type: "boolean",
+          });
+          break;
+        }
+      default:
+        properties[propertyName] = new StringProperty({
+          description: `Column ${propertyName}`,
+          index: index.toString(),
+        });
     }
+  });
 
-    h5.close();
-    return errors;
-  }
+  return {
+    "@type": DEFAULT_SCHEMA_TYPE,
+    "@context": DEFAULT_CONTEXT,
+    schema: "https://json-schema.org/draft/2020-12/schema",
+    type: "object",
+    properties,
+    required,
+    additionalProperties: true,
+    description: `Dataset at ${path}`,
+  };
 }
 
 module.exports = {

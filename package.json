@@ -32,6 +32,7 @@
     "file-loader": "^6.2.0",
     "h5wasm": "^0.7.8",
     "hdf5-io": "^0.0.33",
+    "jsfive": "^0.3.14",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.454.0",
     "react": "^18.3.1",
