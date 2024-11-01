@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const { exec } = require("child_process");
 const archiver = require("archiver");
-const { TabularValidationSchema } = require("./src/models/tabularSchema");
+const { TabularValidationSchema } = require("./src/models/tabularSchema.cjs");
 const {
   generateEvidenceGraphs,
 } = require("./src/rocrate/evidence_graph_builder");

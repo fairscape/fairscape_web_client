@@ -12,8 +12,9 @@ import {
   StyledFormGroup,
   WhiteText,
 } from "./SharedComponents";
-import SchemaForm from "./SchemaForm";
-import SchemaSelector from "./SchemaSelector";
+import SchemaForm from "./SchemaComponents/SchemaForm";
+import SchemaUpload from "./SchemaComponents/SchemaUpload";
+import SchemaSelector from "./SchemaComponents/SchemaSelector";
 
 function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -36,6 +37,7 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   const [showSchemaOptions, setShowSchemaOptions] = useState(false);
   const [showSchemaSelector, setShowSchemaSelector] = useState(false);
   const [showSchemaForm, setShowSchemaForm] = useState(false);
+  const [showSchemaUpload, setShowSchemaUpload] = useState(false);
   const [datasetRegistered, setDatasetRegistered] = useState(false);
   const [pendingRegistration, setPendingRegistration] = useState(false);
   const [schemaGuid, setSchemaGuid] = useState(null);
@@ -52,12 +54,16 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
       description: "Define a custom schema for your dataset.",
     },
     {
+      text: "Upload Schema",
+      action: "upload",
+      description: "Upload a JSON schema file.",
+    },
+    {
       text: "Skip Schema",
       action: "skip",
       description: "Continue without adding a schema to your dataset.",
     },
   ];
-
   useEffect(() => {
     const fileName = path.basename(file, path.extname(file)).replace(/_/g, " ");
     const fileExtension = path.extname(file).slice(1).toUpperCase();
@@ -130,6 +136,8 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
       setShowSchemaSelector(true);
     } else if (action === "create") {
       setShowSchemaForm(true);
+    } else if (action === "upload") {
+      setShowSchemaUpload(true);
     } else {
       registerDataset();
     }
@@ -228,6 +236,15 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
         onCancel={() => setShowSchemaOptions(true)}
         rocratePath={rocratePath}
         filePath={file}
+      />
+    );
+  }
+  if (showSchemaUpload) {
+    return (
+      <SchemaUpload
+        onSchemaSelect={handleSchemaRegistration}
+        onCancel={() => setShowSchemaOptions(true)}
+        rocratePath={rocratePath}
       />
     );
   }

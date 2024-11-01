@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Row, Col, Form } from "react-bootstrap";
-import { register_schema } from "../../rocrate/rocrate";
+import { register_schema } from "../../../rocrate/rocrate";
 import { ipcRenderer } from "electron";
 import styled from "styled-components";
 import {
@@ -17,7 +17,7 @@ import {
   PropertyList,
   PropertyItem,
   WhiteText,
-} from "./SharedComponents";
+} from "../SharedComponents";
 
 const ButtonGroup = styled.div`
   display: flex;
