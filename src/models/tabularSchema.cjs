@@ -199,13 +199,9 @@ class TabularValidationSchema {
           const ajv = new Ajv2020({ strict: false });
           const schema = this.toJsonSchema();
 
-          // Helper function to make a field nullable
           const makeNullable = (schema) => {
             if (typeof schema !== "object" || !schema) return schema;
-
             const newSchema = { ...schema };
-
-            // Handle properties
             if (newSchema.properties) {
               Object.keys(newSchema.properties).forEach((key) => {
                 const prop = newSchema.properties[key];
@@ -217,37 +213,57 @@ class TabularValidationSchema {
                 }
               });
             }
-
             return newSchema;
           };
 
-          // Make all number/integer fields nullable
+          // Convert string numbers and BigInts to regular numbers
+          const processedData = data.map((row) => {
+            const newRow = { ...row };
+            Object.entries(row).forEach(([key, value]) => {
+              if (typeof value === "bigint") {
+                // Convert BigInt to regular number
+                newRow[key] = Number(value);
+              } else if (
+                typeof value === "string" &&
+                !isNaN(value) &&
+                value.trim() !== ""
+              ) {
+                newRow[key] = Number(value);
+              }
+            });
+            return newRow;
+          });
+
           const nullableSchema = makeNullable(schema);
           const validate = ajv.compile(nullableSchema);
           const errors = [];
 
-          data.forEach((row, index) => {
+          processedData.forEach((row, index) => {
             if (!validate(row)) {
               validate.errors.forEach((error) => {
-                // Helper function to check if a property has a pattern constraint
+                const fieldName = error.instancePath.slice(1);
+                const rawValue = data[index][fieldName];
+                const processedValue = row[fieldName];
+
+                console.log(`Debug - Row ${index}, Field ${fieldName}:`, {
+                  rawValue,
+                  processedValue,
+                  rawType: typeof rawValue,
+                  processedType: typeof processedValue,
+                  error: error,
+                });
+
                 const hasPatternConstraint = (path) => {
                   let currentSchema = schema;
                   const parts = path.split("/").filter(Boolean);
-
                   for (const part of parts) {
                     currentSchema = currentSchema.properties?.[part];
                   }
-
                   return currentSchema?.pattern !== undefined;
                 };
 
-                // Only include errors that are:
-                // 1. Not type errors for strings
-                // 2. Or string errors with pattern validation
-                // 3. Or any other kind of error
                 const isStringTypeError =
                   error.keyword === "type" && error.params.type === "string";
-
                 const shouldIncludeError =
                   !isStringTypeError ||
                   (isStringTypeError &&
@@ -257,10 +273,13 @@ class TabularValidationSchema {
                   errors.push({
                     message: error.message,
                     row: index,
-                    field: error.instancePath.slice(1),
+                    field: fieldName,
                     type: "ValidationError",
                     failedKeyword: error.keyword,
-                    value: row[error.instancePath.slice(1)],
+                    rawValue,
+                    processedValue,
+                    rawType: typeof rawValue,
+                    processedType: typeof processedValue,
                   });
                 }
               });
@@ -276,7 +295,6 @@ class TabularValidationSchema {
       });
     });
   }
-
   toJsonSchema() {
     return {
       $schema: this.schema,
@@ -354,11 +372,12 @@ class HDF5Schema {
       f.close();
       FS.unlink(tempFileName);
 
+      const clean_required = Object.keys(properties);
       return new HDF5Schema({
         name,
         description,
         properties,
-        required,
+        clean_required,
         identifier: name.toLowerCase().replace(/\s+/g, "-"),
       });
     } catch (error) {

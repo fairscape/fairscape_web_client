@@ -64,6 +64,7 @@ const HDF5SchemaForm = ({
         rocratePath,
         hdf5FilePath
       );
+      console.log(schemaJSON);
       setSchemaData(schemaJSON);
     } catch (error) {
       console.error("Error converting HDF5 schema:", error);
@@ -166,25 +167,12 @@ const HDF5SchemaForm = ({
       .replace(/\s+/g, "-")}-${new Date().getTime()}`;
 
     try {
-      // Collect all required fields from the nested structure
-      const required = [];
-      const collectRequired = (properties, prefix = "") => {
-        Object.entries(properties).forEach(([key, prop]) => {
-          const fullPath = prefix ? `${prefix}/${key}` : key;
-          required.push(fullPath);
-          if (prop.properties) {
-            collectRequired(prop.properties, fullPath);
-          }
-        });
-      };
-      collectRequired(schemaData.properties);
-
       const result = register_schema(
         rocratePath,
         schemaData.name,
         schemaData.description,
         schemaData.properties,
-        required,
+        schemaData.required,
         ",", // separator is not relevant for HDF5
         false, // header is not relevant for HDF5
         guid,

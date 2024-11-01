@@ -47,7 +47,6 @@ function generateSchema({
       .toLowerCase()
       .replace(/\s+/g, "-")}-${sq}`;
   }
-
   const schemaMetadata = new Schema({
     "@id": guid,
     name,
@@ -64,6 +63,7 @@ function generateSchema({
 }
 
 function addProperty(schema, propertyName, propertyData) {
+  console.log("I was called!!");
   if (validateProperty(propertyData)) {
     schema.properties[propertyName] = propertyData;
     if (!schema.required.includes(propertyName)) {

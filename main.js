@@ -6,6 +6,7 @@ const archiver = require("archiver");
 const {
   TabularValidationSchema,
   HDF5Schema,
+  FileType,
 } = require("./src/models/tabularSchema.cjs");
 const {
   generateEvidenceGraphs,
@@ -243,15 +244,28 @@ ipcMain.handle(
       const filePath = dataset.contentUrl.replace("file:///", "");
       const fullPath = path.join(rocratePath, filePath);
 
-      // Create schema instance and validate
-      const schemaInstance = new TabularValidationSchema({
-        name: schema.name,
-        description: schema.description,
-        properties: schema.properties,
-        required: schema.required || [],
-        separator: schema.separator,
-        header: schema.header,
-      });
+      // Determine file type and create appropriate schema instance
+      const fileType = FileType.fromExtension(fullPath);
+
+      let schemaInstance;
+      if (fileType === FileType.HDF5) {
+        schemaInstance = new HDF5Schema({
+          name: schema.name,
+          description: schema.description,
+          properties: schema.properties,
+          required: schema.required || [],
+          identifier: schema.identifier,
+        });
+      } else {
+        schemaInstance = new TabularValidationSchema({
+          name: schema.name,
+          description: schema.description,
+          properties: schema.properties,
+          required: schema.required || [],
+          separator: schema.separator,
+          header: schema.header,
+        });
+      }
 
       const errors = await schemaInstance.validateFile(fullPath);
       return errors;
