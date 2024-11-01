@@ -245,14 +245,6 @@ class TabularValidationSchema {
                 const rawValue = data[index][fieldName];
                 const processedValue = row[fieldName];
 
-                console.log(`Debug - Row ${index}, Field ${fieldName}:`, {
-                  rawValue,
-                  processedValue,
-                  rawType: typeof rawValue,
-                  processedType: typeof processedValue,
-                  error: error,
-                });
-
                 const hasPatternConstraint = (path) => {
                   let currentSchema = schema;
                   const parts = path.split("/").filter(Boolean);
