@@ -1,8 +1,7 @@
 const duckdb = require("duckdb");
 const Ajv2020 = require("ajv/dist/2020");
-import h5wasm from "h5wasm";
-import { readFileSync, existsSync } from "fs";
-import { resolve } from "path";
+const { readFileSync, existsSync } = require("fs");
+const { resolve } = require("path");
 
 let h5wasm;
 
@@ -58,7 +57,7 @@ class BaseProperty {
   constructor({ description, index, valueURL = null, type }) {
     this.description = description;
     this.index = index;
-    this.valueURL = valueURL;
+    if (valueURL) this.valueURL = valueURL;
     this.type = type;
   }
 }
@@ -72,17 +71,21 @@ class StringProperty extends BaseProperty {
     minLength = null,
   }) {
     super({ description, index, type: "string" });
-    this.pattern = pattern;
-    this.maxLength = maxLength;
-    this.minLength = minLength;
+    // Only add these properties if they have non-null values
+    if (pattern) this.pattern = pattern;
+    if (maxLength !== null && Number.isInteger(maxLength))
+      this.maxLength = maxLength;
+    if (minLength !== null && Number.isInteger(minLength))
+      this.minLength = minLength;
   }
 }
 
 class NumberProperty extends BaseProperty {
   constructor({ description, index, maximum = null, minimum = null }) {
     super({ description, index, type: "number" });
-    this.maximum = maximum;
-    this.minimum = minimum;
+    // Only add these properties if they have non-null values
+    if (maximum !== null && typeof maximum === "number") this.maximum = maximum;
+    if (minimum !== null && typeof minimum === "number") this.minimum = minimum;
 
     if (maximum !== null && minimum !== null) {
       if (maximum === minimum) {
@@ -370,6 +373,127 @@ class HDF5Schema {
       required: this.required,
       additionalProperties: true,
     };
+  }
+
+  async validateFile(filepath) {
+    if (!existsSync(filepath)) {
+      throw new Error(`File not found: ${filepath}`);
+    }
+
+    const h5 = await initHDF5();
+    const { FS } = h5;
+    const errors = [];
+
+    try {
+      const fileBuffer = readFileSync(filepath);
+      const tempFileName = "temp_data.h5";
+      FS.writeFile(tempFileName, new Uint8Array(fileBuffer));
+
+      const f = new h5.File(tempFileName, "r");
+      const ajv = new Ajv2020({ strict: false });
+
+      const validateDataset = (dataset, schema, path) => {
+        if (!dataset.dtype.compound_type) return;
+
+        const validate = ajv.compile(schema);
+        const data = dataset.value;
+
+        // Helper function to convert values based on schema type
+        const convertValue = (value, memberName, memberType) => {
+          // Get the schema type for this field
+          const fieldSchema = schema.properties[memberName];
+          if (fieldSchema && fieldSchema.type === "boolean") {
+            // Convert numeric booleans (0/1) to actual booleans
+            return value === 1 || value === true;
+          }
+          return value;
+        };
+
+        // Convert the compound data to proper JSON objects
+        data.forEach((row, index) => {
+          const jsonRow = {};
+          dataset.dtype.compound_type.members.forEach((member, colIndex) => {
+            const value = row[colIndex];
+            jsonRow[member.name] = convertValue(
+              value,
+              member.name,
+              member.type
+            );
+          });
+
+          if (!validate(jsonRow)) {
+            validate.errors.forEach((error) => {
+              errors.push({
+                message: error.message,
+                path: path,
+                row: index,
+                field: error.instancePath.slice(1),
+                type: "ValidationError",
+                value: jsonRow[error.instancePath.slice(1)],
+              });
+            });
+          }
+        });
+      };
+
+      const exploreAndValidate = (group, prefix = "") => {
+        const keys = group.keys();
+
+        for (const key of keys) {
+          try {
+            const item = group.get(key);
+            const currentPath = prefix ? `${prefix}/${key}` : key;
+
+            if (item.constructor.name === "Dataset") {
+              const schemaForDataset = this.properties[currentPath];
+              if (schemaForDataset?.properties) {
+                validateDataset(item, schemaForDataset, currentPath);
+              }
+            } else if (item.constructor.name === "Group") {
+              exploreAndValidate(item, currentPath);
+            }
+          } catch (error) {
+            errors.push({
+              message: `Error processing item: ${error.message}`,
+              path: prefix ? `${prefix}/${key}` : key,
+              type: "ProcessingError",
+            });
+          }
+        }
+      };
+
+      exploreAndValidate(f);
+
+      this.required.forEach((requiredPath) => {
+        let found = false;
+        try {
+          const parts = requiredPath.split("/");
+          let current = f;
+          for (const part of parts) {
+            current = current.get(part);
+            if (!current) break;
+          }
+          found = current !== undefined;
+        } catch {
+          found = false;
+        }
+
+        if (!found) {
+          errors.push({
+            message: `Required dataset not found`,
+            path: requiredPath,
+            type: "MissingRequired",
+          });
+        }
+      });
+
+      f.close();
+      FS.unlink(tempFileName);
+
+      return errors;
+    } catch (error) {
+      throw new Error(`Error validating file: ${error.message}`);
+    }
   }
 }
 
