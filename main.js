@@ -3,7 +3,10 @@ const path = require("path");
 const fs = require("fs");
 const { exec } = require("child_process");
 const archiver = require("archiver");
-const { TabularValidationSchema } = require("./src/models/tabularSchema.cjs");
+const {
+  TabularValidationSchema,
+  HDF5Schema,
+} = require("./src/models/tabularSchema.cjs");
 const {
   generateEvidenceGraphs,
 } = require("./src/rocrate/evidence_graph_builder");
@@ -33,17 +36,39 @@ async function convertFileToSchemaJSON(rocratePath, filePath) {
   }
 
   try {
-    const fileExtension = path.extname(filePath);
+    const fileExtension = path.extname(filePath).toLowerCase();
     const fileName = path.basename(filePath, fileExtension);
     const fileType = fileExtension.slice(1).toUpperCase();
 
+    // Check if it's an HDF5 file
+    if (fileExtension === ".h5" || fileExtension === ".hdf5") {
+      const schema = await HDF5Schema.inferFromFile(
+        fullPath,
+        fileName,
+        `Auto-generated schema for ${fileType} file: ${fileName}`
+      );
+
+      // Return the complete HDF5 schema without transforming properties
+      return {
+        name: schema.name,
+        description: schema.description,
+        properties: schema.properties,
+        required: schema.required,
+        type: schema.type,
+        schema: schema.schema,
+        identifier: schema.identifier,
+        "@context": schema["@context"],
+        "@type": schema["@type"],
+      };
+    }
+
+    // For CSV/Parquet files, keep the existing transformation
     const schema = await TabularValidationSchema.inferFromFile(
       fullPath,
       fileName,
       `Auto-generated schema for ${fileType} file: ${fileName}`
     );
 
-    // Convert schema to the format expected by the frontend
     return {
       name: schema.name,
       description: schema.description,
@@ -175,6 +200,22 @@ ipcMain.handle(
       return schemaJSON;
     } catch (error) {
       console.error("Error converting CSV to Schema:", error);
+      throw error;
+    }
+  }
+);
+
+ipcMain.handle(
+  "convert-hdf5-to-schema",
+  async (event, rocratePath, hdf5FilePath) => {
+    try {
+      const schemaJSON = await convertFileToSchemaJSON(
+        rocratePath,
+        hdf5FilePath
+      );
+      return schemaJSON;
+    } catch (error) {
+      console.error("Error converting HDF5 to Schema:", error);
       throw error;
     }
   }

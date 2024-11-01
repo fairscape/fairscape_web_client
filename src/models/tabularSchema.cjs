@@ -2,6 +2,7 @@ const duckdb = require("duckdb");
 const Ajv2020 = require("ajv/dist/2020");
 const { readFileSync, existsSync } = require("fs");
 const { resolve } = require("path");
+const path = require("path");
 
 let h5wasm;
 

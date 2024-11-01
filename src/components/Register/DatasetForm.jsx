@@ -15,6 +15,7 @@ import {
 import SchemaForm from "./SchemaComponents/SchemaForm";
 import SchemaUpload from "./SchemaComponents/SchemaUpload";
 import SchemaSelector from "./SchemaComponents/SchemaSelector";
+import HDF5SchemaForm from "./SchemaComponents/HDF5SchemaForm";
 
 function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -37,6 +38,7 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   const [showSchemaOptions, setShowSchemaOptions] = useState(false);
   const [showSchemaSelector, setShowSchemaSelector] = useState(false);
   const [showSchemaForm, setShowSchemaForm] = useState(false);
+  const [showHDF5SchemaForm, setShowHDF5SchemaForm] = useState(false);
   const [showSchemaUpload, setShowSchemaUpload] = useState(false);
   const [datasetRegistered, setDatasetRegistered] = useState(false);
   const [pendingRegistration, setPendingRegistration] = useState(false);
@@ -135,7 +137,13 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
     if (action === "select") {
       setShowSchemaSelector(true);
     } else if (action === "create") {
-      setShowSchemaForm(true);
+      // Check file extension for HDF5
+      const fileExtension = file.toLowerCase().split(".").pop();
+      if (fileExtension === "h5" || fileExtension === "hdf5") {
+        setShowHDF5SchemaForm(true);
+      } else {
+        setShowSchemaForm(true);
+      }
     } else if (action === "upload") {
       setShowSchemaUpload(true);
     } else {
@@ -231,6 +239,17 @@ function DatasetForm({ file, onBack, rocratePath, onSuccess }) {
   if (showSchemaForm) {
     return (
       <SchemaForm
+        datasetName={formData.name}
+        onSubmit={handleSchemaRegistration}
+        onCancel={() => setShowSchemaOptions(true)}
+        rocratePath={rocratePath}
+        filePath={file}
+      />
+    );
+  }
+  if (showHDF5SchemaForm) {
+    return (
+      <HDF5SchemaForm
         datasetName={formData.name}
         onSubmit={handleSchemaRegistration}
         onCancel={() => setShowSchemaOptions(true)}
