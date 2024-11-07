@@ -19,6 +19,7 @@ function generateROCrate({
   guid,
   name,
   description,
+  author,
   keywords,
   organizationName = null,
   projectName = null,
@@ -45,6 +46,7 @@ function generateROCrate({
     isPartOf: [],
     keywords: keywords,
     description: description,
+    author: author,
     "@graph": [],
   };
 
@@ -96,6 +98,7 @@ class ROCrate {
   constructor(
     name,
     description,
+    author,
     keywords,
     projectName = null,
     organizationName = null,
@@ -105,6 +108,7 @@ class ROCrate {
     this.metadataType = "https://w3id.org/EVI#ROCrate";
     this.name = name;
     this.description = description;
+    this.author = author;
     this.keywords = keywords;
     this.projectName = projectName;
     this.organizationName = organizationName;

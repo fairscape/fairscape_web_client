@@ -98,6 +98,7 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
     description: "",
     keywords: "",
     packageType: "",
+    author: "",
   });
 
   const [jsonLdPreview, setJsonLdPreview] = useState({});
@@ -141,6 +142,7 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
       isPartOf: [],
       keywords: formData.keywords.split(",").map((k) => k.trim()),
       description: formData.description,
+      author: formData.author,
       packageType: formData.packageType,
       "@graph": [],
     };
@@ -204,6 +206,7 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
         formData.organization_name,
         formData.project_name,
         formData.description,
+        formData.author,
         formData.keywords,
         formData.packageType,
         guid
@@ -345,6 +348,15 @@ function InitForm({ rocratePath, setRocratePath, onSuccess }) {
                 value={formData.description}
                 onChange={handleChange}
                 required
+              />
+
+              <FormField
+                label="Author"
+                name="author"
+                value={formData.author}
+                onChange={handleChange}
+                required
+                placeholder="1st Author First Last, 2nd Author First Last, ..."
               />
 
               <FormField

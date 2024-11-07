@@ -125,6 +125,7 @@ export function rocrate_create(
   organization_name,
   project_name,
   description,
+  author,
   keywords,
   packageType,
   guid = ""
@@ -136,6 +137,7 @@ export function rocrate_create(
     organizationName: organization_name,
     projectName: project_name,
     description,
+    author,
     keywords,
     packageType,
   });
