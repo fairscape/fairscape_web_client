@@ -33,7 +33,7 @@ const PUBLISH_STEPS = [
   },
 ];
 
-// Simulated API calls with promises and timeouts
+// Simulated API calls remain the same
 const simulateCreateMetadata = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -120,64 +120,69 @@ const PublishPage = () => {
   const showProgress = publishing || (currentStep === 2 && !error);
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a] py-8">
+    <div
+      id="root"
+      style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+    >
       <Header />
-      <div className="container mx-auto px-4 max-w-3xl">
-        <StyledForm onSubmit={handleSubmit}>
-          <FormTitle>Publish ROCrate to Dataverse</FormTitle>
+      <div style={{ flex: 1 }}>
+        <div className="container mx-auto px-4 max-w-3xl py-8">
+          <StyledForm onSubmit={handleSubmit}>
+            <FormTitle>Publish ROCrate to Dataverse</FormTitle>
 
-          {error && (
-            <Alert type="error">
-              <AlertCircle className="h-5 w-5" />
-              <div>
-                <h3 className="font-medium">Error</h3>
-                <p>{error}</p>
-              </div>
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert type="success">
-              <CheckCircle2 className="h-5 w-5" />
-              <div>
-                <h3 className="font-medium">Success</h3>
-                <p>{successMessage}</p>
-              </div>
-            </Alert>
-          )}
-
-          {showProgress && (
-            <div className="mb-6 bg-[#2a3552] p-6 rounded-lg">
-              <h3 className="text-white font-medium mb-4">
-                Publication Progress
-              </h3>
-              <PublishProgress
-                steps={PUBLISH_STEPS}
-                currentStep={currentStep}
-                error={Boolean(error)}
-              />
-              {persistentId && (
-                <div className="mt-4 text-sm text-gray-300">
-                  Persistent ID:{" "}
-                  <span className="font-mono">{persistentId}</span>
+            {error && (
+              <Alert type="error">
+                <AlertCircle className="h-5 w-5" />
+                <div>
+                  <h3 className="font-medium">Error</h3>
+                  <p>{error}</p>
                 </div>
-              )}
-            </div>
-          )}
+              </Alert>
+            )}
 
-          {datasetUrl && currentStep === 2 && !error && (
-            <DatasetLink url={datasetUrl} />
-          )}
+            {successMessage && (
+              <Alert type="success">
+                <CheckCircle2 className="h-5 w-5" />
+                <div>
+                  <h3 className="font-medium">Success</h3>
+                  <p>{successMessage}</p>
+                </div>
+              </Alert>
+            )}
 
-          {showForm && !publishing && (
-            <PublicationForm
-              formData={formData}
-              onInputChange={handleInputChange}
-              onSubmit={handleSubmit}
-              publishing={publishing}
-            />
-          )}
-        </StyledForm>
+            {showProgress && (
+              <div className="mb-6 bg-[#2a3552] p-6 rounded-lg">
+                <h3 className="text-white font-medium mb-4">
+                  Publication Progress
+                </h3>
+                <PublishProgress
+                  steps={PUBLISH_STEPS}
+                  currentStep={currentStep}
+                  error={Boolean(error)}
+                />
+                {persistentId && (
+                  <div className="mt-4 text-sm text-gray-300">
+                    Persistent ID:{" "}
+                    <span className="font-mono">{persistentId}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {datasetUrl && currentStep === 2 && !error && (
+              <DatasetLink url={datasetUrl} />
+            )}
+
+            {showForm && !publishing && (
+              <PublicationForm
+                formData={formData}
+                onInputChange={handleInputChange}
+                onSubmit={handleSubmit}
+                publishing={publishing}
+              />
+            )}
+          </StyledForm>
+        </div>
       </div>
       <Footer />
     </div>
