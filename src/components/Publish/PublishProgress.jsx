@@ -24,11 +24,10 @@ const ProgressBar = styled.div`
   background: ${(props) =>
     props.failed ? "#dc3545" : "linear-gradient(to right, #007bff, #28a745)"};
   width: ${(props) => {
-    const stepWidth = 100 / (props.totalSteps - 1);
-    return props.currentStep >= 0
-      ? Math.min(props.currentStep * stepWidth, 100)
-      : 100;
-  }}%;
+    if (props.failed) return "100%";
+    if (props.currentStep === -1) return "0%";
+    return `${(props.currentStep * 100) / (props.totalSteps - 1)}%`;
+  }};
   transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
 `;
 
@@ -86,7 +85,21 @@ const StepDescription = styled.span`
   color: #9ca3af;
 `;
 
-const PublishProgress = ({ steps, currentStep, error = false }) => {
+const ErrorMessage = styled.div`
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(220, 53, 69, 0.1);
+  border-radius: 4px;
+`;
+
+const PublishProgress = ({
+  steps,
+  currentStep,
+  error = false,
+  errorMessage,
+}) => {
   const getStepStatus = (stepIndex) => {
     if (error && stepIndex === currentStep) return "error";
     if (stepIndex < currentStep) return "completed";
@@ -119,13 +132,12 @@ const PublishProgress = ({ steps, currentStep, error = false }) => {
         />
         <StepContainer>
           {steps.map((step, index) => (
-            <Step key={step.id} active={index <= currentStep}>
+            <Step key={step.id} active={index <= currentStep && !error}>
               {index + 1}. {step.label}
             </Step>
           ))}
         </StepContainer>
       </ProgressBarContainer>
-
       <StepsList>
         {steps.map((step, index) => {
           const status = getStepStatus(index);
@@ -136,6 +148,9 @@ const PublishProgress = ({ steps, currentStep, error = false }) => {
                 <StepLabel status={status}>{step.label}</StepLabel>
                 {step.description && (
                   <StepDescription>{step.description}</StepDescription>
+                )}
+                {status === "error" && errorMessage && (
+                  <ErrorMessage>{errorMessage}</ErrorMessage>
                 )}
               </StepInfo>
             </StepItem>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import axios from "axios";
 import { AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
 import Header from "../components/header_footer/Header";
 import Footer from "../components/header_footer/Footer";
@@ -14,6 +15,17 @@ import {
   DatasetLink,
   LinkButton,
 } from "../components/Publish/PublishStyles";
+
+export const API_URL =
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+
+export const DATAVERSE_BASE_URL =
+  "https://dataversedev.internal.lib.virginia.edu/dataset.xhtml?persistentId=";
+
+export const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 const PUBLISH_STEPS = [
   {
@@ -33,31 +45,10 @@ const PUBLISH_STEPS = [
   },
 ];
 
-// Simulated API calls remain the same
-const simulateCreateMetadata = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        persistent_id: "doi:10.5072/FK2/123456",
-        dataset_url:
-          "https://dataverse.example.org/dataset.html?persistentId=doi:10.5072/FK2/123456",
-      });
-    }, 2000);
-  });
-};
-
-const simulateUploadData = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ status: "success" });
-    }, 3000);
-  });
-};
-
 const PublishPage = () => {
   const location = useLocation();
-  const [metadata, setMetadata] = useState({ name: "Test ROCrate" });
-  const [loading, setLoading] = useState(false);
+  const [metadata, setMetadata] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [publishing, setPublishing] = useState(false);
@@ -66,12 +57,52 @@ const PublishPage = () => {
   const [datasetUrl, setDatasetUrl] = useState(null);
   const [showForm, setShowForm] = useState(true);
   const [formData, setFormData] = useState({
-    name: "Test Dataset",
-    author: "John Doe",
-    description: "Test description",
-    keywords: "test, demo",
+    name: "",
+    author: "",
+    description: "",
+    keywords: "",
     datePublished: new Date().toISOString().split("T")[0],
   });
+
+  const arkId = location.pathname.replace("/publish/", "");
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (!arkId) {
+        setError("Invalid ARK identifier");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_URL}/${arkId}`, {
+          headers: getAuthHeaders(),
+        });
+
+        setMetadata(response.data);
+        setFormData({
+          name: response.data.name || "",
+          author: Array.isArray(response.data.author)
+            ? response.data.author.join(", ")
+            : response.data.author || "",
+          description: response.data.description || "",
+          keywords: Array.isArray(response.data.keywords)
+            ? response.data.keywords.join(", ")
+            : response.data.keywords || "",
+          datePublished:
+            response.data.datePublished ||
+            new Date().toISOString().split("T")[0],
+        });
+      } catch (err) {
+        setError("Failed to fetch ROCrate metadata");
+        console.error("Error fetching metadata:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetadata();
+  }, [arkId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -92,24 +123,29 @@ const PublishPage = () => {
     setShowForm(false);
 
     try {
+      const headers = getAuthHeaders();
+
       // Step 1: Create metadata
-      const createResponse = await simulateCreateMetadata();
-      setPersistentId(createResponse.persistent_id);
-      setDatasetUrl(createResponse.dataset_url);
+      const createResponse = await axios.post(
+        `${API_URL}/publish/create/${arkId}`,
+        formData,
+        { headers }
+      );
+
+      const pid = createResponse.data.persistent_id;
+      setPersistentId(pid);
+      setDatasetUrl(`${DATAVERSE_BASE_URL}${pid}`);
       setCurrentStep(1);
 
       // Step 2: Upload data
-      await simulateUploadData();
+      await axios.post(`${API_URL}/publish/upload/${arkId}`, {}, { headers });
       setCurrentStep(2);
 
-      setSuccessMessage(
-        `Successfully published to Dataverse with ID: ${createResponse.persistent_id}`
-      );
+      setSuccessMessage(`Successfully published to Dataverse with ID: ${pid}`);
     } catch (err) {
-      setError("Failed to publish to Dataverse");
+      setError(err.response?.data?.detail || "Failed to publish to Dataverse");
       console.error("Error publishing:", err);
-      setCurrentStep(-1);
-      setShowForm(true);
+      setCurrentStep(1); // Set to the step that failed
     } finally {
       setPublishing(false);
     }
@@ -117,15 +153,25 @@ const PublishPage = () => {
 
   if (loading) return <LoadingSpinner />;
 
-  const showProgress = publishing || (currentStep === 2 && !error);
+  if (!metadata) {
+    return (
+      <Alert type="error">
+        <AlertCircle className="h-5 w-5" />
+        <div>
+          <h3 className="font-medium">Error</h3>
+          <p>Failed to load ROCrate metadata</p>
+        </div>
+      </Alert>
+    );
+  }
+
+  // Show progress bar during publishing or when there's an error
+  const showProgress = publishing || currentStep >= 0 || error;
 
   return (
-    <div
-      id="root"
-      style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
-    >
+    <div className="flex flex-col min-h-screen">
       <Header />
-      <div style={{ flex: 1 }}>
+      <main className="flex-1">
         <div className="container mx-auto px-4 max-w-3xl py-8">
           <StyledForm onSubmit={handleSubmit}>
             <FormTitle>Publish ROCrate to Dataverse</FormTitle>
@@ -159,6 +205,7 @@ const PublishPage = () => {
                   steps={PUBLISH_STEPS}
                   currentStep={currentStep}
                   error={Boolean(error)}
+                  errorMessage={error}
                 />
                 {persistentId && (
                   <div className="mt-4 text-sm text-gray-300">
@@ -173,7 +220,7 @@ const PublishPage = () => {
               <DatasetLink url={datasetUrl} />
             )}
 
-            {showForm && !publishing && (
+            {showForm && !publishing && !error && (
               <PublicationForm
                 formData={formData}
                 onInputChange={handleInputChange}
@@ -183,7 +230,7 @@ const PublishPage = () => {
             )}
           </StyledForm>
         </div>
-      </div>
+      </main>
       <Footer />
     </div>
   );
