@@ -7,6 +7,7 @@ import UploadPage from "./pages/UploadPage";
 import HomePage from "./pages/HomePage";
 import MyDashboard from "./pages/MyDashboard";
 import PublishPage from "./pages/PublishPage";
+import DataverseTokensPage from "./pages/DataverseTokensPage";
 import "./global.css";
 import "./components/header_footer/Header.css";
 import Login from "./components/Login/LoginComponent";
@@ -17,6 +18,7 @@ ReactDOM.render(
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/tokens" element={<DataverseTokensPage />} />
         <Route path="/dashboard" element={<MyDashboard />} />
         <Route path="/upload/:type" element={<UploadPage />} />
 
