@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   ThemeProvider,
   createTheme,
@@ -13,20 +14,21 @@ import {
   Box,
   CircularProgress,
   Button,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 import { Pencil, Trash2, Save, X, Plus } from "lucide-react";
 import { styled } from "@mui/system";
 import Header from "../components/header_footer/Header";
 import Footer from "../components/header_footer/Footer";
 
+const API_URL =
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+
 const theme = createTheme({
   palette: {
-    primary: {
-      main: "#1976d2",
-    },
-    secondary: {
-      main: "#dc004e",
-    },
+    primary: { main: "#1976d2" },
+    secondary: { main: "#dc004e" },
   },
 });
 
@@ -59,82 +61,137 @@ const DataverseTokensPage = () => {
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
+  const [editToken, setEditToken] = useState(null);
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const emptyToken = {
-    name: "",
-    url: "",
-    token: "",
+    tokenUID: "",
+    endpointURL: "",
+    tokenValue: "",
   };
 
   const [newToken, setNewToken] = useState(emptyToken);
 
-  useEffect(() => {
-    fetchTokens();
-  }, []);
+  const axiosInstance = axios.create({
+    baseURL: API_URL,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  axiosInstance.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
+  const showNotification = (message, severity = "success") => {
+    setNotification({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleCloseNotification = () => {
+    setNotification({ ...notification, open: false });
+  };
 
   const fetchTokens = async () => {
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const mockTokens = [
-        {
-          id: 1,
-          name: "UVA Dataverse",
-          url: "https://dataverse.uva.edu",
-          token: "sasdasf-12311-1dfs",
-        },
-        {
-          id: 2,
-          name: "Harvard Dataverse",
-          url: "https://dataverse.harvard.edu",
-          token: "hdv-9876-token-5432",
-        },
-      ];
-      setTokens(mockTokens);
+      const response = await axiosInstance.get("/profile/credentials");
+      setTokens(response.data || []);
     } catch (error) {
       console.error("Error fetching tokens:", error);
+      showNotification(
+        error.response?.data?.error || "Failed to fetch tokens",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdate = async (id, updatedToken) => {
+  useEffect(() => {
+    fetchTokens();
+  }, []);
+
+  const handleUpdate = async (tokenUID, updatedToken) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setTokens(
-        tokens.map((token) =>
-          token.id === id ? { ...token, ...updatedToken } : token
-        )
-      );
-      setEditingId(null);
+      const response = await axiosInstance.put("/profile/credentials", {
+        tokenUID,
+        tokenValue: updatedToken.tokenValue,
+        endpointURL: updatedToken.endpointURL,
+      });
+
+      if (response.data.updated) {
+        fetchTokens();
+        setEditingId(null);
+        setEditToken(null);
+        showNotification("Token updated successfully");
+      }
     } catch (error) {
-      console.error("Error updating token:", error);
+      showNotification(
+        error.response?.data?.error || "Failed to update token",
+        "error"
+      );
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (tokenUID) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setTokens(tokens.filter((token) => token.id !== id));
+      const response = await axiosInstance.delete("/profile/credentials", {
+        params: { tokenUID },
+      });
+
+      if (response.data.deleted) {
+        fetchTokens();
+        showNotification("Token deleted successfully");
+      }
     } catch (error) {
-      console.error("Error deleting token:", error);
+      showNotification(
+        error.response?.data?.error || "Failed to delete token",
+        "error"
+      );
     }
   };
 
   const handleAdd = async () => {
     try {
-      if (!newToken.name || !newToken.url || !newToken.token) {
-        alert("Please fill in all fields");
+      if (!newToken.tokenUID || !newToken.endpointURL || !newToken.tokenValue) {
+        showNotification("Please fill in all fields", "error");
         return;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const newId = Math.max(...tokens.map((t) => t.id), 0) + 1;
-      setTokens([...tokens, { ...newToken, id: newId }]);
-      setNewToken(emptyToken);
+      const response = await axiosInstance.post("/profile/credentials", {
+        tokenUID: newToken.tokenUID,
+        tokenValue: newToken.tokenValue,
+        endpointURL: newToken.endpointURL,
+      });
+
+      if (response.data.uploaded) {
+        fetchTokens();
+        setNewToken(emptyToken);
+        showNotification("Token added successfully");
+      }
     } catch (error) {
-      console.error("Error adding token:", error);
+      showNotification(
+        error.response?.data?.error || "Failed to add token",
+        "error"
+      );
     }
+  };
+
+  const startEditing = (token) => {
+    setEditingId(token.tokenUID);
+    setEditToken({ ...token });
   };
 
   return (
@@ -143,7 +200,7 @@ const DataverseTokensPage = () => {
         <Header />
         <Box sx={{ p: 3 }}>
           <Typography variant="h4" gutterBottom>
-            Dataverse Tokens Management
+            Dataverse Token Management
           </Typography>
           {loading ? (
             <Box
@@ -159,44 +216,27 @@ const DataverseTokensPage = () => {
               <Table sx={{ minWidth: 700 }} aria-label="customized table">
                 <TableHead>
                   <TableRow>
-                    <StyledTableCell>Name</StyledTableCell>
-                    <StyledTableCell>URL</StyledTableCell>
-                    <StyledTableCell>Token</StyledTableCell>
+                    <StyledTableCell>Token ID</StyledTableCell>
+                    <StyledTableCell>Endpoint URL</StyledTableCell>
+                    <StyledTableCell>Token Value</StyledTableCell>
                     <StyledTableCell align="right">Actions</StyledTableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {tokens.map((token) => (
-                    <StyledTableRow key={token.id}>
-                      {editingId === token.id ? (
+                    <StyledTableRow key={token.tokenUID}>
+                      {editingId === token.tokenUID ? (
                         <>
+                          <TableCell>{token.tokenUID}</TableCell>
                           <TableCell>
                             <input
                               className="w-full p-2 border rounded"
-                              value={token.name}
+                              value={editToken.endpointURL}
                               onChange={(e) =>
-                                setTokens(
-                                  tokens.map((t) =>
-                                    t.id === token.id
-                                      ? { ...t, name: e.target.value }
-                                      : t
-                                  )
-                                )
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <input
-                              className="w-full p-2 border rounded"
-                              value={token.url}
-                              onChange={(e) =>
-                                setTokens(
-                                  tokens.map((t) =>
-                                    t.id === token.id
-                                      ? { ...t, url: e.target.value }
-                                      : t
-                                  )
-                                )
+                                setEditToken({
+                                  ...editToken,
+                                  endpointURL: e.target.value,
+                                })
                               }
                             />
                           </TableCell>
@@ -204,15 +244,12 @@ const DataverseTokensPage = () => {
                             <input
                               className="w-full p-2 border rounded"
                               type="password"
-                              value={token.token}
+                              value={editToken.tokenValue}
                               onChange={(e) =>
-                                setTokens(
-                                  tokens.map((t) =>
-                                    t.id === token.id
-                                      ? { ...t, token: e.target.value }
-                                      : t
-                                  )
-                                )
+                                setEditToken({
+                                  ...editToken,
+                                  tokenValue: e.target.value,
+                                })
                               }
                             />
                           </TableCell>
@@ -220,14 +257,19 @@ const DataverseTokensPage = () => {
                             <ActionButton
                               variant="contained"
                               color="primary"
-                              onClick={() => handleUpdate(token.id, token)}
+                              onClick={() =>
+                                handleUpdate(token.tokenUID, editToken)
+                              }
                             >
                               <Save size={20} />
                             </ActionButton>
                             <ActionButton
                               variant="contained"
                               color="secondary"
-                              onClick={() => setEditingId(null)}
+                              onClick={() => {
+                                setEditingId(null);
+                                setEditToken(null);
+                              }}
                             >
                               <X size={20} />
                             </ActionButton>
@@ -235,21 +277,21 @@ const DataverseTokensPage = () => {
                         </>
                       ) : (
                         <>
-                          <TableCell>{token.name}</TableCell>
-                          <TableCell>{token.url}</TableCell>
+                          <TableCell>{token.tokenUID}</TableCell>
+                          <TableCell>{token.endpointURL}</TableCell>
                           <TableCell>••••••••••••</TableCell>
                           <TableCell align="right">
                             <ActionButton
                               variant="contained"
                               color="primary"
-                              onClick={() => setEditingId(token.id)}
+                              onClick={() => startEditing(token)}
                             >
                               <Pencil size={20} />
                             </ActionButton>
                             <ActionButton
                               variant="contained"
                               color="secondary"
-                              onClick={() => handleDelete(token.id)}
+                              onClick={() => handleDelete(token.tokenUID)}
                             >
                               <Trash2 size={20} />
                             </ActionButton>
@@ -258,25 +300,27 @@ const DataverseTokensPage = () => {
                       )}
                     </StyledTableRow>
                   ))}
-                  {/* New Token Row */}
                   <StyledTableRow>
                     <TableCell>
                       <input
                         className="w-full p-2 border rounded"
-                        placeholder="Dataverse Name"
-                        value={newToken.name}
+                        placeholder="Token ID"
+                        value={newToken.tokenUID}
                         onChange={(e) =>
-                          setNewToken({ ...newToken, name: e.target.value })
+                          setNewToken({ ...newToken, tokenUID: e.target.value })
                         }
                       />
                     </TableCell>
                     <TableCell>
                       <input
                         className="w-full p-2 border rounded"
-                        placeholder="Dataverse URL"
-                        value={newToken.url}
+                        placeholder="Endpoint URL"
+                        value={newToken.endpointURL}
                         onChange={(e) =>
-                          setNewToken({ ...newToken, url: e.target.value })
+                          setNewToken({
+                            ...newToken,
+                            endpointURL: e.target.value,
+                          })
                         }
                       />
                     </TableCell>
@@ -284,10 +328,13 @@ const DataverseTokensPage = () => {
                       <input
                         className="w-full p-2 border rounded"
                         type="password"
-                        placeholder="API Token"
-                        value={newToken.token}
+                        placeholder="Token Value"
+                        value={newToken.tokenValue}
                         onChange={(e) =>
-                          setNewToken({ ...newToken, token: e.target.value })
+                          setNewToken({
+                            ...newToken,
+                            tokenValue: e.target.value,
+                          })
                         }
                       />
                     </TableCell>
@@ -307,6 +354,20 @@ const DataverseTokensPage = () => {
             </TableContainer>
           )}
         </Box>
+        <Snackbar
+          open={notification.open}
+          autoHideDuration={6000}
+          onClose={handleCloseNotification}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <Alert
+            onClose={handleCloseNotification}
+            severity={notification.severity}
+            sx={{ width: "100%" }}
+          >
+            {notification.message}
+          </Alert>
+        </Snackbar>
         <Footer />
       </div>
     </ThemeProvider>
