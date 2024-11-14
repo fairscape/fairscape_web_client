@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams, useLocation, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import jsonld from "jsonld";
 import N3 from "n3";
@@ -40,12 +40,10 @@ const MetadataPage = () => {
 
   const extractRawType = (type) => {
     if (typeof type === "string") {
-      // Handle URLs
       if (type.startsWith("http://") || type.startsWith("https://")) {
         const parts = type.split(/[/#]/);
         return parts[parts.length - 1].toLowerCase();
       }
-      // Handle general case with colons (including "evi:type")
       if (type.includes(":")) {
         return type.split(":").pop().toLowerCase();
       }
@@ -72,7 +70,6 @@ const MetadataPage = () => {
     const fetchData = async () => {
       setLoading(true);
 
-      //Weird handling so that users can visit /ark:... and rocrate/ark:...
       try {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -205,7 +202,7 @@ const MetadataPage = () => {
       <div className="page-content">
         <div className="container">
           <h3>
-            {mapType(type)} Metadata: {metadata.guid}
+            {mapType(type)} Metadata: {metadata["@id"]}
           </h3>
           <ButtonGroupComponent
             showMetadata={showMetadata}
@@ -213,7 +210,29 @@ const MetadataPage = () => {
             showEvidenceGraph={showEvidenceGraph}
           />
           {view === "metadata" && (
-            <MetadataComponent metadata={metadata} type={mapType(type)} />
+            <>
+              <MetadataComponent metadata={metadata} type={mapType(type)} />
+              {type.toLowerCase() === "rocrate" && (
+                <div className="text-center mt-4">
+                  <Link
+                    to={`/publish/${metadata["@id"]}`}
+                    className="btn btn-primary"
+                    style={{
+                      backgroundColor: "#0d6efd",
+                      borderColor: "#0d6efd",
+                      color: "white",
+                      padding: "8px 16px",
+                      textDecoration: "none",
+                      borderRadius: "4px",
+                      fontWeight: 500,
+                      display: "inline-block",
+                    }}
+                  >
+                    Publish ROCrate to Dataverse
+                  </Link>
+                </div>
+              )}
+            </>
           )}
           {view === "serialization" && (
             <SerializationComponent
