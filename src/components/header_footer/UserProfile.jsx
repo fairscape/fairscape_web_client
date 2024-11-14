@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import "./UserProfile.css";
 
@@ -57,6 +57,9 @@ const UserProfile = () => {
           </p>
           <p>Email: {user.email}</p>
           <p>Organization: {user.organization}</p>
+          <Link to="/tokens" className="tokens-link">
+            Manage Tokens
+          </Link>
           <button className="logout-button" onClick={handleLogout}>
             Log Out
           </button>
