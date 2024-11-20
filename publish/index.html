@@ -115,7 +115,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#publishing-rocrate-to-dataverse-step-by-step-guide" class="md-skip">
+        <a href="#publishing-rocrate-to-dataverse-a-step-by-step-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -501,9 +501,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-navigate-to-rocrate-publication" class="md-nav__link">
+  <a href="#3-navigate-to-ro-crate-publication" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Navigate to ROCrate Publication
+      3. Navigate to RO-Crate Publication
     </span>
   </a>
   
@@ -579,47 +579,39 @@
 
 <!-- markdownlint-disable -->
 
-<h1 id="publishing-rocrate-to-dataverse-step-by-step-guide">Publishing ROCrate to Dataverse: Step-by-Step Guide<a class="headerlink" href="#publishing-rocrate-to-dataverse-step-by-step-guide" title="Permanent link">&para;</a></h1>
+<h1 id="publishing-rocrate-to-dataverse-a-step-by-step-guide">Publishing ROCrate to Dataverse: A Step-by-Step Guide<a class="headerlink" href="#publishing-rocrate-to-dataverse-a-step-by-step-guide" title="Permanent link">&para;</a></h1>
 <h2 id="1-generate-dataverse-api-token">1. Generate Dataverse API Token<a class="headerlink" href="#1-generate-dataverse-api-token" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 1" src="../screenshots/pub1.png" /></p>
 <ol>
-<li>Log in to your Dataverse account</li>
+<li>Log in to your Dataverse account. <a href="https://dataverse.lib.virginia.edu/">UVA Dataverse</a></li>
 <li>Click on your username in the top right corner</li>
 <li>Select "API Token" from the dropdown menu</li>
-<li>Click "Create Token" if you don't have one</li>
-<li>Copy the generated API token</li>
+<li>Click "Create Token" if you don't have one already</li>
+<li>Copy the generated API token for future use</li>
 </ol>
 <h2 id="2-configure-fairscape-token-management">2. Configure Fairscape Token Management<a class="headerlink" href="#2-configure-fairscape-token-management" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 2" src="../screenshots/pub2.png" /></p>
 <ol>
-<li>Log in to Fairscape</li>
+<li>Log in to Fairscape server <a href="https://fairscape.net/login">here</a></li>
 <li>Click "Manage Tokens" in the top navigation</li>
 <li>Fill in the required fields:<ul>
-<li>Token ID (e.g., "Example Dataverse")</li>
-<li>Endpoint URL (e.g., "https://dataverse.uva.edu")</li>
+<li>Token ID (e.g., "My UVA Dataverse Token")</li>
+<li>Endpoint URL (The Dataverse instance you are uploading to e.g.,"https://dataverse.uva.edu")</li>
 <li>Token Value (paste your Dataverse API token)</li>
 </ul>
 </li>
 <li>Click "ADD TOKEN" to save
    <img alt="Step 3" src="../screenshots/pub3.png" /></li>
 </ol>
-<h2 id="3-navigate-to-rocrate-publication">3. Navigate to ROCrate Publication<a class="headerlink" href="#3-navigate-to-rocrate-publication" title="Permanent link">&para;</a></h2>
+<h2 id="3-navigate-to-ro-crate-publication">3. Navigate to RO-Crate Publication<a class="headerlink" href="#3-navigate-to-ro-crate-publication" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 4" src="../screenshots/pub4.png" /></p>
 <ol>
 <li>Go to your ROCrate metadata page in Fairscape</li>
-<li>Verify the ROCrate details are correct:<ul>
-<li>Name</li>
-<li>Persistent Identifier</li>
-<li>Description</li>
-<li>Keywords</li>
-<li>Contained items</li>
-</ul>
-</li>
 <li>Click the "Publish ROCrate to Dataverse" button at the bottom of the page</li>
 </ol>
 <h2 id="4-complete-publication-form">4. Complete Publication Form<a class="headerlink" href="#4-complete-publication-form" title="Permanent link">&para;</a></h2>
 <p><img alt="Step 5" src="../screenshots/pub5.png" />
-Fill in the required fields (marked with *):</p>
+The required fields are auto-populated, but you can edit them as needed (marked with *):</p>
 <ol>
 <li>Select Dataverse Instance from the dropdown<ul>
 <li>Choose your configured Dataverse instance</li>
@@ -631,7 +623,7 @@ Fill in the required fields (marked with *):</p>
 </li>
 <li>Publication Details:<ul>
 <li>Title*: Verify or update the ROCrate title</li>
-<li>Authors*: Add all relevant authors</li>
+<li>Authors*: Edit/Add all relevant authors</li>
 <li>Description*: Review and update as needed</li>
 <li>Keywords*: Confirm or modify keywords</li>
 <li>Publication Date*: Verify the date is correct</li>
@@ -655,9 +647,9 @@ Fill in the required fields (marked with *):</p>
 <h2 id="important-notes">Important Notes<a class="headerlink" href="#important-notes" title="Permanent link">&para;</a></h2>
 <h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Active Dataverse account with API access</li>
-<li>Valid API token</li>
-<li>ROCrate uploaded to Fairscape</li>
+<li>An active Dataverse account with API access</li>
+<li>A valid API token (See Step 1)</li>
+<li>An RO-Crate uploaded to the Fairscape server (See https://fairscape.github.io/FairscapeFrontEnd/instructions/)</li>
 </ul>
 
 
