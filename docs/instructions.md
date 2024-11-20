@@ -130,4 +130,4 @@ Finally, to upload your packaged RO-Crate:
 3. Click "Upload RO-Crate" to begin the upload process.
 4. Track the upload progress with the status bar!
 
-Congratulations! You've successfully created, packaged, and uploaded an RO-Crate to the FAIRSCAPE Repository.
+Congratulations! You've successfully created, packaged, and uploaded an RO-Crate to the FAIRSCAPE Repository. If you want to publish your RO-Crate to Dataverse visist this [page](https://fairscape.github.io/FairscapeFrontEnd/publish/)

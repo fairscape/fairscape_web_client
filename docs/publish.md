@@ -57,11 +57,3 @@ The required fields are auto-populated, but you can edit them as needed (marked 
 2. Publication:
     * Click "Publish to Dataverse" button
     * Wait for the publication process to complete
-
-## Important Notes
-
-### Prerequisites
-
-- An active Dataverse account with API access
-- A valid API token (See Step 1)
-- An RO-Crate uploaded to the Fairscape server (See https://fairscape.github.io/FairscapeFrontEnd/instructions/)
