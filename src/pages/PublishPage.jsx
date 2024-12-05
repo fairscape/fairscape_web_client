@@ -18,7 +18,6 @@ import {
 
 export const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
-
 export const DATAVERSE_BASE_URL =
   "https://dataversedev.internal.lib.virginia.edu/dataset.xhtml?persistentId=";
 
@@ -62,6 +61,7 @@ const PublishPage = () => {
     description: "",
     keywords: "",
     datePublished: new Date().toISOString().split("T")[0],
+    license: "CC BY 4.0", // Default license
   });
 
   const arkId = location.pathname.replace("/publish/", "");
@@ -79,6 +79,10 @@ const PublishPage = () => {
           headers: getAuthHeaders(),
         });
 
+        if (!response.data) {
+          throw new Error("No metadata found for this ROCrate");
+        }
+
         setMetadata(response.data);
         setFormData({
           name: response.data.name || "",
@@ -92,10 +96,15 @@ const PublishPage = () => {
           datePublished:
             response.data.datePublished ||
             new Date().toISOString().split("T")[0],
+          license: "CC BY 4.0", // Default license
         });
       } catch (err) {
-        setError("Failed to fetch ROCrate metadata");
-        console.error("Error fetching metadata:", err);
+        const errorMessage =
+          err.response?.data?.detail ||
+          err.message ||
+          "Failed to fetch ROCrate metadata";
+        setError(errorMessage);
+        setMetadata(null);
       } finally {
         setLoading(false);
       }
@@ -143,7 +152,11 @@ const PublishPage = () => {
 
       setSuccessMessage(`Successfully published to Dataverse with ID: ${pid}`);
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to publish to Dataverse");
+      const errorMessage =
+        err.response?.data?.detail ||
+        err.message ||
+        "Failed to publish to Dataverse";
+      setError(errorMessage);
       console.error("Error publishing:", err);
       setCurrentStep(1); // Set to the step that failed
     } finally {
@@ -151,17 +164,38 @@ const PublishPage = () => {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <LoadingSpinner />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!metadata) {
     return (
-      <Alert type="error">
-        <AlertCircle className="h-5 w-5" />
-        <div>
-          <h3 className="font-medium">Error</h3>
-          <p>Failed to load ROCrate metadata</p>
-        </div>
-      </Alert>
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1">
+          <div className="container mx-auto px-4 max-w-3xl py-8">
+            <StyledForm>
+              <FormTitle>Error Fetching Metadata</FormTitle>
+              <Alert type="error">
+                <AlertCircle className="h-5 w-5" />
+                <div>
+                  <h3 className="font-medium">Error</h3>
+                  <p>{error}</p>
+                </div>
+              </Alert>
+            </StyledForm>
+          </div>
+        </main>
+        <Footer />
+      </div>
     );
   }
 

@@ -13,6 +13,16 @@ import axios from "axios";
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 
+const LICENSE_OPTIONS = [
+  "CC BY 4.0",
+  "CC BY-SA 4.0",
+  "CC BY-NC 4.0",
+  "CC BY-NC-SA 4.0",
+  "CC BY-ND 4.0",
+  "CC BY-NC-ND 4.0",
+  "CC0 1.0",
+];
+
 const PublicationForm = ({ formData, onInputChange, onSubmit, publishing }) => {
   const [tokens, setTokens] = useState([]);
   const [selectedDataverse, setSelectedDataverse] = useState("");
@@ -47,6 +57,7 @@ const PublicationForm = ({ formData, onInputChange, onSubmit, publishing }) => {
     onSubmit(e, {
       dataverse_url: selectedDataverse,
       database: database,
+      userProvidedMetadata: formData,
     });
   };
 
@@ -117,6 +128,15 @@ const PublicationForm = ({ formData, onInputChange, onSubmit, publishing }) => {
         value={formData.description}
         onChange={onInputChange}
         placeholder="Enter description"
+      />
+
+      <FormField
+        label="License"
+        name="license"
+        type="select"
+        value={formData.license || "CC BY 4.0"}
+        onChange={onInputChange}
+        options={LICENSE_OPTIONS}
       />
 
       <FormField
