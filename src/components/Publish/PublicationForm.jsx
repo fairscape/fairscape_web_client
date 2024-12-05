@@ -130,14 +130,23 @@ const PublicationForm = ({ formData, onInputChange, onSubmit, publishing }) => {
         placeholder="Enter description"
       />
 
-      <FormField
-        label="License"
-        name="license"
-        type="select"
-        value={formData.license || "CC BY 4.0"}
-        onChange={onInputChange}
-        options={LICENSE_OPTIONS}
-      />
+      <FormGroup>
+        <Label htmlFor="license">License *</Label>
+        <Input
+          as="select"
+          id="license"
+          name="license"
+          value={formData.license || "CC BY 4.0"}
+          onChange={onInputChange}
+          required
+        >
+          {LICENSE_OPTIONS.map((license) => (
+            <option key={license} value={license}>
+              {license}
+            </option>
+          ))}
+        </Input>
+      </FormGroup>
 
       <FormField
         label="Keywords"
