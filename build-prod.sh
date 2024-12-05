@@ -1,7 +1,7 @@
 #!/bin/bash
 
-VITE_FAIRSCAPE_API_URL=http://localhost:8080/api \
-VITE_FAIRSCAPE_FE_URL=http://localhost:5173/ \
+VITE_FAIRSCAPE_API_URL=https://fairscape.net/api \
+VITE_FAIRSCAPE_FE_URL=http://fairscape.net/ \
 npm run build
 
 # Generate date in YYYY-MM-DD format
