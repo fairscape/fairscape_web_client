@@ -3,33 +3,48 @@ import { useNavigate, Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import "./UserProfile.css";
 
+const API_URL =
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+
 const UserProfile = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    decodeUserToken();
+    validateTokenAndDecodeUser();
   }, []);
 
-  const decodeUserToken = () => {
+  const validateTokenAndDecodeUser = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (token) {
-        const decodedToken = jwtDecode(token);
-        setUser({
-          givenName: decodedToken.name.split(" ")[0],
-          surname: decodedToken.name.split(" ")[1],
-          email: decodedToken.email,
-          organization: decodedToken.iss
-            .replace("https://", "")
-            .replace("/", ""),
-        });
-      } else {
+      if (!token) {
         handleLogout();
+        return;
       }
+
+      // First check if the token is valid via API
+      const response = await fetch(`${API_URL}/profile/credentials`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        handleLogout();
+        return;
+      }
+
+      // If we get here, token is valid, so decode it
+      const decodedToken = jwtDecode(token);
+      setUser({
+        givenName: decodedToken.name.split(" ")[0],
+        surname: decodedToken.name.split(" ")[1],
+        email: decodedToken.email,
+        organization: decodedToken.iss.replace("https://", "").replace("/", ""),
+      });
     } catch (error) {
-      console.error("Error decoding token:", error);
+      console.error("Error validating token:", error);
       handleLogout();
     }
   };
