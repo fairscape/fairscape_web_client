@@ -282,7 +282,11 @@ const TableRow = ({ property, value }) => {
     ) {
       // Filter out items with name "Evidence Graph"
       const filteredValue = value.filter(
-        (item) => !(item.name && item.name.includes("Evidence Graph"))
+        (item) =>
+          !(
+            (item.name && item.name.includes("Evidence Graph")) ||
+            (item["@type"] && item["@type"] === "EVI:EvidenceGraph")
+          )
       );
 
       return (
