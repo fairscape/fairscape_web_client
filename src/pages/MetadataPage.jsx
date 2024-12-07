@@ -102,10 +102,15 @@ const MetadataPage = () => {
           throw new Error("Invalid metadata format");
         }
 
-        metadataData.download =
+        if (
+          currentType.toLowerCase() === "dataset" ||
           currentType.toLowerCase() === "rocrate"
-            ? `${API_URL}/rocrate/download/${currentArk}`
-            : `${API_URL}/dataset/download/${currentArk}`;
+        ) {
+          metadataData.download =
+            currentType.toLowerCase() === "rocrate"
+              ? `${API_URL}/rocrate/download/${currentArk}`
+              : `${API_URL}/dataset/download/${currentArk}`;
+        }
 
         setMetadata(metadataData);
         document.title = `Fairscape ${mapType(currentType)} Metadata`;
