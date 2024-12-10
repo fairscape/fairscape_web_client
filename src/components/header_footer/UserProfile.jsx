@@ -55,7 +55,8 @@ const UserProfile = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    setUser(null);
+    setDropdownVisible(false);
   };
 
   if (!user) return null;
