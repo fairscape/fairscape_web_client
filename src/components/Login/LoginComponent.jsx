@@ -1,7 +1,6 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext"; // Make sure path is correct
-import Header from "../header_footer/Header";
 import "./Login.css";
 
 const API_URL =
