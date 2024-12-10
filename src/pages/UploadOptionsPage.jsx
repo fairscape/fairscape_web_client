@@ -7,7 +7,6 @@ import Footer from "../components/header_footer/Footer";
 const UploadOptionsPage = () => {
   return (
     <div className="upload-options-page">
-      <Header />
       <main className="main-content">
         <h1>Upload Options</h1>
         <div className="options-grid">
@@ -48,7 +47,6 @@ const UploadOptionsPage = () => {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

@@ -15,4 +15,6 @@ docker build \
   -t ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE} .
 
 
-docker push ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}
+#docker push ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}
+
+docker run -p 5173:80 ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}

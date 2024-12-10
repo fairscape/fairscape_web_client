@@ -167,11 +167,9 @@ const PublishPage = () => {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header />
         <main className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
         </main>
-        <Footer />
       </div>
     );
   }
@@ -179,7 +177,6 @@ const PublishPage = () => {
   if (!metadata) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header />
         <main className="flex-1">
           <div className="container mx-auto px-4 max-w-3xl py-8">
             <StyledForm>
@@ -194,7 +191,6 @@ const PublishPage = () => {
             </StyledForm>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -204,7 +200,6 @@ const PublishPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
       <main className="flex-1">
         <div className="container mx-auto px-4 max-w-3xl py-8">
           <StyledForm onSubmit={handleSubmit}>
@@ -265,7 +260,6 @@ const PublishPage = () => {
           </StyledForm>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

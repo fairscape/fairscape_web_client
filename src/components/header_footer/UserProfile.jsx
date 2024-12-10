@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
+import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import "./UserProfile.css";
+import { AuthContext } from "../../context/AuthContext";
 
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
@@ -9,7 +10,7 @@ const API_URL =
 const UserProfile = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [user, setUser] = useState(null);
-  const navigate = useNavigate();
+  const { setIsLoggedIn } = useContext(AuthContext);
 
   useEffect(() => {
     validateTokenAndDecodeUser();
@@ -22,19 +23,16 @@ const UserProfile = () => {
         handleLogout();
         return;
       }
-
       // First check if the token is valid via API
       const response = await fetch(`${API_URL}/profile/credentials`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
       if (response.status === 401) {
         handleLogout();
         return;
       }
-
       // If we get here, token is valid, so decode it
       const decodedToken = jwtDecode(token);
       setUser({
@@ -57,6 +55,7 @@ const UserProfile = () => {
     localStorage.removeItem("token");
     setUser(null);
     setDropdownVisible(false);
+    setIsLoggedIn(false);
   };
 
   if (!user) return null;

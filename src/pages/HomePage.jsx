@@ -6,7 +6,6 @@ import Footer from "../components/header_footer/Footer";
 const HomePage = () => {
   return (
     <div className="home-page">
-      <Header />
       <main className="main-content">
         <section className="hero">
           <h1 id="welcome-to-fairscape">Welcome to FAIRSCAPE</h1>
@@ -116,7 +115,6 @@ const HomePage = () => {
           </a>
         </section>
       </main>
-      <Footer />
     </div>
   );
 };

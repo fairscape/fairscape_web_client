@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import "./Header.css";
 import FairscapeLogo from "./FairscapeLogo";
 import UserProfile from "./UserProfile";
+import { AuthContext } from "../../context/AuthContext";
 
 const Header = () => {
-  const isLoggedIn = !!localStorage.getItem("token");
+  const { isLoggedIn } = useContext(AuthContext);
 
   return (
     <header className="header">

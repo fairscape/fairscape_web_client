@@ -202,56 +202,48 @@ const MetadataPage = () => {
   const json = JSON.stringify(metadata, null, 2);
 
   return (
-    <div id="root">
-      <Header />
-      <div className="page-content">
-        <div className="container">
-          <h3>
-            {mapType(type)} Metadata: {metadata["@id"]}
-          </h3>
-          <ButtonGroupComponent
-            showMetadata={showMetadata}
-            showJSON={showJSON}
-            showEvidenceGraph={showEvidenceGraph}
-          />
-          {view === "metadata" && (
-            <>
-              <MetadataComponent metadata={metadata} type={mapType(type)} />
-              {type.toLowerCase() === "rocrate" && (
-                <div className="text-center mt-4">
-                  <Link
-                    to={`/publish/${metadata["@id"]}`}
-                    className="btn btn-primary"
-                    style={{
-                      backgroundColor: "#0d6efd",
-                      borderColor: "#0d6efd",
-                      color: "white",
-                      padding: "8px 16px",
-                      textDecoration: "none",
-                      borderRadius: "4px",
-                      fontWeight: 500,
-                      display: "inline-block",
-                    }}
-                  >
-                    Publish ROCrate to Dataverse
-                  </Link>
-                </div>
-              )}
-            </>
-          )}
-          {view === "serialization" && (
-            <SerializationComponent
-              json={json}
-              rdfXml={rdfXml}
-              turtle={turtle}
-            />
-          )}
-          {view === "evidenceGraph" && !evidenceGraphLoading && (
-            <EvidenceGraphComponent evidenceGraph={evidenceGraph} />
-          )}
-        </div>
+    <div className="page-content">
+      <div className="container">
+        <h3>
+          {mapType(type)} Metadata: {metadata["@id"]}
+        </h3>
+        <ButtonGroupComponent
+          showMetadata={showMetadata}
+          showJSON={showJSON}
+          showEvidenceGraph={showEvidenceGraph}
+        />
+        {view === "metadata" && (
+          <>
+            <MetadataComponent metadata={metadata} type={mapType(type)} />
+            {type.toLowerCase() === "rocrate" && (
+              <div className="text-center mt-4">
+                <Link
+                  to={`/publish/${metadata["@id"]}`}
+                  className="btn btn-primary"
+                  style={{
+                    backgroundColor: "#0d6efd",
+                    borderColor: "#0d6efd",
+                    color: "white",
+                    padding: "8px 16px",
+                    textDecoration: "none",
+                    borderRadius: "4px",
+                    fontWeight: 500,
+                    display: "inline-block",
+                  }}
+                >
+                  Publish ROCrate to Dataverse
+                </Link>
+              </div>
+            )}
+          </>
+        )}
+        {view === "serialization" && (
+          <SerializationComponent json={json} rdfXml={rdfXml} turtle={turtle} />
+        )}
+        {view === "evidenceGraph" && !evidenceGraphLoading && (
+          <EvidenceGraphComponent evidenceGraph={evidenceGraph} />
+        )}
       </div>
-      <Footer />
     </div>
   );
 };

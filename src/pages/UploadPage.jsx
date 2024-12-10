@@ -10,7 +10,6 @@ const UploadPage = () => {
 
   return (
     <div>
-      <Header />
       <h1>Upload {type}</h1>
       <GenericUploadComponent type={type} />
       <Footer />

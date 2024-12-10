@@ -151,93 +151,87 @@ const MyDashboard = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <div id="root">
-        <Header />
-        <Box sx={{ p: 3 }}>
-          <Typography variant="h4" gutterBottom>
-            My Dashboard
-          </Typography>
-          {loading ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="50vh"
-            >
-              <CircularProgress />
-            </Box>
-          ) : (
-            <TableContainer component={Paper} elevation={3}>
-              <Table sx={{ minWidth: 700 }} aria-label="customized table">
-                <TableHead>
-                  <TableRow>
-                    <StyledTableCell>
-                      <TableSortLabel
-                        active={sortConfig.key === "name"}
-                        direction={
-                          sortConfig.key === "name"
-                            ? sortConfig.direction
-                            : "asc"
-                        }
-                        onClick={() => requestSort("name")}
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          My Dashboard
+        </Typography>
+        {loading ? (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height="50vh"
+          >
+            <CircularProgress />
+          </Box>
+        ) : (
+          <TableContainer component={Paper} elevation={3}>
+            <Table sx={{ minWidth: 700 }} aria-label="customized table">
+              <TableHead>
+                <TableRow>
+                  <StyledTableCell>
+                    <TableSortLabel
+                      active={sortConfig.key === "name"}
+                      direction={
+                        sortConfig.key === "name" ? sortConfig.direction : "asc"
+                      }
+                      onClick={() => requestSort("name")}
+                    >
+                      Name
+                    </TableSortLabel>
+                  </StyledTableCell>
+                  <StyledTableCell>Description</StyledTableCell>
+                  <StyledTableCell>
+                    <TableSortLabel
+                      active={sortConfig.key === "uploadDate"}
+                      direction={
+                        sortConfig.key === "uploadDate"
+                          ? sortConfig.direction
+                          : "asc"
+                      }
+                      onClick={() => requestSort("uploadDate")}
+                    >
+                      Upload Date
+                    </TableSortLabel>
+                  </StyledTableCell>
+                  <StyledTableCell>Items in Crate</StyledTableCell>
+                  <StyledTableCell>Actions</StyledTableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {sortedRocrates.map((rocrate) => (
+                  <StyledTableRow key={rocrate["@id"]}>
+                    <TableCell>{rocrate.name}</TableCell>
+                    <TableCell>{rocrate.description}</TableCell>
+                    <TableCell>{formatDate(rocrate.uploadDate)}</TableCell>
+                    <TableCell>{rocrate["@graph"]?.length || 0}</TableCell>
+                    <TableCell>
+                      <ActionButton
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        href={`/rocrate/${extractArkIdentifier(
+                          rocrate["@id"]
+                        )}`}
                       >
-                        Name
-                      </TableSortLabel>
-                    </StyledTableCell>
-                    <StyledTableCell>Description</StyledTableCell>
-                    <StyledTableCell>
-                      <TableSortLabel
-                        active={sortConfig.key === "uploadDate"}
-                        direction={
-                          sortConfig.key === "uploadDate"
-                            ? sortConfig.direction
-                            : "asc"
-                        }
-                        onClick={() => requestSort("uploadDate")}
+                        View Details
+                      </ActionButton>
+                      <ActionButton
+                        variant="outlined"
+                        color="secondary"
+                        size="small"
+                        onClick={() => handleDownload(rocrate.contentURL)}
                       >
-                        Upload Date
-                      </TableSortLabel>
-                    </StyledTableCell>
-                    <StyledTableCell>Items in Crate</StyledTableCell>
-                    <StyledTableCell>Actions</StyledTableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedRocrates.map((rocrate) => (
-                    <StyledTableRow key={rocrate["@id"]}>
-                      <TableCell>{rocrate.name}</TableCell>
-                      <TableCell>{rocrate.description}</TableCell>
-                      <TableCell>{formatDate(rocrate.uploadDate)}</TableCell>
-                      <TableCell>{rocrate["@graph"]?.length || 0}</TableCell>
-                      <TableCell>
-                        <ActionButton
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          href={`/rocrate/${extractArkIdentifier(
-                            rocrate["@id"]
-                          )}`}
-                        >
-                          View Details
-                        </ActionButton>
-                        <ActionButton
-                          variant="outlined"
-                          color="secondary"
-                          size="small"
-                          onClick={() => handleDownload(rocrate.contentURL)}
-                        >
-                          Download
-                        </ActionButton>
-                      </TableCell>
-                    </StyledTableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Box>
-        <Footer />
-      </div>
+                        Download
+                      </ActionButton>
+                    </TableCell>
+                  </StyledTableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Box>
     </ThemeProvider>
   );
 };

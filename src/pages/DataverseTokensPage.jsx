@@ -196,180 +196,176 @@ const DataverseTokensPage = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <div id="root">
-        <Header />
-        <Box sx={{ p: 3 }}>
-          <Typography variant="h4" gutterBottom>
-            Dataverse Token Management
-          </Typography>
-          {loading ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="50vh"
-            >
-              <CircularProgress />
-            </Box>
-          ) : (
-            <TableContainer component={Paper} elevation={3}>
-              <Table sx={{ minWidth: 700 }} aria-label="customized table">
-                <TableHead>
-                  <TableRow>
-                    <StyledTableCell>Token ID</StyledTableCell>
-                    <StyledTableCell>Endpoint URL</StyledTableCell>
-                    <StyledTableCell>Token Value</StyledTableCell>
-                    <StyledTableCell align="right">Actions</StyledTableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {tokens.map((token) => (
-                    <StyledTableRow key={token.tokenUID}>
-                      {editingId === token.tokenUID ? (
-                        <>
-                          <TableCell>{token.tokenUID}</TableCell>
-                          <TableCell>
-                            <input
-                              className="w-full p-2 border rounded"
-                              value={editToken.endpointURL}
-                              onChange={(e) =>
-                                setEditToken({
-                                  ...editToken,
-                                  endpointURL: e.target.value,
-                                })
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <input
-                              className="w-full p-2 border rounded"
-                              type="password"
-                              value={editToken.tokenValue}
-                              onChange={(e) =>
-                                setEditToken({
-                                  ...editToken,
-                                  tokenValue: e.target.value,
-                                })
-                              }
-                            />
-                          </TableCell>
-                          <TableCell align="right">
-                            <ActionButton
-                              variant="contained"
-                              color="primary"
-                              onClick={() =>
-                                handleUpdate(token.tokenUID, editToken)
-                              }
-                            >
-                              <Save size={20} />
-                            </ActionButton>
-                            <ActionButton
-                              variant="contained"
-                              color="secondary"
-                              onClick={() => {
-                                setEditingId(null);
-                                setEditToken(null);
-                              }}
-                            >
-                              <X size={20} />
-                            </ActionButton>
-                          </TableCell>
-                        </>
-                      ) : (
-                        <>
-                          <TableCell>{token.tokenUID}</TableCell>
-                          <TableCell>{token.endpointURL}</TableCell>
-                          <TableCell>••••••••••••</TableCell>
-                          <TableCell align="right">
-                            <ActionButton
-                              variant="contained"
-                              color="primary"
-                              onClick={() => startEditing(token)}
-                            >
-                              <Pencil size={20} />
-                            </ActionButton>
-                            <ActionButton
-                              variant="contained"
-                              color="secondary"
-                              onClick={() => handleDelete(token.tokenUID)}
-                            >
-                              <Trash2 size={20} />
-                            </ActionButton>
-                          </TableCell>
-                        </>
-                      )}
-                    </StyledTableRow>
-                  ))}
-                  <StyledTableRow>
-                    <TableCell>
-                      <input
-                        className="w-full p-2 border rounded"
-                        placeholder="Token ID"
-                        value={newToken.tokenUID}
-                        onChange={(e) =>
-                          setNewToken({ ...newToken, tokenUID: e.target.value })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <input
-                        className="w-full p-2 border rounded"
-                        placeholder="Endpoint URL"
-                        value={newToken.endpointURL}
-                        onChange={(e) =>
-                          setNewToken({
-                            ...newToken,
-                            endpointURL: e.target.value,
-                          })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <input
-                        className="w-full p-2 border rounded"
-                        type="password"
-                        placeholder="Token Value"
-                        value={newToken.tokenValue}
-                        onChange={(e) =>
-                          setNewToken({
-                            ...newToken,
-                            tokenValue: e.target.value,
-                          })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleAdd}
-                        startIcon={<Plus size={20} />}
-                      >
-                        Add Token
-                      </Button>
-                    </TableCell>
-                  </StyledTableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Box>
-        <Snackbar
-          open={notification.open}
-          autoHideDuration={6000}
-          onClose={handleCloseNotification}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert
-            onClose={handleCloseNotification}
-            severity={notification.severity}
-            sx={{ width: "100%" }}
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Dataverse Token Management
+        </Typography>
+        {loading ? (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height="50vh"
           >
-            {notification.message}
-          </Alert>
-        </Snackbar>
-        <Footer />
-      </div>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <TableContainer component={Paper} elevation={3}>
+            <Table sx={{ minWidth: 700 }} aria-label="customized table">
+              <TableHead>
+                <TableRow>
+                  <StyledTableCell>Token ID</StyledTableCell>
+                  <StyledTableCell>Endpoint URL</StyledTableCell>
+                  <StyledTableCell>Token Value</StyledTableCell>
+                  <StyledTableCell align="right">Actions</StyledTableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {tokens.map((token) => (
+                  <StyledTableRow key={token.tokenUID}>
+                    {editingId === token.tokenUID ? (
+                      <>
+                        <TableCell>{token.tokenUID}</TableCell>
+                        <TableCell>
+                          <input
+                            className="w-full p-2 border rounded"
+                            value={editToken.endpointURL}
+                            onChange={(e) =>
+                              setEditToken({
+                                ...editToken,
+                                endpointURL: e.target.value,
+                              })
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <input
+                            className="w-full p-2 border rounded"
+                            type="password"
+                            value={editToken.tokenValue}
+                            onChange={(e) =>
+                              setEditToken({
+                                ...editToken,
+                                tokenValue: e.target.value,
+                              })
+                            }
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <ActionButton
+                            variant="contained"
+                            color="primary"
+                            onClick={() =>
+                              handleUpdate(token.tokenUID, editToken)
+                            }
+                          >
+                            <Save size={20} />
+                          </ActionButton>
+                          <ActionButton
+                            variant="contained"
+                            color="secondary"
+                            onClick={() => {
+                              setEditingId(null);
+                              setEditToken(null);
+                            }}
+                          >
+                            <X size={20} />
+                          </ActionButton>
+                        </TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell>{token.tokenUID}</TableCell>
+                        <TableCell>{token.endpointURL}</TableCell>
+                        <TableCell>••••••••••••</TableCell>
+                        <TableCell align="right">
+                          <ActionButton
+                            variant="contained"
+                            color="primary"
+                            onClick={() => startEditing(token)}
+                          >
+                            <Pencil size={20} />
+                          </ActionButton>
+                          <ActionButton
+                            variant="contained"
+                            color="secondary"
+                            onClick={() => handleDelete(token.tokenUID)}
+                          >
+                            <Trash2 size={20} />
+                          </ActionButton>
+                        </TableCell>
+                      </>
+                    )}
+                  </StyledTableRow>
+                ))}
+                <StyledTableRow>
+                  <TableCell>
+                    <input
+                      className="w-full p-2 border rounded"
+                      placeholder="Token ID"
+                      value={newToken.tokenUID}
+                      onChange={(e) =>
+                        setNewToken({ ...newToken, tokenUID: e.target.value })
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <input
+                      className="w-full p-2 border rounded"
+                      placeholder="Endpoint URL"
+                      value={newToken.endpointURL}
+                      onChange={(e) =>
+                        setNewToken({
+                          ...newToken,
+                          endpointURL: e.target.value,
+                        })
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <input
+                      className="w-full p-2 border rounded"
+                      type="password"
+                      placeholder="Token Value"
+                      value={newToken.tokenValue}
+                      onChange={(e) =>
+                        setNewToken({
+                          ...newToken,
+                          tokenValue: e.target.value,
+                        })
+                      }
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleAdd}
+                      startIcon={<Plus size={20} />}
+                    >
+                      Add Token
+                    </Button>
+                  </TableCell>
+                </StyledTableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Box>
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          sx={{ width: "100%" }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </ThemeProvider>
   );
 };
