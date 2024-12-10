@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext"; // Make sure path is correct
 import Header from "../header_footer/Header";
 import "./Login.css";
 
@@ -11,10 +12,12 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { setIsLoggedIn } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     const formData = new FormData();
     formData.append("username", username);
     formData.append("password", password);
@@ -24,14 +27,12 @@ const Login = () => {
         method: "POST",
         body: formData,
       });
-      console.log("Response status:", response.status);
-      const responseData = await response.json();
-      console.log("Response data:", responseData);
 
+      const responseData = await response.json();
       if (response.ok) {
         localStorage.setItem("token", responseData.access_token);
-        console.log("Login successful, token stored");
-        navigate("/dashboard"); // Redirect to dashboard after successful login
+        setIsLoggedIn(true);
+        navigate("/dashboard");
       } else {
         setError(responseData.message || "Login failed");
         console.error("Login failed:", responseData.message);
