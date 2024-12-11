@@ -106,7 +106,7 @@ const HomePage = () => {
             started.
           </p>
           <a
-            href="https://github.com/fairscape/fairscape"
+            href="https://github.com/fairscape/"
             className="cta-button"
           >
             Visit our GitHub
