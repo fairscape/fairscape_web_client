@@ -1,26 +1,36 @@
 :root {
-  --primary-color: #3a86ff;
-  --primary-dark: #2667cc;
-  --secondary-color: #8ecae6;
-  --accent-color: #ffb703;
-  --background-color: #f8f9fa;
-  --text-color: #333333;
-  --light-gray: #e9ecef;
-  --medium-gray: #ced4da;
-  --dark-gray: #6c757d;
+  --primary-color: #0969da;
+  --primary-hover: #0552b0;
+  --nav-text: #24292f;
+  --header-bg: linear-gradient(to right, #e8f3ff 0%, #ffffff 95%);
+  --border-color: #d0d7de;
+  --link-hover-bg: #f6f8fa;
+  --text-secondary: #57606a;
 }
 
 .header {
-  background-color: var(--primary-color);
-  padding: 10px 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--header-bg);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(
+    to right,
+    #1a4b91 0%,
+    /* Deep blue start */ #2670d9 40%,
+    /* Medium blue */ #3a7be0 70%,
+    /* Lighter blue */ #6ba6ff 85%,
+    /* Very light blue */ #ffffff 100% /* Small white section at end */
+  );
 }
 
+/* Main navigation styles */
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0;
 }
@@ -28,19 +38,23 @@
 .navbar-brand {
   display: flex;
   align-items: center;
+  gap: 16px; /* Increased gap */
 }
 
+/* Updated logo styling */
 .logo {
   color: white;
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 26px; /* Increased size */
+  font-weight: 700; /* Bolder */
   text-decoration: none;
+  letter-spacing: -0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Added subtle shadow */
 }
 
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 20px;
+  gap: 8px; /* Slightly increased gap */
   margin: 0;
   padding: 0;
   align-items: center;
@@ -51,42 +65,107 @@
   align-items: center;
 }
 
+/* Updated regular nav links */
 .nav-links li a {
   color: white;
   text-decoration: none;
-  font-size: 16px;
-  transition: color 0.3s ease;
+  font-size: 16px; /* Increased size */
+  font-weight: 500;
+  padding: 8px 16px; /* More horizontal padding */
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05); /* Subtle shadow */
 }
 
 .nav-links li a:hover {
-  color: var(--accent-color);
-  text-decoration: none;
+  color: white;
+  background-color: rgba(255, 255, 255, 0.15); /* Slightly more visible hover */
 }
 
 .navbar-right {
   display: flex;
   align-items: center;
+  gap: 16px;
+}
+
+/* Documentation link styling */
+.nav-links li a[href*="github"] {
+  color: rgba(255, 255, 255, 0.9); /* More visible */
+  font-weight: 500;
+}
+
+.nav-links li a[href="/login"] {
+  color: white;
+  background-color: rgba(41, 121, 255, 0.85); /* Lighter, more vibrant blue */
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.nav-links li a[href="/login"]:hover {
+  background-color: rgba(
+    41,
+    121,
+    255,
+    1
+  ); /* Solid version of the lighter blue */
+  border-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
 }
 
 .user-profile {
-  margin-left: 20px;
+  margin-left: 16px;
 }
 
+/* Mobile responsive styles */
 @media (max-width: 768px) {
+  .header {
+    padding: 12px 16px;
+    background: linear-gradient(
+      to right,
+      #1a4b91 0%,
+      #2670d9 60%,
+      #3a7be0 85%,
+      #6ba6ff 95%,
+      #ffffff 100%
+    );
+  }
+
   .navbar {
     flex-direction: column;
     align-items: flex-start;
+    gap: 16px;
   }
 
   .nav-links {
-    margin-top: 10px;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .nav-links li {
+    width: 100%;
+  }
+
+  .nav-links li a {
+    width: 100%;
+    display: block;
+    padding: 12px 16px; /* Increased padding for better touch targets */
   }
 
   .navbar-right {
-    margin-top: 10px;
-    align-self: flex-end;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Adjust login button for mobile */
+  .nav-links li a[href="/login"] {
+    text-align: center;
+    margin-top: 8px;
   }
 }

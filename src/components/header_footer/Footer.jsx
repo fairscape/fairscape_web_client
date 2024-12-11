@@ -5,9 +5,6 @@ const Footer = () => {
   return (
     <footer className="footer">
       <div className="footer-content">
-        <div className="copyright">
-          <span className="highlight">Copyright © University of Virginia</span>
-        </div>
         <div className="social">
           <a
             href="https://github.com/fairscape/fairscape.github.io"
@@ -18,6 +15,9 @@ const Footer = () => {
           >
             GitHub
           </a>
+        </div>
+        <div className="copyright">
+          <span className="highlight">Copyright © University of Virginia</span>
         </div>
       </div>
     </footer>

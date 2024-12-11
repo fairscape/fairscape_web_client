@@ -1,8 +1,13 @@
 .footer {
   flex-shrink: 0;
-  background-color: var(--primary-color);
-  color: white;
-  text-align: center;
+  background: linear-gradient(
+    to left,
+    #1a4b91 0%,
+    /* Deep blue start */ #2670d9 40%,
+    /* Medium blue */ #3a7be0 70%,
+    /* Lighter blue */ #6ba6ff 85%,
+    /* Very light blue */ #ffffff 100% /* Small white section at end */
+  );
   padding: 20px 0;
   margin-top: auto;
 }
@@ -15,28 +20,27 @@
   align-items: center;
 }
 
-.footer-logo {
-  font-size: 1.5rem;
-  font-weight: bold;
+/* Social section styling with darker grey */
+.social {
+  color: #333333;
 }
 
-.footer-links {
-  display: flex;
-  gap: 20px;
-}
-
-.footer-link {
-  color: white;
+.social__link {
+  color: #333333 !important; /* Added !important to override any inherited styles */
   text-decoration: none;
   transition: color 0.3s ease;
+  font-weight: 500;
 }
 
-.footer-link:hover {
-  color: var(--accent-color);
+.social__link:hover {
+  color: #555555 !important;
 }
 
-.footer-copyright {
-  margin-top: 10px;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+/* Copyright section */
+.copyright {
+  color: white;
+}
+
+.highlight {
+  font-weight: 500;
 }
