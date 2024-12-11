@@ -9,20 +9,19 @@
 }
 
 .header {
-  background: var(--header-bg);
+  background: linear-gradient(
+    to right,
+    #1a4b91 0%,
+    #2670d9 40%,
+    #3a7be0 70%,
+    #6ba6ff 85%,
+    #ffffff 100%
+  );
   padding: 16px 24px;
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 100;
-  background: linear-gradient(
-    to right,
-    #1a4b91 0%,
-    /* Deep blue start */ #2670d9 40%,
-    /* Medium blue */ #3a7be0 70%,
-    /* Lighter blue */ #6ba6ff 85%,
-    /* Very light blue */ #ffffff 100% /* Small white section at end */
-  );
 }
 
 /* Main navigation styles */
@@ -38,23 +37,35 @@
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 16px; /* Increased gap */
+  gap: 16px;
+  padding: 8px 18px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  background: transparent; /* Changed to transparent */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand:hover {
+  border-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
 }
 
 /* Updated logo styling */
 .logo {
   color: white;
-  font-size: 26px; /* Increased size */
-  font-weight: 700; /* Bolder */
+  font-size: 26px;
+  font-weight: 700;
   text-decoration: none;
   letter-spacing: -0.5px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Added subtle shadow */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 8px; /* Slightly increased gap */
+  gap: 8px;
   margin: 0;
   padding: 0;
   align-items: center;
@@ -69,17 +80,17 @@
 .nav-links li a {
   color: white;
   text-decoration: none;
-  font-size: 16px; /* Increased size */
+  font-size: 16px;
   font-weight: 500;
-  padding: 8px 16px; /* More horizontal padding */
+  padding: 8px 16px;
   border-radius: 6px;
   transition: all 0.2s ease;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 }
 
 .nav-links li a:hover {
   color: white;
-  background-color: rgba(255, 255, 255, 0.15); /* Slightly more visible hover */
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .navbar-right {
@@ -90,13 +101,13 @@
 
 /* Documentation link styling */
 .nav-links li a[href*="github"] {
-  color: rgba(255, 255, 255, 0.9); /* More visible */
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
 }
 
 .nav-links li a[href="/login"] {
   color: white;
-  background-color: rgba(41, 121, 255, 0.85); /* Lighter, more vibrant blue */
+  background-color: rgba(41, 121, 255, 0.85);
   border: 2px solid rgba(255, 255, 255, 0.8);
   padding: 8px 18px;
   border-radius: 6px;
@@ -107,12 +118,7 @@
 }
 
 .nav-links li a[href="/login"]:hover {
-  background-color: rgba(
-    41,
-    121,
-    255,
-    1
-  ); /* Solid version of the lighter blue */
+  background-color: rgba(41, 121, 255, 1);
   border-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transform: translateY(-1px);
@@ -142,6 +148,11 @@
     gap: 16px;
   }
 
+  .navbar-brand {
+    width: calc(100% - 40px);
+    justify-content: center;
+  }
+
   .nav-links {
     flex-direction: column;
     width: 100%;
@@ -155,7 +166,7 @@
   .nav-links li a {
     width: 100%;
     display: block;
-    padding: 12px 16px; /* Increased padding for better touch targets */
+    padding: 12px 16px;
   }
 
   .navbar-right {

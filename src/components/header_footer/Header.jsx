@@ -14,7 +14,7 @@ const Header = () => {
         <div className="navbar-brand">
           <FairscapeLogo />
           <Link to="/" className="logo">
-            Fairscape
+            fairscape
           </Link>
         </div>
         <div className="navbar-right">
