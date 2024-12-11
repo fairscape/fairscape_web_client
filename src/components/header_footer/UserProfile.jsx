@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import "./UserProfile.css";
 import { AuthContext } from "../../context/AuthContext";
@@ -10,7 +10,8 @@ const API_URL =
 const UserProfile = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [user, setUser] = useState(null);
-  const { setIsLoggedIn } = useContext(AuthContext);
+  const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     validateTokenAndDecodeUser();
@@ -23,16 +24,18 @@ const UserProfile = () => {
         handleLogout();
         return;
       }
-      // First check if the token is valid via API
-      const response = await fetch(`${API_URL}/profile/credentials`, {
+
+      const response = await fetch(`${API_URL}/rocrate`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
       if (response.status === 401) {
         handleLogout();
         return;
       }
+
       // If we get here, token is valid, so decode it
       const decodedToken = jwtDecode(token);
       setUser({
@@ -52,10 +55,16 @@ const UserProfile = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
     setUser(null);
     setDropdownVisible(false);
-    setIsLoggedIn(false);
+    logout();
+  };
+
+  const handleUserLogout = () => {
+    setUser(null);
+    setDropdownVisible(false);
+    logout();
+    navigate("/");
   };
 
   if (!user) return null;
@@ -75,7 +84,7 @@ const UserProfile = () => {
           <Link to="/tokens" className="tokens-link">
             Manage Tokens
           </Link>
-          <button className="logout-button" onClick={handleLogout}>
+          <button className="logout-button" onClick={handleUserLogout}>
             Log Out
           </button>
         </div>

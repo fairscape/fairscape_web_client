@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../../context/AuthContext"; // Make sure path is correct
+import { AuthContext } from "../../context/AuthContext";
 import "./Login.css";
 
 const API_URL =
@@ -11,7 +11,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { setIsLoggedIn } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,11 +26,10 @@ const Login = () => {
         method: "POST",
         body: formData,
       });
-
       const responseData = await response.json();
+
       if (response.ok) {
-        localStorage.setItem("token", responseData.access_token);
-        setIsLoggedIn(true);
+        login(responseData.access_token);
         navigate("/dashboard");
       } else {
         setError(responseData.message || "Login failed");

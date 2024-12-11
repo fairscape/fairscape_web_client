@@ -1,7 +1,7 @@
-// Login.test.jsx
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import { BrowserRouter } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 import Login from "./LoginComponent";
 
 const API_URL = "http://localhost:8080/api";
@@ -23,19 +23,22 @@ vi.mock("react-router-dom", async () => {
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+// Mock login function
+const mockLogin = vi.fn();
+
 describe("Login Component", () => {
-  // Reset all mocks and clear localStorage before each test
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
   });
 
-  // Helper function to render component with router
   const renderLogin = () => {
     return render(
-      <BrowserRouter>
-        <Login />
-      </BrowserRouter>
+      <AuthContext.Provider value={{ login: mockLogin }}>
+        <BrowserRouter>
+          <Login />
+        </BrowserRouter>
+      </AuthContext.Provider>
     );
   };
 
@@ -43,14 +46,12 @@ describe("Login Component", () => {
     it("renders login form with all elements", () => {
       renderLogin();
 
-      // Check for form elements
       expect(
         screen.getByRole("heading", { name: /login/i })
       ).toBeInTheDocument();
       expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
 
-      // Check input attributes
       const usernameInput = screen.getByLabelText(/username/i);
       expect(usernameInput).toHaveAttribute("type", "text");
       expect(usernameInput).toBeRequired();
@@ -59,7 +60,6 @@ describe("Login Component", () => {
       expect(passwordInput).toHaveAttribute("type", "password");
       expect(passwordInput).toBeRequired();
 
-      // Check button
       const loginButton = screen.getByRole("button", { name: /login/i });
       expect(loginButton).toBeEnabled();
     });
@@ -97,7 +97,6 @@ describe("Login Component", () => {
 
       renderLogin();
 
-      // Fill form
       fireEvent.change(screen.getByLabelText(/username/i), {
         target: { value: "testuser" },
       });
@@ -105,10 +104,8 @@ describe("Login Component", () => {
         target: { value: "password123" },
       });
 
-      // Submit form
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
-      // Verify API call
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledTimes(1);
         expect(mockFetch).toHaveBeenCalledWith(`${API_URL}/login`, {
@@ -117,9 +114,8 @@ describe("Login Component", () => {
         });
       });
 
-      // Verify successful login actions
       await waitFor(() => {
-        expect(localStorage.getItem("token")).toBe("fake-token");
+        expect(mockLogin).toHaveBeenCalledWith("fake-token");
         expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
       });
     });
@@ -133,7 +129,6 @@ describe("Login Component", () => {
 
       renderLogin();
 
-      // Fill and submit form
       fireEvent.change(screen.getByLabelText(/username/i), {
         target: { value: "wronguser" },
       });
@@ -142,10 +137,9 @@ describe("Login Component", () => {
       });
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
-      // Verify error handling
       await waitFor(() => {
         expect(screen.getByText("Invalid credentials")).toBeInTheDocument();
-        expect(localStorage.getItem("token")).toBeNull();
+        expect(mockLogin).not.toHaveBeenCalled();
         expect(mockNavigate).not.toHaveBeenCalled();
       });
     });
@@ -155,7 +149,6 @@ describe("Login Component", () => {
 
       renderLogin();
 
-      // Fill and submit form
       fireEvent.change(screen.getByLabelText(/username/i), {
         target: { value: "testuser" },
       });
@@ -164,12 +157,11 @@ describe("Login Component", () => {
       });
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
-      // Verify error handling
       await waitFor(() => {
         expect(
           screen.getByText("An error occurred. Please try again.")
         ).toBeInTheDocument();
-        expect(localStorage.getItem("token")).toBeNull();
+        expect(mockLogin).not.toHaveBeenCalled();
         expect(mockNavigate).not.toHaveBeenCalled();
       });
     });
