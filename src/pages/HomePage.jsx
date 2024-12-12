@@ -1,38 +1,70 @@
-import React from "react";
+import React, { useState } from "react";
 import "./HomePage.css";
 
 const HomePage = () => {
+  const [expandedFeature, setExpandedFeature] = useState(null);
+
+  const features = [
+    {
+      title: "FAIRSCAPE CLI",
+      details:
+        "A data validation and packaging utility for the FAIRSCAPE ecosystem. Provides a command line interface that allows the client side remote teams to create RO-Crate and BagIt.",
+      link: "https://fairscape.github.io/fairscape-cli/",
+    },
+    {
+      title: "FAIRSCAPE GUI Client",
+      details:
+        "The FAIRSCAPE Electron App provides a user-friendly interface for packaging research objects and validating metadata, making it easier than ever to ensure your research data is FAIR (Findable, Accessible, Interoperable, and Reusable).",
+      link: "https://github.com/fairscape/FairscapeGUIClient/releases/tag/1.0",
+    },
+    {
+      title: "FAIRSCAPE MDS",
+      details:
+        "The Metadata Service (MDS) of the FAIRSCAPE application, is the core backend service responsible for metadata managment. MDS is a RESTfull API implemented in python with the fastAPI framework. This service provides persitant globally unique identifiers (guids) as ARKS for many types of digital objects and maintains provenance metadata during the data science life-cycle.",
+      link: "https://github.com/fairscape/mds_python",
+    },
+  ];
+
   return (
     <div className="home-page">
+      <section className="hero-section">
+        <div className="hero-content">
+          <h1 className="hero-title">Making Scientific Data FAIR</h1>
+          <p className="hero-subtitle">
+            Transform your research with our comprehensive framework for
+            implementing Findable, Accessible, Interoperable, and Reusable data
+            principles.
+          </p>
+          <div className="hero-stats">
+            <div className="stat-item">
+              <span className="stat-number">FAIR</span>
+              <span className="stat-label"> </span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">Open Source</span>
+              <span className="stat-label"> </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <main className="main-content">
-        <section className="hero">
-          <h1 id="welcome-to-fairscape">Welcome to FAIRSCAPE</h1>
-          <div className="content">
-            <div className="description">
-              <h2>Description</h2>
+        <div className="content-wrapper">
+          <div className="left-column">
+            <section className="overview-section">
+              <h2>Framework Overview</h2>
               <p>
-                FAIRSCAPE
-                <sup id="fnref:1">
-                  <a className="footnote-ref" href="#fn:1">
-                    1
-                  </a>
-                </sup>{" "}
-                is a computational framework written in Python that implements
-                the FAIR
-                <sup id="fnref:2">
-                  <a className="footnote-ref" href="#fn:2">
-                    2
-                  </a>
-                </sup>{" "}
-                data principles on components such as datasets, software,
-                computations, runtime parameters, environment and personnel
-                involved in a computational analysis. It generates fully FAIR
-                evidence of correctness of the analysis by recording formal
-                representations of the components and their interactions in the
-                form of a graph called Evidence Graph. For every computational
-                result, FAIRSCAPE creates a machine interpretable Evidence Graph
-                whose nodes and edges may contain persistent identifiers with
-                metadata resolvable to the underling components.
+                FAIRSCAPE is a computational framework written in Python that
+                implements the FAIR data principles on components such as
+                datasets, software, computations, runtime parameters,
+                environment and personnel involved in a computational analysis.
+                It generates fully FAIR evidence of correctness of the analysis
+                by recording formal representations of the components and their
+                interactions in the form of a graph called Evidence Graph. For
+                every computational result, FAIRSCAPE creates a machine
+                interpretable Evidence Graph whose nodes and edges may contain
+                persistent identifiers with metadata resolvable to the underling
+                components.
               </p>
               <p>
                 FAIRSCAPE provides a command line client tool to package and
@@ -40,75 +72,45 @@ const HomePage = () => {
                 validation component for the datasets, and a REST API to perform
                 various operations on the server-side.
               </p>
-            </div>
-            <div className="features">
-              <h2>Key Features</h2>
-              <ul className="feature-list">
-                <li>
-                  <strong>
-                    <a href="https://fairscape.github.io/fairscape-cli/">
-                      FAIRSCAPE CLI - A Validation and Packaging Command Line
-                      Tool
-                    </a>
-                  </strong>
-                  : A data validation and packaging utility for the FAIRSCAPE
-                  ecosystem. Provides a command line interface that allows the
-                  client side remote teams to create
-                  <a href="https://www.researchobject.org/ro-crate/">
-                    RO-Crate
-                  </a>{" "}
-                  and{" "}
-                  <a href="https://datatracker.ietf.org/doc/html/rfc8493">
-                    BagIt
-                  </a>
-                  .
-                </li>
-                <li>
-                  <strong>
-                    <a href="">Schema Validation</a>
-                  </strong>
-                  : ...
-                </li>
-                <li>
-                  <strong>
-                    <a href="https://fairscape.pods.uvarc.io/docs">
-                      FAIRSCAPE REST docs UI
-                    </a>
-                  </strong>
-                  : It is provided by{" "}
-                  <a href="https://github.com/swagger-api/swagger-ui">
-                    Swagger UI
-                  </a>{" "}
-                  and allows a client to use <code>Try it out</code> button to
-                  run operations on the endpoints.
-                </li>
-                <li>
-                  <strong>
-                    <a href="https://fairscape.pods.uvarc.io/redoc">
-                      FAIRSCAPE REST ReDoc UI
-                    </a>
-                  </strong>
-                  : It is provided by{" "}
-                  <a href="https://github.com/Redocly/redoc">ReDoc</a> offering
-                  a three panel responsive layout containing a search bar on the
-                  left, documentation in the middle, and request and response
-                  examples on the right.
-                </li>
-              </ul>
-            </div>
+            </section>
           </div>
-        </section>
-        <section className="call-to-action">
+
+          <div className="right-column">
+            <section className="features-section">
+              <h2>Key Features</h2>
+              <div className="feature-list">
+                {features.map((feature, index) => (
+                  <div
+                    key={index}
+                    className="feature-item"
+                    onMouseEnter={() => setExpandedFeature(index)}
+                    onMouseLeave={() => setExpandedFeature(null)}
+                  >
+                    <h3>
+                      <a href={feature.link}>{feature.title}</a>
+                    </h3>
+                    <div
+                      className={`feature-details ${
+                        expandedFeature === index ? "expanded" : ""
+                      }`}
+                    >
+                      {feature.details}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <section className="cta-section">
           <h2>Get Started with Fairscape</h2>
           <p>
             Join the Fairscape community today and start making your scientific
             data FAIR. Explore our documentation to learn more about how to get
             started.
           </p>
-          <a
-            href="https://github.com/fairscape/"
-            className="cta-button"
-          >
+          <a href="https://github.com/fairscape/" className="cta-button">
             Visit our GitHub
           </a>
         </section>
