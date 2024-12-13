@@ -7,6 +7,7 @@ import {
   SoftwareProperties,
   SchemaProperties,
   ComputationProperties,
+  EvidenceGraphProperties,
 } from "./metadataProperties";
 
 const getPropertyList = (type) => {
@@ -21,6 +22,8 @@ const getPropertyList = (type) => {
       return SchemaProperties;
     case "Computation":
       return ComputationProperties;
+    case "EvidenceGraph":
+      return EvidenceGraphProperties;
     default:
       return [];
   }

@@ -53,3 +53,9 @@ export const SchemaProperties = [
   { name: "Author", key: "author" },
   { name: "License", key: "license" },
 ];
+
+export const EvidenceGraphProperties = [
+  { name: "Name", key: "name" },
+  { name: "Description", key: "description" },
+  { name: "Persistent Identifier", key: "@id" },
+];
