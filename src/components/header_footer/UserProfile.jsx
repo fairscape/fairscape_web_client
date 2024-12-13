@@ -47,7 +47,7 @@ const UserProfile = ({ onLogout }) => {
 
   useEffect(() => {
     validateTokenAndDecodeUser();
-    const intervalId = setInterval(validateTokenAndDecodeUser, 5 * 1000);
+    const intervalId = setInterval(validateTokenAndDecodeUser, 5 * 60 * 1000);
     return () => clearInterval(intervalId);
   }, []);
 
