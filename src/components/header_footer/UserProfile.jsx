@@ -7,21 +7,17 @@ import { AuthContext } from "../../context/AuthContext";
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 
-const UserProfile = () => {
+const UserProfile = ({ onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [user, setUser] = useState(null);
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    validateTokenAndDecodeUser();
-  }, []);
-
   const validateTokenAndDecodeUser = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        handleLogout();
+        handleLogout("Your session has expired. Please log in again.");
         return;
       }
 
@@ -32,11 +28,10 @@ const UserProfile = () => {
       });
 
       if (response.status === 401) {
-        handleLogout();
+        handleLogout("Your session has expired. Please log in again.");
         return;
       }
 
-      // If we get here, token is valid, so decode it
       const decodedToken = jwtDecode(token);
       setUser({
         givenName: decodedToken.name.split(" ")[0],
@@ -46,25 +41,29 @@ const UserProfile = () => {
       });
     } catch (error) {
       console.error("Error validating token:", error);
-      handleLogout();
+      handleLogout("An error occurred with your session. Please log in again.");
     }
   };
+
+  useEffect(() => {
+    validateTokenAndDecodeUser();
+    const intervalId = setInterval(validateTokenAndDecodeUser, 5 * 1000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const toggleDropdown = () => {
     setDropdownVisible(!dropdownVisible);
   };
 
-  const handleLogout = () => {
+  const handleLogout = (message) => {
     setUser(null);
     setDropdownVisible(false);
     logout();
+    onLogout(message);
   };
 
   const handleUserLogout = () => {
-    setUser(null);
-    setDropdownVisible(false);
-    logout();
-    navigate("/");
+    handleLogout("You have been logged out successfully.");
   };
 
   if (!user) return null;
