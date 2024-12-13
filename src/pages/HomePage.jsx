@@ -31,18 +31,22 @@ const HomePage = () => {
         <div className="hero-content">
           <h1 className="hero-title">Making Scientific Data FAIR</h1>
           <p className="hero-subtitle">
-            Transform your research with our comprehensive framework for
-            implementing Findable, Accessible, Interoperable, and Reusable data
-            principles.
+            Transform your research with our comprehensive framework that
+            implements FAIR principles while tracking complete data provenance
+            through Evidence Graphs.
           </p>
           <div className="hero-stats">
             <div className="stat-item">
               <span className="stat-number">FAIR</span>
-              <span className="stat-label"> </span>
+              <span className="stat-label">Best practices built-in</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">Evidence Graphs</span>
+              <span className="stat-label">Complete provenance</span>
             </div>
             <div className="stat-item">
               <span className="stat-number">Open Source</span>
-              <span className="stat-label"> </span>
+              <span className="stat-label">Transparent & extensible</span>
             </div>
           </div>
         </div>
@@ -54,17 +58,28 @@ const HomePage = () => {
             <section className="overview-section">
               <h2>Framework Overview</h2>
               <p>
-                FAIRSCAPE is a computational framework written in Python that
-                implements the FAIR data principles on components such as
-                datasets, software, computations, runtime parameters,
-                environment and personnel involved in a computational analysis.
-                It generates fully FAIR evidence of correctness of the analysis
-                by recording formal representations of the components and their
-                interactions in the form of a graph called Evidence Graph. For
-                every computational result, FAIRSCAPE creates a machine
-                interpretable Evidence Graph whose nodes and edges may contain
-                persistent identifiers with metadata resolvable to the underling
-                components.
+                FAIRSCAPE
+                <sup id="fnref:1">
+                  <a className="footnote-ref" href="#fn:1">
+                    1
+                  </a>
+                </sup>{" "}
+                is a computational framework written in Python that implements
+                the FAIR
+                <sup id="fnref:2">
+                  <a className="footnote-ref" href="#fn:2">
+                    2
+                  </a>
+                </sup>{" "}
+                data principles on components such as datasets, software,
+                computations, runtime parameters, environment and personnel
+                involved in a computational analysis. It generates fully FAIR
+                evidence of correctness of the analysis by recording formal
+                representations of the components and their interactions in the
+                form of a graph called Evidence Graph. For every computational
+                result, FAIRSCAPE creates a machine interpretable Evidence Graph
+                whose nodes and edges may contain persistent identifiers with
+                metadata resolvable to the underling components.
               </p>
               <p>
                 FAIRSCAPE provides a command line client tool to package and
