@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import "./UserProfile.css";
@@ -12,6 +12,7 @@ const UserProfile = ({ onLogout }) => {
   const [user, setUser] = useState(null);
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const dropdownRef = useRef(null);
 
   const validateTokenAndDecodeUser = async () => {
     try {
@@ -47,8 +48,22 @@ const UserProfile = ({ onLogout }) => {
 
   useEffect(() => {
     validateTokenAndDecodeUser();
-    const intervalId = setInterval(validateTokenAndDecodeUser, 5 * 60 * 1000);
+    const intervalId = setInterval(validateTokenAndDecodeUser, 1 * 60 * 1000);
     return () => clearInterval(intervalId);
+  }, []);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownVisible(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const toggleDropdown = () => {
@@ -69,8 +84,13 @@ const UserProfile = ({ onLogout }) => {
   if (!user) return null;
 
   return (
-    <div className="user-profile">
-      <div className="user-circle" onClick={toggleDropdown}>
+    <div className="user-profile" ref={dropdownRef}>
+      <div
+        className="user-circle"
+        onClick={toggleDropdown}
+        role="button"
+        aria-label="User Profile"
+      >
         {user.givenName.charAt(0)}
       </div>
       {dropdownVisible && (
