@@ -1,3 +1,9 @@
+/**
+ * This component is based on jsonld-vis (https://github.com/scienceai/jsonld-vis)
+ * Copyright scienceai
+ * Licensed under the Apache License, Version 2.0
+ * Modified for FAIRSCAPE to handle evidence graph visualization
+ */
 import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
 
