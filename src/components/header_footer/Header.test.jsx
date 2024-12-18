@@ -157,11 +157,9 @@ describe("Header Component", () => {
       ).toBeInTheDocument();
       expect(mockLogout).toHaveBeenCalled();
 
-      // Close the alert
       const closeButton = screen.getByLabelText("Close");
       fireEvent.click(closeButton);
 
-      // Since the component uses window.location.href, we verify it's set correctly
       expect(window.location.href).toBe("/");
     });
 

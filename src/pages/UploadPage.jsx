@@ -1,8 +1,6 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import GenericUploadComponent from "../components/UploadForm/GenericUploadComponent";
-import Header from "../components/header_footer/Header";
-import Footer from "../components/header_footer/Footer";
+import Upload from "../components/UploadForm/Upload";
 import "./UploadPage.css";
 
 const UploadPage = () => {
@@ -10,9 +8,8 @@ const UploadPage = () => {
 
   return (
     <div>
-      <h1>Upload {type}</h1>
-      <GenericUploadComponent type={type} />
-      <Footer />
+      <h1>RO-Crate Upload</h1>
+      <Upload />
     </div>
   );
 };

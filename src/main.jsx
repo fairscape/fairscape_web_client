@@ -24,7 +24,7 @@ ReactDOM.render(
             <Route path="/login" element={<Login />} />
             <Route path="/tokens" element={<DataverseTokensPage />} />
             <Route path="/dashboard" element={<MyDashboard />} />
-            <Route path="/upload/:type" element={<UploadPage />} />
+            <Route path="/upload" element={<UploadPage />} />
             <Route path="/publish/*" element={<PublishPage />} />
             <Route path="/:type/*" element={<MetadataPage />} />
           </Routes>

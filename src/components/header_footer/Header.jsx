@@ -112,6 +112,9 @@ const Header = () => {
                 <Link to="/dashboard">Dashboard</Link>
               </li>
               <li>
+                <Link to="/upload">Upload</Link>
+              </li>
+              <li>
                 <a
                   href="https://github.com/fairscape/mds_python"
                   target="_blank"

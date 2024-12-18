@@ -1,0 +1,154 @@
+.upload-container {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px auto;
+  max-width: 600px;
+}
+
+.upload-container h2 {
+  color: #007bff;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.error-message {
+  color: #dc3545;
+  margin-top: 10px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.upload-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.upload-button:hover {
+  background-color: #0056b3;
+}
+
+.upload-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Status Tracker Styles */
+.status-tracker {
+  margin-top: 20px;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.status-title {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.progress-bar-container {
+  background-color: #e9ecef;
+  border-radius: 25px;
+  height: 50px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progress-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(to right, #007bff, #28a745);
+  transition: width 0.5s ease-in-out;
+}
+
+.progress-bar-fill.failed {
+  background: #dc3545;
+}
+
+.step-container {
+  display: flex;
+  justify-content: space-between;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+}
+
+.step {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #6c757d;
+  z-index: 2;
+  padding: 0 5px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.step.active {
+  color: #ffffff;
+}
+
+.status-details {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #ffffff;
+  border-radius: 5px;
+}
+
+.status-details p {
+  margin: 5px 0;
+  color: #495057;
+}
+
+.result-link {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.result-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .upload-container {
+    margin: 10px;
+    padding: 15px;
+  }
+
+  .step {
+    font-size: 12px;
+  }
+}
