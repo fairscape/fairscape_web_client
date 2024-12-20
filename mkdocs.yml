@@ -15,7 +15,7 @@ theme:
   name: readthedocs
   navigation_depth: 4
 
-# Extensions
+# Extension
 markdown_extensions:
   - footnotes
   - attr_list
