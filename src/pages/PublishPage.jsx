@@ -18,8 +18,6 @@ import {
 
 export const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
-export const DATAVERSE_BASE_URL =
-  "https://dataversedev.internal.lib.virginia.edu/dataset.xhtml?persistentId=";
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
@@ -29,18 +27,18 @@ export const getAuthHeaders = () => {
 const PUBLISH_STEPS = [
   {
     id: "metadata",
-    label: "Creating Dataverse Dataset",
-    description: "Publishing metadata to Dataverse",
+    label: "Creating Repository Dataset",
+    description: "Publishing metadata to repository",
   },
   {
     id: "upload",
     label: "Uploading Data",
-    description: "Uploading files to Dataverse",
+    description: "Uploading files to repository",
   },
   {
     id: "complete",
     label: "Publication Complete",
-    description: "Metadata and data published on Dataverse",
+    description: "Metadata and data published on repository",
   },
 ];
 
@@ -61,7 +59,7 @@ const PublishPage = () => {
     description: "",
     keywords: "",
     datePublished: new Date().toISOString().split("T")[0],
-    license: "CC BY 4.0", // Default license
+    license: "CC BY 4.0",
   });
 
   const arkId = location.pathname.replace("/publish/", "");
@@ -96,7 +94,7 @@ const PublishPage = () => {
           datePublished:
             response.data.datePublished ||
             new Date().toISOString().split("T")[0],
-          license: "CC BY 4.0", // Default license
+          license: "CC BY 4.0",
         });
       } catch (err) {
         const errorMessage =
@@ -121,7 +119,7 @@ const PublishPage = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, formMetadata) => {
     e.preventDefault();
     setPublishing(true);
     setError(null);
@@ -136,29 +134,37 @@ const PublishPage = () => {
 
       // Step 1: Create metadata
       const createResponse = await axios.post(
-        `${API_URL}/publish/create/${arkId}`,
-        formData,
+        `${API_URL}/publish/create/${arkId}?platform_url=${encodeURIComponent(
+          formMetadata.platform_url
+        )}&database=${encodeURIComponent(formMetadata.database)}`,
+        { userProvidedMetadata: formMetadata.userProvidedMetadata },
         { headers }
       );
 
       const pid = createResponse.data.persistent_id;
       setPersistentId(pid);
-      setDatasetUrl(`${DATAVERSE_BASE_URL}${pid}`);
+      setDatasetUrl(createResponse.data.dataset_url);
       setCurrentStep(1);
 
       // Step 2: Upload data
-      await axios.post(`${API_URL}/publish/upload/${arkId}`, {}, { headers });
+      await axios.post(
+        `${API_URL}/publish/upload/${arkId}?platform_url=${encodeURIComponent(
+          formMetadata.platform_url
+        )}`,
+        {},
+        { headers }
+      );
       setCurrentStep(2);
 
-      setSuccessMessage(`Successfully published to Dataverse with ID: ${pid}`);
+      setSuccessMessage(`Successfully published to repository with ID: ${pid}`);
     } catch (err) {
       const errorMessage =
         err.response?.data?.detail ||
         err.message ||
-        "Failed to publish to Dataverse";
+        "Failed to publish to repository";
       setError(errorMessage);
       console.error("Error publishing:", err);
-      setCurrentStep(1); // Set to the step that failed
+      setCurrentStep(1);
     } finally {
       setPublishing(false);
     }
@@ -195,7 +201,6 @@ const PublishPage = () => {
     );
   }
 
-  // Show progress bar during publishing or when there's an error
   const showProgress = publishing || currentStep >= 0 || error;
 
   return (
@@ -203,7 +208,7 @@ const PublishPage = () => {
       <main className="flex-1">
         <div className="container mx-auto px-4 max-w-3xl py-8">
           <StyledForm onSubmit={handleSubmit}>
-            <FormTitle>Publish ROCrate to Dataverse</FormTitle>
+            <FormTitle>Publish ROCrate to Repository</FormTitle>
 
             {error && (
               <Alert type="error">

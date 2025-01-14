@@ -25,7 +25,7 @@ const LICENSE_OPTIONS = [
 
 const PublicationForm = ({ formData, onInputChange, onSubmit, publishing }) => {
   const [tokens, setTokens] = useState([]);
-  const [selectedDataverse, setSelectedDataverse] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState("");
   const [database, setDatabase] = useState("libradata");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,10 +39,10 @@ const PublicationForm = ({ formData, onInputChange, onSubmit, publishing }) => {
         });
         setTokens(response.data || []);
         if (response.data && response.data.length > 0) {
-          setSelectedDataverse(response.data[0].endpointURL);
+          setSelectedPlatform(response.data[0].endpointURL);
         }
       } catch (err) {
-        setError("Failed to fetch Dataverse tokens");
+        setError("Failed to fetch repository tokens");
         console.error("Error fetching tokens:", err);
       } finally {
         setLoading(false);
@@ -55,7 +55,7 @@ const PublicationForm = ({ formData, onInputChange, onSubmit, publishing }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(e, {
-      dataverse_url: selectedDataverse,
+      platform_url: selectedPlatform,
       database: database,
       userProvidedMetadata: formData,
     });
@@ -70,19 +70,19 @@ const PublicationForm = ({ formData, onInputChange, onSubmit, publishing }) => {
       )}
 
       <FormGroup>
-        <Label htmlFor="dataverse">Select Dataverse Instance *</Label>
+        <Label htmlFor="platform">Select Repository Instance *</Label>
         <Input
           as="select"
-          id="dataverse"
-          value={selectedDataverse}
-          onChange={(e) => setSelectedDataverse(e.target.value)}
+          id="platform"
+          value={selectedPlatform}
+          onChange={(e) => setSelectedPlatform(e.target.value)}
           disabled={loading || tokens.length === 0}
           required
         >
           {loading ? (
             <option>Loading...</option>
           ) : tokens.length === 0 ? (
-            <option>No Dataverse tokens available</option>
+            <option>No repository tokens available</option>
           ) : (
             tokens.map((token) => (
               <option key={token.tokenUID} value={token.endpointURL}>
@@ -170,7 +170,7 @@ const PublicationForm = ({ formData, onInputChange, onSubmit, publishing }) => {
           disabled={publishing || loading || tokens.length === 0}
           onClick={handleSubmit}
         >
-          {publishing ? "Publishing..." : "Publish to Dataverse"}
+          {publishing ? "Publishing..." : "Publish to Repository"}
         </Button>
       </div>
     </div>

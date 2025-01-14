@@ -6,6 +6,157 @@ import convertToRdfXml from "../pages/helper";
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 
+const buildEvidenceGraph = (data) => {
+  // Helper function to clean URLs from IDs
+  const cleanId = (id) => {
+    if (typeof id === 'string' && id.includes('ark:')) {
+      return id.substring(id.indexOf('ark:'));
+    }
+    return id;
+  };
+
+  // Helper function to clean array of IDs
+  const cleanIdArray = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return arr.map(id => cleanId(id));
+  };
+
+  // Create maps for quick lookups
+  const idToElement = new Map();
+  const usedAsInput = new Set();
+  
+  // First pass: Create ID to element map with cleaned IDs
+  data['@graph'].forEach(element => {
+    const elementId = cleanId(element['@id']);
+    if (elementId) {
+      // Clean any IDs in the element
+      const cleanedElement = {...element, '@id': elementId};
+      
+      // Clean various ID references
+      if (cleanedElement.generated) {
+        cleanedElement.generated = cleanIdArray(cleanedElement.generated);
+      }
+      if (cleanedElement.usedDataset) {
+        cleanedElement.usedDataset = cleanIdArray(cleanedElement.usedDataset);
+      }
+      if (cleanedElement.usedSoftware) {
+        cleanedElement.usedSoftware = cleanIdArray(cleanedElement.usedSoftware);
+      }
+      if (cleanedElement.generatedBy) {
+        cleanedElement.generatedBy = cleanIdArray(cleanedElement.generatedBy);
+      }
+      
+      idToElement.set(elementId, cleanedElement);
+    }
+  });
+
+  // Second pass: Process relationships and track used datasets
+  data['@graph'].forEach(element => {
+    const elementId = cleanId(element['@id']);
+    const cleanedElement = idToElement.get(elementId);
+    
+    // Track datasets used as input
+    if (cleanedElement?.usedDataset) {
+      cleanedElement.usedDataset.forEach(id => {
+        usedAsInput.add(cleanId(id));
+      });
+    }
+
+    // Set up generatedBy relationships based on computation's generated field
+    if (cleanedElement?.['@type']?.includes('Computation') && cleanedElement.generated) {
+      cleanedElement.generated.forEach(datasetId => {
+        const dataset = idToElement.get(datasetId);
+        if (dataset) {
+          if (!dataset.generatedBy) {
+            dataset.generatedBy = [];
+          }
+          if (!dataset.generatedBy.includes(elementId)) {
+            dataset.generatedBy.push(elementId);
+          }
+        }
+      });
+    }
+  });
+
+  // Find output datasets (those not used as input)
+  const outputDatasets = Array.from(idToElement.values()).filter(element => {
+    const elementId = cleanId(element['@id']);
+    return element['@type']?.includes('Dataset') && !usedAsInput.has(elementId);
+  });
+
+  // Helper function to recursively build the provenance tree
+  const buildProvTree = (element, visited = new Set()) => {
+    if (!element || visited.has(element['@id'])) {
+      return null;
+    }
+
+    visited.add(element['@id']);
+    const tree = { ...element };
+
+    // Handle generatedBy relationship
+    if (element.generatedBy) {
+      const computationIds = Array.isArray(element.generatedBy) 
+        ? element.generatedBy 
+        : [element.generatedBy];
+      
+      tree.generatedBy = computationIds
+        .map(id => {
+          const computation = idToElement.get(id);
+          if (!computation) return null;
+          
+          const computationTree = { ...computation };
+          
+          // Handle usedDataset for computations
+          if (computation.usedDataset) {
+            computationTree.usedDataset = computation.usedDataset
+              .map(datasetId => {
+                const dataset = idToElement.get(datasetId);
+                if (!dataset) {
+                  // For missing datasets, create a placeholder with basic info
+                  return {
+                    '@id': datasetId,
+                    '@type': 'Dataset',
+                    'name': `Dataset ${datasetId}`
+                  };
+                }
+                return buildProvTree(dataset, new Set(visited));
+              })
+              .filter(Boolean);
+          }
+          
+          // Handle usedSoftware for computations
+          if (computation.usedSoftware) {
+            computationTree.usedSoftware = computation.usedSoftware
+              .map(softwareId => {
+                const software = idToElement.get(softwareId);
+                return software ? buildProvTree(software, new Set(visited)) : null;
+              })
+              .filter(Boolean);
+          }
+          
+          return computationTree;
+        })
+        .filter(Boolean);
+    }
+
+    return tree;
+  };
+
+  // Build evidence graphs for each output dataset
+  const evidenceGraphs = outputDatasets.map(dataset => {
+    const graphId = `${cleanId(dataset['@id'])}`;
+    return {
+      '@id': graphId,
+      '@type': 'EVI:EvidenceGraph',
+      'name': dataset.name || graphId,
+      'description': dataset.description || `Evidence graph for ${dataset.name || graphId}`,
+      ...buildProvTree(dataset)
+    };
+  });
+
+  return evidenceGraphs;
+};
+
 export const useMetadataOperations = ({
   setMetadata,
   setEvidenceGraph,
@@ -104,7 +255,17 @@ export const useMetadataOperations = ({
           keysToKeep
         );
       } else {
-        evidenceGraphData = filterNonProv(metadataData, keysToKeep);
+        // Generate evidence graph if it doesn't exist
+        const generatedGraphs = buildEvidenceGraph(metadataData);
+        if (generatedGraphs && generatedGraphs.length > 0) {
+          evidenceGraphData = generatedGraphs[0];  // Use the first generated graph
+          // Add generated evidence graph back to metadata
+          metadataData.hasEvidenceGraph = evidenceGraphData['@id'];
+          setMetadata(metadataData);
+        } else {
+          // Fallback to filtered metadata if no evidence graphs generated
+          evidenceGraphData = filterNonProv(metadataData, keysToKeep);
+        }
       }
 
       setEvidenceGraph(evidenceGraphData);
