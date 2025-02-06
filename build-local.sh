@@ -11,7 +11,7 @@ docker build \
   --build-arg VITE_FAIRSCAPE_API_URL=http://localhost:8080/api \
   --build-arg VITE_FAIRSCAPE_FE_URL=http://localhost:5173/ \
   -f Dockerfile.local \
-  -t ghcr.io/fairscape/fairscapefrontendlocal:RELEASE.${DATE}.v2 .
+  -t ghcr.io/fairscape/fairscapefrontendlocal:RELEASE.${DATE} .
 
 # Run the container
-docker push ghcr.io/fairscape/fairscapefrontendlocal:RELEASE.${DATE}.v2
+docker push ghcr.io/fairscape/fairscapefrontendlocal:RELEASE.${DATE}
