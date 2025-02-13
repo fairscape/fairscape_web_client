@@ -256,7 +256,11 @@ const ValueRenderer = ({ value }) => {
   } else if (typeof value === "object") {
     return <ObjectRenderer object={value} />;
   }
-  return <Link value={value} />;
+  return (
+    <div className="max-h-32 overflow-y-auto break-words whitespace-pre-wrap">
+      <Link value={value} />
+    </div>
+  );
 };
 
 const TableRow = ({ property, value }) => {
