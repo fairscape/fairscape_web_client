@@ -246,19 +246,38 @@ const PropertiesRenderer = ({ properties }) => {
     </div>
   );
 };
-
 const ValueRenderer = ({ value }) => {
   if (value === null || value === undefined) {
     return <span>No data</span>;
   }
+
   if (Array.isArray(value)) {
     return <ArrayRenderer items={value} />;
-  } else if (typeof value === "object") {
+  }
+
+  if (typeof value === "object") {
     return <ObjectRenderer object={value} />;
   }
+
+  // Check if the value is a string and contains spaces
+  const shouldUseLink = typeof value === "string" && !value.includes(" ");
+
   return (
-    <div className="max-h-32 overflow-y-auto break-words whitespace-pre-wrap">
-      <Link value={value} />
+    <div
+      style={{
+        maxHeight: "5.5em",
+        minHeight: "1.5em",
+        lineHeight: "1.5em",
+        overflowY: "auto",
+        whiteSpace: "normal",
+        wordBreak: "break-word",
+      }}
+    >
+      {shouldUseLink ? (
+        <Link value={value} />
+      ) : (
+        <div style={{ whiteSpace: "normal" }}>{value}</div>
+      )}
     </div>
   );
 };
