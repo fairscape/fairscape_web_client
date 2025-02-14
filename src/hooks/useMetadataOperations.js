@@ -40,17 +40,6 @@ export const useMetadataOperations = ({
     return null;
   };
 
-  const filterNonProv = (data, keysToKeep) => {
-    if (typeof data !== "object" || data === null) return data;
-    if (Array.isArray(data))
-      return data.map((item) => filterNonProv(item, keysToKeep));
-    return Object.fromEntries(
-      Object.entries(data)
-        .filter(([k]) => keysToKeep.includes(k))
-        .map(([k, v]) => [k, filterNonProv(v, keysToKeep)])
-    );
-  };
-
   const generateRdfFormats = async (metadataData) => {
     try {
       const nquads = await jsonld.toRDF(metadataData, {
@@ -93,28 +82,80 @@ export const useMetadataOperations = ({
         "evidence",
       ];
 
-      const trimMetadata = (data) => {
-        console.log("Before trimming:", {
-          hasHasPart: !!data.hasPart,
-          graphLength: data["@graph"]?.length || 0,
-          keys: Object.keys(data),
-        });
+      // Helper to estimate node count
+      const countNodes = (obj) => {
+        if (typeof obj !== "object" || obj === null) return 0;
+        if (Array.isArray(obj))
+          return obj.reduce((sum, item) => sum + countNodes(item), 0);
+        return (
+          1 + Object.values(obj).reduce((sum, val) => sum + countNodes(val), 0)
+        );
+      };
 
-        const trimmed = { ...data };
-        delete trimmed.hasPart;
-        if (
-          trimmed["@graph"] &&
-          Array.isArray(trimmed["@graph"]) &&
-          trimmed["@graph"].length > 10
-        ) {
-          trimmed["@graph"] = trimmed["@graph"].slice(0, 10);
+      // Recursive filtering function with node and depth limits
+      const filterNonProv = (data, keysToKeep, options = {}) => {
+        const { nodeLimit = 50, depthLimit = 10, currentDepth = 0 } = options;
+        if (currentDepth > depthLimit) return null;
+        if (typeof data !== "object" || data === null || nodeLimit <= 0)
+          return data;
+
+        let remainingNodes = nodeLimit;
+        const processValue = (value) => {
+          if (remainingNodes <= 0) return null;
+          const result = filterNonProv(value, keysToKeep, {
+            nodeLimit: remainingNodes,
+            depthLimit,
+            currentDepth: currentDepth + 1,
+          });
+          remainingNodes -= countNodes(result);
+          return result;
+        };
+
+        if (Array.isArray(data)) {
+          return data
+            .slice(0, Math.min(data.length, 5))
+            .map(processValue)
+            .filter(Boolean);
         }
 
-        console.log("After trimming:", {
-          hasHasPart: !!trimmed.hasPart,
-          graphLength: trimmed["@graph"]?.length || 0,
-          keys: Object.keys(trimmed),
-        });
+        const filtered = {};
+        for (const [key, value] of Object.entries(data)) {
+          if (remainingNodes <= 0) break;
+          if (keysToKeep.includes(key)) {
+            if (key === "@graph") {
+              // Special handling for @graph - preserve structure but limit entries
+              filtered[key] = value
+                .slice(0, 15) // Keep first 15 graph entries
+                .map(processValue)
+                .filter(Boolean);
+              remainingNodes -= filtered[key].length;
+            } else {
+              filtered[key] = processValue(value);
+            }
+          }
+        }
+        return filtered;
+      };
+
+      // Function to trim metadata aggressively
+      const trimMetadata = (data) => {
+        const trimmed = { ...data };
+        // Remove large non-provenance properties
+        delete trimmed.hasPart;
+        delete trimmed.distribution;
+        delete trimmed.keywords;
+
+        // Keep first 15 @graph entries and limit their depth
+        if (trimmed["@graph"] && Array.isArray(trimmed["@graph"])) {
+          trimmed["@graph"] = trimmed["@graph"].slice(0, 15).map((item) => ({
+            "@id": item["@id"],
+            "@type": item["@type"],
+            name: item.name,
+            description: item.description,
+            generatedBy: item.generatedBy,
+            usedByComputation: item.usedByComputation,
+          }));
+        }
 
         return trimmed;
       };
@@ -130,19 +171,29 @@ export const useMetadataOperations = ({
         console.log("Fetching from:", graphUrl);
         const evidenceGraphResponse = await axios.get(
           `${API_URL}/${graphUrl}`,
-          { headers }
+          {
+            headers,
+          }
         );
         const graphData = evidenceGraphResponse.data["@graph"]
           ? evidenceGraphResponse.data["@graph"]
           : evidenceGraphResponse.data;
 
-        evidenceGraphData = filterNonProv(trimMetadata(graphData), keysToKeep);
+        // Apply filtering with limits
+        evidenceGraphData = filterNonProv(trimMetadata(graphData), keysToKeep, {
+          nodeLimit: 100,
+          depthLimit: 10,
+        });
         console.log("Evidence graph data after processing:", evidenceGraphData);
       } else {
         console.log("Route: Using direct metadata");
         evidenceGraphData = filterNonProv(
           trimMetadata(metadataData),
-          keysToKeep
+          keysToKeep,
+          {
+            nodeLimit: 100,
+            depthLimit: 10,
+          }
         );
         console.log("Evidence graph data after processing:", evidenceGraphData);
       }
@@ -153,7 +204,11 @@ export const useMetadataOperations = ({
       console.log("Route: Error fallback");
       const fallbackData = filterNonProv(
         trimMetadata(metadataData),
-        keysToKeep
+        keysToKeep,
+        {
+          nodeLimit: 100,
+          depthLimit: 10,
+        }
       );
       console.log("Fallback evidence graph data:", fallbackData);
       setEvidenceGraph(fallbackData);
@@ -164,6 +219,9 @@ export const useMetadataOperations = ({
 
   const fetchMetadata = async (currentArk, currentType, headers) => {
     try {
+      currentArk = currentArk.endsWith("/")
+        ? currentArk.slice(0, -1)
+        : currentArk;
       const metadataResponse = await axios.get(`${API_URL}/${currentArk}`, {
         headers,
       });
@@ -173,14 +231,51 @@ export const useMetadataOperations = ({
         throw new Error("Invalid metadata format");
       }
 
+      // If there's a nested metadata object, spread its properties to the top level
+      if (metadataData.metadata && typeof metadataData.metadata === "object") {
+        metadataData = {
+          ...metadataData,
+          ...metadataData.metadata,
+          metadata: undefined,
+        };
+      }
+
       if (
         currentType.toLowerCase() === "dataset" ||
         currentType.toLowerCase() === "rocrate"
       ) {
-        metadataData.download =
-          currentType.toLowerCase() === "rocrate"
-            ? `${API_URL}/rocrate/download/${currentArk}`
-            : `${API_URL}/dataset/download/${currentArk}`;
+        if (metadataData.distribution) {
+          metadataData.download =
+            currentType.toLowerCase() === "rocrate"
+              ? `${API_URL}/rocrate/download/${currentArk}`
+              : `${API_URL}/dataset/download/${currentArk}`;
+        } else {
+          try {
+            metadataData.download = metadataData.contentUrl;
+          } catch (error) {
+            console.error("Error fetching metadata:", error);
+            metadataData.download = null;
+          }
+        }
+
+        // Check if it's a ROCrate with empty @graph
+        if (
+          currentType.toLowerCase() === "rocrate" &&
+          (!metadataData["@graph"] || metadataData["@graph"].length <= 2)
+        ) {
+          const graphResponse = await axios.get(
+            `${API_URL}/rocrate/${currentArk}`,
+            {
+              headers,
+            }
+          );
+          if (graphResponse.data?.metadata?.["@graph"]) {
+            metadataData["@graph"] = [
+              ...(metadataData["@graph"] || []).slice(0, 2),
+              ...graphResponse.data.metadata["@graph"].slice(2),
+            ];
+          }
+        }
       }
 
       setMetadata(metadataData);
