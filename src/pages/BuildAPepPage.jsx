@@ -4,6 +4,7 @@ import PepForm from "../components/pep/PepForm";
 import "./BuildAPep.css";
 import bioPep from "../components/pep/schemas/perturb-seq.json";
 import imagingPep from "../components/pep/schemas/image-pep.json";
+import simplePep from "../components/pep/schemas/simple-pep.json";
 
 const BuildAPep = () => {
   const [pepSchemas, setPepSchemas] = useState([]);
@@ -15,6 +16,12 @@ const BuildAPep = () => {
     try {
       console.log("Loading schemas...");
       const schemas = [
+        {
+          id: "simple",
+          name: "Example PEP",
+          description: "Simple Example",
+          schema: simplePep,
+        },
         {
           id: "bio",
           name: "BioSample & SRA",

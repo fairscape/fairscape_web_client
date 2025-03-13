@@ -1,0 +1,54 @@
+{
+  "description": "A simple PEP schema with minimal fields",
+  "imports": ["http://schema.databio.org/pep/2.0.0.yaml"],
+  "properties": {
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sample_name": {
+            "type": "string",
+            "description": "Unique sample identifier",
+            "unique": true
+          },
+          "biosample_id": {
+            "type": "string",
+            "description": "BioSample accession",
+            "unique": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Text description of the sample"
+          }
+        },
+        "required": ["sample_name", "biosample_id"]
+      }
+    },
+    "subsamples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subsample_name": {
+            "type": "string",
+            "description": "Unique identifier for this SRA entry",
+            "unique": true
+          },
+          "sample_name": {
+            "type": "string",
+            "description": "Reference to parent sample",
+            "unique": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Text description of the sample"
+          }
+        },
+        "required": ["subsample_name", "sample_name"]
+      }
+    }
+  },
+  "required": ["samples", "subsamples"],
+  "name": "Simple Perturb Seq"
+}
