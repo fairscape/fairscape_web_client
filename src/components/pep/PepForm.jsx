@@ -95,40 +95,64 @@ const PepForm = ({ selectedPep, onBackToList }) => {
     e.preventDefault();
 
     try {
-      const combinedFormData = {
-        samples: formData.samples.map((sample) => ({
-          ...formData.commonSampleFields,
-          ...sample,
-        })),
-        subsamples: formData.subsamples.map((subsample) => ({
-          ...formData.commonSubsampleFields,
-          ...subsample,
-        })),
-      };
+      // Combine common fields with unique fields
+      const combinedSamples = formData.samples.map((sample) => ({
+        ...formData.commonSampleFields,
+        ...sample,
+      }));
 
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/peps/submit`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          pepType: selectedPep.name,
-          data: combinedFormData,
-        }),
-      });
+      const combinedSubsamples = formData.subsamples.map((subsample) => ({
+        ...formData.commonSubsampleFields,
+        ...subsample,
+      }));
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      // Convert to CSV
+      const samplesCSV = convertToCSV(combinedSamples);
+      const subsamplesCSV = convertToCSV(combinedSubsamples);
 
-      const result = await response.json();
-      alert("PEP created successfully!");
-      navigate("/peps");
+      // Download the CSV files
+      downloadCSV(samplesCSV, "samples.csv");
+      downloadCSV(subsamplesCSV, "subsamples.csv");
+
+      alert("CSV files downloaded successfully!");
     } catch (err) {
-      setError(`Failed to submit PEP: ${err.message}`);
+      setError(`Failed to create CSV files: ${err.message}`);
     }
+  };
+
+  // Helper function to convert data to CSV
+  const convertToCSV = (items) => {
+    if (items.length === 0) return "";
+
+    const headers = Object.keys(items[0]);
+    const csvRows = [];
+
+    // Add header row
+    csvRows.push(headers.join(","));
+
+    // Add data rows
+    for (const item of items) {
+      const values = headers.map((header) => {
+        const val = item[header] || "";
+        // Escape quotes and wrap in quotes if contains comma or newline
+        return `"${String(val).replace(/"/g, '""')}"`;
+      });
+      csvRows.push(values.join(","));
+    }
+
+    return csvRows.join("\n");
+  };
+
+  // Helper function to download CSV
+  const downloadCSV = (csvContent, fileName) => {
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (!selectedPep || !selectedPep.schema) {
@@ -222,7 +246,7 @@ const PepForm = ({ selectedPep, onBackToList }) => {
             ← Back to PEP List
           </button>
           <button type="submit" className="submit-button button-with-icon">
-            💾 Create PEP
+            💾 Download PEP
           </button>
         </div>
       </form>
