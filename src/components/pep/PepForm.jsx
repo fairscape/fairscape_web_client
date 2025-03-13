@@ -260,6 +260,7 @@ const PepForm = ({ selectedPep, onBackToList }) => {
             <h3>Sample Information</h3>
             <span className="section-badge">Unique per sample</span>
           </div>
+
           <div className="items-container">
             {formData.samples.map((sample, sampleIndex) => (
               <div key={sampleIndex} className="sample-container">
@@ -312,6 +313,19 @@ const PepForm = ({ selectedPep, onBackToList }) => {
             ))}
           </div>
           <div className="button-group">
+            <input
+              id="sample-csv-upload"
+              type="file"
+              accept=".csv"
+              className="csv-upload-input"
+              style={{ display: "none" }}
+            />
+            <label
+              htmlFor="sample-csv-upload"
+              className="csv-upload-button button-with-icon"
+            >
+              📄 Upload CSV
+            </label>
             <button
               type="button"
               className="add-button button-with-icon"
@@ -362,6 +376,7 @@ const PepForm = ({ selectedPep, onBackToList }) => {
             <h3>Subsample Information</h3>
             <span className="section-badge">Unique per subsample</span>
           </div>
+
           <div className="items-container">
             {formData.subsamples.map((subsample, subsampleIndex) => (
               <div key={subsampleIndex} className="subsample-container">
@@ -373,7 +388,7 @@ const PepForm = ({ selectedPep, onBackToList }) => {
                       className="remove-button button-with-icon"
                       onClick={() => removeItem("subsamples", subsampleIndex)}
                     >
-                      <FaTrash /> Remove
+                      ✕ Remove
                     </button>
                   )}
                 </div>
@@ -414,6 +429,19 @@ const PepForm = ({ selectedPep, onBackToList }) => {
             ))}
           </div>
           <div className="button-group">
+            <input
+              id="subsample-csv-upload"
+              type="file"
+              accept=".csv"
+              className="csv-upload-input"
+              style={{ display: "none" }}
+            />
+            <label
+              htmlFor="subsample-csv-upload"
+              className="csv-upload-button button-with-icon"
+            >
+              📄 Upload CSV
+            </label>
             <button
               type="button"
               className="add-button button-with-icon"
