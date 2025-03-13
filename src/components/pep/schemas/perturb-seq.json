@@ -1,0 +1,163 @@
+{
+  "description": "A PEP for perturb-seq with BioSample metadata and SRA subsamples.",
+  "imports": [
+    "http://schema.databio.org/pep/2.0.0.yaml"
+  ],
+  "properties": {
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sample_name": {
+            "type": "string",
+            "description": "Unique sample identifier"
+          },
+          "biosample_id": {
+            "type": "string",
+            "description": "BioSample accession (e.g., SAMN44306450)"
+          },
+          "bioproject": {
+            "type": "string",
+            "description": "BioProject accession (e.g., PRJNA1173491)"
+          },
+          "organism": {
+            "type": "string",
+            "description": "Organism (e.g., Homo sapiens)"
+          },
+          "taxonomy_id": {
+            "type": "string",
+            "description": "Taxonomy ID (e.g., 9606)"
+          },
+          "isolate": {
+            "type": "string",
+            "description": "Isolate information"
+          },
+          "age": {
+            "type": "string",
+            "description": "Age of donor"
+          },
+          "biomaterial_provider": {
+            "type": "string",
+            "description": "Provider of the biomaterial"
+          },
+          "collection_date": {
+            "type": "string",
+            "description": "Date of collection"
+          },
+          "sex": {
+            "type": "string",
+            "description": "Biological sex"
+          },
+          "tissue": {
+            "type": "string",
+            "description": "Tissue of origin"
+          },
+          "cell_line": {
+            "type": "string",
+            "description": "Cell line (e.g., KOLF2.1J)"
+          },
+          "cell_subtype": {
+            "type": "string",
+            "description": "Cell subtype"
+          },
+          "cell_type": {
+            "type": "string",
+            "description": "Cell type"
+          }
+        },
+        "required": [
+          "sample_name",
+          "biosample_id"
+        ]
+      }
+    },
+    "subsamples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subsample_name": {
+            "type": "string",
+            "description": "Unique identifier for this SRA entry"
+          },
+          "sample_name": {
+            "type": "string",
+            "description": "Reference to parent sample"
+          },
+          "sra_accession": {
+            "type": "string",
+            "description": "SRA run accession (e.g., SRR31012381)"
+          },
+          "experiment_id": {
+            "type": "string",
+            "description": "SRA experiment ID (e.g., SRX26400013)"
+          },
+          "library_id": {
+            "type": "string",
+            "description": "Library ID from SRA"
+          },
+          "library_strategy": {
+            "type": "string",
+            "description": "Library strategy (e.g., RNA-Seq)"
+          },
+          "library_source": {
+            "type": "string",
+            "description": "Library source (e.g., TRANSCRIPTOMIC SINGLE CELL)"
+          },
+          "library_selection": {
+            "type": "string",
+            "description": "Library selection method (e.g., Oligo-dT)"
+          },
+          "library_layout": {
+            "type": "string",
+            "description": "Library layout (SINGLE or PAIRED)"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Sequencing platform (e.g., ILLUMINA)"
+          },
+          "instrument": {
+            "type": "string",
+            "description": "Sequencing instrument (e.g., Illumina NovaSeq X)"
+          },
+          "seq_type": {
+            "type": "string",
+            "description": "Sequencing data type (GEX, CRISPR, etc.)"
+          },
+          "read1": {
+            "type": "string",
+            "description": "Fastq file for read 1"
+          },
+          "read1_md5": {
+            "type": "string",
+            "description": "MD5 checksum for read 1 file"
+          },
+          "read2": {
+            "type": "string",
+            "description": "Fastq file for read 2 (for paired-end experiments)"
+          },
+          "read2_md5": {
+            "type": "string",
+            "description": "MD5 checksum for read 2 file"
+          },
+          "experiment_description": {
+            "type": "string",
+            "description": "Description of the experiment"
+          }
+        },
+        "required": [
+          "subsample_name",
+          "sample_name",
+          "sra_accession",
+          "read1"
+        ]
+      }
+    }
+  },
+  "required": [
+    "samples",
+    "subsamples"
+  ],
+  "name": "Perturb Seq"
+}

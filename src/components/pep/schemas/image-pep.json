@@ -1,0 +1,136 @@
+{
+  "description": "A PEP for BioImage Archive data following REMBI metadata model.",
+  "imports": [
+    "http://schema.databio.org/pep/2.0.0.yaml"
+  ],
+  "properties": {
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sample_name": {
+            "type": "string",
+            "description": "Unique sample identifier"
+          },
+          "organism_scientific_name": {
+            "type": "string",
+            "description": "Scientific name of the organism"
+          },
+          "organism_common_name": {
+            "type": "string",
+            "description": "Common name of the organism"
+          },
+          "organism_ncbi_taxon": {
+            "type": "string",
+            "description": "NCBI Taxon for the organism (e.g., http://purl.obolibrary.org/obo/NCBITaxon_9606)"
+          },
+          "biological_entity": {
+            "type": "string",
+            "description": "What is being imaged (e.g., cell line, tissue)"
+          },
+          "description": {
+            "type": "string",
+            "description": "High level description of sample"
+          },
+          "intrinsic_variables": {
+            "type": "string",
+            "description": "Intrinsic (e.g. genetic) alteration"
+          },
+          "extrinsic_variables": {
+            "type": "string",
+            "description": "External treatment (e.g. reagent)"
+          },
+          "experimental_variables": {
+            "type": "string",
+            "description": "What is intentionally varied between multiple images"
+          },
+          "sample_preparation": {
+            "type": "string",
+            "description": "How the sample was prepared for imaging"
+          },
+          "growth_protocol": {
+            "type": "string",
+            "description": "How the specimen was grown (e.g., cell culture methods)"
+          }
+        },
+        "required": [
+          "sample_name",
+          "organism_scientific_name",
+          "organism_ncbi_taxon",
+          "biological_entity",
+          "sample_preparation"
+        ]
+      }
+    },
+    "subsamples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subsample_name": {
+            "type": "string",
+            "description": "Unique identifier for this image dataset"
+          },
+          "sample_name": {
+            "type": "string",
+            "description": "Reference to parent sample"
+          },
+          "imaging_method_value": {
+            "type": "string",
+            "description": "The imaging method used (e.g., bright-field microscopy)"
+          },
+          "imaging_method_ontology_name": {
+            "type": "string",
+            "description": "The name of the ontology (e.g., Biological Imaging Methods Ontology (FBbi))"
+          },
+          "imaging_method_ontology_id": {
+            "type": "string",
+            "description": "The URI identifier for the ontology value"
+          },
+          "imaging_instrument": {
+            "type": "string",
+            "description": "Description of the instrument used to capture the images"
+          },
+          "image_acquisition_parameters": {
+            "type": "string",
+            "description": "How the images were acquired, including instrument settings/parameters"
+          },
+          "file_name": {
+            "type": "string",
+            "description": "Name of the image file"
+          },
+          "file_format": {
+            "type": "string",
+            "description": "Format of the image file (e.g., TIFF, OME-TIFF)"
+          },
+          "file_size": {
+            "type": "string",
+            "description": "Size of the image file"
+          },
+          "image_dimensions": {
+            "type": "string",
+            "description": "Dimensions of the image (e.g., X, Y, Z, T, C)"
+          },
+          "channels": {
+            "type": "string",
+            "description": "Description of the channels in the image"
+          }
+        },
+        "required": [
+          "subsample_name",
+          "sample_name",
+          "imaging_method_value",
+          "imaging_instrument",
+          "image_acquisition_parameters",
+          "file_name"
+        ]
+      }
+    }
+  },
+  "required": [
+    "samples",
+    "subsamples"
+  ],
+  "name": "Image Pep"
+}
