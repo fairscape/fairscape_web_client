@@ -1,8 +1,6 @@
 {
   "description": "A PEP for perturb-seq with BioSample metadata and SRA subsamples.",
-  "imports": [
-    "http://schema.databio.org/pep/2.0.0.yaml"
-  ],
+  "imports": ["http://schema.databio.org/pep/2.0.0.yaml"],
   "properties": {
     "samples": {
       "type": "array",
@@ -11,11 +9,13 @@
         "properties": {
           "sample_name": {
             "type": "string",
-            "description": "Unique sample identifier"
+            "description": "Unique sample identifier",
+            "unique": true
           },
           "biosample_id": {
             "type": "string",
-            "description": "BioSample accession (e.g., SAMN44306450)"
+            "description": "BioSample accession (e.g., SAMN44306450)",
+            "unique": true
           },
           "bioproject": {
             "type": "string",
@@ -66,10 +66,7 @@
             "description": "Cell type"
           }
         },
-        "required": [
-          "sample_name",
-          "biosample_id"
-        ]
+        "required": ["sample_name", "biosample_id"]
       }
     },
     "subsamples": {
@@ -79,19 +76,23 @@
         "properties": {
           "subsample_name": {
             "type": "string",
-            "description": "Unique identifier for this SRA entry"
+            "description": "Unique identifier for this SRA entry",
+            "unique": true
           },
           "sample_name": {
             "type": "string",
-            "description": "Reference to parent sample"
+            "description": "Reference to parent sample",
+            "unique": true
           },
           "sra_accession": {
             "type": "string",
-            "description": "SRA run accession (e.g., SRR31012381)"
+            "description": "SRA run accession (e.g., SRR31012381)",
+            "unique": true
           },
           "experiment_id": {
             "type": "string",
-            "description": "SRA experiment ID (e.g., SRX26400013)"
+            "description": "SRA experiment ID (e.g., SRX26400013)",
+            "unique": true
           },
           "library_id": {
             "type": "string",
@@ -127,37 +128,33 @@
           },
           "read1": {
             "type": "string",
-            "description": "Fastq file for read 1"
+            "description": "Fastq file for read 1",
+            "unique": true
           },
           "read1_md5": {
             "type": "string",
-            "description": "MD5 checksum for read 1 file"
+            "description": "MD5 checksum for read 1 file",
+            "unique": true
           },
           "read2": {
             "type": "string",
-            "description": "Fastq file for read 2 (for paired-end experiments)"
+            "description": "Fastq file for read 2 (for paired-end experiments)",
+            "unique": true
           },
           "read2_md5": {
             "type": "string",
-            "description": "MD5 checksum for read 2 file"
+            "description": "MD5 checksum for read 2 file",
+            "unique": true
           },
           "experiment_description": {
             "type": "string",
             "description": "Description of the experiment"
           }
         },
-        "required": [
-          "subsample_name",
-          "sample_name",
-          "sra_accession",
-          "read1"
-        ]
+        "required": ["subsample_name", "sample_name", "sra_accession", "read1"]
       }
     }
   },
-  "required": [
-    "samples",
-    "subsamples"
-  ],
+  "required": ["samples", "subsamples"],
   "name": "Perturb Seq"
 }

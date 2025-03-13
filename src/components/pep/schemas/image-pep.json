@@ -1,8 +1,6 @@
 {
   "description": "A PEP for BioImage Archive data following REMBI metadata model.",
-  "imports": [
-    "http://schema.databio.org/pep/2.0.0.yaml"
-  ],
+  "imports": ["http://schema.databio.org/pep/2.0.0.yaml"],
   "properties": {
     "samples": {
       "type": "array",
@@ -11,7 +9,8 @@
         "properties": {
           "sample_name": {
             "type": "string",
-            "description": "Unique sample identifier"
+            "description": "Unique sample identifier",
+            "unique": true
           },
           "organism_scientific_name": {
             "type": "string",
@@ -70,11 +69,13 @@
         "properties": {
           "subsample_name": {
             "type": "string",
-            "description": "Unique identifier for this image dataset"
+            "description": "Unique identifier for this image dataset",
+            "unique": true
           },
           "sample_name": {
             "type": "string",
-            "description": "Reference to parent sample"
+            "description": "Reference to parent sample",
+            "unique": true
           },
           "imaging_method_value": {
             "type": "string",
@@ -98,7 +99,8 @@
           },
           "file_name": {
             "type": "string",
-            "description": "Name of the image file"
+            "description": "Name of the image file",
+            "unique": true
           },
           "file_format": {
             "type": "string",
@@ -106,7 +108,8 @@
           },
           "file_size": {
             "type": "string",
-            "description": "Size of the image file"
+            "description": "Size of the image file",
+            "unique": true
           },
           "image_dimensions": {
             "type": "string",
@@ -128,9 +131,6 @@
       }
     }
   },
-  "required": [
-    "samples",
-    "subsamples"
-  ],
+  "required": ["samples", "subsamples"],
   "name": "Image Pep"
 }
