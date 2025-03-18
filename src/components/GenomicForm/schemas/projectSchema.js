@@ -17,7 +17,7 @@ const projectSchema = {
     archive: {
       type: "string",
       title: "Archive",
-      default: "Unknown",
+      default: "N/A",
     },
     description: {
       type: "string",

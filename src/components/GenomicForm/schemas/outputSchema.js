@@ -25,11 +25,6 @@ const outputSchema = {
             description:
               "Reference to the experiment that produced this output",
           },
-          size: {
-            type: "string",
-            title: "Size",
-            description: "Total size of output data, e.g. '2.3 GB'",
-          },
           published: {
             type: "string",
             title: "Published Date",
@@ -43,7 +38,7 @@ const outputSchema = {
             minItems: 1,
             items: {
               type: "object",
-              required: ["filename", "size", "date", "url", "md5"],
+              required: ["filename", "size", "url", "md5"],
               properties: {
                 filename: {
                   type: "string",
@@ -54,12 +49,6 @@ const outputSchema = {
                   type: "string",
                   title: "File Size",
                   description: "Size in bytes or formatted (e.g., '1.2 GB')",
-                },
-                date: {
-                  type: "string",
-                  title: "File Date",
-                  description: "Date when the file was created or modified",
-                  format: "date",
                 },
                 url: {
                   type: "string",

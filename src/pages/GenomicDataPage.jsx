@@ -34,6 +34,131 @@ const GenomicDataPage = () => {
 
   const navigate = useNavigate();
 
+  // Function to format the experiment data to match the desired output structure
+  const formatExperiment = (exp) => {
+    return {
+      accession: exp.accession || "",
+      title: exp.title || "",
+      study_ref: exp.study_ref || "",
+      sample_ref: exp.sample_ref || "",
+      design: {
+        library_name: exp.library_name || "",
+        library_strategy: exp.library_strategy || "",
+        library_source: exp.library_source || "",
+        library_selection: exp.library_selection || "",
+        library_layout: exp.library_layout || "",
+        nominal_length: exp.nominal_length || "",
+      },
+      platform: {
+        type: exp.platform_type || "",
+        instrument_model: exp.instrument_model || "",
+      },
+    };
+  };
+
+  // Function to format the biosample data to match the desired output structure
+  const formatBiosample = (sample) => {
+    // Extract basic properties
+    const basicProps = {
+      accession: sample.accession || "",
+      title: sample.title || sample.sample_name || "",
+      scientific_name: sample.scientific_name || "",
+      taxon_id: sample.taxon_id || "",
+    };
+
+    // Create attributes object with remaining properties
+    const attributes = {};
+    Object.entries(sample).forEach(([key, value]) => {
+      // Skip properties already included in the basic structure
+      if (
+        ![
+          "accession",
+          "title",
+          "scientific_name",
+          "taxon_id",
+          "attributes",
+        ].includes(key)
+      ) {
+        attributes[key] = value;
+      }
+    });
+
+    // Include any existing attributes
+    if (sample.attributes) {
+      Object.assign(attributes, sample.attributes);
+    }
+
+    return {
+      ...basicProps,
+      attributes: attributes,
+    };
+  };
+
+  // Function to format the output/run data to match the desired structure
+  const formatOutput = (output) => {
+    return {
+      accession: output.accession || "",
+      title: output.title || "",
+      experiment_ref: output.experiment_ref || "",
+      total_spots: output.total_spots || "",
+      total_bases: output.total_bases || "",
+      size: output.size || "",
+      published: output.published || "",
+      files: Array.isArray(output.files) ? output.files : [],
+      nreads: output.nreads || "",
+      nspots: output.nspots || "",
+      base_count: output.base_count || "",
+      base_composition: output.base_composition || {
+        A: output.a_count || "",
+        C: output.c_count || "",
+        G: output.g_count || "",
+        T: output.t_count || "",
+        N: output.n_count || "",
+      },
+    };
+  };
+
+  // Function to download the data as a JSON file
+  const downloadJson = (data, filename = "genomic-data.json") => {
+    try {
+      // Format each section according to the example structure
+      const result = {
+        bioproject: data.project || {},
+        biosamples: (data.samples?.items || []).map(formatBiosample),
+        experiments: (data.experiments?.items || []).map(formatExperiment),
+        runs: (data.outputs?.items || []).map(formatOutput),
+      };
+
+      // Convert to JSON string with pretty formatting
+      const jsonString = JSON.stringify(result, null, 2);
+
+      // Create a blob with the data
+      const blob = new Blob([jsonString], { type: "application/json" });
+
+      // Create a temporary URL for the blob
+      const url = URL.createObjectURL(blob);
+
+      // Create a link element
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+
+      // Append to the body, click it, and remove it
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Release the URL object
+      URL.revokeObjectURL(url);
+
+      return true;
+    } catch (err) {
+      console.error("Error downloading JSON:", err);
+      setError(`Failed to download file: ${err.message}`);
+      return false;
+    }
+  };
+
   // Update form data for a specific step
   const updateFormData = (step, data) => {
     setFormData((prevData) => ({
@@ -71,18 +196,15 @@ const GenomicDataPage = () => {
         outputs: formData.outputs,
       };
 
-      // For now, just log the data - in a real app, you'd send this to an API
-      console.log("Submitting genomic data:", genomicData);
+      // Log the data for debugging
+      console.log("Genomic data for download:", genomicData);
 
-      // Example of sending to an API (commented out for now)
-      // const response = await fetch('/api/genomic-data', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(genomicData)
-      // });
+      // Download the data as a JSON file
+      const downloaded = downloadJson(genomicData);
 
-      // Navigate to a confirmation page or show success message
-      // navigate("/success");
+      if (!downloaded) {
+        throw new Error("Failed to download the file");
+      }
 
       setIsSubmitting(false);
     } catch (err) {
@@ -142,6 +264,13 @@ const GenomicDataPage = () => {
               <pre>{JSON.stringify(formData.outputs, null, 2)}</pre>
             </div>
           </div>
+
+          <div className="download-section">
+            <p>
+              When you click "Submit" below, your data will be downloaded as a
+              JSON file.
+            </p>
+          </div>
         </div>
       );
     }
@@ -166,9 +295,9 @@ const GenomicDataPage = () => {
   return (
     <div className="genomic-data-container">
       <div className="genomic-header">
-        <h1>Genomic Data Builder</h1>
+        <h1>Genomic Metadata Builder</h1>
         <p className="description">
-          Complete the form to create a Genomic Data structure
+          Complete the form to create structured genomic metadata
         </p>
       </div>
 

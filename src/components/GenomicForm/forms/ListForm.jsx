@@ -32,12 +32,8 @@ const ListForm = ({ schema, data, updateData }) => {
     return {};
   });
 
-  // Key to identify this specific form instance - prevents state confusion
-  const [formKey] = useState(`form-${Math.random().toString(36).substr(2, 9)}`);
-
   // Update formData when data prop changes
   useEffect(() => {
-    // Only update if data is defined and not an empty object
     if (data && Object.keys(data).length > 0) {
       setFormData(data);
 
@@ -190,41 +186,116 @@ const ListForm = ({ schema, data, updateData }) => {
     });
   };
 
-  // Add a new item to the items array
-  const addItem = () => {
+  // Add a new item to an array (can be top-level or nested)
+  const addItem = (arrayPath = []) => {
     setFormData((prevData) => {
       const newData = { ...prevData };
+      let current = newData;
+
+      // Navigate to the array
+      for (let i = 0; i < arrayPath.length; i++) {
+        if (current[arrayPath[i]] === undefined) {
+          current[arrayPath[i]] = i === arrayPath.length - 1 ? [] : {};
+        }
+        current = current[arrayPath[i]];
+      }
+
+      // Get the schema for the array items
+      let itemsSchema = schema;
+      let arrayField = "";
+
+      if (arrayPath.length === 0) {
+        // Top-level items array
+        arrayField = "items";
+      } else {
+        // Nested array - the last element in arrayPath is the array field name
+        arrayField = arrayPath[arrayPath.length - 1];
+
+        // Navigate to the correct schema location for the nested array
+        let currentPath = [];
+        for (let i = 0; i < arrayPath.length - 1; i++) {
+          if (currentPath.length === 0 && arrayPath[i] === "items") {
+            itemsSchema = itemsSchema.properties.items.items;
+          } else {
+            const prop = arrayPath[i];
+            if (itemsSchema.properties && itemsSchema.properties[prop]) {
+              itemsSchema = itemsSchema.properties[prop];
+            }
+          }
+          currentPath.push(arrayPath[i]);
+        }
+      }
 
       // Create a new item with default values
-      const newItem = createEmptyObject(
-        schema.properties.items.items.properties
-      );
+      let newItem;
 
-      // Apply common fields
-      if (schema.commonFields) {
-        schema.commonFields.forEach((field) => {
-          newItem[field] = commonFields[field] || "";
-        });
+      if (arrayPath.length === 0) {
+        // Top-level items array
+        newItem = createEmptyObject(schema.properties.items.items.properties);
+
+        // Apply common fields
+        if (schema.commonFields) {
+          schema.commonFields.forEach((field) => {
+            newItem[field] = commonFields[field] || "";
+          });
+        }
+      } else {
+        // Nested array
+        const arrayField = arrayPath[arrayPath.length - 1];
+        // Find the schema for this nested array field
+        let nestedArraySchema;
+
+        // Start with parent's schema and navigate to the nested field
+        if (arrayPath[0] === "items") {
+          // This is an array inside a top-level item
+          let parentSchema = schema.properties.items.items;
+          for (let i = 1; i < arrayPath.length; i++) {
+            if (
+              parentSchema.properties &&
+              parentSchema.properties[arrayPath[i]]
+            ) {
+              parentSchema = parentSchema.properties[arrayPath[i]];
+            }
+          }
+          nestedArraySchema = parentSchema;
+        }
+
+        // Create empty object based on the nested array schema
+        if (nestedArraySchema && nestedArraySchema.items) {
+          newItem = createEmptyObject(nestedArraySchema.items.properties);
+        } else {
+          // Default empty object if schema not found
+          newItem = {};
+        }
       }
 
       // Add the new item to the array
-      if (!Array.isArray(newData.items)) {
-        newData.items = [];
+      if (!Array.isArray(current)) {
+        current = [];
       }
-      newData.items.push(newItem);
+      current.push(newItem);
 
       return newData;
     });
   };
 
-  // Remove an item from the items array
-  const removeItem = (index) => {
+  // Remove an item from an array (can be top-level or nested)
+  const removeItem = (index, arrayPath = []) => {
     setFormData((prevData) => {
       const newData = { ...prevData };
-      if (!Array.isArray(newData.items)) return prevData;
+      let current = newData;
+
+      // Navigate to the array
+      for (let i = 0; i < arrayPath.length; i++) {
+        current = current[arrayPath[i]];
+        if (!current) return prevData;
+      }
+
+      if (!Array.isArray(current)) return prevData;
 
       // Remove the item
-      newData.items.splice(index, 1);
+      current.splice(index, 1);
+
       return newData;
     });
   };
@@ -303,6 +374,112 @@ const ListForm = ({ schema, data, updateData }) => {
     });
   };
 
+  // Render nested arrays (like files inside each output)
+  const renderNestedArray = (
+    fieldName,
+    fieldSchema,
+    parentPath,
+    parentIndex
+  ) => {
+    const path = [...parentPath, parentIndex, fieldName];
+    const value =
+      getNestedValue(formData, parentPath, parentIndex, fieldName) || [];
+
+    return (
+      <div className="nested-items-section" key={`${path.join("-")}`}>
+        <div className="section-subheader">
+          <h5>{fieldSchema.title || fieldName}</h5>
+          {fieldSchema.description && (
+            <p className="section-hint">{fieldSchema.description}</p>
+          )}
+        </div>
+
+        {Array.isArray(value) && value.length > 0 ? (
+          value.map((item, index) => (
+            <div
+              key={`${path.join("-")}-${index}`}
+              className="nested-item-container"
+            >
+              <div className="nested-item-header">
+                <h6>
+                  {fieldSchema.items.title ||
+                    `${fieldSchema.title || fieldName} ${index + 1}`}
+                </h6>
+                <button
+                  type="button"
+                  className="remove-button-small"
+                  onClick={() => removeItem(index, path)}
+                >
+                  Remove
+                </button>
+              </div>
+
+              <div className="form-grid">
+                {Object.entries(fieldSchema.items.properties).map(
+                  ([itemFieldName, itemFieldSchema]) => {
+                    const required =
+                      fieldSchema.items.required?.includes(itemFieldName);
+                    return renderField({
+                      fieldName: itemFieldName,
+                      fieldSchema: itemFieldSchema,
+                      path: [...path, index],
+                      required,
+                      formData,
+                      handlers: {
+                        handleInputChange,
+                        handleArrayChange,
+                        handleObjectChange,
+                        addItem,
+                        removeItem,
+                        addObjectProperty,
+                        removeObjectProperty,
+                        updateObjectPropertyKey,
+                      },
+                    });
+                  }
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="empty-items-message">
+            <p>No {fieldSchema.title || fieldName} added yet.</p>
+          </div>
+        )}
+
+        <div className="button-group-small">
+          <button
+            type="button"
+            className="add-button-small"
+            onClick={() => addItem(path)}
+          >
+            + Add {fieldSchema.items.title || fieldSchema.title || fieldName}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Get nested value from an object
+  const getNestedValue = (obj, parentPath, parentIndex, fieldName) => {
+    if (!obj || !parentPath || parentIndex === undefined) return undefined;
+
+    let current = obj;
+
+    // Navigate to the parent object
+    for (let i = 0; i < parentPath.length; i++) {
+      current = current[parentPath[i]];
+      if (!current) return undefined;
+    }
+
+    // Access the specific array item
+    current = current[parentIndex];
+    if (!current) return undefined;
+
+    // Return the field value
+    return current[fieldName];
+  };
+
   // Update parent component when form data changes
   useEffect(() => {
     updateData(formData);
@@ -374,7 +551,7 @@ const ListForm = ({ schema, data, updateData }) => {
 
         {items.length > 0 ? (
           items.map((item, index) => (
-            <div key={`${formKey}-item-${index}`} className="item-container">
+            <div key={`item-${index}`} className="item-container">
               <div className="item-header">
                 <h4>
                   {itemSchema.title ? itemSchema.title.slice(0, -1) : "Item"}{" "}
@@ -384,7 +561,7 @@ const ListForm = ({ schema, data, updateData }) => {
                   <button
                     type="button"
                     className="remove-button"
-                    onClick={() => removeItem(index)}
+                    onClick={() => removeItem(index, ["items"])}
                   >
                     Remove
                   </button>
@@ -398,6 +575,21 @@ const ListForm = ({ schema, data, updateData }) => {
                   )
                   .map(([fieldName, fieldSchema]) => {
                     const required = itemSchema.required?.includes(fieldName);
+
+                    // Special handling for nested arrays (like files)
+                    if (
+                      fieldSchema.type === "array" &&
+                      fieldSchema.items &&
+                      fieldSchema.items.type === "object"
+                    ) {
+                      return renderNestedArray(
+                        fieldName,
+                        fieldSchema,
+                        ["items"],
+                        index
+                      );
+                    }
+
                     return renderField({
                       fieldName,
                       fieldSchema,
@@ -417,7 +609,11 @@ const ListForm = ({ schema, data, updateData }) => {
         )}
 
         <div className="button-group">
-          <button type="button" className="add-button" onClick={addItem}>
+          <button
+            type="button"
+            className="add-button"
+            onClick={() => addItem(["items"])}
+          >
             + Add {itemSchema.title ? itemSchema.title.slice(0, -1) : "Item"}
           </button>
         </div>
@@ -426,7 +622,7 @@ const ListForm = ({ schema, data, updateData }) => {
   };
 
   return (
-    <div className="form-section" key={formKey}>
+    <div className="form-section">
       <h2>{schema.title}</h2>
       <p className="form-description">{schema.description}</p>
 
