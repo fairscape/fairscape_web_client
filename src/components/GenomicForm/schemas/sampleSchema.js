@@ -12,19 +12,14 @@ const sampleSchema = {
       minItems: 1,
       items: {
         type: "object",
-        required: [
-          "sample_name",
-          "cell_line_of_sample",
-          "scientific_name",
-          "taxon_id",
-        ],
+        required: ["sample_name", "cell_line", "scientific_name", "taxon_id"],
         properties: {
           sample_name: {
             type: "string",
             title: "Sample Name",
             description: "Name of the sample",
           },
-          cell_line_of_sample: {
+          cell_line: {
             type: "string",
             title: "Cell Line Of Sample",
             description: "Cell line used in this sample",
@@ -56,31 +51,11 @@ const sampleSchema = {
             title: "Collection Date",
             description: "Date when the sample was collected (YYYY-MM-DD)",
           },
-          sample_type: {
-            type: "string",
-            title: "Sample Type",
-            description: "Type of biological sample",
-            enum: [
-              "Cell line",
-              "Primary cells",
-              "Tissue",
-              "Organoid",
-              "Lysate",
-              "Plasma/Serum",
-              "Whole blood",
-              "Other",
-            ],
-          },
         },
       },
     },
   },
   // Define common fields that should be shared across all samples
-  commonFields: [
-    "scientific_name",
-    "taxon_id",
-    "cell_line_of_sample",
-    "sample_type",
-  ],
+  commonFields: ["scientific_name", "taxon_id", "cell_line"],
 };
 export default sampleSchema;
