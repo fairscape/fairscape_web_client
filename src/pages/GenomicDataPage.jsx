@@ -109,18 +109,8 @@ const GenomicDataPage = () => {
 
   // Get the current data based on step
   const getCurrentData = () => {
-    switch (steps[currentStep].id) {
-      case "project":
-        return formData.project;
-      case "samples":
-        return formData.samples;
-      case "experiments":
-        return formData.experiments;
-      case "outputs":
-        return formData.outputs;
-      default:
-        return null;
-    }
+    const stepId = steps[currentStep].id;
+    return formData[stepId];
   };
 
   // Render the current form step
@@ -137,17 +127,17 @@ const GenomicDataPage = () => {
               <pre>{JSON.stringify(formData.project, null, 2)}</pre>
             </div>
 
-            <h4>Samples ({formData.samples.items.length})</h4>
+            <h4>Samples ({formData.samples.items?.length || 0})</h4>
             <div className="json-preview">
               <pre>{JSON.stringify(formData.samples, null, 2)}</pre>
             </div>
 
-            <h4>Experiments ({formData.experiments.items.length})</h4>
+            <h4>Experiments ({formData.experiments.items?.length || 0})</h4>
             <div className="json-preview">
               <pre>{JSON.stringify(formData.experiments, null, 2)}</pre>
             </div>
 
-            <h4>Outputs ({formData.outputs.items.length})</h4>
+            <h4>Outputs ({formData.outputs.items?.length || 0})</h4>
             <div className="json-preview">
               <pre>{JSON.stringify(formData.outputs, null, 2)}</pre>
             </div>
@@ -160,11 +150,16 @@ const GenomicDataPage = () => {
     const data = getCurrentData();
 
     return (
-      <FormFactory
-        schema={schema}
-        data={data}
-        updateData={(updatedData) => updateFormData(currentStepId, updatedData)}
-      />
+      <div className="form-wrapper" key={`form-${currentStepId}`}>
+        <FormFactory
+          key={currentStepId}
+          schema={schema}
+          data={data}
+          updateData={(updatedData) =>
+            updateFormData(currentStepId, updatedData)
+          }
+        />
+      </div>
     );
   };
 

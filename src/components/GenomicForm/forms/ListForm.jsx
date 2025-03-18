@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
-import "./FormStyles.css";
+import "../forms/FormStyles.css";
 import { createInitialData, createEmptyObject, renderField } from "./FormUtils";
 
 // ListForm handles a form with a list of items and common fields
 const ListForm = ({ schema, data, updateData }) => {
   // Initialize form data with schema defaults or provided data
   const [formData, setFormData] = useState(() => {
-    if (data) return data;
+    if (data && Object.keys(data).length > 0) {
+      return data;
+    }
     return createInitialData(schema);
   });
 
@@ -30,9 +32,13 @@ const ListForm = ({ schema, data, updateData }) => {
     return {};
   });
 
+  // Key to identify this specific form instance - prevents state confusion
+  const [formKey] = useState(`form-${Math.random().toString(36).substr(2, 9)}`);
+
   // Update formData when data prop changes
   useEffect(() => {
-    if (data) {
+    // Only update if data is defined and not an empty object
+    if (data && Object.keys(data).length > 0) {
       setFormData(data);
 
       // Update common fields if applicable
@@ -368,10 +374,11 @@ const ListForm = ({ schema, data, updateData }) => {
 
         {items.length > 0 ? (
           items.map((item, index) => (
-            <div key={index} className="item-container">
+            <div key={`${formKey}-item-${index}`} className="item-container">
               <div className="item-header">
                 <h4>
-                  {itemSchema.title || "Item"} {index + 1}
+                  {itemSchema.title ? itemSchema.title.slice(0, -1) : "Item"}{" "}
+                  {index + 1}
                 </h4>
                 {items.length > 1 && (
                   <button
@@ -419,7 +426,7 @@ const ListForm = ({ schema, data, updateData }) => {
   };
 
   return (
-    <div className="form-section">
+    <div className="form-section" key={formKey}>
       <h2>{schema.title}</h2>
       <p className="form-description">{schema.description}</p>
 
