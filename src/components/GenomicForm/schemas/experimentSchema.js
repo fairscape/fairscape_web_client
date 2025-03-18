@@ -13,7 +13,6 @@ const experimentSchema = {
       items: {
         type: "object",
         required: [
-          "accession",
           "title",
           "study_ref",
           "sample_ref",
@@ -26,20 +25,10 @@ const experimentSchema = {
           "instrument_model",
         ],
         properties: {
-          accession: {
-            type: "string",
-            title: "Accession",
-            description: "Unique experiment identifier",
-          },
           title: {
             type: "string",
             title: "Title",
             description: "Experiment title",
-          },
-          study_ref: {
-            type: "string",
-            title: "Study Reference",
-            description: "Reference to the study this experiment belongs to",
           },
           sample_ref: {
             type: "string",
@@ -148,6 +137,16 @@ const experimentSchema = {
       },
     },
   },
+  // Define common fields that should be shared across all experiments
+  commonFields: [
+    "sample_ref",
+    "library_strategy",
+    "library_source",
+    "library_selection",
+    "library_layout",
+    "platform_type",
+    "instrument_model",
+  ],
 };
 
 export default experimentSchema;

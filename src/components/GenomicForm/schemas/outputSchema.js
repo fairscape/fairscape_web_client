@@ -12,13 +12,8 @@ const outputSchema = {
       minItems: 1,
       items: {
         type: "object",
-        required: ["accession", "title", "experiment_ref", "size", "published"],
+        required: ["title", "experiment_ref", "published"],
         properties: {
-          accession: {
-            type: "string",
-            title: "Accession",
-            description: "Unique output identifier",
-          },
           title: {
             type: "string",
             title: "Title",
@@ -29,16 +24,6 @@ const outputSchema = {
             title: "Experiment Reference",
             description:
               "Reference to the experiment that produced this output",
-          },
-          total_spots: {
-            type: "string",
-            title: "Total Spots",
-            description: "Total number of spots",
-          },
-          total_bases: {
-            type: "string",
-            title: "Total Bases",
-            description: "Total number of bases",
           },
           size: {
             type: "string",
@@ -89,45 +74,12 @@ const outputSchema = {
               },
             },
           },
-          nreads: {
-            type: "string",
-            title: "Number of Reads",
-            description: "Total number of reads",
-          },
-          nspots: {
-            type: "string",
-            title: "Number of Spots",
-            description: "Total number of spots",
-          },
-          a_count: {
-            type: "string",
-            title: "A Count",
-            description: "Count of adenine nucleotides",
-          },
-          c_count: {
-            type: "string",
-            title: "C Count",
-            description: "Count of cytosine nucleotides",
-          },
-          g_count: {
-            type: "string",
-            title: "G Count",
-            description: "Count of guanine nucleotides",
-          },
-          t_count: {
-            type: "string",
-            title: "T Count",
-            description: "Count of thymine nucleotides",
-          },
-          n_count: {
-            type: "string",
-            title: "N Count",
-            description: "Count of unknown nucleotides",
-          },
         },
       },
     },
   },
+  // Define common fields that should be shared across all outputs
+  commonFields: ["experiment_ref", "published"],
 };
 
 export default outputSchema;
