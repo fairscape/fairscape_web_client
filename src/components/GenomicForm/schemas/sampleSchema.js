@@ -13,10 +13,10 @@ const sampleSchema = {
       items: {
         type: "object",
         required: [
+          "sample_name",
           "cell_line_of_sample",
           "scientific_name",
           "taxon_id",
-          "sample_name",
         ],
         properties: {
           sample_name: {
@@ -41,12 +41,46 @@ const sampleSchema = {
             description: "NCBI taxonomy identifier",
             default: "9606",
           },
+          treatment: {
+            type: "string",
+            title: "Treatment",
+            description: "Treatment applied to the sample (if any)",
+          },
+          tissue_type: {
+            type: "string",
+            title: "Tissue Type",
+            description: "Type of tissue if applicable",
+          },
+          collection_date: {
+            type: "string",
+            title: "Collection Date",
+            description: "Date when the sample was collected (YYYY-MM-DD)",
+          },
+          sample_type: {
+            type: "string",
+            title: "Sample Type",
+            description: "Type of biological sample",
+            enum: [
+              "Cell line",
+              "Primary cells",
+              "Tissue",
+              "Organoid",
+              "Lysate",
+              "Plasma/Serum",
+              "Whole blood",
+              "Other",
+            ],
+          },
         },
       },
     },
   },
   // Define common fields that should be shared across all samples
-  commonFields: ["scientific_name", "taxon_id", "cell_line_of_sample"],
+  commonFields: [
+    "scientific_name",
+    "taxon_id",
+    "cell_line_of_sample",
+    "sample_type",
+  ],
 };
-
 export default sampleSchema;
