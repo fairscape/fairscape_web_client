@@ -4,7 +4,8 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Layout from "./components/Layout";
 import MetadataPage from "./pages/MetadataPage";
-import UploadOptionsPage from "./pages/UploadOptionsPage";
+import SearchPage from "./pages/SearchPage";
+import CompareSearchPage from "./pages/CompareSearchPage";
 import UploadPage from "./pages/UploadPage";
 import HomePage from "./pages/HomePage";
 import MyDashboard from "./pages/MyDashboard";
@@ -30,6 +31,8 @@ ReactDOM.render(
             <Route path="/genomic" element={<GenomicDataPage />} />
             <Route path="/publish/*" element={<PublishPage />} />
             <Route path="/:type/*" element={<MetadataPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/compare" element={<CompareSearchPage />} />
           </Routes>
         </Layout>
       </Router>

@@ -28,7 +28,6 @@ export const ComputationProperties = [
   { name: "Persistent Identifier", key: "@id" },
   { name: "Description", key: "description" },
   { name: "Author", key: "author" },
-  { name: "Owner", key: "owner" },
   { name: "Used Datasets", key: "usedDataset" },
   { name: "Used Software", key: "usedSoftware" },
   { name: "Keywords", key: "keywords" },

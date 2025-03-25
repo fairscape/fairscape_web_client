@@ -34,6 +34,9 @@ export const useMetadataOperations = ({
       }
       return type.toLowerCase();
     }
+    if (Array.isArray(type) && type.length > 1) {
+      return extractRawType(type[1]);
+    }
     if (Array.isArray(type) && type.length > 0) {
       return extractRawType(type[0]);
     }
