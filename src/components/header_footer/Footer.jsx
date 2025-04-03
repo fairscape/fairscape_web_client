@@ -19,6 +19,10 @@ const Footer = () => {
         <div className="copyright">
           <span className="highlight">Copyright © University of Virginia</span>
         </div>
+        <div className="admin-notice">
+          This repository is under review for potential modification in
+          compliance with Administration directives.
+        </div>
       </div>
     </footer>
   );

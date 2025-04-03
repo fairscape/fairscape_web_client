@@ -1,0 +1,224 @@
+.subcrateSummary {
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  border: 1px solid #eee;
+}
+
+.subcrateError {
+  background-color: #fff0f0;
+  border: 1px solid #ffcccb;
+  color: #d8000c;
+}
+
+.subcrateTitle {
+  border-bottom: 2px solid #2c3e50;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+  font-size: 18px;
+  margin-top: 0;
+}
+
+.subcrateMetadata {
+  margin-bottom: 15px;
+}
+
+.metadataItem {
+  margin-bottom: 6px;
+  display: flex;
+  font-size: 0.9em;
+}
+
+.metadataLabel {
+  font-weight: bold;
+  color: #2c3e50;
+  margin-right: 10px;
+  width: 150px; /* Fixed width for labels */
+  flex-shrink: 0;
+}
+
+.metadataValue {
+  flex-grow: 1;
+  word-break: break-word; /* Prevent long IDs/URLs from breaking layout */
+}
+
+.metadataValue a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.metadataValue a:hover {
+  text-decoration: underline;
+}
+
+.compactList {
+  margin: 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.compactList li {
+  margin-bottom: 4px;
+}
+
+.subcrateComposition h4 {
+  font-size: 16px;
+  color: #2c3e50;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.compactGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsive grid */
+  gap: 15px; /* Increased gap */
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.summaryCard {
+  border: 1px solid #eaeaea;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  background-color: #fff; /* White background for cards */
+  display: flex;
+  flex-direction: column; /* Stack header and content */
+}
+
+.cardHeader {
+  background-color: #f0f4f8; /* Lighter blue header */
+  padding: 10px 15px;
+  border-bottom: 1px solid #eaeaea;
+  display: flex;
+  align-items: center;
+}
+
+.cardIcon {
+  font-size: 18px; /* Slightly smaller icon */
+  margin-right: 8px;
+}
+
+.cardTitle {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 0.95em; /* Slightly smaller title */
+}
+
+.cardContent {
+  padding: 15px;
+  flex-grow: 1; /* Allow content to fill space */
+}
+
+.statRow {
+  margin-bottom: 6px; /* Slightly more space */
+  display: flex;
+  font-size: 0.9em; /* Smaller font for details */
+  line-height: 1.4;
+}
+
+.statRow:last-child {
+  margin-bottom: 0;
+}
+
+.statLabel {
+  font-weight: 600; /* Semi-bold label */
+  color: #555;
+  min-width: 80px; /* Ensure label alignment */
+  flex-shrink: 0;
+  margin-right: 5px;
+}
+
+.statValue {
+  color: #333;
+  flex-grow: 1;
+  word-break: break-word;
+}
+
+.indent {
+  margin-left: 15px;
+  margin-top: 4px; /* Add space before indented rows */
+  margin-bottom: 8px;
+  border-left: 2px solid #e0e0e0; /* Indentation line */
+  padding-left: 10px;
+}
+
+.small {
+  font-size: 0.9em;
+  color: #666;
+}
+
+.viewFullLink {
+  margin-top: 15px;
+  text-align: right;
+}
+
+.viewFullButton { /* Style as a button */
+  display: inline-block;
+  padding: 8px 15px;
+  background-color: #2c3e50;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.viewFullButton:hover {
+  background-color: #1a252f;
+  color: white; /* Ensure text remains white on hover */
+}
+
+@media (max-width: 768px) {
+   .compactGrid {
+       grid-template-columns: 1fr; /* Stack cards on smaller screens */
+   }
+   .metadataItem {
+       flex-direction: column; /* Stack label/value */
+   }
+   .metadataLabel {
+       width: 100%;
+       margin-bottom: 2px;
+   }
+}
+
+@media print {
+  .subcrateSummary {
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: none;
+    border: 1px solid #ccc;
+    page-break-inside: avoid;
+  }
+  .subcrateTitle {
+    font-size: 12pt;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+  }
+  .metadataItem, .statRow {
+    font-size: 9pt;
+  }
+  .compactGrid {
+      grid-template-columns: 1fr; /* Always stack in print */
+      gap: 10px;
+  }
+  .summaryCard {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+  .cardHeader {
+     background-color: #f8f9fa; /* Keep light background */
+     padding: 8px 10px;
+  }
+  .cardContent {
+      padding: 10px;
+  }
+  .viewFullLink {
+      display: none; /* Hide link in print */
+  }
+}

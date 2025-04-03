@@ -1,0 +1,69 @@
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-family: "Helvetica", "Arial", sans-serif;
+  color: #333;
+  line-height: 1.5;
+}
+
+.header {
+  margin-bottom: 20px;
+  border-bottom: 2px solid #2c3e50;
+  padding-bottom: 15px;
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.header h1 {
+  font-size: 24px;
+  margin-bottom: 5px;
+  color: #2c3e50;
+}
+
+.header div {
+  color: #555;
+  font-size: 0.95em;
+}
+
+.sectionHeader {
+  margin: 25px 0 15px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+  color: #2c3e50;
+}
+
+.sectionHeader h2 {
+  font-size: 20px;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+@media print {
+  .container {
+    box-shadow: none;
+    max-width: 100%;
+    padding: 10px;
+    border: none;
+  }
+  .header {
+    background-color: white;
+    border-bottom: 2px solid #2c3e50;
+    box-shadow: none;
+    padding: 10px 0;
+    border-radius: 0;
+  }
+  .header h1 {
+    font-size: 18pt;
+  }
+  .sectionHeader {
+    margin: 20px 0 10px 0;
+    border-bottom: 1px solid #ccc;
+  }
+  .sectionHeader h2 {
+    font-size: 14pt;
+  }
+}

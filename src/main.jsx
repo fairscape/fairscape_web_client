@@ -16,6 +16,7 @@ import "./global.css";
 import "./components/header_footer/Header.css";
 import Login from "./components/Login/LoginComponent";
 import GenomicDataPage from "./pages/GenomicDataPage";
+import DatasheetPage from "./pages/DatasheetPage";
 
 ReactDOM.render(
   <React.StrictMode>
@@ -33,6 +34,7 @@ ReactDOM.render(
             <Route path="/:type/*" element={<MetadataPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/compare" element={<CompareSearchPage />} />
+            <Route path="/datasheet" element={<DatasheetPage />} />
           </Routes>
         </Layout>
       </Router>

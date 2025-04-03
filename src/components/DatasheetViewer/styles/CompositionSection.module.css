@@ -1,0 +1,17 @@
+.subcratesContainer {
+  margin-top: 30px;
+}
+
+.subcratesContainer p {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  text-align: center;
+  color: #555;
+}
+
+@media print {
+  .subcratesContainer {
+    margin-top: 20px;
+  }
+}

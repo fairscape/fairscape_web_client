@@ -1,0 +1,98 @@
+.sectionHeader {
+  margin: 25px 0 15px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+  color: #2c3e50;
+}
+
+.sectionHeader h2 {
+  font-size: 20px;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.distributionSection {
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.distributionItem {
+  margin-bottom: 12px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  font-size: 0.95em;
+  display: flex; /* Align label and value side-by-side */
+}
+
+.distributionItem:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.distributionLabel {
+  font-weight: bold;
+  color: #2c3e50;
+  width: 180px; /* Fixed width for labels */
+  flex-shrink: 0;
+  padding-right: 10px;
+}
+
+.distributionValue {
+  flex-grow: 1;
+}
+
+.distributionValue a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.distributionValue a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .distributionItem {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+  }
+  .distributionLabel {
+    width: 100%;
+    margin-bottom: 3px;
+  }
+  .distributionValue {
+    width: 100%;
+  }
+}
+
+@media print {
+  .sectionHeader {
+    margin: 20px 0 10px 0;
+    border-bottom: 1px solid #ccc;
+  }
+  .sectionHeader h2 {
+    font-size: 14pt;
+  }
+  .distributionSection {
+    box-shadow: none;
+    border: 1px solid #eee;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: white;
+    page-break-inside: avoid;
+  }
+  .distributionItem {
+    font-size: 10pt;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px dotted #eee;
+  }
+  .distributionLabel {
+    width: 150px; /* Adjust for print if needed */
+  }
+}
