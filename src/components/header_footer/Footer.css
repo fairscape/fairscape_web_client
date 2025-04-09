@@ -10,6 +10,10 @@
   );
   padding: 20px 0;
   margin-top: auto;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  z-index: 100;
 }
 
 .footer-content {
@@ -49,7 +53,6 @@
 /* Admin notice styling */
 .admin-notice {
   color: white;
-  width: 100%;
   text-align: center;
   margin-top: 10px;
   font-size: 0.9rem;
