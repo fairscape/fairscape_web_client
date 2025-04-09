@@ -1,0 +1,79 @@
+{
+  "@type": "evi:EvidenceGraph",
+  "@id": "ark:59852/evidence-graph-dataset-molecule-data-alpha-chip-2-channel-8",
+  "owner": "justin",
+  "description": "Evidence Graph for ark:59852/dataset-molecule-data-alpha-chip-2-channel-8",
+  "name": "Evidence Graph for ark:59852/dataset-molecule-data-alpha-chip-2-channel-8",
+  "@graph": {
+    "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-8",
+    "@type": "https://w3id.org/EVI#Dataset",
+    "name": "Molecule Data-ALPHA-Chip-2-Channel-8",
+    "description": "Molecule h5 data for ALPHA-Chip-2-Channel-8",
+    "generatedBy": {
+      "@id": "ark:59852/computation-cellranger-count-alpha-chip-2-channel-8",
+      "@type": "https://w3id.org/EVI#Computation",
+      "name": "Cellranger Count ALPHA-Chip-2-Channel-8",
+      "description": "Cellranger count processing for ALPHA-Chip-2-Channel-8",
+      "usedDataset": [
+        {
+          "@id": "ark:59852/dataset-sra-data-kolf2-alpha-crispr-chip-2-channel-8-DcuZHvgP3h2",
+          "@type": "https://w3id.org/EVI#Dataset",
+          "name": "SRA Data-KOLF2-ALPHA-CRISPR-Chip-2-Channel-8",
+          "description": "Perturb Seq of KOLF2.1J: CRISPR Library; Sample Name: KOLF2-ALPHA-CRISPR-Chip-2-Channel-8; Channel-8. KOLF2 CRISPR library from ALPHA batch, Chip-2 Channel-8",
+          "generatedBy": {
+            "@id": "ark:59852/computation-sra-experiment-kolf2-alpha-crispr-chip-2-channel-8-Ewf1WjAhR",
+            "@type": "https://w3id.org/EVI#Experiment",
+            "name": "SRA Experiment KOLF2-ALPHA-CRISPR-Chip-2-Channel-8",
+            "description": "RNA-Seq experiment for Perturb Seq of KOLF2.1J: CRISPR Library; Sample Name: KOLF2-ALPHA-CRISPR-Chip-2-Channel-8; Channel-8",
+            "usedSample": [
+              {
+                "@id": "https://dataview.ncbi.nlm.nih.gov/object/53424721",
+                "@type": "https://w3id.org/EVI#Sample",
+                "name": "Sample-KOLF2-ALPHA-CRISPR-Chip-2-Channel-8",
+                "description": "Sample Name: KOLF2-ALPHA-CRISPR-Chip-2-Channel-8; Channel-8. KOLF2 CRISPR library from ALPHA batch, Chip-2 Channel-8"
+              }
+            ],
+            "usedInstrument": {
+              "@id": "https://www.illumina.com/systems/sequencing-platforms/novaseq-x-plus.html",
+              "@type": "https://w3id.org/EVI#Instrument",
+              "name": "Illumina NovaSeq X Plus",
+              "description": "Illumina NovaSeq X Plus sequencing platform"
+            }
+          }
+        },
+        {
+          "@id": "ark:59852/dataset-sra-data-kolf2-alpha-gex-chip-2-channel-8-IoleAa0vdN",
+          "@type": "https://w3id.org/EVI#Dataset",
+          "name": "SRA Data-KOLF2-ALPHA-GEX-Chip-2-Channel-8",
+          "description": "Perturb Seq of KOLF2.1J: GEX Library; Sample Name: KOLF2-ALPHA-GEX-Chip-2-Channel-8; Channel-8. KOLF2 GEX library from ALPHA batch, Chip-2 Channel-8",
+          "generatedBy": {
+            "@id": "ark:59852/computation-sra-experiment-kolf2-alpha-gex-chip-2-channel-8-1OJGf497sqU",
+            "@type": "https://w3id.org/EVI#Experiment",
+            "name": "SRA Experiment KOLF2-ALPHA-GEX-Chip-2-Channel-8",
+            "description": "RNA-Seq experiment for Perturb Seq of KOLF2.1J: GEX Library; Sample Name: KOLF2-ALPHA-GEX-Chip-2-Channel-8; Channel-8",
+            "usedSample": [
+              {
+                "@id": "https://dataview.ncbi.nlm.nih.gov/object/53424722",
+                "@type": "https://w3id.org/EVI#Sample",
+                "name": "Sample-KOLF2-ALPHA-CRISPR-Chip-2-Channel-9",
+                "description": "Sample Name: KOLF2-ALPHA-CRISPR-Chip-2-Channel-9; Channel-8. KOLF2 CRISPR library from ALPHA batch, Chip-2 Channel-8"
+              }
+            ],
+            "usedInstrument": {
+              "@id": "https://www.illumina.com/systems/sequencing-platforms/novaseq-x-plus.html",
+              "@type": "https://w3id.org/EVI#Instrument",
+              "name": "Illumina NovaSeq X Plus",
+              "description": "Illumina NovaSeq X Plus sequencing platform"
+            }
+          }
+        }
+      ],
+      "usedSoftware": {
+        "@id": "https://doi.org/doi:10.1038/ncomms14049",
+        "@type": "https://w3id.org/EVI#Software",
+        "name": "Cellranger Count",
+        "description": "Cellranger Count software for processing single-cell RNA-seq data"
+      }
+    }
+  }
+}

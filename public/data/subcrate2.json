@@ -1,0 +1,32 @@
+{
+  "@context": "https://w3id.org/ro/crate/1.1/context",
+  "@graph": [
+    {
+      "@id": "ro-crate-metadata.json",
+      "@type": "CreativeWork",
+      "about": { "@id": "./" },
+      "conformsTo": { "@id": "https://w3id.org/ro/crate/1.1" }
+    },
+    {
+      "@id": "./",
+      "@type": "Dataset",
+      "name": "Sub-Crate: Processed Results",
+      "description": "Results after processing raw data.",
+      "datePublished": "2024-07-26",
+      "keywords": ["processed data", "analysis"],
+      "hasPart": [{ "@id": "result.png" }],
+      "wasGeneratedBy": { "@id": "computation1" }
+    },
+    {
+      "@id": "result.png",
+      "@type": "File",
+      "name": "result.png",
+      "encodingFormat": "image/png"
+    },
+    {
+      "@id": "computation1",
+      "@type": "ComputationalWorkflow",
+      "name": "Processing Workflow"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "@id": "ark:59852/dataset-kolf-pan-genome-aggregated-data-B9Fd0uujkz",
+  "name": "KOLF Pan Genome Aggregated Data",
+  "@type": "https://w3id.org/EVI#Dataset",
+  "additionalType": "Dataset",
+  "author": "Doctor Y; Dailamy A; Forget A; Lee YH; Chinn B; Khaliq H; Polacco B; Muralidharan, M; Pan E; Zhang Y; Sigaeva A; Hansen JN; Gao J; Parker JA; Obernier K; Clark T; Chen JY; Metallo C; Lundberg E; Idkeker T; Krogan N; Mali P",
+  "datePublished": "2024-12-18",
+  "version": "1.0",
+  "description": "Aggregated single-cell data in h5mu format",
+  "keywords": [
+    "AI",
+    "Artificial intelligence",
+    "Cell maps",
+    "CM4AI",
+    "CRISPR perturbation",
+    "IPSC",
+    "KOLF2.1J",
+    "Machine learning",
+    "Perturb-seq",
+    "scRNAseq",
+    "single-cell RNA sequencing"
+  ],
+  "associatedPublication": null,
+  "additionalDocumentation": null,
+  "format": "h5mu",
+  "evi:Schema": null,
+  "generatedBy": [
+    {
+      "@id": "ark:59852/computation-perturbation-cell-atlas-data-processing-Cmx85JtSguG"
+    }
+  ],
+  "derivedFrom": [],
+  "usedByComputation": [],
+  "contentUrl": "Embargoed"
+}

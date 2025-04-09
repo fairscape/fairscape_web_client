@@ -1,0 +1,32 @@
+{
+  "@context": "https://w3id.org/ro/crate/1.1/context",
+  "@graph": [
+    {
+      "@id": "ro-crate-metadata.json",
+      "@type": "CreativeWork",
+      "about": { "@id": "./" },
+      "conformsTo": { "@id": "https://w3id.org/ro/crate/1.1" }
+    },
+    {
+      "@id": "./",
+      "@type": "Dataset",
+      "name": "Sub-Crate: Raw Data",
+      "description": "Initial raw data collection.",
+      "datePublished": "2024-07-25",
+      "keywords": ["raw data", "omics"],
+      "hasPart": [{ "@id": "file1.csv" }, { "@id": "file2.txt" }]
+    },
+    {
+      "@id": "file1.csv",
+      "@type": "File",
+      "name": "file1.csv",
+      "contentSize": "1024"
+    },
+    {
+      "@id": "file2.txt",
+      "@type": "File",
+      "name": "file2.txt",
+      "contentSize": "512"
+    }
+  ]
+}

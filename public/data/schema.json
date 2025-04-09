@@ -1,0 +1,79 @@
+{
+  "@id": "ark:59852/schema-protospacer_calls-20250131-093344",
+  "@type": "EVI:Schema",
+  "name": "protospacer_calls",
+  "@context": {
+    "@vocab": "https://schema.org/",
+    "evi": "https://w3id.org/EVI#"
+  },
+  "url": null,
+  "description": "Per-cell protospacer calls data",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "keywords": [
+    "AI",
+    "Artificial intelligence",
+    "Cell maps",
+    "CM4AI",
+    "CRISPR perturbation",
+    "IPSC",
+    "KOLF2.1J",
+    "Machine learning",
+    "Perturb-seq",
+    "scRNAseq",
+    "single-cell RNA sequencing"
+  ],
+  "published": true,
+  "properties": {
+    "cell_barcode": {
+      "description": "Unique identifier barcode for individual cells",
+      "index": 0,
+      "type": "string",
+      "value-url": null,
+      "pattern": null,
+      "items": null,
+      "min-items": null,
+      "max-items": null,
+      "unique-items": null
+    },
+    "num_features": {
+      "description": "Number of distinct features detected in this cell",
+      "index": 1,
+      "type": "integer",
+      "value-url": null,
+      "pattern": null,
+      "items": null,
+      "min-items": null,
+      "max-items": null,
+      "unique-items": null
+    },
+    "feature_call": {
+      "description": "Called protospacer sequence or feature ID for this cell",
+      "index": 2,
+      "type": "string",
+      "value-url": null,
+      "pattern": null,
+      "items": null,
+      "min-items": null,
+      "max-items": null,
+      "unique-items": null
+    },
+    "num_umis": {
+      "description": "Number of unique molecular identifiers (UMIs) supporting this feature call",
+      "index": 3,
+      "type": "string",
+      "value-url": null,
+      "pattern": null,
+      "items": null,
+      "min-items": null,
+      "max-items": null,
+      "unique-items": null
+    }
+  },
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["cell_barcode", "num_features", "feature_call", "num_umis"],
+  "separator": ",",
+  "header": true,
+  "examples": [],
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

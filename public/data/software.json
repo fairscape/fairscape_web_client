@@ -1,0 +1,28 @@
+{
+  "@id": "ark:59852/software-perturb-seq-heuristic-pipeline-uhBWMDz215T",
+  "name": "Perturb-seq Heuristic Pipeline",
+  "@type": "https://w3id.org/EVI#Software",
+  "additionalType": "Software",
+  "author": "Doctor Y; Dailamy A; Forget A; Lee YH; Chinn B; Khaliq H; Polacco B; Muralidharan, M; Pan E; Zhang Y; Sigaeva A; Hansen JN; Gao J; Parker JA; Obernier K; Clark T; Chen JY; Metallo C; Lundberg E; Idkeker T; Krogan N; Mali P",
+  "dateModified": "2024-12-18",
+  "version": "1.0",
+  "description": "Python script implementing the heuristic pipeline for Perturb-seq analysis",
+  "associatedPublication": null,
+  "additionalDocumentation": null,
+  "format": "py",
+  "usedByComputation": [],
+  "contentUrl": "Embargoed",
+  "keywords": [
+    "AI",
+    "Artificial intelligence",
+    "Cell maps",
+    "CM4AI",
+    "CRISPR perturbation",
+    "IPSC",
+    "KOLF2.1J",
+    "Machine learning",
+    "Perturb-seq",
+    "scRNAseq",
+    "single-cell RNA sequencing"
+  ]
+}

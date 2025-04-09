@@ -1,0 +1,313 @@
+{
+  "@id": "ark:59852/computation-perturbation-cell-atlas-data-processing-Cmx85JtSguG",
+  "name": "Perturbation Cell Atlas Data Processing",
+  "@type": "https://w3id.org/EVI#Computation",
+  "additionalType": "Computation",
+  "runBy": "Doctor Y; Dailamy A; Forget A; Lee YH; Chinn B; Khaliq H; Polacco B; Muralidharan, M; Pan E; Zhang Y; Sigaeva A; Hansen JN; Gao J; Parker JA; Obernier K; Clark T; Chen JY; Metallo C; Lundberg E; Idkeker T; Krogan N; Mali P",
+  "description": "Computation processing SRA data to generate the Perturbation Cell Atlas",
+  "dateCreated": "2024-12-18",
+  "associatedPublication": null,
+  "additionalDocumentation": null,
+  "command": "cellranger aggr --id $ID --csv $AGGREGATION_CSV --nosecondary",
+  "usedSoftware": [
+    {
+      "@id": "https://doi.org/doi:10.1038/ncomms14049"
+    }
+  ],
+  "usedDataset": [
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-1"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-2"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-3"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-4"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-5"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-6"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-7"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-8"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-9"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-10"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-11"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-12"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-13"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-14"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-15"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-1-channel-16"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-1"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-2"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-4"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-5"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-6"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-7"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-8"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-9"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-10"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-11"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-12"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-13"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-15"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-alpha-chip-2-channel-16"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-2"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-3"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-4"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-5"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-6"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-7"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-8"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-9"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-10"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-11"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-12"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-13"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-14"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-15"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-1-channel-16"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-1"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-2"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-3"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-4"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-5"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-6"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-7"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-8"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-9"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-10"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-11"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-12"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-13"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-14"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-15"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-beta-chip-2-channel-16"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-1"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-2"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-3"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-4"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-5"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-6"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-7"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-8"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-9"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-10"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-11"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-12"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-13"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-14"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-15"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-1-channel-16"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-1"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-2"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-3"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-4"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-5"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-6"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-9"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-10"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-11"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-12"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-13"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-15"
+    },
+    {
+      "@id": "ark:59852/dataset-molecule-data-gamma-chip-2-channel-16"
+    }
+  ],
+  "generated": [
+    {
+      "@id": "ark:59852/dataset-kolf-pan-genome-aggregated-data-B9Fd0uujkz"
+    },
+    {
+      "@id": "ark:59852/dataset-protospacer-calls-per-cell-B9Fd0u2jQx"
+    },
+    {
+      "@id": "ark:59852/dataset-aggregation-data-fULJ7Eh9Al"
+    }
+  ],
+  "keywords": [
+    "AI",
+    "Artificial intelligence",
+    "Cell maps",
+    "CM4AI",
+    "CRISPR perturbation",
+    "IPSC",
+    "KOLF2.1J",
+    "Machine learning",
+    "Perturb-seq",
+    "scRNAseq",
+    "single-cell RNA sequencing"
+  ]
+}
