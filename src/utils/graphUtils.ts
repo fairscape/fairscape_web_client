@@ -57,6 +57,8 @@ export function getDisplayableProperties(
     "generatedBy",
     "usedDataset",
     "usedSoftware",
+    "usedSample",
+    "usedInstrument",
     "_sourceData",
     "_remainingDatasets",
     "_expandedCount",
@@ -99,8 +101,23 @@ export function createEvidenceNode(
     (Array.isArray(entityData.usedDataset)
       ? entityData.usedDataset.length > 0
       : true);
+  const hasUsedSample =
+    entityData.usedSample &&
+    (Array.isArray(entityData.usedSample)
+      ? entityData.usedSample.length > 0
+      : true);
+  const hasUsedInstrument =
+    entityData.usedInstrument &&
+    (Array.isArray(entityData.usedInstrument)
+      ? entityData.usedInstrument.length > 0
+      : true);
 
-  let isExpandable = hasGeneratedBy || hasUsedSoftware || hasUsedDataset;
+  let isExpandable =
+    hasGeneratedBy ||
+    hasUsedSoftware ||
+    hasUsedDataset ||
+    hasUsedSample ||
+    hasUsedInstrument;
 
   const propertyKeys = Object.keys(entityData).filter(
     (k) =>
@@ -110,7 +127,9 @@ export function createEvidenceNode(
       k !== "description" &&
       k !== "generatedBy" &&
       k !== "usedDataset" &&
-      k !== "usedSoftware"
+      k !== "usedSoftware" &&
+      k !== "usedSample" &&
+      k !== "usedInstrument"
   );
 
   if (
@@ -118,7 +137,9 @@ export function createEvidenceNode(
     propertyKeys.length === 0 &&
     !hasGeneratedBy &&
     !hasUsedDataset &&
-    !hasUsedSoftware
+    !hasUsedSoftware &&
+    !hasUsedSample &&
+    !hasUsedInstrument
   ) {
     isExpandable = false;
   }
@@ -266,30 +287,44 @@ export function expandEvidenceNode(
   }
 
   // Handle Computation -> Software relationship
-  if (nodeType === "Computation" && sourceData.usedSoftware) {
-    const softwareInputObject =
-      typeof sourceData.usedSoftware === "string"
-        ? { "@id": sourceData.usedSoftware, "@type": "evi:Software" }
-        : sourceData.usedSoftware;
+  if (
+    (nodeType === "Computation" || nodeType === "Experiment") &&
+    sourceData.usedSoftware
+  ) {
+    const softwareItems = Array.isArray(sourceData.usedSoftware)
+      ? sourceData.usedSoftware
+      : [sourceData.usedSoftware];
 
-    const softwareNode = createEvidenceNode(softwareInputObject);
-    if (softwareNode) {
-      if (!nodeExists(softwareNode.id)) {
-        result.newNodes.push(softwareNode);
+    softwareItems.forEach((software) => {
+      if (!software) return;
+
+      const softwareObject =
+        typeof software === "string"
+          ? { "@id": software, "@type": "evi:Software" }
+          : software;
+
+      const softwareNode = createEvidenceNode(softwareObject);
+      if (softwareNode) {
+        if (!nodeExists(softwareNode.id)) {
+          result.newNodes.push(softwareNode);
+        }
+        result.newEdges.push({
+          id: `${nodeId}_uses_sw_${softwareNode.id}`,
+          source: nodeId,
+          target: softwareNode.id,
+          type: "smoothstep",
+          label: "used software",
+          animated: false,
+        });
       }
-      result.newEdges.push({
-        id: `${nodeId}_uses_sw_${softwareNode.id}`,
-        source: nodeId,
-        target: softwareNode.id,
-        type: "smoothstep",
-        label: "used software",
-        animated: false,
-      });
-    }
+    });
   }
 
   // Handle Computation -> Dataset relationship
-  if (nodeType === "Computation" && sourceData.usedDataset) {
+  if (
+    (nodeType === "Computation" || nodeType === "Experiment") &&
+    sourceData.usedDataset
+  ) {
     const datasets = Array.isArray(sourceData.usedDataset)
       ? sourceData.usedDataset
       : [sourceData.usedDataset];
@@ -336,6 +371,74 @@ export function expandEvidenceNode(
         });
       }
     }
+  }
+
+  // Handle Computation/Experiment -> Sample relationship
+  if (
+    (nodeType === "Computation" || nodeType === "Experiment") &&
+    sourceData.usedSample
+  ) {
+    const samples = Array.isArray(sourceData.usedSample)
+      ? sourceData.usedSample
+      : [sourceData.usedSample];
+
+    samples.forEach((sample) => {
+      if (!sample) return;
+
+      const sampleObject =
+        typeof sample === "string"
+          ? { "@id": sample, "@type": "evi:Sample" }
+          : sample;
+
+      const sampleNode = createEvidenceNode(sampleObject);
+      if (sampleNode) {
+        if (!nodeExists(sampleNode.id)) {
+          result.newNodes.push(sampleNode);
+        }
+        result.newEdges.push({
+          id: `${nodeId}_uses_sample_${sampleNode.id}`,
+          source: nodeId,
+          target: sampleNode.id,
+          type: "smoothstep",
+          label: "used sample",
+          animated: false,
+        });
+      }
+    });
+  }
+
+  // Handle Computation/Experiment -> Instrument relationship
+  if (
+    (nodeType === "Computation" || nodeType === "Experiment") &&
+    sourceData.usedInstrument
+  ) {
+    const instruments = Array.isArray(sourceData.usedInstrument)
+      ? sourceData.usedInstrument
+      : [sourceData.usedInstrument];
+
+    instruments.forEach((instrument) => {
+      if (!instrument) return;
+
+      const instrumentObject =
+        typeof instrument === "string"
+          ? { "@id": instrument, "@type": "evi:Instrument" }
+          : instrument;
+
+      const instrumentNode = createEvidenceNode(instrumentObject);
+      if (instrumentNode) {
+        if (!nodeExists(instrumentNode.id)) {
+          result.newNodes.push(instrumentNode);
+        }
+        result.newEdges.push({
+          id: `${nodeId}_uses_instrument_${instrumentNode.id}`,
+          source: nodeId,
+          target: instrumentNode.id,
+          type: "smoothstep",
+          label: "used instrument",
+          animated: false,
+        });
+      }
+    });
   }
 
   return result;

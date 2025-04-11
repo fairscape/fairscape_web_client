@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
 import { format, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
 import axios from "axios";
+
+// Import AuthContext
+import { AuthContext } from "../../context/AuthContext";
 
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
@@ -169,6 +172,16 @@ const DownloadButton = styled.button`
   }
 `;
 
+// Error message component
+const ErrorMessage = styled.div`
+  padding: ${({ theme }) => theme.spacing.md};
+  background-color: #fff3f3;
+  border: 1px solid #ffcaca;
+  border-radius: ${({ theme }) => theme.borderRadius};
+  color: #d8000c;
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+`;
+
 interface RoCrate {
   "@id": string;
   name: string;
@@ -181,43 +194,48 @@ interface RoCrate {
 const Dashboard: React.FC = () => {
   const [rocrates, setRocrates] = useState<RoCrate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState({
     key: "uploadDate",
     direction: "desc",
   });
 
+  // Get authentication context
+  const { isLoggedIn } = useContext(AuthContext);
+
   useEffect(() => {
     const fetchRocrates = async () => {
       setLoading(true);
+      setError(null);
+
       try {
-        // Comment out the API call but keep it for future reference
-        /*
-        const token = localStorage.getItem("token");
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await fetch(`${API_URL}/rocrate`, {
-          headers,
-        });
+        let response;
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // If logged in, make the real API call
+        if (isLoggedIn) {
+          const token = localStorage.getItem("token");
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+          try {
+            response = await axios.get(`${API_URL}/rocrate`, { headers });
+            setRocrates(response.data.rocrates || []);
+          } catch (err: any) {
+            console.error("Error fetching from API:", err);
+            throw new Error(
+              err.response?.data?.message || "Failed to fetch data from API"
+            );
+          }
         }
-
-        const data = await response.json();
-        setRocrates(data.rocrates);
-        */
-
-        // Instead, read from local JSON file
-        const response = await axios.get("/data/dashboard.json");
-        setRocrates(response.data.rocrates);
-      } catch (error) {
-        console.error("Error fetching ROCrates:", error);
+      } catch (err: any) {
+        setError(err.message || "Failed to load data");
+        console.error("Error fetching ROCrates:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRocrates();
-  }, []);
+  }, [isLoggedIn]);
 
   const extractArkIdentifier = (url: string) => {
     const match = url.match(/(ark:.+)/);
@@ -265,48 +283,10 @@ const Dashboard: React.FC = () => {
     return format(date, "yyyy-MM-dd HH:mm:ss");
   };
 
-  const handleDownload = async (downloadUrl: string) => {
-    try {
-      // Comment out the API call but keep it for future reference
-      /*
-      const token = localStorage.getItem("token");
-      const response = await fetch(downloadUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.setAttribute("download", "rocrate.zip");
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-      */
-
-      // For now, just log the download attempt
-      console.log("Download requested for:", downloadUrl);
-      alert(
-        "Download functionality is mocked. Would download from: " + downloadUrl
-      );
-    } catch (error) {
-      console.error("Download failed:", error);
-      alert(
-        `Download failed. Please try again. Error: ${(error as Error).message}`
-      );
-    }
-  };
-
   return (
     <DashboardContainer>
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+
       {loading ? (
         <LoadingContainer>
           <Spinner />
@@ -338,40 +318,49 @@ const Dashboard: React.FC = () => {
               </tr>
             </TableHead>
             <tbody>
-              {sortedRocrates.map((rocrate) => (
-                <TableRow key={rocrate["@id"]}>
-                  <TableCell
-                    style={{
-                      maxWidth: "200px",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {rocrate.name}
-                  </TableCell>
-                  <DescriptionCell>
-                    <div title={rocrate.description}>{rocrate.description}</div>
-                  </DescriptionCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {formatDate(rocrate.uploadDate)}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {rocrate["@graph"]?.length || 0}
-                  </TableCell>
-                  <TableCell>
-                    <ActionButtonContainer>
-                      <ViewButton
-                        to={`/view/rocrate/${extractArkIdentifier(
-                          rocrate["@id"]
-                        )}`}
-                      >
-                        View Details
-                      </ViewButton>
-                    </ActionButtonContainer>
+              {sortedRocrates.length > 0 ? (
+                sortedRocrates.map((rocrate) => (
+                  <TableRow key={rocrate["@id"]}>
+                    <TableCell
+                      style={{
+                        maxWidth: "200px",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {rocrate.name}
+                    </TableCell>
+                    <DescriptionCell>
+                      <div title={rocrate.description}>
+                        {rocrate.description}
+                      </div>
+                    </DescriptionCell>
+                    <TableCell style={{ textAlign: "center" }}>
+                      {formatDate(rocrate.uploadDate)}
+                    </TableCell>
+                    <TableCell style={{ textAlign: "center" }}>
+                      {rocrate["@graph"]?.length || 0}
+                    </TableCell>
+                    <TableCell>
+                      <ActionButtonContainer>
+                        <ViewButton
+                          to={`/view/${extractArkIdentifier(rocrate["@id"])}`}
+                        >
+                          View Details
+                        </ViewButton>
+                      </ActionButtonContainer>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} style={{ textAlign: "center" }}>
+                    No ROCrates found.{" "}
+                    {!isLoggedIn && "Please log in to view your ROCrates."}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </tbody>
           </Table>
         </TableContainer>

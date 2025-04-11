@@ -1,9 +1,7 @@
-// src/components/MetadataDisplay/SubcrateCard.tsx
 import React from "react";
 import styled from "styled-components";
 import { SubcrateSummary } from "../../utils/metadataProcessing";
 import LoadingSpinner from "../common/LoadingSpinner";
-import MetadataField from "./MetadataField";
 
 interface SubcrateCardProps {
   subcrate: SubcrateSummary;
@@ -95,6 +93,9 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
   isLoading,
   error,
 }) => {
+  const feUrl =
+    import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
+
   if (error) {
     return (
       <SubcrateError>
@@ -122,7 +123,7 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
         <MetadataItem>
           <MetadataLabel>ROCrate ID:</MetadataLabel>
           <MetadataValue>
-            <a href={`https://fairscape.net/${subcrate.id}`}>{subcrate.id}</a>
+            <a href={`${feUrl}${subcrate.id}`}>{subcrate.id}</a>
           </MetadataValue>
         </MetadataItem>
 
@@ -208,10 +209,10 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
           )}
       </SubcrateMetadata>
 
-      {subcrate.previewUrl && (
+      {subcrate.id && (
         <ViewFullLink>
           <ViewFullLinkAnchor
-            href={subcrate.previewUrl}
+            href={`${feUrl}${subcrate.id}`}
             target="_blank"
             rel="noopener noreferrer"
           >

@@ -1,4 +1,3 @@
-// src/components/MetadataDisplay/OverviewSection.tsx
 import React from "react";
 import styled from "styled-components";
 import { OverviewData } from "../../utils/metadataProcessing";
@@ -45,7 +44,9 @@ interface OverviewSectionProps {
 }
 
 const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
-  // Filter out undefined/null values
+  console.log("Rendering OverviewSection with data:", overviewData);
+
+  // Only filter out undefined, null, and empty strings
   const fieldsToRender = Object.entries(overviewData)
     .filter(
       ([, value]) => value !== undefined && value !== null && value !== ""
@@ -53,6 +54,8 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
     .map(([key, value]) => {
       let label = key.replace(/_/g, " ").replace(/([A-Z])/g, " $1");
       label = label.charAt(0).toUpperCase() + label.slice(1);
+
+      // Custom label mappings
       if (key === "id_value") label = "ROCrate ID";
       if (key === "release_date") label = "Release Date";
       if (key === "license_value") label = "License";
@@ -62,23 +65,35 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
       if (key === "contact_email") label = "Contact Email";
       if (key === "human_subject") label = "Human Subject Data";
       if (key === "confidentiality_level") label = "Confidentiality Level";
+      if (key === "related_publications") label = "Related Publications";
+
       return { key, label, value };
     });
 
-  if (fieldsToRender.length === 0) return null;
+  console.log("Fields to render:", fieldsToRender);
 
+  // Always render the container even if we don't have many fields
   return (
     <SectionContainer>
       <SummarySection>
         <SectionTitle>Overview</SectionTitle>
-        {fieldsToRender.map(({ key, label, value }) => (
-          <SummaryRow key={key}>
-            <SummaryLabel>{label}</SummaryLabel>
-            <SummaryValue id={key.replace(/_/g, "-")}>
-              {React.createElement(MetadataField, { label: "", value: value })}
-            </SummaryValue>
+        {fieldsToRender.length > 0 ? (
+          fieldsToRender.map(({ key, label, value }) => (
+            <SummaryRow key={key}>
+              <SummaryLabel>{label}</SummaryLabel>
+              <SummaryValue id={key.replace(/_/g, "-")}>
+                {React.createElement(MetadataField, {
+                  label: "",
+                  value: value,
+                })}
+              </SummaryValue>
+            </SummaryRow>
+          ))
+        ) : (
+          <SummaryRow>
+            <SummaryValue>No overview data available</SummaryValue>
           </SummaryRow>
-        ))}
+        )}
       </SummarySection>
     </SectionContainer>
   );

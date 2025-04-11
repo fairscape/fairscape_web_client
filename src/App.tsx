@@ -31,11 +31,8 @@ function App() {
               <Route path="/search" element={<SearchPage />} />
               <Route path="/search/basic" element={<BasicSearchPage />} />
               <Route path="/compare" element={<CompareSearchPage />} />
-              <Route
-                path="/view/:viewType/:arkId?"
-                element={<MetadataDisplayPage />}
-              />
-              <Route path="/evidence/:arkId" element={<EvidenceGraphPage />} />
+              <Route path="/view/*" element={<MetadataDisplayPage />} />
+              <Route path="/evidence/*" element={<EvidenceGraphPage />} />
               <Route path="/create-release" element={<ReleaseFormPage />} />
               <Route
                 path="*"

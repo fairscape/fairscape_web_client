@@ -31,10 +31,10 @@ const TableCell = styled.td<{ isDescription?: boolean }>`
   ${({ isDescription }) =>
     isDescription &&
     `
-    max-width: 400px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   `}
 `;
 
@@ -53,6 +53,14 @@ const EmptyMessage = styled.p`
   padding: ${({ theme }) => theme.spacing.lg};
 `;
 
+const StyledLink = styled.a`
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 export interface EntityItem {
   name: string;
   description: string;
@@ -60,6 +68,7 @@ export interface EntityItem {
   date?: string;
   type?: string; // For 'other' types
   id?: string;
+  contentUrl?: string | string[];
 }
 
 interface EntityTableProps {
@@ -73,9 +82,28 @@ const EntityTable: React.FC<EntityTableProps> = ({
   headers,
   emptyMessage = "No items found.",
 }) => {
+  const feUrl =
+    import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
+
   if (items.length === 0) {
     return <EmptyMessage>{emptyMessage}</EmptyMessage>;
   }
+
+  const renderContentStatus = (item: EntityItem) => {
+    if (item.contentStatus === "Download" && item.contentUrl) {
+      const url = Array.isArray(item.contentUrl)
+        ? item.contentUrl[0]
+        : item.contentUrl;
+
+      return (
+        <StyledLink href={url} target="_blank" rel="noopener noreferrer">
+          Download
+        </StyledLink>
+      );
+    }
+
+    return item.contentStatus;
+  };
 
   return (
     <TableContainer>
@@ -90,11 +118,19 @@ const EntityTable: React.FC<EntityTableProps> = ({
         <tbody>
           {items.map((item, index) => (
             <TableRow key={index}>
-              <TableCell>{item.name}</TableCell>
+              <TableCell>
+                {item.id ? (
+                  <StyledLink href={`${feUrl}${item.id}`}>
+                    {item.name}
+                  </StyledLink>
+                ) : (
+                  item.name
+                )}
+              </TableCell>
               <TableCell isDescription={true} title={item.description}>
                 {item.description}
               </TableCell>
-              <TableCell>{item.contentStatus}</TableCell>
+              <TableCell>{renderContentStatus(item)}</TableCell>
               <TableCell>{item.date || item.type}</TableCell>
             </TableRow>
           ))}

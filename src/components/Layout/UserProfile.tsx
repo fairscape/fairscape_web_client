@@ -3,10 +3,9 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { AuthContext } from "../../context/AuthContext"; // Adjust path
+import { AuthContext } from "../../context/AuthContext";
 import { User } from "../../types"; // Adjust path
-// Import icons if needed (e.g., from lucide-react)
-// import { LogOut, Settings } from 'lucide-react';
+import { theme } from "../../styles/theme"; // Adjust path
 
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";

@@ -1,4 +1,3 @@
-// src/components/MetadataDisplay/ROCrateComponent.tsx
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { Metadata, RawGraphEntity } from "../../types";
@@ -42,7 +41,9 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
       // Process overview data
       if (metadata) {
-        setOverviewData(processOverview(metadata));
+        const overview = processOverview(metadata);
+        console.log("Overview data:", overview);
+        setOverviewData(overview);
         categorizeEntities(metadata["@graph"] as RawGraphEntity[]);
       }
 
@@ -58,24 +59,35 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   const categorizeEntities = (graph: RawGraphEntity[]) => {
     if (!graph || !Array.isArray(graph)) return;
 
-    const rootEntity = graph.find((entity) => {
-      // Find the metadata entity
-      const metadataEntity = graph.find(
-        (e) => e["@id"] === "ro-crate-metadata.json"
-      );
-      // Check if this entity is referenced by 'about' in metadata
-      return metadataEntity?.about?.["@id"] === entity["@id"];
-    });
+    // Find the metadata entity (usually has @id null or ro-crate-metadata.json)
+    const metadataEntity = graph.find(
+      (e) => e["@id"] === null || e["@id"] === "ro-crate-metadata.json"
+    );
 
-    if (!rootEntity) return;
+    if (!metadataEntity) {
+      console.error("Could not find metadata entity in RO-Crate");
+      return;
+    }
 
-    // Extract and categorize all entities except the root and metadata entities
+    // Get the root entity ID from the 'about' property of the metadata entity
+    const rootId = metadataEntity.about?.["@id"];
+
+    // Find the root entity using the ID from the metadata's 'about' property
+    const rootEntity = graph.find((entity) => entity["@id"] === rootId);
+
+    if (!rootEntity) {
+      console.error(`Could not find root entity with ID: ${rootId}`);
+      return;
+    }
+
+    console.log("Found root entity:", rootEntity);
+
+    // Extract and categorize all entities except the metadata entity and root entity
     const entities = graph.filter(
       (entity) =>
-        entity["@id"] !== rootEntity["@id"] &&
+        entity["@id"] !== null &&
         entity["@id"] !== "ro-crate-metadata.json" &&
-        // Only include entities that have a name or description
-        (entity.name || entity.description)
+        entity["@id"] !== rootId
     );
 
     const processedDatasets: EntityItem[] = [];
@@ -91,7 +103,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
         ? entity["@type"]
         : [entity["@type"]];
       const name =
-        entity.name || entity["@id"].split("/").pop() || entity["@id"];
+        entity.name || entity["@id"]?.split("/").pop() || entity["@id"];
       const description = entity.description || "";
       const date =
         entity.datePublished || entity.dateCreated || entity.dateModified || "";
@@ -141,6 +153,10 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
         processedOther.push(item);
       }
     });
+
+    console.log("Processed datasets:", processedDatasets);
+    console.log("Processed software:", processedSoftware);
+    console.log("Processed computations:", processedComputations);
 
     setDatasets(processedDatasets);
     setSoftware(processedSoftware);
@@ -194,6 +210,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       setActiveTab(tabs[0].id);
     }
 
+    console.log("Generated tabs:", tabs);
     return tabs;
   };
 

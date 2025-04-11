@@ -5,12 +5,25 @@ import { Metadata, RawGraphEntity } from "../types"; // Adjust path
 export const findRootEntity = (
   graph: RawGraphEntity[]
 ): RawGraphEntity | undefined => {
-  // Common ways to identify the root: has conformsTo, or is referenced by 'about' in metadata descriptor
+  // Find the metadata descriptor - could have @id null OR ro-crate-metadata.json
   const metadataDescriptor = graph.find(
-    (e) => e["@id"] === "ro-crate-metadata.json"
+    (e) => e["@id"] === "ro-crate-metadata.json" || e["@id"] === null
   );
+
+  // Get the root ID from the about property
   const rootId = metadataDescriptor?.about?.["@id"];
-  return graph.find((e) => e["@id"] === rootId);
+
+  if (rootId) {
+    // Find and return the root entity
+    return graph.find((e) => e["@id"] === rootId);
+  }
+
+  // Fallback: look for entity with type ROCrate
+  return graph.find(
+    (e) =>
+      Array.isArray(e["@type"]) &&
+      e["@type"].includes("https://w3id.org/EVI#ROCrate")
+  );
 };
 
 // Helper to get a potentially linked property's value or name
@@ -50,6 +63,9 @@ export interface OverviewData {
 export const processOverview = (metadata: Metadata): OverviewData => {
   const graph = (metadata["@graph"] as RawGraphEntity[]) || [];
   const root = findRootEntity(graph);
+
+  console.log("Processing overview, found root:", root);
+
   if (!root) return {} as OverviewData; // Return empty if no root
 
   // Resolve linked authors/publisher
@@ -121,7 +137,8 @@ export const processOverview = (metadata: Metadata): OverviewData => {
     }
   }
 
-  return {
+  // Return the processed overview data
+  const overviewData = {
     title: root.name || "Untitled",
     version: root.version || undefined,
     id_value: root["@id"] || "N/A",
@@ -142,7 +159,12 @@ export const processOverview = (metadata: Metadata): OverviewData => {
     completeness: completeness || undefined,
     related_publications: related_publications,
   };
+
+  console.log("Processed overview data:", overviewData);
+  return overviewData;
 };
+
+// Rest of the file remains the same...
 
 export interface UseCasesData {
   intended_uses?: string;
@@ -353,8 +375,7 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
   return { subcrates: subcrateRefs };
 };
 
-// --- NEW: Function to process details of a SINGLE sub-crate ---
-// This would be called AFTER fetching the sub-crate's specific metadata file
+// --- Function to process details of a SINGLE sub-crate ---
 export const processSingleSubcrateDetails = (
   subcrateMetadata: Metadata,
   basePath: string
@@ -534,12 +555,14 @@ export const determineReleaseType = (metadata: Metadata): string => {
   }
   // Other types
   else if (
+    jsonLdTypes.includes("https://w3id.org/EVI#Software") ||
     jsonLdTypes.includes("Software") ||
     jsonLdTypes.includes("SoftwareApplication") ||
     jsonLdTypes.includes("SoftwareSourceCode")
   ) {
     return "software";
   } else if (
+    jsonLdTypes.includes("https://w3id.org/EVI#Computation") ||
     jsonLdTypes.includes("Computation") ||
     jsonLdTypes.includes("ComputationalWorkflow") ||
     jsonLdTypes.includes("HowTo")

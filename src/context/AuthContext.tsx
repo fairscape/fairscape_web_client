@@ -3,7 +3,6 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  useContext,
   ReactNode,
 } from "react";
 import axios from "axios";
@@ -12,17 +11,21 @@ const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 const TOKEN_EXPIRY_HOURS = 24;
 
-// Define AuthContextType for TypeScript
-export interface AuthContextType {
+// Define the AuthContext type
+interface AuthContextType {
   isLoggedIn: boolean;
-  isInitialized: boolean;
+  token: string | null;
   login: (token: string) => void;
   logout: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
-);
+// Create context with a default value
+export const AuthContext = createContext<AuthContextType>({
+  isLoggedIn: false,
+  token: null,
+  login: () => {},
+  logout: () => {},
+});
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -31,23 +34,28 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
-  const validateToken = useCallback(async (token: string): Promise<boolean> => {
-    if (!token) return false;
-    try {
-      await axios.get(`${API_URL}/rocrate?limit=1`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return true;
-    } catch (error) {
-      console.error("Token validation error:", error);
-      return false;
-    }
-  }, []);
+  const validateToken = useCallback(
+    async (tokenValue: string): Promise<boolean> => {
+      if (!tokenValue) return false;
+      try {
+        await axios.get(`${API_URL}/rocrate`, {
+          headers: { Authorization: `Bearer ${tokenValue}` },
+        });
+        return true;
+      } catch (error) {
+        console.error("Token validation error:", error);
+        return false;
+      }
+    },
+    []
+  );
 
   const handleSessionExpired = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("tokenExpiry");
+    setToken(null);
     setIsLoggedIn(false);
     window.location.href = "/login";
   }, []);
@@ -63,12 +71,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     (expiryTime: Date) => {
       const now = new Date();
       const timeUntilExpiry = expiryTime.getTime() - now.getTime();
-
       if (timeUntilExpiry <= 0) {
         handleSessionExpired();
         return null;
       }
-
       return setTimeout(handleSessionExpired, timeUntilExpiry);
     },
     [handleSessionExpired]
@@ -76,11 +82,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("token");
+      const storedToken = localStorage.getItem("token");
       const storedExpiry = localStorage.getItem("tokenExpiry");
 
-      if (!token || !storedExpiry) {
+      if (!storedToken || !storedExpiry) {
         setIsLoggedIn(false);
+        setToken(null);
         setIsInitialized(true);
         return;
       }
@@ -92,13 +99,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      const isValid = await validateToken(token);
+      const isValid = await validateToken(storedToken);
       if (!isValid) {
         handleSessionExpired();
         setIsInitialized(true);
         return;
       }
 
+      setToken(storedToken);
       setIsLoggedIn(true);
       const timeoutId = setupExpiryTimeout(expiryTime);
       setIsInitialized(true);
@@ -113,6 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "token" && !e.newValue) {
         setIsLoggedIn(false);
+        setToken(null);
       }
     };
 
@@ -121,8 +130,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [validateToken, handleSessionExpired, setupExpiryTimeout]);
 
   const login = useCallback(
-    (token: string) => {
-      localStorage.setItem("token", token);
+    (newToken: string) => {
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
       const expiryTime = setTokenExpiry();
       setupExpiryTimeout(expiryTime);
       setIsLoggedIn(true);
@@ -133,33 +143,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("tokenExpiry");
+    setToken(null);
     setIsLoggedIn(false);
   }, []);
-
-  // Create the context value object
-  const contextValue: AuthContextType = {
-    isLoggedIn,
-    isInitialized,
-    login,
-    logout,
-  };
 
   if (!isInitialized) {
     return <div>Loading...</div>;
   }
 
   return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ isLoggedIn, token, login, logout }}>
+      {children}
+    </AuthContext.Provider>
   );
-};
-
-// Custom hook for consuming the context
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 };
 
 export default AuthProvider;

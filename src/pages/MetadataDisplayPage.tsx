@@ -1,11 +1,7 @@
-// src/pages/MetadataDisplayPage.tsx
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState, useContext } from "react";
 import styled from "styled-components";
-import axios from "axios";
 
-// Types and Components
-import { RawGraphData, Metadata } from "../types";
+// Components
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 import ButtonGroup from "../components/MetadataDisplay/ButtonGroup";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -15,11 +11,16 @@ import ROCrateComponent from "../components/MetadataDisplay/ROCrateComponent";
 import GenericMetadataComponent from "../components/MetadataDisplay/GenericMetadataComponent";
 import SerializationView from "../components/MetadataDisplay/SerializationView";
 
-// Utility functions
+// Context, Services and Utilities
+import { AuthContext } from "../context/AuthContext";
+import metadataService from "../hooks/metadataService";
 import {
   findRootEntity,
   determineReleaseType,
 } from "../utils/metadataProcessing";
+
+// Types
+import { RawGraphData, Metadata } from "../types";
 
 // Styled Components
 const Container = styled.div`
@@ -79,100 +80,98 @@ const Footer = styled.footer`
 type ViewType = "metadata" | "serialization" | "graph";
 
 const MetadataDisplayPage: React.FC = () => {
-  const { viewType, arkId } = useParams<{ viewType: string; arkId: string }>();
+  // Extract ARK ID from URL path
+  const location = window.location.pathname;
+  const arkId = location.includes("/view/") ? location.split("/view/")[1] : "";
+
+  // State
   const [view, setView] = useState<ViewType>("metadata");
   const [title, setTitle] = useState<string>("Data Display");
   const [version, setVersion] = useState<string>("1.0");
-  const [evidenceGraph, setEvidenceGraph] = useState<RawGraphData | null>(null);
   const [metadata, setMetadata] = useState<Metadata | null>(null);
+  const [evidenceGraph, setEvidenceGraph] = useState<RawGraphData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [determinedType, setDeterminedType] = useState<string | null>(null);
+  const [hasEvidenceGraph, setHasEvidenceGraph] = useState<boolean>(false);
+
+  // Get auth context
+  const { isLoggedIn } = useContext(AuthContext);
+
+  // Create instance of the metadata service
+  const metadataServiceInstance = metadataService();
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!arkId) {
+        setLoading(false);
+        setError("No ARK ID provided");
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
       try {
-        // Determine which data file to load based on viewType
-        let dataUrl = "";
-        switch (viewType) {
-          case "release":
-            dataUrl = "/data/release.json";
-            break;
-          case "rocrate":
-            dataUrl = "/data/rocrate.json";
-            break;
-          case "dataset":
-            dataUrl = "/data/dataset.json";
-            break;
-          case "software":
-            dataUrl = "/data/software.json";
-            break;
-          case "computation":
-            dataUrl = "/data/computation.json";
-            break;
-          case "schema":
-            dataUrl = "/data/schema.json";
-            break;
-          default:
-            dataUrl = "/data/release.json"; // Default to release.json
+        // Use the metadata service to fetch data
+        const result = await metadataServiceInstance.fetchMetadata(arkId);
+
+        if (result.error) {
+          setError(result.error);
+          setLoading(false);
+          return;
         }
 
-        // Fetch the metadata
-        const metadataResponse = await axios.get<Metadata>(dataUrl);
-        const metadataData = metadataResponse.data;
-        setMetadata(metadataData);
+        // Update state with the result data
+        setMetadata(result.metadata);
+        console.log("Fetched metadata:", result.metadata);
+        setEvidenceGraph(result.evidenceGraph);
+        setDeterminedType(result.type);
+        setHasEvidenceGraph(result.hasEvidenceGraph);
 
-        if (metadataData) {
-          // Use utility function to determine the type
-          const type = determineReleaseType(metadataData);
-          setDeterminedType(type);
-
-          // Find the root entity to get the title and version
-          if (metadataData["@graph"] && Array.isArray(metadataData["@graph"])) {
-            const rootEntity = findRootEntity(metadataData["@graph"]);
-
+        // Set title and version from metadata
+        if (result.metadata) {
+          if (
+            result.metadata["@graph"] &&
+            Array.isArray(result.metadata["@graph"])
+          ) {
+            const rootEntity = findRootEntity(result.metadata["@graph"]);
             if (rootEntity) {
               setTitle(
                 rootEntity.name ||
-                  `${type.charAt(0).toUpperCase() + type.slice(1)} Details`
+                  `${
+                    result.type.charAt(0).toUpperCase() + result.type.slice(1)
+                  } Details`
               );
               setVersion(rootEntity.version || "1.0");
             } else {
-              setTitle(`${viewType} Details`);
+              setTitle(
+                `${
+                  result.type.charAt(0).toUpperCase() + result.type.slice(1)
+                } Details`
+              );
             }
           } else {
-            // If no graph, treat the metadata itself as the root
             setTitle(
-              metadataData.name ||
-                `${type.charAt(0).toUpperCase() + type.slice(1)} Details`
+              result.metadata.name ||
+                `${
+                  result.type.charAt(0).toUpperCase() + result.type.slice(1)
+                } Details`
             );
-            setVersion(metadataData.version || "1.0");
+            setVersion(result.metadata.version || "1.0");
           }
         }
 
-        // Try to fetch evidence graph data if available
-        try {
-          const graphResponse = await axios.get<RawGraphData>(
-            "/data/evidence-graph.json"
-          );
-          setEvidenceGraph(graphResponse.data);
-        } catch (err) {
-          console.log("Evidence graph not available");
-        }
-      } catch (err: any) {
-        console.error("Error loading data:", err);
-        setError(`Failed to load data: ${err.message}`);
-        setTitle(`${viewType} Details`);
-      } finally {
         setLoading(false);
+      } catch (err: any) {
+        console.error("Error fetching data:", err);
+        setLoading(false);
+        setError(err.message || "Failed to fetch data");
       }
     };
 
     fetchData();
-  }, [viewType, arkId]);
+  }, [arkId, isLoggedIn]);
 
   useEffect(() => {
     document.title = `${title} - FAIRSCAPE`;
@@ -189,8 +188,8 @@ const MetadataDisplayPage: React.FC = () => {
 
     switch (view) {
       case "metadata":
-        // Use determined type or fallback to viewType
-        const contentType = determinedType || viewType;
+        // Use determined type from metadata
+        const contentType = determinedType || "unknown";
 
         switch (contentType) {
           case "release":
@@ -248,15 +247,16 @@ const MetadataDisplayPage: React.FC = () => {
           />
         );
       case "graph":
-        return evidenceGraph ? (
-          <EvidenceGraphViewer evidenceGraphData={evidenceGraph} />
-        ) : (
-          <Alert
-            type="info"
-            title="No Evidence Graph"
-            message="Evidence graph data is not available for this item."
-          />
-        );
+        if (!evidenceGraph) {
+          return (
+            <Alert
+              type="info"
+              title="No Evidence Graph"
+              message="Evidence graph data is not available for this item."
+            />
+          );
+        }
+        return <EvidenceGraphViewer evidenceGraphData={evidenceGraph} />;
       default:
         return (
           <Alert
@@ -279,7 +279,7 @@ const MetadataDisplayPage: React.FC = () => {
         <ButtonGroup
           currentView={view}
           onSelectView={(selectedView) => setView(selectedView as ViewType)}
-          showEvidenceGraphButton={!!evidenceGraph}
+          showEvidenceGraphButton={hasEvidenceGraph}
         />
       </ButtonGroupContainer>
 
