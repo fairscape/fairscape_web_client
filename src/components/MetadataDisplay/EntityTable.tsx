@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 
 const TableContainer = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.lg};
   overflow-x: auto;
 `;
-
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
@@ -13,7 +12,6 @@ const Table = styled.table`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   table-layout: fixed;
 `;
-
 const TableHeader = styled.th`
   text-align: left;
   padding: ${({ theme }) => theme.spacing.md};
@@ -22,7 +20,6 @@ const TableHeader = styled.th`
   color: ${({ theme }) => theme.colors.primary};
   border-bottom: 2px solid ${({ theme }) => theme.colors.border};
 `;
-
 const TableCell = styled.td<{ isDescription?: boolean }>`
   text-align: left;
   padding: ${({ theme }) => theme.spacing.md};
@@ -31,13 +28,12 @@ const TableCell = styled.td<{ isDescription?: boolean }>`
   ${({ isDescription }) =>
     isDescription &&
     `
-  max-width: 400px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  `}
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    `}
 `;
-
 const TableRow = styled.tr`
   &:nth-child(even) {
     background-color: ${({ theme }) => theme.colors.backgroundAlt};
@@ -46,13 +42,11 @@ const TableRow = styled.tr`
     background-color: ${({ theme }) => theme.colors.backgroundHover};
   }
 `;
-
 const EmptyMessage = styled.p`
   color: ${({ theme }) => theme.colors.textSecondary};
   text-align: center;
   padding: ${({ theme }) => theme.spacing.lg};
 `;
-
 const StyledLink = styled.a`
   color: ${({ theme }) => theme.colors.primary};
   text-decoration: none;
@@ -60,7 +54,6 @@ const StyledLink = styled.a`
     text-decoration: underline;
   }
 `;
-
 export interface EntityItem {
   name: string;
   description: string;
@@ -70,13 +63,11 @@ export interface EntityItem {
   id?: string;
   contentUrl?: string | string[];
 }
-
 interface EntityTableProps {
   items: EntityItem[];
   headers: string[];
   emptyMessage?: string;
 }
-
 const EntityTable: React.FC<EntityTableProps> = ({
   items,
   headers,
@@ -84,6 +75,19 @@ const EntityTable: React.FC<EntityTableProps> = ({
 }) => {
   const feUrl =
     import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
+
+  // Debug: Log the environment variable value
+  useEffect(() => {
+    console.log(
+      "VITE_FAIRSCAPE_FE_URL:",
+      import.meta.env.VITE_FAIRSCAPE_FE_URL
+    );
+    console.log("feUrl being used:", feUrl);
+    // Log the first item's full URL for debugging
+    if (items.length > 0 && items[0].id) {
+      console.log("First item URL:", `${feUrl}${items[0].id}`);
+    }
+  }, [feUrl, items]);
 
   if (items.length === 0) {
     return <EmptyMessage>{emptyMessage}</EmptyMessage>;
@@ -94,14 +98,12 @@ const EntityTable: React.FC<EntityTableProps> = ({
       const url = Array.isArray(item.contentUrl)
         ? item.contentUrl[0]
         : item.contentUrl;
-
       return (
         <StyledLink href={url} target="_blank" rel="noopener noreferrer">
           Download
         </StyledLink>
       );
     }
-
     return item.contentStatus;
   };
 
@@ -116,24 +118,32 @@ const EntityTable: React.FC<EntityTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {items.map((item, index) => (
-            <TableRow key={index}>
-              <TableCell>
-                {item.id ? (
-                  <StyledLink href={`${feUrl}${item.id}`}>
-                    {item.name}
-                  </StyledLink>
-                ) : (
-                  item.name
-                )}
-              </TableCell>
-              <TableCell isDescription={true} title={item.description}>
-                {item.description}
-              </TableCell>
-              <TableCell>{renderContentStatus(item)}</TableCell>
-              <TableCell>{item.date || item.type}</TableCell>
-            </TableRow>
-          ))}
+          {items.map((item, index) => {
+            // Debug: Log each item's URL
+            const fullUrl = item.id ? `${feUrl}${item.id}` : "";
+
+            return (
+              <TableRow key={index}>
+                <TableCell>
+                  {item.id ? (
+                    <StyledLink
+                      href={fullUrl}
+                      data-testid={`entity-link-${index}`}
+                    >
+                      {item.name}
+                    </StyledLink>
+                  ) : (
+                    item.name
+                  )}
+                </TableCell>
+                <TableCell isDescription={true} title={item.description}>
+                  {item.description}
+                </TableCell>
+                <TableCell>{renderContentStatus(item)}</TableCell>
+                <TableCell>{item.date || item.type}</TableCell>
+              </TableRow>
+            );
+          })}
         </tbody>
       </Table>
     </TableContainer>

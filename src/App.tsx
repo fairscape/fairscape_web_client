@@ -15,6 +15,7 @@ import EvidenceGraphPage from "./pages/EvidenceGraphPage";
 import ReleaseFormPage from "./pages/ReleaseFormPage";
 import { theme } from "./styles/theme";
 import { GlobalStyle } from "./styles/GlobalStyles";
+import DataverseTokensPage from "./pages/DataverseTokensPage";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
               <Route path="/view/*" element={<MetadataDisplayPage />} />
               <Route path="/evidence/*" element={<EvidenceGraphPage />} />
               <Route path="/create-release" element={<ReleaseFormPage />} />
+              <Route path="/tokens" element={<DataverseTokensPage />} />
               <Route
                 path="*"
                 element={

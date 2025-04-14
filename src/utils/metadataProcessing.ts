@@ -64,8 +64,6 @@ export const processOverview = (metadata: Metadata): OverviewData => {
   const graph = (metadata["@graph"] as RawGraphEntity[]) || [];
   const root = findRootEntity(graph);
 
-  console.log("Processing overview, found root:", root);
-
   if (!root) return {} as OverviewData; // Return empty if no root
 
   // Resolve linked authors/publisher
@@ -160,7 +158,6 @@ export const processOverview = (metadata: Metadata): OverviewData => {
     related_publications: related_publications,
   };
 
-  console.log("Processed overview data:", overviewData);
   return overviewData;
 };
 

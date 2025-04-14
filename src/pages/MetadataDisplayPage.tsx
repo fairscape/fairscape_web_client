@@ -124,7 +124,6 @@ const MetadataDisplayPage: React.FC = () => {
 
         // Update state with the result data
         setMetadata(result.metadata);
-        console.log("Fetched metadata:", result.metadata);
         setEvidenceGraph(result.evidenceGraph);
         setDeterminedType(result.type);
         setHasEvidenceGraph(result.hasEvidenceGraph);
@@ -164,7 +163,6 @@ const MetadataDisplayPage: React.FC = () => {
 
         setLoading(false);
       } catch (err: any) {
-        console.error("Error fetching data:", err);
         setLoading(false);
         setError(err.message || "Failed to fetch data");
       }

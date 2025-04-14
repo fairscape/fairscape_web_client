@@ -95,8 +95,15 @@ export const metadataService = () => {
     }
 
     try {
-      // Main metadata request
-      const response = await axios.get(`${API_URL}/${arkId}`, { headers });
+      const cleanArkId = arkId.replace(/^\/|\/$/g, ""); // Remove leading/trailing slashes
+      const url = `${API_URL}/${cleanArkId}`;
+      console.log("Requesting URL:", url);
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+        maxRedirects: 5,
+        withCredentials: true,
+      });
 
       // Extract metadata from response
       let metadata = response.data.metadata || response.data;
@@ -119,8 +126,13 @@ export const metadataService = () => {
       if (type === "rocrate") {
         try {
           const rocrateResponse = await axios.get(
-            `${API_URL}/rocrate/${arkId}`,
-            { headers }
+            `${API_URL}/rocrate/${cleanArkId}`,
+            {
+              headers,
+              timeout: 10000,
+              maxRedirects: 5,
+              withCredentials: true,
+            }
           );
           if (rocrateResponse.data.metadata) {
             metadata = rocrateResponse.data.metadata;

@@ -120,7 +120,6 @@ const Header: React.FC = () => {
   const [logoutMessage, setLogoutMessage] = useState("");
 
   if (!authContext) {
-
     console.error("AuthContext not available in Header");
     return <StyledHeader>Loading Auth...</StyledHeader>;
   }
@@ -161,9 +160,6 @@ const Header: React.FC = () => {
             </NavItem>
             <NavItem>
               <NavLink to="/search">Search</NavLink>
-            </NavItem>
-            <NavItem>
-              <NavLink to="/dashboard">Dashboard</NavLink>
             </NavItem>
             <NavItem>
               <ExternalLink
