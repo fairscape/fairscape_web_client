@@ -1,7 +1,7 @@
 // src/components/common/Alert.tsx
 import React from "react";
 import styled from "styled-components";
-import { theme } from "../../styles/theme";
+import { ThemeType } from "../../styles/theme";
 
 type AlertType = "error" | "success" | "info" | "warning";
 
@@ -56,19 +56,10 @@ const CloseButton = styled.button`
   }
 `;
 
-// Optional: Map types to icons
-// const icons: Record<AlertType, React.ElementType> = {
-//   error: AlertCircle,
-//   success: CheckCircle,
-//   info: Info,
-//   warning: AlertCircle, // Or a specific warning icon
-// };
-
+// Use theme from the component props instead of importing it directly
 const Alert: React.FC<AlertProps> = ({ type, title, message, onClose }) => {
-  // const Icon = icons[type];
   return (
     <AlertContainer $type={type}>
-      {/* {Icon && <Icon size={20} style={{ flexShrink: 0, marginTop: '2px' }} />} */}
       <div
         style={{
           // Placeholder for icon
@@ -77,12 +68,12 @@ const Alert: React.FC<AlertProps> = ({ type, title, message, onClose }) => {
           marginRight: "8px",
           flexShrink: 0,
           marginTop: "2px",
-          border: `2px solid ${theme.colors[type]}`,
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           fontWeight: "bold",
+          border: "2px solid currentColor",
         }}
       >
         !

@@ -1,15 +1,12 @@
-// src/utils/layoutUtils.ts
 import { Node, Edge } from "reactflow";
 import dagre from "dagre";
 
-// Updated node dimensions to match actual rendered size
 const NODE_WIDTH = 180;
 const NODE_HEIGHT = 90;
 
-// Increased separation for better visibility
 const RANK_SEP = 200;
 const NODE_SEP = 120;
-const ALIGNMENT = "DL"; // Changed to downward-left alignment
+const ALIGNMENT = "DL";
 const MARGIN_X = 50;
 const MARGIN_Y = 50;
 
@@ -25,10 +22,6 @@ export const getLayoutedElements = (
 
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-
-  console.log(
-    `Running layout for ${nodes.length} nodes, ${edges.length} edges. Direction: ${direction}, Node Size: ${NODE_WIDTH}x${NODE_HEIGHT}`
-  );
 
   dagreGraph.setGraph({
     rankdir: direction,

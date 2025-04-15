@@ -153,7 +153,11 @@ const FeatureItem = styled.div`
   }
 `;
 
-const FeatureDetails = styled.div`
+interface FeatureDetailsProps {
+  expanded: boolean;
+}
+
+const FeatureDetails = styled.div<FeatureDetailsProps>`
   opacity: ${({ expanded }) => (expanded ? 1 : 0.8)};
   max-height: ${({ expanded }) => (expanded ? "500px" : "auto")};
   transition: opacity 0.3s ease;
@@ -195,7 +199,7 @@ const CtaButton = styled.a`
 `;
 
 const HomePage: React.FC = () => {
-  const [expandedFeature, setExpandedFeature] = useState(null);
+  const [expandedFeature, setExpandedFeature] = useState<number | null>(null);
 
   const features = [
     {

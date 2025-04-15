@@ -79,7 +79,7 @@ const ErrorMessage = styled.div`
   border-left: 4px solid ${({ theme }) => theme.colors.error};
 `;
 
-const StatusDetails = styled.div`
+const StatusDetailsContainer = styled.div`
   margin-top: ${({ theme }) => theme.spacing.md};
   padding: ${({ theme }) => theme.spacing.md};
   background-color: ${({ theme }) => theme.colors.background};
@@ -230,7 +230,8 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
       progress = 0;
   }
 
-  const isFailed = status === "Failed" || error || (completed && !success);
+  const isFailed =
+    status === "Failed" || Boolean(error) || (completed && !success);
 
   if (!status) return null;
 
@@ -251,7 +252,7 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
       {isFailed && <ErrorMessage>{error || "Upload failed"}</ErrorMessage>}
 
       {details && (
-        <StatusDetails>
+        <StatusDetailsContainer>
           <p>Status: {status}</p>
           <p>Success: {success ? "Yes" : "No"}</p>
           {details.result && (
@@ -266,7 +267,7 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
               </ResultLink>
             </p>
           )}
-        </StatusDetails>
+        </StatusDetailsContainer>
       )}
     </TrackerContainer>
   );

@@ -1,4 +1,3 @@
-// src/components/MetadataDisplay/GenericMetadataComponent.tsx
 import React from "react";
 import styled from "styled-components";
 import { RawGraphEntity, Metadata } from "../../types";
@@ -177,7 +176,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   };
 
   // Format value based on type and key
-  const formatValue = (key: string, value: any): JSX.Element => {
+  const formatValue = (key: string, value: any): React.ReactElement => {
     if (value === null || value === undefined) {
       return <span>Not specified</span>;
     }

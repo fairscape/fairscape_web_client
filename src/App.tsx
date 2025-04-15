@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 import { AuthProvider } from "./context/AuthContext";
@@ -21,7 +20,7 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider theme={theme}>
-        <GlobalStyle />
+        <GlobalStyle theme={theme} />
         <Router>
           <Layout>
             <Routes>

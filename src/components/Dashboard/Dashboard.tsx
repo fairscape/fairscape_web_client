@@ -139,39 +139,6 @@ const ViewButton = styled(Link)`
   }
 `;
 
-const EvidenceButton = styled(Link)`
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
-  background-color: ${({ theme }) => theme.colors.secondary};
-  color: white;
-  border-radius: ${({ theme }) => theme.borderRadius};
-  font-weight: 500;
-  text-decoration: none;
-  font-size: 0.9rem;
-  margin-right: ${({ theme }) => theme.spacing.xs};
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.secondaryLight};
-    color: white;
-    text-decoration: none;
-  }
-`;
-
-const DownloadButton = styled.button`
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
-  background-color: white;
-  color: ${({ theme }) => theme.colors.secondary};
-  border: 1px solid ${({ theme }) => theme.colors.secondary};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  font-weight: 500;
-  cursor: pointer;
-  font-size: 0.9rem;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.secondary};
-    color: white;
-  }
-`;
-
 // Error message component
 const ErrorMessage = styled.div`
   padding: ${({ theme }) => theme.spacing.md};
@@ -257,11 +224,13 @@ const Dashboard: React.FC = () => {
         const aValue = a[sortConfig.key as keyof RoCrate];
         const bValue = b[sortConfig.key as keyof RoCrate];
 
-        if (aValue < bValue) {
-          return sortConfig.direction === "asc" ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === "asc" ? 1 : -1;
+        if (aValue !== undefined && bValue !== undefined) {
+          if (aValue < bValue) {
+            return sortConfig.direction === "asc" ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return sortConfig.direction === "asc" ? 1 : -1;
+          }
         }
         return 0;
       });

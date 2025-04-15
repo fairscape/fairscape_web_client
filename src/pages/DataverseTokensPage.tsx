@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { Pencil, Trash2, Save, X, Plus } from "lucide-react";
 
 const API_URL =
@@ -29,7 +29,6 @@ const Spinner = styled.div`
   width: 40px;
   height: 40px;
   animation: spin 1s linear infinite;
-
   @keyframes spin {
     0% {
       transform: rotate(0deg);
@@ -69,7 +68,6 @@ const TableRow = styled.tr`
   &:nth-child(odd) {
     background-color: ${({ theme }) => theme.colors.background};
   }
-
   &:hover {
     background-color: ${({ theme }) => theme.colors.background};
   }
@@ -96,22 +94,18 @@ const ActionButton = styled.button`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   &.primary {
     background-color: ${({ theme }) => theme.colors.primary};
     color: white;
     border: none;
-
     &:hover:not(:disabled) {
       background-color: ${({ theme }) => theme.colors.primaryLight};
     }
   }
-
   &.secondary {
     background-color: ${({ theme }) => theme.colors.secondary};
     color: white;
     border: none;
-
     &:hover:not(:disabled) {
       background-color: ${({ theme }) => theme.colors.secondary}dd;
     }
@@ -124,7 +118,6 @@ const AddButton = styled.button`
   display: inline-flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.xs};
-
   &:hover:not(:disabled) {
     background-color: ${({ theme }) => theme.colors.primaryLight};
   }
@@ -165,24 +158,36 @@ const ActionsCell = styled(TableCell)`
   text-align: right;
 `;
 
+// Define types for the token
+interface Token {
+  tokenUID: string;
+  endpointURL: string;
+  tokenValue: string;
+}
+
+// Define a type for the API error response
+interface ApiErrorResponse {
+  error?: string;
+  message?: string;
+}
+
 const DataverseTokensPage = () => {
-  const [tokens, setTokens] = useState([]);
+  const [tokens, setTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState(null);
-  const [editToken, setEditToken] = useState(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editToken, setEditToken] = useState<Token | null>(null);
   const [notification, setNotification] = useState({
     open: false,
     message: "",
     severity: "success",
   });
 
-  const emptyToken = {
+  const emptyToken: Token = {
     tokenUID: "",
     endpointURL: "",
     tokenValue: "",
   };
-
-  const [newToken, setNewToken] = useState(emptyToken);
+  const [newToken, setNewToken] = useState<Token>(emptyToken);
 
   // Optional: Use AuthContext if you want to follow the Dashboard pattern
   // const { isLoggedIn } = useContext(AuthContext);
@@ -202,13 +207,12 @@ const DataverseTokensPage = () => {
     return config;
   });
 
-  const showNotification = (message, severity = "success") => {
+  const showNotification = (message: string, severity = "success") => {
     setNotification({
       open: true,
       message,
       severity,
     });
-
     // Auto-hide after 6 seconds
     setTimeout(() => {
       setNotification((prev) => ({ ...prev, open: false }));
@@ -226,8 +230,11 @@ const DataverseTokensPage = () => {
       setTokens(response.data || []);
     } catch (error) {
       console.error("Error fetching tokens:", error);
+      const axiosError = error as AxiosError<ApiErrorResponse>;
       showNotification(
-        error.response?.data?.error || "Failed to fetch tokens",
+        axiosError.response?.data?.error ||
+          axiosError.response?.data?.message ||
+          "Failed to fetch tokens",
         "error"
       );
     } finally {
@@ -239,14 +246,13 @@ const DataverseTokensPage = () => {
     fetchTokens();
   }, []);
 
-  const handleUpdate = async (tokenUID, updatedToken) => {
+  const handleUpdate = async (tokenUID: string, updatedToken: Token) => {
     try {
       const response = await axiosInstance.put("/profile/credentials", {
         tokenUID,
         tokenValue: updatedToken.tokenValue,
         endpointURL: updatedToken.endpointURL,
       });
-
       if (response.data.updated) {
         fetchTokens();
         setEditingId(null);
@@ -254,26 +260,31 @@ const DataverseTokensPage = () => {
         showNotification("Token updated successfully");
       }
     } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
       showNotification(
-        error.response?.data?.error || "Failed to update token",
+        axiosError.response?.data?.error ||
+          axiosError.response?.data?.message ||
+          "Failed to update token",
         "error"
       );
     }
   };
 
-  const handleDelete = async (tokenUID) => {
+  const handleDelete = async (tokenUID: string) => {
     try {
       const response = await axiosInstance.delete("/profile/credentials", {
         params: { tokenUID },
       });
-
       if (response.data.deleted) {
         fetchTokens();
         showNotification("Token deleted successfully");
       }
     } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
       showNotification(
-        error.response?.data?.error || "Failed to delete token",
+        axiosError.response?.data?.error ||
+          axiosError.response?.data?.message ||
+          "Failed to delete token",
         "error"
       );
     }
@@ -285,27 +296,28 @@ const DataverseTokensPage = () => {
         showNotification("Please fill in all fields", "error");
         return;
       }
-
       const response = await axiosInstance.post("/profile/credentials", {
         tokenUID: newToken.tokenUID,
         tokenValue: newToken.tokenValue,
         endpointURL: newToken.endpointURL,
       });
-
       if (response.data.uploaded) {
         fetchTokens();
         setNewToken(emptyToken);
         showNotification("Token added successfully");
       }
     } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
       showNotification(
-        error.response?.data?.error || "Failed to add token",
+        axiosError.response?.data?.error ||
+          axiosError.response?.data?.message ||
+          "Failed to add token",
         "error"
       );
     }
   };
 
-  const startEditing = (token) => {
+  const startEditing = (token: Token) => {
     setEditingId(token.tokenUID);
     setEditToken({ ...token });
   };
@@ -313,7 +325,6 @@ const DataverseTokensPage = () => {
   return (
     <TokensPageContainer>
       <PageTitle>Dataverse Token Management</PageTitle>
-
       {loading ? (
         <LoadingContainer>
           <Spinner />
@@ -339,24 +350,32 @@ const DataverseTokensPage = () => {
                       <TableCell>{token.tokenUID}</TableCell>
                       <TableCell>
                         <StyledInput
-                          value={editToken.endpointURL}
+                          value={editToken?.endpointURL || ""}
                           onChange={(e) =>
-                            setEditToken({
-                              ...editToken,
-                              endpointURL: e.target.value,
-                            })
+                            setEditToken(
+                              editToken
+                                ? {
+                                    ...editToken,
+                                    endpointURL: e.target.value,
+                                  }
+                                : null
+                            )
                           }
                         />
                       </TableCell>
                       <TableCell>
                         <StyledInput
                           type="password"
-                          value={editToken.tokenValue}
+                          value={editToken?.tokenValue || ""}
                           onChange={(e) =>
-                            setEditToken({
-                              ...editToken,
-                              tokenValue: e.target.value,
-                            })
+                            setEditToken(
+                              editToken
+                                ? {
+                                    ...editToken,
+                                    tokenValue: e.target.value,
+                                  }
+                                : null
+                            )
                           }
                         />
                       </TableCell>
@@ -364,7 +383,7 @@ const DataverseTokensPage = () => {
                         <ActionButton
                           className="primary"
                           onClick={() =>
-                            handleUpdate(token.tokenUID, editToken)
+                            editToken && handleUpdate(token.tokenUID, editToken)
                           }
                         >
                           <Save size={20} />
@@ -449,7 +468,6 @@ const DataverseTokensPage = () => {
           </Table>
         </TableContainer>
       )}
-
       {notification.open && (
         <NotificationWrapper>
           <Notification severity={notification.severity}>

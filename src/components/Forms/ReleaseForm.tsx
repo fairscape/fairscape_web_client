@@ -2,6 +2,41 @@ import React, { useState, useRef } from "react";
 import styled from "styled-components";
 import { FiDownload, FiEye, FiEyeOff } from "react-icons/fi";
 
+// Form data interface
+interface FormData {
+  [key: string]: string;
+  name: string;
+  description: string;
+  id_value: string;
+  principal_investigator: string;
+  contact_email: string;
+  version: string;
+  release_date: string;
+  content_size: string;
+  license_value: string;
+  confidentiality_level: string;
+  human_subject: string;
+  intended_uses: string;
+  prohibited_uses: string;
+  maintenance_plan: string;
+  limitations: string;
+}
+
+// Input field props
+interface InputFieldProps {
+  label: string;
+  field: string;
+  placeholder: string;
+  multiline?: boolean;
+}
+
+// Preview field props
+interface PreviewFieldProps {
+  label: string;
+  value?: string;
+  placeholder: string;
+}
+
 const FormContainer = styled.div`
   max-width: 1000px;
   margin: 0 auto;
@@ -188,9 +223,9 @@ const PreviewValue = styled.div`
 
 const ReleaseForm = () => {
   // Use refs for form inputs instead of controlled components
-  const formRef = useRef(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewData, setPreviewData] = useState({});
+  const [previewData, setPreviewData] = useState<Partial<FormData>>({});
 
   const placeholders = {
     name: "Cell Maps for Artificial Intelligence - Data Release",
@@ -216,41 +251,43 @@ const ReleaseForm = () => {
   const togglePreview = () => {
     if (!showPreview) {
       // Update preview data when showing preview
-      const formData = new FormData(formRef.current);
-      const data = {};
+      if (formRef.current) {
+        const formData = new FormData(formRef.current);
+        const data: Partial<FormData> = {};
 
-      for (const [key, value] of formData.entries()) {
-        data[key] = value;
+        for (const [key, value] of formData.entries()) {
+          if (typeof value === "string") {
+            data[key as keyof FormData] = value;
+          }
+        }
+
+        setPreviewData(data);
       }
-
-      setPreviewData(data);
     }
 
     setShowPreview(!showPreview);
   };
 
   const generateJson = () => {
+    if (!formRef.current) return "{}";
+
     const formData = new FormData(formRef.current);
-    const data = {};
+    const data: Partial<FormData> = {};
 
     for (const [key, value] of formData.entries()) {
-      data[key] = value;
+      if (typeof value === "string") {
+        data[key as keyof FormData] = value;
+      }
     }
 
     // Default values for empty fields
-    const defaults = {
+    const finalData = {
       id_value: data.id_value || "ark:59852/cm4ai-dataset-" + Date.now(),
       license_value:
         data.license_value ||
         "https://creativecommons.org/licenses/by-nc-sa/4.0/",
       human_subject: data.human_subject || "No",
-    };
-
-    const finalData = {
-      ...defaults,
-      ...Object.fromEntries(
-        Object.entries(data).filter(([_, value]) => value !== "")
-      ),
+      ...data,
     };
 
     const json = {
@@ -328,7 +365,12 @@ const ReleaseForm = () => {
     URL.revokeObjectURL(url);
   };
 
-  const InputField = ({ label, field, placeholder, multiline = false }) => (
+  const InputField: React.FC<InputFieldProps> = ({
+    label,
+    field,
+    placeholder,
+    multiline = false,
+  }) => (
     <SummaryRow>
       <SummaryLabel>{label}</SummaryLabel>
       <SummaryValue>
@@ -350,7 +392,11 @@ const ReleaseForm = () => {
     </SummaryRow>
   );
 
-  const PreviewField = ({ label, value, placeholder }) => (
+  const PreviewField: React.FC<PreviewFieldProps> = ({
+    label,
+    value,
+    placeholder,
+  }) => (
     <PreviewRow>
       <PreviewLabel>{label}</PreviewLabel>
       <PreviewValue>{value || placeholder}</PreviewValue>
