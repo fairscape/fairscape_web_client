@@ -1,6 +1,5 @@
 // src/pages/EvidenceGraphPage.tsx
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState, useContext } from "react";
 import styled from "styled-components";
 import axios from "axios";
 
@@ -9,6 +8,9 @@ import { RawGraphData } from "../types";
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import Alert from "../components/common/Alert";
+
+// Context and Services
+import { AuthContext } from "../context/AuthContext";
 
 // Styled Components
 const Container = styled.div`
@@ -67,34 +69,124 @@ const Footer = styled.footer`
   }
 `;
 
+// API URL from environment variable
+const API_URL =
+  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+
 const EvidenceGraphPage: React.FC = () => {
-  const { arkId } = useParams<{ arkId: string }>();
+  // Extract ARK ID from URL path
+  const location = window.location.pathname;
+  const arkId = location.includes("/evidence/")
+    ? location.split("/evidence/")[1]
+    : "";
+
   const [evidenceGraph, setEvidenceGraph] = useState<RawGraphData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Get auth context
+  const { isLoggedIn } = useContext(AuthContext);
+
+  // Function to fetch evidence graph by ID
+  const fetchEvidenceGraphById = async (graphId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await axios.get(`${API_URL}/${graphId}`, {
+        headers,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching evidence graph by ID:", error);
+      return null;
+    }
+  };
+
+  // Function to fetch graph data for ARK
+  const fetchGraphData = async (arkId: string) => {
+    if (!arkId) {
+      return { graph: null, error: "No ARK ID provided" };
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const cleanArkId = arkId.replace(/^\/|\/$/g, ""); // Remove leading/trailing slashes
+      const url = `${API_URL}/${cleanArkId}`;
+      console.log("Requesting URL:", url);
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+        maxRedirects: 5,
+        withCredentials: true,
+      });
+
+      // Extract data from response
+      const data = response.data;
+      console.log("Response data:", data);
+
+      if (data["@graph"]) {
+        return { graph: data, error: null };
+      }
+
+      // Case 3: Item with hasEvidenceGraph reference
+      if (
+        data.hasEvidenceGraph ||
+        (data.metadata && data.metadata.hasEvidenceGraph)
+      ) {
+        const hasGraph =
+          data.hasEvidenceGraph || data.metadata.hasEvidenceGraph;
+        const graphId =
+          typeof hasGraph === "string" ? hasGraph : hasGraph["@id"];
+
+        const graphData = await fetchEvidenceGraphById(graphId);
+
+        if (graphData && graphData["@graph"]) {
+          return { graph: graphData["@graph"], error: null };
+        } else {
+          return { graph: null, error: "Referenced evidence graph not found" };
+        }
+      }
+
+      return { graph: null, error: "No graph data found for this ARK ID" };
+    } catch (err: any) {
+      console.error("Error fetching graph data:", err);
+      return {
+        graph: null,
+        error: err.message || "Failed to fetch graph data",
+      };
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
+    const loadGraphData = async () => {
       setLoading(true);
       setError(null);
 
-      try {
-        // For now, hard-coding to use the sample evidence graph
-        // In a real implementation, this would fetch based on the arkId
-        const graphResponse = await axios.get<RawGraphData>(
-          "/data/evidence-graph.json"
-        );
-        setEvidenceGraph(graphResponse.data);
-      } catch (err: any) {
-        console.error("Error loading evidence graph:", err);
-        setError(`Failed to load evidence graph: ${err.message}`);
-      } finally {
-        setLoading(false);
+      const result = await fetchGraphData(arkId);
+
+      if (result.error) {
+        setError(result.error);
+      } else if (result.graph) {
+        setEvidenceGraph(result.graph);
+      } else {
+        setError("No graph data available");
       }
+
+      setLoading(false);
     };
 
-    fetchData();
-  }, [arkId]);
+    loadGraphData();
+  }, [arkId, isLoggedIn]);
 
   // Update Document Title
   useEffect(() => {
@@ -111,8 +203,8 @@ const EvidenceGraphPage: React.FC = () => {
       return (
         <Alert
           type="info"
-          title="No Evidence Graph"
-          message="Evidence graph data is not available for this item."
+          title="No Graph Data"
+          message="Graph data is not available for this item."
         />
       );
 

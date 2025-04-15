@@ -524,7 +524,11 @@ export const determineReleaseType = (metadata: Metadata): string => {
     jsonLdTypes.includes("EVI:Schema")
   ) {
     return "schema";
-  } else if (jsonLdTypes.includes("EvidenceGraph")) {
+  } else if (
+    jsonLdTypes.includes("EvidenceGraph") ||
+    jsonLdTypes.includes("EVI:EvidenceGraph") ||
+    jsonLdTypes.includes("evi:EvidenceGraph")
+  ) {
     return "evidencegraph";
   } else {
     return (
