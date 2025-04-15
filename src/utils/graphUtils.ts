@@ -4,10 +4,11 @@ import {
   RawGraphData,
   EvidenceNode,
   EvidenceEdge,
-} from "../types/graph";
+} from "../types/graph"; // Adjust path if necessary
 
 const MAX_LABEL_LENGTH = 50;
 
+// --- Keep: getEntityType, abbreviateName, formatPropertyValue, getDisplayableProperties ---
 export function getEntityType(typeUri: string | string[] | undefined): string {
   if (!typeUri) return "Unknown";
   const typeString = Array.isArray(typeUri) ? typeUri[0] : typeUri;
@@ -83,6 +84,7 @@ export function getDisplayableProperties(
   return properties;
 }
 
+// --- Keep: createEvidenceNode, createDatasetCollectionNode ---
 export function createEvidenceNode(
   entityData: RawGraphEntity
 ): EvidenceNode | null {
@@ -141,7 +143,10 @@ export function createEvidenceNode(
     !hasUsedSample &&
     !hasUsedInstrument
   ) {
-    isExpandable = false;
+    const displayableProps = getDisplayableProperties(entityData);
+    if (Object.keys(displayableProps).length === 0) {
+      isExpandable = false;
+    }
   }
 
   if (
@@ -178,7 +183,10 @@ export function createDatasetCollectionNode(
 ): EvidenceNode | null {
   const collectionId = `${computationId}_dataset_collection_${Date.now()}`;
   const validDatasets = datasets
-    .filter((ds) => ds && (typeof ds === "string" || ds["@id"]))
+    .filter(
+      (ds) =>
+        ds && (typeof ds === "string" || (typeof ds === "object" && ds["@id"]))
+    ) // Ensure object has @id
     .map((ds) =>
       typeof ds === "string" ? { "@id": ds, "@type": "evi:Dataset" } : ds
     );
@@ -208,7 +216,7 @@ export function createDatasetCollectionNode(
       count: count,
       description: `Collection of ${count} input datasets`,
     },
-    _remainingDatasets: [...validDatasets],
+    _remainingDatasets: [...validDatasets] as RawGraphEntity[], // Cast remaining items
     _expandedCount: 0,
   };
 
@@ -220,6 +228,7 @@ export function createDatasetCollectionNode(
   };
 }
 
+// --- MODIFIED getInitialElements ---
 export function getInitialElements(
   graphData: RawGraphData,
   initialExpansionDepth: number = 2
@@ -256,85 +265,85 @@ export function getInitialElements(
     const nodesExpandedInThisLevel: EvidenceNode[] = [
       ...nodesToExpandInNextLevel,
     ];
-    nodesToExpandInNextLevel = [];
+    nodesToExpandInNextLevel = []; // Reset for the next level
 
     if (nodesExpandedInThisLevel.length === 0) {
-      break;
+      break; // Stop if no more nodes to expand at this depth
     }
 
     nodesExpandedInThisLevel.forEach((nodeToExpand) => {
       const currentNodeInstance = currentNodes.find(
         (n) => n.id === nodeToExpand.id
       );
+      // Check again if node exists and is still marked as expandable and not already processed (_expanded = false)
       if (
         !currentNodeInstance ||
         !currentNodeInstance.data.expandable ||
         currentNodeInstance.data._expanded
       ) {
-        return;
+        return; // Skip if not found, not expandable, or already expanded in a previous level iteration
       }
 
-      let expansionResult: ExpansionResult;
-      let updatedCollectionData: Partial<EvidenceNodeData> | null = null;
+      // --- In initial expansion, ONLY expandEvidenceNode is relevant ---
+      const expansionResult = expandEvidenceNode(nodeToExpand, currentNodes);
+      // --- `updatedCollectionData` is not needed or used here ---
 
-      expansionResult = expandEvidenceNode(nodeToExpand, currentNodes);
+      const nodeIndex = currentNodes.findIndex((n) => n.id === nodeToExpand.id);
 
-      if (
-        expansionResult.newNodes.length > 0 ||
-        expansionResult.newEdges.length > 0 ||
-        updatedCollectionData
-      ) {
-        const nodeIndex = currentNodes.findIndex(
-          (n) => n.id === nodeToExpand.id
-        );
-        if (nodeIndex !== -1) {
+      if (nodeIndex !== -1) {
+        const hasNewElements =
+          expansionResult.newNodes.length > 0 ||
+          expansionResult.newEdges.length > 0;
+
+        if (hasNewElements) {
+          // Mark the current node as expanded and no longer visually expandable
+          // because its children have been added
           currentNodes[nodeIndex].data._expanded = true;
           currentNodes[nodeIndex].data.expandable = false;
 
-          if (updatedCollectionData) {
-            currentNodes[nodeIndex].data = {
-              ...currentNodes[nodeIndex].data,
-              ...updatedCollectionData,
-            };
-            if (updatedCollectionData.expandable) {
-              currentNodes[nodeIndex].data.expandable = true;
+          // Add newly found nodes and edges
+          expansionResult.newNodes.forEach((newNode) => {
+            // Add only if it's truly new to the list
+            if (!currentNodes.some((n) => n.id === newNode.id)) {
+              currentNodes.push(newNode);
+              // If this new node is itself expandable, queue it for the next level
+              if (newNode.data.expandable) {
+                nodesToExpandInNextLevel.push(newNode);
+              }
             }
-          }
-        }
+          });
 
-        expansionResult.newNodes.forEach((newNode) => {
-          if (!currentNodes.some((n) => n.id === newNode.id)) {
-            currentNodes.push(newNode);
-            if (newNode.data.expandable) {
-              nodesToExpandInNextLevel.push(newNode);
+          expansionResult.newEdges.forEach((newEdge) => {
+            // Add only if it's truly new
+            if (!currentEdges.some((e) => e.id === newEdge.id)) {
+              currentEdges.push(newEdge);
             }
-          }
-        });
-
-        expansionResult.newEdges.forEach((newEdge) => {
-          if (!currentEdges.some((e) => e.id === newEdge.id)) {
-            currentEdges.push(newEdge);
-          }
-        });
-      } else {
-        const nodeIndex = currentNodes.findIndex(
-          (n) => n.id === nodeToExpand.id
-        );
-        if (nodeIndex !== -1) {
+          });
+        } else {
+          // If the expansion attempt yielded no new elements,
+          // mark it as no longer expandable (as the attempt was made).
+          // Do not mark _expanded = true, as nothing was actually added.
           currentNodes[nodeIndex].data.expandable = false;
         }
       }
     });
   }
 
+  // Return the accumulated nodes and edges after the initial expansion loops
   return { nodes: currentNodes, edges: currentEdges };
 }
 
+// --- Interface Definitions ---
 export interface ExpansionResult {
   newNodes: EvidenceNode[];
   newEdges: EvidenceEdge[];
 }
 
+export interface CollectionExpansionResult extends ExpansionResult {
+  updatedCollectionData: Partial<EvidenceNodeData>;
+}
+
+// --- Keep: expandEvidenceNode, expandDatasetCollectionNode ---
 export function expandEvidenceNode(
   node: EvidenceNode,
   currentNodes: EvidenceNode[]
@@ -344,7 +353,7 @@ export function expandEvidenceNode(
   const sourceData = node.data._sourceData;
   const result: ExpansionResult = { newNodes: [], newEdges: [] };
 
-  if (!sourceData || node.data._expanded) {
+  if (!sourceData || node.data._expanded || !node.data.expandable) {
     return result;
   }
 
@@ -353,19 +362,26 @@ export function expandEvidenceNode(
     result.newNodes.some((n) => n.id === id);
 
   if (nodeType === "Dataset" && sourceData.generatedBy) {
-    const computationNode = createEvidenceNode(sourceData.generatedBy);
-    if (computationNode) {
-      if (!nodeExists(computationNode.id)) {
-        result.newNodes.push(computationNode);
+    const computationData = sourceData.generatedBy;
+    if (
+      typeof computationData === "object" &&
+      computationData !== null &&
+      computationData["@id"]
+    ) {
+      const computationNode = createEvidenceNode(computationData);
+      if (computationNode) {
+        if (!nodeExists(computationNode.id)) {
+          result.newNodes.push(computationNode);
+        }
+        result.newEdges.push({
+          id: `${nodeId}_generated_by_${computationNode.id}`,
+          source: nodeId,
+          target: computationNode.id,
+          type: "smoothstep",
+          label: "generated by",
+          animated: false,
+        });
       }
-      result.newEdges.push({
-        id: `${nodeId}_generated_by_${computationNode.id}`,
-        source: nodeId,
-        target: computationNode.id,
-        type: "smoothstep",
-        label: "generated by",
-        animated: false,
-      });
     }
   }
 
@@ -379,25 +395,29 @@ export function expandEvidenceNode(
 
     softwareItems.forEach((software) => {
       if (!software) return;
-
       const softwareObject =
         typeof software === "string"
           ? { "@id": software, "@type": "evi:Software" }
           : software;
-
-      const softwareNode = createEvidenceNode(softwareObject);
-      if (softwareNode) {
-        if (!nodeExists(softwareNode.id)) {
-          result.newNodes.push(softwareNode);
+      if (
+        typeof softwareObject === "object" &&
+        softwareObject !== null &&
+        softwareObject["@id"]
+      ) {
+        const softwareNode = createEvidenceNode(softwareObject);
+        if (softwareNode) {
+          if (!nodeExists(softwareNode.id)) {
+            result.newNodes.push(softwareNode);
+          }
+          result.newEdges.push({
+            id: `${nodeId}_uses_sw_${softwareNode.id}`,
+            source: nodeId,
+            target: softwareNode.id,
+            type: "smoothstep",
+            label: "used software",
+            animated: false,
+          });
         }
-        result.newEdges.push({
-          id: `${nodeId}_uses_sw_${softwareNode.id}`,
-          source: nodeId,
-          target: softwareNode.id,
-          type: "smoothstep",
-          label: "used software",
-          animated: false,
-        });
       }
     });
   }
@@ -410,33 +430,40 @@ export function expandEvidenceNode(
       ? sourceData.usedDataset
       : [sourceData.usedDataset];
     const validDatasetInputs = datasets.filter(
-      (ds) => ds && (typeof ds === "string" || ds["@id"])
+      (ds) =>
+        ds && (typeof ds === "string" || (typeof ds === "object" && ds["@id"]))
     );
 
     if (validDatasetInputs.length === 1) {
+      const dsInput = validDatasetInputs[0];
       const datasetInputObject =
-        typeof validDatasetInputs[0] === "string"
-          ? { "@id": validDatasetInputs[0], "@type": "evi:Dataset" }
-          : validDatasetInputs[0];
-
-      const datasetNode = createEvidenceNode(datasetInputObject);
-      if (datasetNode) {
-        if (!nodeExists(datasetNode.id)) {
-          result.newNodes.push(datasetNode);
+        typeof dsInput === "string"
+          ? { "@id": dsInput, "@type": "evi:Dataset" }
+          : dsInput;
+      if (
+        typeof datasetInputObject === "object" &&
+        datasetInputObject !== null &&
+        datasetInputObject["@id"]
+      ) {
+        const datasetNode = createEvidenceNode(datasetInputObject);
+        if (datasetNode) {
+          if (!nodeExists(datasetNode.id)) {
+            result.newNodes.push(datasetNode);
+          }
+          result.newEdges.push({
+            id: `${nodeId}_uses_ds_${datasetNode.id}`,
+            source: nodeId,
+            target: datasetNode.id,
+            type: "smoothstep",
+            label: "used dataset",
+            animated: false,
+          });
         }
-        result.newEdges.push({
-          id: `${nodeId}_uses_ds_${datasetNode.id}`,
-          source: nodeId,
-          target: datasetNode.id,
-          type: "smoothstep",
-          label: "used dataset",
-          animated: false,
-        });
       }
     } else if (validDatasetInputs.length > 1) {
       const collectionNode = createDatasetCollectionNode(
         nodeId,
-        validDatasetInputs
+        validDatasetInputs as (RawGraphEntity | string)[]
       );
       if (collectionNode) {
         if (!nodeExists(collectionNode.id)) {
@@ -461,28 +488,31 @@ export function expandEvidenceNode(
     const samples = Array.isArray(sourceData.usedSample)
       ? sourceData.usedSample
       : [sourceData.usedSample];
-
     samples.forEach((sample) => {
       if (!sample) return;
-
       const sampleObject =
         typeof sample === "string"
           ? { "@id": sample, "@type": "evi:Sample" }
           : sample;
-
-      const sampleNode = createEvidenceNode(sampleObject);
-      if (sampleNode) {
-        if (!nodeExists(sampleNode.id)) {
-          result.newNodes.push(sampleNode);
+      if (
+        typeof sampleObject === "object" &&
+        sampleObject !== null &&
+        sampleObject["@id"]
+      ) {
+        const sampleNode = createEvidenceNode(sampleObject);
+        if (sampleNode) {
+          if (!nodeExists(sampleNode.id)) {
+            result.newNodes.push(sampleNode);
+          }
+          result.newEdges.push({
+            id: `${nodeId}_uses_sample_${sampleNode.id}`,
+            source: nodeId,
+            target: sampleNode.id,
+            type: "smoothstep",
+            label: "used sample",
+            animated: false,
+          });
         }
-        result.newEdges.push({
-          id: `${nodeId}_uses_sample_${sampleNode.id}`,
-          source: nodeId,
-          target: sampleNode.id,
-          type: "smoothstep",
-          label: "used sample",
-          animated: false,
-        });
       }
     });
   }
@@ -494,37 +524,36 @@ export function expandEvidenceNode(
     const instruments = Array.isArray(sourceData.usedInstrument)
       ? sourceData.usedInstrument
       : [sourceData.usedInstrument];
-
     instruments.forEach((instrument) => {
       if (!instrument) return;
-
       const instrumentObject =
         typeof instrument === "string"
           ? { "@id": instrument, "@type": "evi:Instrument" }
           : instrument;
-
-      const instrumentNode = createEvidenceNode(instrumentObject);
-      if (instrumentNode) {
-        if (!nodeExists(instrumentNode.id)) {
-          result.newNodes.push(instrumentNode);
+      if (
+        typeof instrumentObject === "object" &&
+        instrumentObject !== null &&
+        instrumentObject["@id"]
+      ) {
+        const instrumentNode = createEvidenceNode(instrumentObject);
+        if (instrumentNode) {
+          if (!nodeExists(instrumentNode.id)) {
+            result.newNodes.push(instrumentNode);
+          }
+          result.newEdges.push({
+            id: `${nodeId}_uses_instrument_${instrumentNode.id}`,
+            source: nodeId,
+            target: instrumentNode.id,
+            type: "smoothstep",
+            label: "used instrument",
+            animated: false,
+          });
         }
-        result.newEdges.push({
-          id: `${nodeId}_uses_instrument_${instrumentNode.id}`,
-          source: nodeId,
-          target: instrumentNode.id,
-          type: "smoothstep",
-          label: "used instrument",
-          animated: false,
-        });
       }
     });
   }
 
   return result;
-}
-
-export interface CollectionExpansionResult extends ExpansionResult {
-  updatedCollectionData: Partial<EvidenceNodeData>;
 }
 
 export function expandDatasetCollectionNode(
@@ -536,6 +565,8 @@ export function expandDatasetCollectionNode(
   const originalData = collectionNode.data;
   const remaining = originalData._remainingDatasets;
 
+  let updatedCollectionData: Partial<EvidenceNodeData> = { expandable: false }; // Default if nothing happens
+
   if (!remaining || remaining.length === 0) {
     return {
       newNodes: [],
@@ -545,26 +576,31 @@ export function expandDatasetCollectionNode(
   }
 
   const datasetToExpand = remaining[0];
-  const datasetNode = createEvidenceNode(datasetToExpand);
+  if (
+    typeof datasetToExpand === "object" &&
+    datasetToExpand !== null &&
+    datasetToExpand["@id"]
+  ) {
+    const datasetNode = createEvidenceNode(datasetToExpand);
+    const nodeExists = (id: string) =>
+      currentNodes.some((n) => n.id === id) ||
+      result.newNodes.some((n) => n.id === id);
 
-  const nodeExists = (id: string) =>
-    currentNodes.some((n) => n.id === id) ||
-    result.newNodes.some((n) => n.id === id);
-
-  if (datasetNode) {
-    if (!nodeExists(datasetNode.id)) {
-      result.newNodes.push(datasetNode);
+    if (datasetNode) {
+      if (!nodeExists(datasetNode.id)) {
+        result.newNodes.push(datasetNode);
+      }
+      result.newEdges.push({
+        id: `${nodeId}_contains_${datasetNode.id}_${
+          originalData._expandedCount || 0
+        }`,
+        source: nodeId,
+        target: datasetNode.id,
+        type: "smoothstep",
+        label: "contains",
+        animated: false,
+      });
     }
-    result.newEdges.push({
-      id: `${nodeId}_contains_${datasetNode.id}_${
-        originalData._expandedCount || 0
-      }`,
-      source: nodeId,
-      target: datasetNode.id,
-      type: "smoothstep",
-      label: "contains",
-      animated: false,
-    });
   }
 
   const nextRemaining = remaining.slice(1);
@@ -577,7 +613,7 @@ export function expandDatasetCollectionNode(
     ? `Datasets (${nextRemaining.length})`
     : `Datasets (All)`;
 
-  const updatedCollectionData: Partial<EvidenceNodeData> = {
+  updatedCollectionData = {
     _remainingDatasets: nextRemaining,
     _expandedCount: nextExpandedCount,
     expandable: nextExpandable,
@@ -585,8 +621,5 @@ export function expandDatasetCollectionNode(
     displayName: nextDisplayName,
   };
 
-  return {
-    ...result,
-    updatedCollectionData: updatedCollectionData,
-  };
+  return { ...result, updatedCollectionData: updatedCollectionData };
 }
