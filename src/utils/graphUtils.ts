@@ -220,7 +220,10 @@ export function createDatasetCollectionNode(
   };
 }
 
-export function getInitialElements(graphData: RawGraphData): {
+export function getInitialElements(
+  graphData: RawGraphData,
+  initialExpansionDepth: number = 2
+): {
   nodes: EvidenceNode[];
   edges: EvidenceEdge[];
 } {
@@ -243,10 +246,91 @@ export function getInitialElements(graphData: RawGraphData): {
     return { nodes: [], edges: [] };
   }
 
-  return { nodes: [rootNode], edges: [] };
+  let currentNodes: EvidenceNode[] = [rootNode];
+  let currentEdges: EvidenceEdge[] = [];
+  let nodesToExpandInNextLevel: EvidenceNode[] = rootNode.data.expandable
+    ? [rootNode]
+    : [];
+
+  for (let level = 0; level < initialExpansionDepth; level++) {
+    const nodesExpandedInThisLevel: EvidenceNode[] = [
+      ...nodesToExpandInNextLevel,
+    ];
+    nodesToExpandInNextLevel = [];
+
+    if (nodesExpandedInThisLevel.length === 0) {
+      break;
+    }
+
+    nodesExpandedInThisLevel.forEach((nodeToExpand) => {
+      const currentNodeInstance = currentNodes.find(
+        (n) => n.id === nodeToExpand.id
+      );
+      if (
+        !currentNodeInstance ||
+        !currentNodeInstance.data.expandable ||
+        currentNodeInstance.data._expanded
+      ) {
+        return;
+      }
+
+      let expansionResult: ExpansionResult;
+      let updatedCollectionData: Partial<EvidenceNodeData> | null = null;
+
+      expansionResult = expandEvidenceNode(nodeToExpand, currentNodes);
+
+      if (
+        expansionResult.newNodes.length > 0 ||
+        expansionResult.newEdges.length > 0 ||
+        updatedCollectionData
+      ) {
+        const nodeIndex = currentNodes.findIndex(
+          (n) => n.id === nodeToExpand.id
+        );
+        if (nodeIndex !== -1) {
+          currentNodes[nodeIndex].data._expanded = true;
+          currentNodes[nodeIndex].data.expandable = false;
+
+          if (updatedCollectionData) {
+            currentNodes[nodeIndex].data = {
+              ...currentNodes[nodeIndex].data,
+              ...updatedCollectionData,
+            };
+            if (updatedCollectionData.expandable) {
+              currentNodes[nodeIndex].data.expandable = true;
+            }
+          }
+        }
+
+        expansionResult.newNodes.forEach((newNode) => {
+          if (!currentNodes.some((n) => n.id === newNode.id)) {
+            currentNodes.push(newNode);
+            if (newNode.data.expandable) {
+              nodesToExpandInNextLevel.push(newNode);
+            }
+          }
+        });
+
+        expansionResult.newEdges.forEach((newEdge) => {
+          if (!currentEdges.some((e) => e.id === newEdge.id)) {
+            currentEdges.push(newEdge);
+          }
+        });
+      } else {
+        const nodeIndex = currentNodes.findIndex(
+          (n) => n.id === nodeToExpand.id
+        );
+        if (nodeIndex !== -1) {
+          currentNodes[nodeIndex].data.expandable = false;
+        }
+      }
+    });
+  }
+
+  return { nodes: currentNodes, edges: currentEdges };
 }
 
-interface ExpansionResult {
+export interface ExpansionResult {
   newNodes: EvidenceNode[];
   newEdges: EvidenceEdge[];
 }
@@ -268,7 +352,6 @@ export function expandEvidenceNode(
     currentNodes.some((n) => n.id === id) ||
     result.newNodes.some((n) => n.id === id);
 
-  // Handle Dataset -> Computation relationship
   if (nodeType === "Dataset" && sourceData.generatedBy) {
     const computationNode = createEvidenceNode(sourceData.generatedBy);
     if (computationNode) {
@@ -286,7 +369,6 @@ export function expandEvidenceNode(
     }
   }
 
-  // Handle Computation -> Software relationship
   if (
     (nodeType === "Computation" || nodeType === "Experiment") &&
     sourceData.usedSoftware
@@ -320,7 +402,6 @@ export function expandEvidenceNode(
     });
   }
 
-  // Handle Computation -> Dataset relationship
   if (
     (nodeType === "Computation" || nodeType === "Experiment") &&
     sourceData.usedDataset
@@ -373,7 +454,6 @@ export function expandEvidenceNode(
     }
   }
 
-  // Handle Computation/Experiment -> Sample relationship
   if (
     (nodeType === "Computation" || nodeType === "Experiment") &&
     sourceData.usedSample
@@ -407,7 +487,6 @@ export function expandEvidenceNode(
     });
   }
 
-  // Handle Computation/Experiment -> Instrument relationship
   if (
     (nodeType === "Computation" || nodeType === "Experiment") &&
     sourceData.usedInstrument

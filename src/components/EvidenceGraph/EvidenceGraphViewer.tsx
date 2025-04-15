@@ -95,7 +95,6 @@ const GraphRenderer: React.FC<EvidenceGraphViewerProps> = ({
           if (fit && !initialLayoutDone.current) {
             setTimeout(() => {
               const result = fitView({ padding: 0.15, duration: 300 });
-              // Handle the Promise returned by fitView
               Promise.resolve(result).then(() => {
                 initialLayoutDone.current = true;
               });
@@ -120,7 +119,7 @@ const GraphRenderer: React.FC<EvidenceGraphViewerProps> = ({
       setIsLoading(true);
 
       const { nodes: initialNodes, edges: initialEdges } =
-        getInitialElements(evidenceGraphData);
+        getInitialElements(evidenceGraphData); // Default depth is 2
 
       if (initialNodes.length > 0) {
         rootNodeIdRef.current = initialNodes[0].id;
@@ -223,7 +222,6 @@ const GraphRenderer: React.FC<EvidenceGraphViewerProps> = ({
                     allCurrentNodesPostLayout.length > 0
                   ) {
                     const result = fitView({ duration: 400, padding: 0.15 });
-                    // Handle the Promise returned by fitView
                     Promise.resolve(result).then(() => {
                       const rootNodePostFit = getNodes().find(
                         (n) => n.id === rootNodeIdRef.current
@@ -233,8 +231,7 @@ const GraphRenderer: React.FC<EvidenceGraphViewerProps> = ({
                         const targetX = 100;
                         const deltaX = targetX - rootScreenPos.x;
                         if (Math.abs(deltaX) > 10) {
-                          // Use the reactflow instance's panBy function
-                          // Omitting the panBy call as it's causing a TS error
+                          // Removed panBy call due to potential issues/complexity
                         }
                       }
                     });
@@ -249,7 +246,6 @@ const GraphRenderer: React.FC<EvidenceGraphViewerProps> = ({
 
         if (newEdges.length > 0) {
           setEdges((prevEdges) => {
-            // Convert newEdges to proper Edge type before adding
             const edgesToAdd = newEdges as unknown as Edge[];
             return [...prevEdges, ...edgesToAdd];
           });
