@@ -151,7 +151,7 @@ const EvidenceGraphPage: React.FC = () => {
         const graphData = await fetchEvidenceGraphById(graphId);
 
         if (graphData && graphData["@graph"]) {
-          return { graph: graphData["@graph"], error: null };
+          return { graph: graphData, error: null };
         } else {
           return { graph: null, error: "Referenced evidence graph not found" };
         }

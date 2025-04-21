@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
+import axios from "axios";
 import { RawGraphEntity, Metadata } from "../../types";
 import {
   DatasetProperties,
@@ -130,6 +131,41 @@ const ButtonLink = styled.a`
   }
 `;
 
+const CustomAlert = ({ message, onClose }) => (
+  <div
+    style={{
+      position: "fixed",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      backgroundColor: "#f8d7da",
+      color: "#721c24",
+      padding: "20px",
+      borderRadius: "5px",
+      boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+      zIndex: 1000,
+      maxWidth: "80%",
+      textAlign: "center",
+    }}
+  >
+    <div>{message}</div>
+    <button
+      onClick={onClose}
+      style={{
+        marginTop: "10px",
+        background: "none",
+        border: "1px solid #721c24",
+        color: "#721c24",
+        padding: "5px 10px",
+        borderRadius: "3px",
+        cursor: "pointer",
+      }}
+    >
+      Close
+    </button>
+  </div>
+);
+
 type EntityType = "dataset" | "software" | "computation" | "schema";
 
 interface GenericMetadataComponentProps {
@@ -143,6 +179,79 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   type,
   arkId,
 }) => {
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+
+  const apiUrl =
+    import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+
+  const getToken = () => {
+    return localStorage.getItem("token") || "";
+  };
+
+  const handleDownload = async (downloadUrl) => {
+    const token = getToken();
+
+    if (!token) {
+      setAlertMessage("You must be logged in to download files.");
+      setShowAlert(true);
+      return;
+    }
+
+    try {
+      const response = await axios({
+        url: downloadUrl,
+        method: "GET",
+        responseType: "blob",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Try to get filename from Content-Disposition header
+      const contentDisposition = response.headers["content-disposition"];
+      let filename = null;
+      if (contentDisposition) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, "");
+        }
+      }
+
+      // If filename not found in header, extract from URL
+      if (!filename) {
+        const urlParts = downloadUrl.split("/");
+        filename = urlParts[urlParts.length - 1];
+        // Add .zip extension if it's not already there
+        if (!filename.toLowerCase().endsWith(".zip")) {
+          filename += ".zip";
+        }
+      }
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+      if (error.response && error.response.status === 401) {
+        setAlertMessage(
+          "You must be a member of the group to download this data."
+        );
+      } else {
+        setAlertMessage(
+          `Download failed. Please try again. Error: ${error.message}`
+        );
+      }
+      setShowAlert(true);
+    }
+  };
+
   // Get the appropriate property list based on type
   const getPropertyList = () => {
     switch (type) {
@@ -255,11 +364,26 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
       if (value === "Embargoed") {
         return <span>Embargoed</span>;
       } else {
-        return (
-          <ButtonLink href={value} target="_blank" rel="noopener noreferrer">
-            Download
-          </ButtonLink>
-        );
+        const rocrateDowloadPattern = new RegExp(`^${apiUrl}.*?download/`);
+        if (rocrateDowloadPattern.test(value)) {
+          return (
+            <ButtonLink
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                handleDownload(value);
+              }}
+            >
+              Download
+            </ButtonLink>
+          );
+        } else {
+          return (
+            <ButtonLink href={value} target="_blank" rel="noopener noreferrer">
+              Download
+            </ButtonLink>
+          );
+        }
       }
     }
 
@@ -308,6 +432,12 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
           })}
         </SummaryList>
       </SummarySection>
+      {showAlert && (
+        <CustomAlert
+          message={alertMessage}
+          onClose={() => setShowAlert(false)}
+        />
+      )}
     </Container>
   );
 };
