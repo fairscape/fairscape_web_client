@@ -20,6 +20,7 @@ interface FormData {
   prohibited_uses: string;
   maintenance_plan: string;
   limitations: string;
+  potential_sources_of_bias: string;
 }
 
 // Input field props
@@ -246,6 +247,8 @@ const ReleaseForm = () => {
       "These laboratory data are not to be used in clinical decision-making...",
     maintenance_plan: "Dataset will be regularly updated and augmented...",
     limitations: "This is an interim release. It does not contain...",
+    potential_sources_of_bias:
+      "Potential sources of bias include sample selection bias...",
   };
 
   const togglePreview = () => {
@@ -493,6 +496,12 @@ const ReleaseForm = () => {
             label="Prohibited Uses"
             field="prohibited_uses"
             placeholder={placeholders.prohibited_uses}
+            multiline={true}
+          />
+          <InputField
+            label="Potential Sources of Bias"
+            field="potential_sources_of_bias"
+            placeholder={placeholders.potential_sources_of_bias}
             multiline={true}
           />
 
