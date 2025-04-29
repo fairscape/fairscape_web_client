@@ -1,0 +1,253 @@
+{
+  "Dataset": {
+    "properties": [
+      {
+        "name": "name",
+        "label": "Dataset Name",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., Raw Sequencing Reads"
+      },
+      {
+        "name": "description",
+        "label": "Description",
+        "type": "textarea",
+        "required": true,
+        "placeholder": "Description of the dataset"
+      },
+      {
+        "name": "author",
+        "label": "Author(s)",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., Jane Doe (ORCID or Name)"
+      },
+      {
+        "name": "version",
+        "label": "Version",
+        "type": "text",
+        "required": true,
+        "defaultValue": "1.0",
+        "placeholder": "e.g., 1.0"
+      },
+      {
+        "name": "keywords",
+        "label": "Keywords",
+        "type": "keywords",
+        "required": true,
+        "placeholder": "e.g., fastq, raw data, genomics"
+      },
+      {
+        "name": "dataFormat",
+        "label": "Data Format (MIME)",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., text/csv, application/fastq"
+      },
+      {
+        "name": "filename",
+        "label": "Filename/Path (relative to crate root)",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., data/raw_reads.fastq.gz"
+      },
+      {
+        "name": "url",
+        "label": "URL (Optional)",
+        "type": "url",
+        "required": false,
+        "placeholder": "URL reference for the dataset"
+      },
+      {
+        "name": "datePublished",
+        "label": "Date Published (Optional)",
+        "type": "date",
+        "required": false
+      },
+      {
+        "name": "associatedPublication",
+        "label": "Associated Publication (Optional)",
+        "type": "text",
+        "required": false,
+        "placeholder": "Identifier or URL"
+      },
+      {
+        "name": "additionalDocumentation",
+        "label": "Additional Documentation (Optional)",
+        "type": "text",
+        "required": false,
+        "placeholder": "URL or path"
+      },
+      {
+        "name": "schema",
+        "label": "Schema (Optional)",
+        "type": "text",
+        "required": false,
+        "placeholder": "Identifier or URL of the data schema"
+      }
+    ]
+  },
+  "Software": {
+    "properties": [
+      {
+        "name": "name",
+        "label": "Software Name",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., Analysis Pipeline Script"
+      },
+      {
+        "name": "description",
+        "label": "Description",
+        "type": "textarea",
+        "required": true
+      },
+      {
+        "name": "author",
+        "label": "Author(s)",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., John Smith (ORCID or Name)"
+      },
+      {
+        "name": "version",
+        "label": "Version",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., 2.1.0"
+      },
+      {
+        "name": "keywords",
+        "label": "Keywords",
+        "type": "keywords",
+        "required": true,
+        "placeholder": "e.g., python, bioinformatics, analysis"
+      },
+      {
+        "name": "fileFormat",
+        "label": "File Format (MIME type)",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., text/x-python, application/javascript"
+      },
+      {
+        "name": "filename",
+        "label": "Filename/Path (Optional, relative to crate root)",
+        "type": "text",
+        "required": false,
+        "placeholder": "e.g., scripts/main_analysis.py"
+      },
+      {
+        "name": "url",
+        "label": "URL (Optional)",
+        "type": "url",
+        "required": false,
+        "placeholder": "URL reference for the software (e.g., repository)"
+      },
+      {
+        "name": "dateModified",
+        "label": "Date Modified (Optional)",
+        "type": "date",
+        "required": false
+      },
+      {
+        "name": "associatedPublication",
+        "label": "Associated Publication (Optional)",
+        "type": "text",
+        "required": false,
+        "placeholder": "Identifier or URL"
+      },
+      {
+        "name": "additionalDocumentation",
+        "label": "Additional Documentation (Optional)",
+        "type": "text",
+        "required": false,
+        "placeholder": "URL or path"
+      }
+    ]
+  },
+  "Computation": {
+    "properties": [
+      {
+        "name": "name",
+        "label": "Computation Name",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., Data Preprocessing Step"
+      },
+      {
+        "name": "description",
+        "label": "Description",
+        "type": "textarea",
+        "required": true
+      },
+      {
+        "name": "runBy",
+        "label": "Run By",
+        "type": "text",
+        "required": true,
+        "placeholder": "e.g., Alice Brown (ORCID or Name)"
+      },
+      {
+        "name": "dateCreated",
+        "label": "Date Created",
+        "type": "date",
+        "required": true
+      },
+      {
+        "name": "keywords",
+        "label": "Keywords",
+        "type": "keywords",
+        "required": true,
+        "placeholder": "e.g., filtering, quality control, alignment"
+      },
+      {
+        "name": "command",
+        "label": "Command (Optional)",
+        "type": "textarea",
+        "required": false,
+        "placeholder": "The command line execution string or script content"
+      },
+      {
+        "name": "associatedPublication",
+        "label": "Associated Publication (Optional)",
+        "type": "text",
+        "required": false,
+        "placeholder": "Identifier or URL"
+      },
+      {
+        "name": "additionalDocumentation",
+        "label": "Additional Documentation (Optional)",
+        "type": "text",
+        "required": false,
+        "placeholder": "URL or path"
+      },
+      {
+        "name": "relationships",
+        "label": "Inputs / Outputs / Software",
+        "type": "relationships",
+        "required": false,
+        "config": {
+          "sources": ["Dataset", "Software"],
+          "targets": [
+            {
+              "id": "usedDataset",
+              "label": "Input Datasets",
+              "accepts": ["Dataset"]
+            },
+            {
+              "id": "usedSoftware",
+              "label": "Software Used",
+              "accepts": ["Software"]
+            },
+            {
+              "id": "generated",
+              "label": "Generated Datasets/Files",
+              "accepts": ["Dataset"]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
