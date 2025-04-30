@@ -1,4 +1,3 @@
-// src/components/EvidenceGraph/EvidenceNode.tsx
 import React, { useCallback } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import Tippy from "@tippyjs/react";
@@ -9,7 +8,7 @@ import {
   formatPropertyValue,
   getDisplayableProperties,
 } from "../../utils/graphUtils";
-import styled from "styled-components";
+import styled from "styled-components"; // Ensure styled-components is imported
 
 const getNodeColor = (type: string): string => {
   switch (type) {
@@ -25,7 +24,7 @@ const getNodeColor = (type: string): string => {
     case "DatasetCollection":
       return "#B5DEFF";
     default:
-      return "#E0E0E0";
+      return "#E0E0E0"; // Changed default from ccc to E0E0E0 for consistency with previous versions
   }
 };
 
@@ -105,15 +104,15 @@ const TooltipWrapper = styled.div`
   }
 `;
 
+// Styled component for the node wrapper
 const NodeWrapper = styled.div<{
   expandable: boolean;
   color: string;
-  highlightClass: string;
 }>`
   background: #fff;
   padding: 0;
   border-radius: 5px;
-  border: 1px solid #ddd;
+  border: 1px solid #ddd; /* Base border */
   text-align: center;
   width: 180px;
   height: 90px;
@@ -126,6 +125,7 @@ const NodeWrapper = styled.div<{
   transition: border 0.2s ease, box-shadow 0.2s ease;
   cursor: default;
 
+  /* Add dashed border for expandable nodes */
   ${({ expandable }) =>
     expandable &&
     `
@@ -133,13 +133,16 @@ const NodeWrapper = styled.div<{
     cursor: pointer;
   `}
 
+  /* Highlight styles applied via class names */
   &.path-highlight {
     box-shadow: 0 0 0 3px rgba(255, 0, 114, 0.7) !important;
-    border: 2px solid rgba(255, 0, 114, 0.9) !important;
+    border: 2px solid rgba(255, 0, 114, 0.9) !important; /* Override dashed border if highlighted */
+    z-index: 2; /* Ensure highlighted nodes are above non-highlighted */
   }
   &.path-start-end {
     box-shadow: 0 0 0 4px rgba(0, 114, 255, 0.7) !important;
-    border: 2px solid rgba(0, 114, 255, 0.9) !important;
+    border: 2px solid rgba(0, 114, 255, 0.9) !important; /* Override dashed/highlight border */
+    z-index: 3; /* Ensure start/end nodes are highest */
   }
 `;
 
@@ -170,7 +173,7 @@ const NodeContent = styled.div`
   font-size: 12px;
   line-height: 1.3;
   box-sizing: border-box;
-  min-height: 0;
+  min-height: 0; /* Allow content to shrink */
 `;
 
 const NodeLabel = styled.div`
@@ -178,7 +181,7 @@ const NodeLabel = styled.div`
   text-align: center;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 3; /* Limit label to 3 lines */
   -webkit-box-orient: vertical;
 `;
 
@@ -213,9 +216,9 @@ const InfoButton = styled.button<{ bgColor: string }>`
 const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
   data,
   isConnectable,
-  id,
-  selected,
-  className = "",
+  id, // id is available in NodeProps
+  selected, // selected is available in NodeProps
+  className = "", // className prop is passed by React Flow for styling
 }) => {
   const nodeColor = getNodeColor(data.type);
 
@@ -223,6 +226,7 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
     const sourceProps = getDisplayableProperties(data._sourceData);
     const allProps = { ...sourceProps, ...data.properties };
 
+    // Exclude certain properties from the general list
     delete allProps.name;
     delete allProps.label;
     delete allProps.description;
@@ -232,11 +236,13 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
 
     return (
       <TooltipWrapper>
-        <h4>{data.label || data.displayName || "Node Details"}</h4>
-
+        <h4>{data.label || data.displayName || "Node Details"}</h4>{" "}
+        {/* Use displayName if label is missing */}
+        {/* Essential Node Metadata */}
         <div className="tooltip-section node-meta">
           <div className="prop-item">
             <span className="prop-key">@id:</span>
+            {/* Using id from data, which comes from _sourceData["@id"] */}
             <span
               className="prop-value"
               dangerouslySetInnerHTML={{ __html: formatPropertyValue(data.id) }}
@@ -252,6 +258,7 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
               <span className="prop-value">{data.description}</span>
             </div>
           )}
+          {/* Special display for DatasetCollection item count */}
           {data.type === "DatasetCollection" &&
             data.properties?.count !== undefined && (
               <div className="prop-item">
@@ -260,7 +267,7 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
               </div>
             )}
         </div>
-
+        {/* Display other properties if any exist */}
         {Object.entries(allProps).length > 0 && (
           <div className="tooltip-section">
             {Object.entries(allProps).map(([key, value]) => (
@@ -276,7 +283,7 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
             ))}
           </div>
         )}
-
+        {/* Expansion/Selection Hints */}
         {data.expandable && (
           <em className="expand-hint">
             (Click node center to expand{" "}
@@ -285,60 +292,73 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
             (Shift+Click to select for path)
           </em>
         )}
-        {!data.expandable && (
+        {!data.expandable && ( // Show hint even if not expandable
           <em className="expand-hint">(Shift+Click to select for path)</em>
         )}
       </TooltipWrapper>
     );
-  }, [data]);
+  }, [data]); // Dependency on data ensures tooltip updates if data changes
 
   const handleIconClick = (e: React.MouseEvent) => {
+    // Prevent the click event on the 'i' button from propagating to the node wrapper
+    // This ensures clicking 'i' doesn't trigger node expansion/selection.
     e.stopPropagation();
   };
 
   return (
+    // NodeWrapper accepts className prop which React Flow passes
     <NodeWrapper
-      expandable={!!data.expandable}
+      expandable={!!data.expandable} // Convert to boolean
       color={nodeColor}
-      highlightClass={className}
+      className={className} // Apply the className provided by React Flow (includes highlight classes)
     >
+      {/* Target Handle (for incoming edges) */}
       <Handle
         type="target"
         position={Position.Left}
         isConnectable={isConnectable}
-        style={{ background: "#555", zIndex: 1 }}
+        style={{ background: "#555", zIndex: 1 }} // Ensure handle is above wrapper content
       />
 
+      {/* Node Header (Type) */}
       <NodeHeader bgColor={nodeColor}>{data.type}</NodeHeader>
 
+      {/* Node Content (Display Name) */}
       <NodeContent>
-        <NodeLabel title={data.label}>{data.displayName}</NodeLabel>
+        {/* Use title for full text on hover if truncated */}
+        <NodeLabel title={data.displayName || data.label}>
+          {data.displayName || data.label || id}
+        </NodeLabel>{" "}
+        {/* Fallback to id if displayName/label missing */}
       </NodeContent>
 
+      {/* Tippy for Tooltip */}
       <Tippy
         content={renderTooltipContent()}
-        theme="light"
-        interactive={true}
-        placement="right-start"
-        trigger="mouseenter focus"
-        appendTo={() => document.body}
+        theme="light" // Use the light theme defined in CSS
+        interactive={true} // Allow interaction within the tooltip (e.g., copying text)
+        placement="right-start" // Position tooltip
+        trigger="mouseenter focus click" // Show on hover, focus, or click
+        appendTo={() => document.body} // Append tooltip to body to avoid clipping issues
         maxWidth={500}
-        delay={[150, 0]}
+        delay={[150, 0]} // Delay showing, no delay hiding
       >
+        {/* Info Button */}
         <InfoButton
           onClick={handleIconClick}
-          aria-label={`Details for ${data.label || data.displayName}`}
-          bgColor={nodeColor}
+          aria-label={`Details for ${data.displayName || data.label || id}`}
+          bgColor={nodeColor} // Use node color for button background
         >
           i
         </InfoButton>
       </Tippy>
 
+      {/* Source Handle (for outgoing edges) */}
       <Handle
         type="source"
         position={Position.Right}
         isConnectable={isConnectable}
-        style={{ background: "#555", zIndex: 1 }}
+        style={{ background: "#555", zIndex: 1 }} // Ensure handle is above wrapper content
       />
     </NodeWrapper>
   );
