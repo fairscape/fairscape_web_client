@@ -60,6 +60,8 @@ const SummaryValue = styled.div`
   flex: 1;
   max-height: 300px;
   overflow: auto;
+  word-wrap: break-word; /* Added for better wrapping */
+  word-break: break-all; /* Added for better wrapping */
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -85,6 +87,10 @@ const List = styled.ul`
   padding-left: 20px;
 `;
 
+const ListItem = styled.li`
+  margin-bottom: 4px;
+`;
+
 const CodeBlock = styled.pre`
   background-color: ${({ theme }) => theme.colors.backgroundAlt};
   padding: ${({ theme }) => theme.spacing.sm};
@@ -92,6 +98,8 @@ const CodeBlock = styled.pre`
   overflow-x: auto;
   font-family: monospace;
   margin: 0;
+  white-space: pre-wrap; /* Allow wrapping within code block */
+  word-break: break-all; /* Break long words/lines */
 `;
 
 const PropertiesTable = styled.table`
@@ -103,6 +111,7 @@ const PropertiesTable = styled.table`
     padding: 8px;
     text-align: left;
     border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+    vertical-align: top; /* Align content to top */
   }
 
   th {
@@ -128,6 +137,14 @@ const ButtonLink = styled.a`
   &:disabled {
     background-color: ${({ theme }) => theme.colors.border};
     cursor: not-allowed;
+  }
+`;
+
+const StyledLink = styled.a`
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
   }
 `;
 
@@ -182,6 +199,8 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
 
+  const feUrl =
+    import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
   const apiUrl =
     import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 
@@ -189,7 +208,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     return localStorage.getItem("token") || "";
   };
 
-  const handleDownload = async (downloadUrl) => {
+  const handleDownload = async (downloadUrl: string) => {
     const token = getToken();
 
     if (!token) {
@@ -208,7 +227,6 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         },
       });
 
-      // Try to get filename from Content-Disposition header
       const contentDisposition = response.headers["content-disposition"];
       let filename = null;
       if (contentDisposition) {
@@ -219,11 +237,9 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         }
       }
 
-      // If filename not found in header, extract from URL
       if (!filename) {
         const urlParts = downloadUrl.split("/");
         filename = urlParts[urlParts.length - 1];
-        // Add .zip extension if it's not already there
         if (!filename.toLowerCase().endsWith(".zip")) {
           filename += ".zip";
         }
@@ -237,7 +253,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Download failed:", error);
       if (error.response && error.response.status === 401) {
         setAlertMessage(
@@ -252,7 +268,6 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     }
   };
 
-  // Get the appropriate property list based on type
   const getPropertyList = () => {
     switch (type) {
       case "dataset":
@@ -268,7 +283,6 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     }
   };
 
-  // Get the appropriate section title based on type
   const getSectionTitle = () => {
     switch (type) {
       case "dataset":
@@ -284,18 +298,31 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     }
   };
 
-  // Format value based on type and key
-  const formatValue = (key: string, value: any): React.ReactElement => {
+  const renderArkLink = (arkId: string, index?: number) => {
+    if (typeof arkId === "string" && arkId.startsWith("ark:")) {
+      const fullUrl = `${feUrl}${arkId}`;
+      return (
+        <StyledLink
+          href={fullUrl}
+          key={index ?? arkId}
+          data-testid={`ark-link-${arkId}`}
+        >
+          {arkId}
+        </StyledLink>
+      );
+    }
+    return <span key={index ?? arkId}>{String(arkId)}</span>;
+  };
+
+  const formatValue = (key: string, value: any): React.ReactNode => {
     if (value === null || value === undefined) {
       return <span>Not specified</span>;
     }
 
-    // Special case for command in computation - display as code block
     if (key === "command" && type === "computation") {
       return <CodeBlock>{value}</CodeBlock>;
     }
 
-    // Special case for properties in schema - display as table
     if (
       key === "properties" &&
       type === "schema" &&
@@ -325,41 +352,35 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
       );
     }
 
-    // Handle arrays
     if (Array.isArray(value)) {
-      // Keywords array
-      if (key === "keywords") {
+      if (key === "keywords" || (key === "required" && type === "schema")) {
         return <span>{value.join(", ")}</span>;
       }
 
-      // Required fields array for schema
-      if (key === "required" && type === "schema") {
-        return <span>{value.join(", ")}</span>;
-      }
-
-      // References to other entities (IDs or objects)
       return (
         <List>
           {value.map((item, index) => (
-            <li key={index}>
+            <ListItem key={index}>
               {typeof item === "object" && item !== null && item["@id"]
-                ? item["@id"]
-                : String(item)}
-            </li>
+                ? renderArkLink(item["@id"], index)
+                : renderArkLink(item, index)}
+            </ListItem>
           ))}
         </List>
       );
     }
 
-    // Handle objects (typically references)
     if (typeof value === "object" && value !== null) {
       if (value["@id"]) {
-        return <span>{value["@id"]}</span>;
+        return renderArkLink(value["@id"]);
       }
-      return <span>{JSON.stringify(value)}</span>;
+      try {
+        return <span>{JSON.stringify(value)}</span>;
+      } catch (e) {
+        return <span>[Object]</span>;
+      }
     }
 
-    // Handle download links
     if (key === "contentUrl") {
       if (value === "Embargoed") {
         return <span>Embargoed</span>;
@@ -387,13 +408,11 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
       }
     }
 
-    // Format boolean values
     if (typeof value === "boolean") {
       return <span>{value ? "Yes" : "No"}</span>;
     }
 
-    // Default: just convert to string
-    return <span>{String(value)}</span>;
+    return renderArkLink(String(value));
   };
 
   if (!metadata) {
@@ -406,7 +425,6 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     );
   }
 
-  // Treat the metadata itself as the entity
   const entity = metadata as unknown as RawGraphEntity;
   const propertyList = getPropertyList();
 
@@ -417,13 +435,13 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
 
         <SummaryList>
           {propertyList.map((prop) => {
-            // Only show properties that exist in the entity
-            if (entity[prop.key] !== undefined) {
+            const propValue = entity[prop.key];
+            if (propValue !== undefined) {
               return (
                 <SummaryRow key={prop.key}>
                   <SummaryLabel>{prop.name}</SummaryLabel>
                   <SummaryValue>
-                    {formatValue(prop.key, entity[prop.key])}
+                    {formatValue(prop.key, propValue)}
                   </SummaryValue>
                 </SummaryRow>
               );

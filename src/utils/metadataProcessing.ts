@@ -521,6 +521,7 @@ export const determineReleaseType = (metadata: Metadata): string => {
     return "computation";
   } else if (
     jsonLdTypes.includes("Schema") ||
+    jsonLdTypes.includes("evi:schema") ||
     jsonLdTypes.includes("EVI:Schema")
   ) {
     return "schema";

@@ -226,6 +226,14 @@ const MetadataDisplayPage: React.FC = () => {
                 arkId={arkId}
               />
             );
+          case "evi:schema":
+            return (
+              <GenericMetadataComponent
+                metadata={metadata}
+                type="schema"
+                arkId={arkId}
+              />
+            );
           default:
             return (
               <Alert
