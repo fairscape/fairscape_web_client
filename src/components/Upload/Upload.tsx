@@ -80,24 +80,38 @@ const UploadButton = styled.button`
   }
 `;
 
+const SuccessMessage = styled.div`
+  color: ${({ theme }) => theme.colors.success};
+  margin-top: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.md};
+  background-color: ${({ theme }) => theme.colors.successLight};
+  border-radius: ${({ theme }) => theme.borderRadius};
+  font-weight: 600;
+  text-align: center;
+`;
+
 const Upload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
-  const [submissionUUID, setSubmissionUUID] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<UploadError | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<UploadError | null>(null);
   const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile && selectedFile.type === "application/zip") {
+    if (
+      selectedFile &&
+      (selectedFile.type === "application/zip" ||
+        selectedFile.type === "application/json")
+    ) {
       setFile(selectedFile);
       setError("");
-      setSubmissionUUID(null);
+      setIsSuccess(false);
       setUploadError(null);
       setIsUploading(false);
     } else {
-      setError("Please select a valid ZIP file");
+      setError("Please select a valid ZIP or JSON file");
       setFile(null);
     }
   };
@@ -118,35 +132,50 @@ const Upload: React.FC = () => {
     setError("");
     setIsUploading(true);
     setUploadError(null);
-
-    const formData = new FormData();
-    formData.append("crate", file);
+    setIsSuccess(false);
 
     try {
-      const response = await fetch(`${API_URL}/rocrate/upload-async`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      let response;
+      if (file.type === "application/zip") {
+        const formData = new FormData();
+        formData.append("crate", file);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSubmissionUUID(data.transactionFolder);
-      } else {
-        setUploadError({
-          status: response.status.toString(),
-          message: data.message || "Upload failed",
+        response = await fetch(`${API_URL}/rocrate/upload-async`, {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
-        setIsUploading(false);
+      } else if (file.type === "application/json") {
+        const fileContent = await file.text();
+        const jsonData = JSON.parse(fileContent);
+
+        response = await fetch(`${API_URL}/rocrate/metadata`, {
+          method: "POST",
+          body: JSON.stringify(jsonData),
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+      }
+
+      if (response && response.ok) {
+        setIsSuccess(true);
+      } else {
+        const data = await response?.json();
+        setUploadError({
+          status: response ? response.status.toString() : "Error",
+          message: data?.message || "Upload failed",
+        });
       }
     } catch (error) {
       setUploadError({
         status: "Error",
         message: "An error occurred during upload",
       });
+    } finally {
       setIsUploading(false);
     }
   };
@@ -155,12 +184,12 @@ const Upload: React.FC = () => {
     <UploadContainer>
       <form onSubmit={handleSubmit}>
         <FormGroup>
-          <Label htmlFor="file">Select ZIP File:</Label>
+          <Label htmlFor="file">Select ZIP or JSON File:</Label>
           <FileInput
             type="file"
             id="file"
             onChange={handleFileChange}
-            accept=".zip"
+            accept=".zip,.json"
             disabled={isUploading}
           />
           {error && <ErrorMessage>{error}</ErrorMessage>}
@@ -170,11 +199,15 @@ const Upload: React.FC = () => {
           {isUploading ? "Uploading..." : "Upload"}
         </UploadButton>
 
-        <StatusTracker
-          submissionUUID={submissionUUID}
-          uploadError={uploadError}
-          isUploading={isUploading}
-        />
+        {isSuccess && (
+          <SuccessMessage>Upload completed successfully!</SuccessMessage>
+        )}
+
+        {uploadError && (
+          <ErrorMessage>
+            Error {uploadError.status}: {uploadError.message}
+          </ErrorMessage>
+        )}
       </form>
     </UploadContainer>
   );
