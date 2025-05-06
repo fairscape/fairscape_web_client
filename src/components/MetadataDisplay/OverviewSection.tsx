@@ -44,8 +44,6 @@ interface OverviewSectionProps {
 }
 
 const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
-  console.log("Rendering OverviewSection with data:", overviewData);
-
   // Only filter out undefined, null, and empty strings
   const fieldsToRender = Object.entries(overviewData)
     .filter(
@@ -69,8 +67,6 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
 
       return { key, label, value };
     });
-
-  console.log("Fields to render:", fieldsToRender);
 
   // Always render the container even if we don't have many fields
   return (

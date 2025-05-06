@@ -13,7 +13,6 @@ export interface MetadataResult {
 }
 
 export const metadataService = () => {
-  // Function to fetch evidence graph
   const fetchEvidenceGraph = async (graphId: string) => {
     try {
       const token = localStorage.getItem("token");
@@ -32,7 +31,6 @@ export const metadataService = () => {
     }
   };
 
-  // Function to initiate evidence graph build
   const initiateEvidenceGraphBuild = async (arkId: string) => {
     try {
       const token = localStorage.getItem("token");
@@ -47,10 +45,8 @@ export const metadataService = () => {
         { headers }
       );
 
-      // Wait for 0.5 seconds
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Check if metadata now has evidence graph
       const metadataResponse = await axios.get(`${API_URL}/${arkId}`, {
         headers,
       });
@@ -95,7 +91,7 @@ export const metadataService = () => {
     }
 
     try {
-      const cleanArkId = arkId.replace(/^\/|\/$/g, ""); // Remove leading/trailing slashes
+      const cleanArkId = arkId.replace(/^\/|\/$/g, "");
       const url = `${API_URL}/${cleanArkId}`;
       console.log("Requesting URL:", url);
       const response = await axios.get(url, {
@@ -105,24 +101,21 @@ export const metadataService = () => {
         withCredentials: true,
       });
 
-      // Extract metadata from response
       let metadata = response.data.metadata || response.data;
 
-      // Determine the content type
       let type = "unknown";
-      if (metadata["@type"]) {
-        const typeValue = Array.isArray(metadata["@type"])
-          ? metadata["@type"][1]
-          : metadata["@type"];
+      if (metadata && (metadata as any)["@type"]) {
+        const typeValue = Array.isArray((metadata as any)["@type"])
+          ? (metadata as any)["@type"][1] // Assuming the second type might be more specific
+          : (metadata as any)["@type"];
 
         if (typeof typeValue === "string") {
-          // Extract the last part after # or /
           const typeParts = typeValue.split(/[/#]/);
           type = typeParts[typeParts.length - 1].toLowerCase();
         }
       }
-      console.log("Metadata type:", type);
-      // For RO-Crate, make an additional request
+      console.log("Initial metadata type:", type);
+
       if (type === "rocrate") {
         try {
           const rocrateResponse = await axios.get(
@@ -134,28 +127,93 @@ export const metadataService = () => {
               withCredentials: true,
             }
           );
-          if (rocrateResponse.data.metadata) {
-            metadata = rocrateResponse.data.metadata;
+          const rocrateResponseData = rocrateResponse.data;
+
+          if (rocrateResponseData && rocrateResponseData.metadata) {
+            const fetchedRocrateMetadata = rocrateResponseData.metadata;
+            metadata = fetchedRocrateMetadata; // Update the main metadata object with the full RO-Crate content
+
+            // Now, analyze the fetched RO-Crate metadata to refine the type
+            if (
+              fetchedRocrateMetadata &&
+              Array.isArray((fetchedRocrateMetadata as any)["@graph"])
+            ) {
+              const graphElements = (fetchedRocrateMetadata as any)["@graph"];
+              let rocrateDatasetCount = 0;
+
+              for (const element of graphElements) {
+                if (
+                  element &&
+                  typeof element === "object" &&
+                  (element as any)["@type"]
+                ) {
+                  const elementTypes = Array.isArray((element as any)["@type"])
+                    ? (element as any)["@type"]
+                    : [(element as any)["@type"]];
+
+                  const isDataset = elementTypes.some(
+                    (t: any) =>
+                      typeof t === "string" &&
+                      (t.toLowerCase().endsWith("/dataset") ||
+                        t.toLowerCase() === "dataset")
+                  );
+                  const isROCrate = elementTypes.some(
+                    (t: any) =>
+                      typeof t === "string" &&
+                      (t === "https://w3id.org/EVI#ROCrate" ||
+                        t.toLowerCase().endsWith("/rocrate"))
+                  );
+
+                  if (isDataset && isROCrate) {
+                    rocrateDatasetCount++;
+                  }
+                }
+              }
+
+              console.log(
+                "RO-Crate Dataset count in @graph:",
+                rocrateDatasetCount
+              );
+
+              if (rocrateDatasetCount > 1) {
+                type = "release"; // It's a release containing multiple RO-Crate datasets
+              }
+              // If count is 0 or 1, type remains 'rocrate' as initially determined.
+            } else {
+              console.log(
+                "RO-Crate endpoint returned metadata but no @graph array."
+              );
+              // Metadata updated, type remains 'rocrate'
+            }
+          } else {
+            console.log(
+              "RO-Crate endpoint did not return expected metadata structure (no .metadata)."
+            );
+            // Keep original metadata and type ('rocrate')
           }
         } catch (err) {
-          console.log("RO-Crate endpoint not available, trying alternatives");
+          console.log(
+            "RO-Crate endpoint not available or failed, keeping original metadata/type",
+            err
+          );
+          // If the /rocrate call fails, keep the initial metadata and type ('rocrate')
         }
       }
 
-      // Check for evidence graph
+      console.log("Final metadata type:", type);
+
       let evidenceGraph = null;
       let hasEvidenceGraph = false;
 
-      if (metadata.hasEvidenceGraph) {
+      if (metadata && (metadata as any).hasEvidenceGraph) {
         hasEvidenceGraph = true;
         const graphId =
-          typeof metadata.hasEvidenceGraph === "string"
-            ? metadata.hasEvidenceGraph
-            : metadata.hasEvidenceGraph["@id"];
+          typeof (metadata as any).hasEvidenceGraph === "string"
+            ? (metadata as any).hasEvidenceGraph
+            : (metadata as any).hasEvidenceGraph["@id"];
 
         evidenceGraph = await fetchEvidenceGraph(graphId);
       } else if (type !== "release" && type !== "rocrate" && token) {
-        // Try to generate evidence graph for non-release/rocrate types
         const result = await initiateEvidenceGraphBuild(arkId);
         if (result.hasEvidenceGraph) {
           metadata = result.metadata || metadata;
@@ -187,11 +245,9 @@ export const metadataService = () => {
     dataFile: string = "release.json"
   ): Promise<MetadataResult> => {
     try {
-      // Load local JSON data file
       const response = await axios.get<Metadata>(`/data/${dataFile}`);
       const metadata = response.data;
 
-      // Try to load evidence graph
       let evidenceGraph: RawGraphData | null = null;
       let hasEvidenceGraph = false;
 
@@ -205,12 +261,11 @@ export const metadataService = () => {
         console.log("Local evidence graph not available");
       }
 
-      // Determine type
       let type = "unknown";
-      if (metadata["@type"]) {
-        const typeValue = Array.isArray(metadata["@type"])
-          ? metadata["@type"][0]
-          : metadata["@type"];
+      if (metadata && (metadata as any)["@type"]) {
+        const typeValue = Array.isArray((metadata as any)["@type"])
+          ? (metadata as any)["@type"][0]
+          : (metadata as any)["@type"];
 
         if (typeof typeValue === "string") {
           const typeParts = typeValue.split(/[/#]/);

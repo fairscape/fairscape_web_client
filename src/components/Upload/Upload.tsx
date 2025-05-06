@@ -94,8 +94,10 @@ const Upload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [submissionUUID, setSubmissionUUID] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
+  const [jsonSuccess, setJsonSuccess] = useState(false);
+  const [jsonError, setJsonError] = useState<UploadError | null>(null);
   const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,9 +109,11 @@ const Upload: React.FC = () => {
     ) {
       setFile(selectedFile);
       setError("");
-      setIsSuccess(false);
+      setSubmissionUUID(null);
       setUploadError(null);
       setIsUploading(false);
+      setJsonSuccess(false);
+      setJsonError(null);
     } else {
       setError("Please select a valid ZIP or JSON file");
       setFile(null);
@@ -132,26 +136,37 @@ const Upload: React.FC = () => {
     setError("");
     setIsUploading(true);
     setUploadError(null);
-    setIsSuccess(false);
+    setJsonSuccess(false);
+    setJsonError(null);
 
     try {
-      let response;
       if (file.type === "application/zip") {
         const formData = new FormData();
         formData.append("crate", file);
 
-        response = await fetch(`${API_URL}/rocrate/upload-async`, {
+        const response = await fetch(`${API_URL}/rocrate/upload-async`, {
           method: "POST",
           body: formData,
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setSubmissionUUID(data.transactionFolder);
+        } else {
+          setUploadError({
+            status: response.status.toString(),
+            message: data.message || "Upload failed",
+          });
+        }
       } else if (file.type === "application/json") {
         const fileContent = await file.text();
         const jsonData = JSON.parse(fileContent);
 
-        response = await fetch(`${API_URL}/rocrate/metadata`, {
+        const response = await fetch(`${API_URL}/rocrate/metadata`, {
           method: "POST",
           body: JSON.stringify(jsonData),
           headers: {
@@ -159,24 +174,33 @@ const Upload: React.FC = () => {
             "Content-Type": "application/json",
           },
         });
-      }
 
-      if (response && response.ok) {
-        setIsSuccess(true);
-      } else {
-        const data = await response?.json();
-        setUploadError({
-          status: response ? response.status.toString() : "Error",
-          message: data?.message || "Upload failed",
-        });
+        if (response.ok) {
+          setJsonSuccess(true);
+        } else {
+          const data = await response.json();
+          setJsonError({
+            status: response.status.toString(),
+            message: data.message || "Upload failed",
+          });
+        }
       }
     } catch (error) {
-      setUploadError({
-        status: "Error",
-        message: "An error occurred during upload",
-      });
+      if (file.type === "application/zip") {
+        setUploadError({
+          status: "Error",
+          message: "An error occurred during upload",
+        });
+      } else {
+        setJsonError({
+          status: "Error",
+          message: "An error occurred during upload",
+        });
+      }
     } finally {
-      setIsUploading(false);
+      if (file.type === "application/json") {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -199,13 +223,21 @@ const Upload: React.FC = () => {
           {isUploading ? "Uploading..." : "Upload"}
         </UploadButton>
 
-        {isSuccess && (
-          <SuccessMessage>Upload completed successfully!</SuccessMessage>
+        {file?.type === "application/zip" && (
+          <StatusTracker
+            submissionUUID={submissionUUID}
+            uploadError={uploadError}
+            isUploading={isUploading}
+          />
         )}
 
-        {uploadError && (
+        {file?.type === "application/json" && jsonSuccess && (
+          <SuccessMessage>Metadata uploaded successfully!</SuccessMessage>
+        )}
+
+        {file?.type === "application/json" && jsonError && (
           <ErrorMessage>
-            Error {uploadError.status}: {uploadError.message}
+            Error {jsonError.status}: {jsonError.message}
           </ErrorMessage>
         )}
       </form>
