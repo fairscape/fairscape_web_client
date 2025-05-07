@@ -8,7 +8,9 @@ import {
 
 const MAX_LABEL_LENGTH = 50;
 
-// --- Keep: getEntityType, abbreviateName, formatPropertyValue, getDisplayableProperties ---
+const feUrl =
+  import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
+
 export function getEntityType(typeUri: string | string[] | undefined): string {
   if (!typeUri) return "Unknown";
   const typeString = Array.isArray(typeUri) ? typeUri[0] : typeUri;
@@ -24,29 +26,49 @@ export function abbreviateName(
   return name.substring(0, maxLength - 3) + "...";
 }
 
-export function formatPropertyValue(value: any): string {
-  if (value === null || value === undefined) return "<i>null/undefined</i>";
-
-  if (
-    typeof value === "string" &&
-    (value.startsWith("http://") || value.startsWith("https://"))
-  ) {
-    return `<a href="${value}" target="_blank" rel="noopener noreferrer" style="color: #007bff;">${value}</a>`;
+export function formatPropertyValue(value: any, propKey?: string): string {
+  if (value === null || value === undefined) {
+    return "<em>Not specified</em>";
   }
 
-  if (Array.isArray(value) || typeof value === "object") {
+  if (typeof value === "string") {
+    if (value.startsWith("ark:")) {
+      const fullUrl = `${feUrl}${value}`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${value}</a>`;
+    }
+
+    const urlRegex = /^(https?:\/\/\S+)$/;
+    if (urlRegex.test(value)) {
+      return `<a href="${value}" target="_blank" rel="noopener noreferrer">${value}</a>`;
+    }
+
+    if (propKey === "command") {
+      return `<pre>${value}</pre>`;
+    }
+
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => formatPropertyValue(item)).join("<br/>");
+  }
+
+  if (typeof value === "object" && value !== null) {
+    if (value["@id"]) {
+      return formatPropertyValue(value["@id"]);
+    }
     try {
-      return `<pre style="margin: 0; white-space: pre-wrap; word-break: break-all;">${JSON.stringify(
-        value,
-        null,
-        2
-      )}</pre>`;
+      return `<pre>${JSON.stringify(value, null, 2)}</pre>`;
     } catch (e) {
-      return typeof value === "object" ? "[Object]" : String(value);
+      return "[Object]";
     }
   }
 
-  return String(value).replace(/</g, "<").replace(/>/g, ">");
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  return String(value);
 }
 
 export function getDisplayableProperties(
@@ -84,7 +106,6 @@ export function getDisplayableProperties(
   return properties;
 }
 
-// --- Keep: createEvidenceNode, createDatasetCollectionNode ---
 export function createEvidenceNode(
   entityData: RawGraphEntity
 ): EvidenceNode | null {
@@ -186,7 +207,7 @@ export function createDatasetCollectionNode(
     .filter(
       (ds) =>
         ds && (typeof ds === "string" || (typeof ds === "object" && ds["@id"]))
-    ) // Ensure object has @id
+    )
     .map((ds) =>
       typeof ds === "string" ? { "@id": ds, "@type": "evi:Dataset" } : ds
     );
@@ -216,7 +237,7 @@ export function createDatasetCollectionNode(
       count: count,
       description: `Collection of ${count} input datasets`,
     },
-    _remainingDatasets: [...validDatasets] as RawGraphEntity[], // Cast remaining items
+    _remainingDatasets: [...validDatasets] as RawGraphEntity[],
     _expandedCount: 0,
   };
 
@@ -228,7 +249,6 @@ export function createDatasetCollectionNode(
   };
 }
 
-// --- MODIFIED getInitialElements ---
 export function getInitialElements(
   graphData: RawGraphData,
   initialExpansionDepth: number = 2
@@ -265,28 +285,28 @@ export function getInitialElements(
     const nodesExpandedInThisLevel: EvidenceNode[] = [
       ...nodesToExpandInNextLevel,
     ];
-    nodesToExpandInNextLevel = []; // Reset for the next level
+    nodesToExpandInNextLevel = [];
 
     if (nodesExpandedInThisLevel.length === 0) {
-      break; // Stop if no more nodes to expand at this depth
+      break;
     }
 
     nodesExpandedInThisLevel.forEach((nodeToExpand) => {
       const currentNodeInstance = currentNodes.find(
         (n) => n.id === nodeToExpand.id
       );
-      // Check again if node exists and is still marked as expandable and not already processed (_expanded = false)
       if (
         !currentNodeInstance ||
         !currentNodeInstance.data.expandable ||
         currentNodeInstance.data._expanded
       ) {
-        return; // Skip if not found, not expandable, or already expanded in a previous level iteration
+        return;
       }
 
-      // --- In initial expansion, ONLY expandEvidenceNode is relevant ---
-      const expansionResult = expandEvidenceNode(nodeToExpand, currentNodes);
-      // --- `updatedCollectionData` is not needed or used here ---
+      const expansionResult = expandEvidenceNode(
+        currentNodeInstance,
+        currentNodes
+      );
 
       const nodeIndex = currentNodes.findIndex((n) => n.id === nodeToExpand.id);
 
@@ -296,17 +316,12 @@ export function getInitialElements(
           expansionResult.newEdges.length > 0;
 
         if (hasNewElements) {
-          // Mark the current node as expanded and no longer visually expandable
-          // because its children have been added
           currentNodes[nodeIndex].data._expanded = true;
           currentNodes[nodeIndex].data.expandable = false;
 
-          // Add newly found nodes and edges
           expansionResult.newNodes.forEach((newNode) => {
-            // Add only if it's truly new to the list
             if (!currentNodes.some((n) => n.id === newNode.id)) {
               currentNodes.push(newNode);
-              // If this new node is itself expandable, queue it for the next level
               if (newNode.data.expandable) {
                 nodesToExpandInNextLevel.push(newNode);
               }
@@ -314,26 +329,20 @@ export function getInitialElements(
           });
 
           expansionResult.newEdges.forEach((newEdge) => {
-            // Add only if it's truly new
             if (!currentEdges.some((e) => e.id === newEdge.id)) {
               currentEdges.push(newEdge);
             }
           });
         } else {
-          // If the expansion attempt yielded no new elements,
-          // mark it as no longer expandable (as the attempt was made).
-          // Do not mark _expanded = true, as nothing was actually added.
           currentNodes[nodeIndex].data.expandable = false;
         }
       }
     });
   }
 
-  // Return the accumulated nodes and edges after the initial expansion loops
   return { nodes: currentNodes, edges: currentEdges };
 }
 
-// --- Interface Definitions ---
 export interface ExpansionResult {
   newNodes: EvidenceNode[];
   newEdges: EvidenceEdge[];
@@ -343,7 +352,6 @@ export interface CollectionExpansionResult extends ExpansionResult {
   updatedCollectionData: Partial<EvidenceNodeData>;
 }
 
-// --- Keep: expandEvidenceNode, expandDatasetCollectionNode ---
 export function expandEvidenceNode(
   node: EvidenceNode,
   currentNodes: EvidenceNode[]
@@ -565,7 +573,7 @@ export function expandDatasetCollectionNode(
   const originalData = collectionNode.data;
   const remaining = originalData._remainingDatasets;
 
-  let updatedCollectionData: Partial<EvidenceNodeData> = { expandable: false }; // Default if nothing happens
+  let updatedCollectionData: Partial<EvidenceNodeData> = { expandable: false };
 
   if (!remaining || remaining.length === 0) {
     return {

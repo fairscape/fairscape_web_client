@@ -9,6 +9,7 @@ import {
   SchemaProperties,
 } from "./metadataPropertyLists";
 import Alert from "../common/Alert";
+import SchemaPropertiesTable from "./SchemaPropertiesTable";
 
 const Container = styled.div`
   width: 100%;
@@ -60,8 +61,8 @@ const SummaryValue = styled.div`
   flex: 1;
   max-height: 300px;
   overflow: auto;
-  word-wrap: break-word; /* Added for better wrapping */
-  word-break: break-all; /* Added for better wrapping */
+  word-wrap: break-word;
+  word-break: break-word; /* Use break-word for better readability than break-all */
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -98,26 +99,8 @@ const CodeBlock = styled.pre`
   overflow-x: auto;
   font-family: monospace;
   margin: 0;
-  white-space: pre-wrap; /* Allow wrapping within code block */
-  word-break: break-all; /* Break long words/lines */
-`;
-
-const PropertiesTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-    vertical-align: top; /* Align content to top */
-  }
-
-  th {
-    background-color: ${({ theme }) => theme.colors.backgroundAlt};
-    font-weight: bold;
-  }
+  white-space: pre-wrap;
+  word-break: break-word;
 `;
 
 const ButtonLink = styled.a`
@@ -183,6 +166,81 @@ const CustomAlert = ({ message, onClose }) => (
   </div>
 );
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background-color: ${({ theme }) => theme.colors.background};
+  padding: ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.borderRadius};
+  max-width: 800px;
+  width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  position: relative;
+`;
+
+const ModalCloseButton = styled.button`
+  position: absolute;
+  top: ${({ theme }) => theme.spacing.sm};
+  right: ${({ theme }) => theme.spacing.sm};
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: ${({ theme }) => theme.colors.text};
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const ModalTitle = styled.h3`
+  margin-top: 0;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
+const ModalPropertyDetail = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    color: ${({ theme }) => theme.colors.primary};
+  }
+
+  p,
+  pre,
+  ul {
+    margin: 0;
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+
+  pre {
+    background-color: ${({ theme }) => theme.colors.backgroundAlt};
+    padding: ${({ theme }) => theme.spacing.sm};
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+
+  ul {
+    padding-left: 20px;
+  }
+`;
+
 type EntityType = "dataset" | "software" | "computation" | "schema";
 
 interface GenericMetadataComponentProps {
@@ -198,6 +256,8 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
 }) => {
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [expandedSchemaPropertyDetails, setExpandedSchemaPropertyDetails] =
+    useState<any | null>(null);
 
   const feUrl =
     import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
@@ -298,20 +358,113 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     }
   };
 
-  const renderArkLink = (arkId: string, index?: number) => {
-    if (typeof arkId === "string" && arkId.startsWith("ark:")) {
-      const fullUrl = `${feUrl}${arkId}`;
+  const renderArkLink = (arkId: string | { "@id": string }, index?: number) => {
+    const id =
+      typeof arkId === "object" && arkId !== null && arkId["@id"]
+        ? arkId["@id"]
+        : String(arkId);
+
+    if (typeof id === "string" && id.startsWith("ark:")) {
+      const fullUrl = `${feUrl}${id}`;
       return (
         <StyledLink
           href={fullUrl}
-          key={index ?? arkId}
-          data-testid={`ark-link-${arkId}`}
+          key={index ?? id}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid={`ark-link-${id}`}
         >
-          {arkId}
+          {id}
         </StyledLink>
       );
     }
-    return <span key={index ?? arkId}>{String(arkId)}</span>;
+    return <span key={index ?? id}>{id}</span>;
+  };
+
+  const handleExpandSchemaProperty = (propDetails: any, propName: string) => {
+    setExpandedSchemaPropertyDetails({ name: propName, ...propDetails });
+  };
+
+  const handleCloseModal = () => {
+    setExpandedSchemaPropertyDetails(null);
+  };
+
+  // Helper to render values inside the modal, handling URLs and ARKs
+  const renderModalValueContent = (value: any): React.ReactNode => {
+    if (value === null || value === undefined) {
+      return <p>Not specified</p>;
+    }
+
+    // Check for standard URL strings first (http/https)
+    if (
+      typeof value === "string" &&
+      (value.startsWith("http://") || value.startsWith("https://"))
+    ) {
+      return (
+        <StyledLink href={value} target="_blank" rel="noopener noreferrer">
+          {value}
+        </StyledLink>
+      );
+    }
+
+    // Handle ARK links (string or object)
+    if (
+      (typeof value === "string" && value.startsWith("ark:")) ||
+      (typeof value === "object" && value !== null && value["@id"])
+    ) {
+      return renderArkLink(value);
+    }
+
+    // Handle arrays
+    if (Array.isArray(value)) {
+      // Check if it's an array of simple types or objects that should be stringified
+      // If *any* item is a complex object or array (not just simple link), stringify the whole thing.
+      // Otherwise, list simple primitives/links
+      const allPrimitivesOrSimpleLinks = value.every(
+        (item) =>
+          typeof item !== "object" ||
+          item === null || // Primitive or null
+          (typeof item === "string" &&
+            (item.startsWith("ark:") ||
+              item.startsWith("http://") ||
+              item.startsWith("https://"))) || // String link
+          (typeof item === "object" && item !== null && item["@id"]) // ARK object
+      );
+
+      if (allPrimitivesOrSimpleLinks) {
+        return (
+          // List items, recursively calling renderModalValueContent for each
+          <List>
+            {value.map((item, index) => (
+              <ListItem key={index}>{renderModalValueContent(item)}</ListItem>
+            ))}
+          </List>
+        );
+      }
+      // Otherwise, it's a complex array, stringify it
+      try {
+        return <CodeBlock>{JSON.stringify(value, null, 2)}</CodeBlock>;
+      } catch (e) {
+        return <p>[Array]</p>;
+      }
+    }
+
+    // Handle non-link objects
+    if (typeof value === "object" && value !== null) {
+      try {
+        return <CodeBlock>{JSON.stringify(value, null, 2)}</CodeBlock>;
+      } catch (e) {
+        return <p>[Object]</p>;
+      }
+    }
+
+    // Handle boolean
+    if (typeof value === "boolean") {
+      return <p>{value ? "Yes" : "No"}</p>;
+    }
+
+    // Default for numbers and other primitives - render as paragraph
+    return <p>{String(value)}</p>;
   };
 
   const formatValue = (key: string, value: any): React.ReactNode => {
@@ -323,48 +476,36 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
       return <CodeBlock>{value}</CodeBlock>;
     }
 
+    if (key === "properties" && type === "schema") {
+      // This should not be reached in the rendering loop,
+      // as the 'properties' row renders SchemaPropertiesTable directly.
+      return <p>Schema properties are displayed in the table below.</p>;
+    }
+
+    // Apply truncation for long string values like 'description' in the main list
+    const truncateString = (text: string, limit: number): string => {
+      if (typeof text !== "string") return String(text);
+      if (text.length <= limit) return text;
+      return text.substring(0, limit) + "...";
+    };
+
     if (
-      key === "properties" &&
-      type === "schema" &&
-      typeof value === "object"
+      typeof value === "string" &&
+      (key === "description" || key === "schemaDescription" || key === "readme")
     ) {
-      return (
-        <PropertiesTable>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(value).map(
-              ([propName, propDetails]: [string, any]) => (
-                <tr key={propName}>
-                  <td>{propName}</td>
-                  <td>{propDetails.type || "N/A"}</td>
-                  <td>{propDetails.description || "No description"}</td>
-                </tr>
-              )
-            )}
-          </tbody>
-        </PropertiesTable>
-      );
+      // Added readme as well
+      // Adjust limit as needed
+      return <span>{truncateString(value, 250)}</span>;
     }
 
     if (Array.isArray(value)) {
       if (key === "keywords" || (key === "required" && type === "schema")) {
         return <span>{value.join(", ")}</span>;
       }
-
       return (
         <List>
           {value.map((item, index) => (
-            <ListItem key={index}>
-              {typeof item === "object" && item !== null && item["@id"]
-                ? renderArkLink(item["@id"], index)
-                : renderArkLink(item, index)}
-            </ListItem>
+            <ListItem key={index}>{renderArkLink(item, index)}</ListItem>
           ))}
         </List>
       );
@@ -399,10 +540,11 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
             </ButtonLink>
           );
         } else {
+          // For external URLs, show a standard link
           return (
-            <ButtonLink href={value} target="_blank" rel="noopener noreferrer">
-              Download
-            </ButtonLink>
+            <StyledLink href={value} target="_blank" rel="noopener noreferrer">
+              {value}
+            </StyledLink>
           );
         }
       }
@@ -436,7 +578,24 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         <SummaryList>
           {propertyList.map((prop) => {
             const propValue = entity[prop.key];
+
             if (propValue !== undefined) {
+              if (prop.key === "properties" && type === "schema") {
+                return (
+                  <SummaryRow key={prop.key}>
+                    <SummaryLabel>{prop.name}</SummaryLabel>
+                    <SummaryValue
+                      style={{ maxHeight: "none", overflow: "visible" }}
+                    >
+                      <SchemaPropertiesTable
+                        properties={propValue}
+                        onExpandProperty={handleExpandSchemaProperty}
+                      />
+                    </SummaryValue>
+                  </SummaryRow>
+                );
+              }
+
               return (
                 <SummaryRow key={prop.key}>
                   <SummaryLabel>{prop.name}</SummaryLabel>
@@ -450,11 +609,39 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
           })}
         </SummaryList>
       </SummarySection>
+
       {showAlert && (
         <CustomAlert
           message={alertMessage}
           onClose={() => setShowAlert(false)}
         />
+      )}
+
+      {expandedSchemaPropertyDetails && (
+        <ModalOverlay onClick={handleCloseModal}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalCloseButton onClick={handleCloseModal}>×</ModalCloseButton>
+
+            <ModalTitle>
+              Schema Property Details: {expandedSchemaPropertyDetails.name}
+            </ModalTitle>
+
+            {Object.entries(expandedSchemaPropertyDetails).map(
+              ([key, value]) => {
+                if (key === "name") return null; // 'name' is in the title
+
+                return (
+                  <ModalPropertyDetail key={key}>
+                    <strong>
+                      {key.charAt(0).toUpperCase() + key.slice(1)}:
+                    </strong>
+                    {renderModalValueContent(value)}
+                  </ModalPropertyDetail>
+                );
+              }
+            )}
+          </ModalContent>
+        </ModalOverlay>
       )}
     </Container>
   );
