@@ -287,6 +287,11 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         },
       });
 
+      // Get content type from response headers
+      const contentType =
+        response.headers["content-type"] || "application/octet-stream";
+
+      // Extract filename from content-disposition header
       const contentDisposition = response.headers["content-disposition"];
       let filename = null;
       if (contentDisposition) {
@@ -297,21 +302,48 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         }
       }
 
+      // If no filename in headers, derive from URL
       if (!filename) {
-        const urlParts = downloadUrl.split("/");
-        filename = urlParts[urlParts.length - 1];
-        if (!filename.toLowerCase().endsWith(".zip")) {
-          filename += ".zip";
+        // Check if URL indicates a file inside a zip
+        if (downloadUrl.includes(".zip/")) {
+          // For files inside zips, use the inner file name
+          const innerFilePath = downloadUrl.split(".zip/")[1];
+          filename = innerFilePath.split("/").pop() || "download";
+        } else {
+          // For regular files, use the last path segment
+          const urlParts = downloadUrl.split("/");
+          filename = urlParts[urlParts.length - 1];
         }
       }
 
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      // Ensure filename has appropriate extension based on content type
+      const extensionMap = {
+        "application/zip": ".zip",
+        "text/csv": ".csv",
+        "application/json": ".json",
+        "text/plain": ".txt",
+        "application/pdf": ".pdf",
+      };
+
+      const expectedExtension = extensionMap[contentType] || "";
+      if (
+        expectedExtension &&
+        !filename.toLowerCase().endsWith(expectedExtension)
+      ) {
+        filename += expectedExtension;
+      }
+
+      // Create blob with proper content type
+      const blobUrl = window.URL.createObjectURL(
+        new Blob([response.data], { type: contentType })
+      );
+
       const link = document.createElement("a");
       link.href = blobUrl;
       link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link);
+      link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error: any) {
       console.error("Download failed:", error);

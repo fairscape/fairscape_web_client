@@ -7,6 +7,8 @@ interface ButtonGroupProps {
   currentView: ViewType;
   onSelectView: (view: ViewType) => void;
   showEvidenceGraphButton?: boolean;
+  showExplorerButton?: boolean; // Added prop
+  explorerArkId?: string; // Added prop
 }
 
 const Group = styled.div`
@@ -16,11 +18,8 @@ const Group = styled.div`
   padding: 4px;
 `;
 
-const Button = styled.button<{ $active?: boolean }>`
+const BaseButtonStyles = `
   padding: 8px 16px;
-  background-color: ${({ $active }) => ($active ? "white" : "transparent")};
-  color: ${({ theme, $active }) =>
-    $active ? theme.colors.primary : theme.colors.textSecondary};
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -28,6 +27,7 @@ const Button = styled.button<{ $active?: boolean }>`
   font-weight: 500;
   transition: all 0.2s ease;
   margin: 0 2px;
+  text-decoration: none; // For <a> tags that look like buttons
 
   &:first-child {
     margin-left: 0;
@@ -35,11 +35,6 @@ const Button = styled.button<{ $active?: boolean }>`
 
   &:last-child {
     margin-right: 0;
-  }
-
-  &:hover:not(:disabled) {
-    background-color: ${({ $active }) =>
-      $active ? "white" : "rgba(255, 255, 255, 0.5)"};
   }
 
   &:active:not(:disabled) {
@@ -55,6 +50,18 @@ const Button = styled.button<{ $active?: boolean }>`
     opacity: 0.5;
     cursor: not-allowed;
   }
+`;
+
+const Button = styled.button<{ $active?: boolean }>`
+  ${BaseButtonStyles}
+  background-color: ${({ $active }) => ($active ? "white" : "transparent")};
+  color: ${({ theme, $active }) =>
+    $active ? theme.colors.primary : theme.colors.textSecondary};
+
+  &:hover:not(:disabled) {
+    background-color: ${({ $active }) =>
+      $active ? "white" : "rgba(255, 255, 255, 0.5)"};
+  }
 
   ${({ $active }) =>
     $active &&
@@ -63,11 +70,34 @@ const Button = styled.button<{ $active?: boolean }>`
   `}
 `;
 
+// New styled component for the link, inheriting common styles
+const LinkButton = styled.a`
+  ${BaseButtonStyles}
+  background-color: transparent; // Always like a non-active button
+  color: ${({ theme }) =>
+    theme.colors.textSecondary}; // Always like a non-active button
+
+  &:hover {
+    background-color: rgba(
+      255,
+      255,
+      255,
+      0.5
+    ); // Hover like a non-active button
+  }
+`;
+
 const ButtonGroup: React.FC<ButtonGroupProps> = ({
   currentView,
   onSelectView,
   showEvidenceGraphButton = true,
+  showExplorerButton,
+  explorerArkId,
 }) => {
+  const explorerUrl = explorerArkId
+    ? `http://localhost:8050/?ark=${explorerArkId}`
+    : "#";
+
   return (
     <Group role="group" aria-label="Metadata View Options">
       <Button
@@ -89,6 +119,15 @@ const ButtonGroup: React.FC<ButtonGroupProps> = ({
         >
           Evidence Graph
         </Button>
+      )}
+      {showExplorerButton && explorerArkId && (
+        <LinkButton
+          href={explorerUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Explorer
+        </LinkButton>
       )}
     </Group>
   );

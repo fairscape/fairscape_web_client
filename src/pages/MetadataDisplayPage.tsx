@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useMemo } from "react"; // Added useMemo
 import styled from "styled-components";
 
 // Components
@@ -98,8 +98,8 @@ const MetadataDisplayPage: React.FC = () => {
   // Get auth context
   const { isLoggedIn } = useContext(AuthContext);
 
-  // Create instance of the metadata service
-  const metadataServiceInstance = metadataService();
+  // Create instance of the metadata service, memoized to prevent re-creation on each render
+  const metadataServiceInstance = useMemo(() => metadataService(), []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -169,7 +169,7 @@ const MetadataDisplayPage: React.FC = () => {
     };
 
     fetchData();
-  }, [arkId, isLoggedIn]);
+  }, [arkId, isLoggedIn, metadataServiceInstance]);
 
   useEffect(() => {
     document.title = `${title} - FAIRSCAPE`;
@@ -186,7 +186,6 @@ const MetadataDisplayPage: React.FC = () => {
 
     switch (view) {
       case "metadata":
-        // Use determined type from metadata
         const contentType = determinedType || "unknown";
 
         switch (contentType) {
@@ -286,6 +285,8 @@ const MetadataDisplayPage: React.FC = () => {
           currentView={view}
           onSelectView={(selectedView) => setView(selectedView as ViewType)}
           showEvidenceGraphButton={hasEvidenceGraph}
+          showExplorerButton={determinedType === "dataset"}
+          explorerArkId={arkId}
         />
       </ButtonGroupContainer>
 
