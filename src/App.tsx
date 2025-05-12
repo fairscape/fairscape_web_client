@@ -16,7 +16,6 @@ import { theme } from "./styles/theme";
 import { GlobalStyle } from "./styles/GlobalStyles";
 import DataverseTokensPage from "./pages/DataverseTokensPage";
 import CreateRocratePage from "./pages/CreateRocratePage";
-import SupportsPage from "./pages/SupportsPage";
 
 function App() {
   return (
@@ -38,7 +37,6 @@ function App() {
               <Route path="/create-release" element={<ReleaseFormPage />} />
               <Route path="/tokens" element={<DataverseTokensPage />} />
               <Route path="/create-rocrate" element={<CreateRocratePage />} />
-              <Route path="/supports/*" element={<SupportsPage />} />
               {/* Add other routes as needed */}
               <Route
                 path="*"
