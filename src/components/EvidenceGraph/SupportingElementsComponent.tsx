@@ -1,5 +1,5 @@
 // src/components/GraphViewer/SupportingElementsComponent.tsx
-import React, { useState, useMemo, ReactNode } from "react"; // Added ReactNode
+import React, { useState, useMemo, ReactNode } from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { findPathInFullGraph } from "../../utils/pathfindingUtils";
@@ -67,15 +67,25 @@ const Table = styled.table`
   min-width: 700px;
 `;
 
+// MODIFIED TableHead styling
 const TableHead = styled.thead`
-  background-color: ${({ theme }) => theme.colors.background};
+  // Assuming theme.colors.surface is distinct from theme.colors.background
+  // Use a light grey or a specific header background from your theme if available
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-bottom: 2px solid ${({ theme }) => theme.colors.primary}; // Prominent bottom border
 `;
 
+// MODIFIED TableHeaderCell styling
 const TableHeaderCell = styled.th`
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) =>
+    theme.spacing.sm}; // Increased padding for better spacing
   text-align: left;
-  font-weight: 500;
-  font-size: 0.9rem;
+  font-weight: bold; // Bolded text
+  font-size: 0.95rem; // Slightly larger font size for emphasis
+  color: ${({ theme }) =>
+    theme.colors.primary}; // Use primary color for header text
+  // text-transform: uppercase; // Optional: if you want uppercase headers
+  // letter-spacing: 0.5px; // Optional: for a bit more refined look
 `;
 
 const TableRow = styled.tr`
@@ -88,16 +98,19 @@ const TableRow = styled.tr`
   }
 `;
 
+// MODIFIED TableCell styling
 const TableCell = styled.td`
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.sm}; // Consistent padding with header
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  vertical-align: top;
+  vertical-align: middle; // Center content vertically by default
   font-size: 0.9rem;
 `;
 
+// MODIFIED DescriptionCell styling
 const DescriptionCell = styled(TableCell)`
-  max-width: 400px;
+  max-width: 400px; // Or adjust as needed
   line-height: 1.4;
+  vertical-align: top; // Keep description text aligned to the top
 `;
 
 const StyledLink = styled(Link)`
@@ -131,11 +144,10 @@ const RelationshipButton = styled.button`
   }
 `;
 
-// ADDED: Styled component for highlighting text
 const HighlightSpan = styled.span`
   background-color: yellow;
   font-weight: bold;
-  color: black; /* Ensure contrast on yellow background */
+  color: black;
 `;
 
 interface SupportingElement {
@@ -160,22 +172,20 @@ interface SupportingElementsComponentProps {
   onShowRelationshipPath: (pathNodeIds: string[] | null) => void;
 }
 
-// ADDED: Helper function to escape regex special characters
 const escapeRegExp = (string: string): string => {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
 
-// ADDED: Function to get highlighted text
 const getHighlightedText = (text: string, highlight: string): ReactNode[] => {
-  if (!text) return [text]; // Return original if text is null/undefined
+  if (!text) return [text];
   if (!highlight.trim()) {
-    return [text]; // No highlight if search term is empty
+    return [text];
   }
   const escapedHighlight = escapeRegExp(highlight);
   const parts = text.split(new RegExp(`(${escapedHighlight})`, "gi"));
   return parts.map((part, index) =>
     part.toLowerCase() === highlight.toLowerCase() ? (
-      <HighlightSpan key={`${part}-${index}`}>{part}</HighlightSpan> // Added unique key
+      <HighlightSpan key={`${part}-${index}`}>{part}</HighlightSpan>
     ) : (
       part
     )
@@ -334,7 +344,6 @@ const SupportingElementsComponent: React.FC<
                                 element["@id"]
                               )}`}
                             >
-                              {/* MODIFIED to use highlighter */}
                               {getHighlightedText(
                                 element.name || element["@id"],
                                 searchTerm
@@ -342,7 +351,6 @@ const SupportingElementsComponent: React.FC<
                             </StyledLink>
                           </TableCell>
                           <DescriptionCell>
-                            {/* MODIFIED to use highlighter */}
                             {getHighlightedText(
                               element.description || "No description provided.",
                               searchTerm
