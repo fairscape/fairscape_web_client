@@ -85,3 +85,117 @@ export const findShortestPath = (
     pathEdgeIds: pathEdgeIds.reverse(),
   };
 };
+
+// Path finding function for the full evidence graph
+export const findPathInFullGraph = (
+  graphData: any,
+  targetId: string
+): string[] | null => {
+  if (!graphData || !targetId) return null;
+
+  // Extract the root entity
+  const rootEntity = Array.isArray(graphData["@graph"])
+    ? graphData["@graph"][0]
+    : graphData["@graph"];
+
+  if (!rootEntity || !rootEntity["@id"]) return null;
+
+  // Track visited nodes to prevent infinite loops
+  const visited = new Set<string>();
+
+  // Helper function for DFS traversal
+  const findPathToTarget = (
+    currentEntity: any,
+    currentPath: string[] = []
+  ): string[] | null => {
+    if (!currentEntity || !currentEntity["@id"]) return null;
+
+    const currentId = currentEntity["@id"];
+
+    // Skip if already visited to prevent cycles
+    if (visited.has(currentId)) return null;
+    visited.add(currentId);
+
+    // Add current node to path
+    currentPath = [...currentPath, currentId];
+
+    // Check if we found the target
+    if (currentId === targetId) {
+      return currentPath;
+    }
+
+    // Check generatedBy relationship
+    if (currentEntity.generatedBy) {
+      const result = findPathToTarget(currentEntity.generatedBy, currentPath);
+      if (result) return result;
+    }
+
+    // Check usedDataset relationship (single or array)
+    if (currentEntity.usedDataset) {
+      const datasets = Array.isArray(currentEntity.usedDataset)
+        ? currentEntity.usedDataset
+        : [currentEntity.usedDataset];
+
+      for (const dataset of datasets) {
+        // Skip if not an object with @id
+        if (!dataset || typeof dataset !== "object" || !dataset["@id"])
+          continue;
+
+        const result = findPathToTarget(dataset, currentPath);
+        if (result) return result;
+      }
+    }
+
+    // Check usedSoftware relationship (single or array)
+    if (currentEntity.usedSoftware) {
+      const software = Array.isArray(currentEntity.usedSoftware)
+        ? currentEntity.usedSoftware
+        : [currentEntity.usedSoftware];
+
+      for (const sw of software) {
+        // Skip if not an object with @id
+        if (!sw || typeof sw !== "object" || !sw["@id"]) continue;
+
+        const result = findPathToTarget(sw, currentPath);
+        if (result) return result;
+      }
+    }
+
+    // Check usedSample relationship (if exists)
+    if (currentEntity.usedSample) {
+      const samples = Array.isArray(currentEntity.usedSample)
+        ? currentEntity.usedSample
+        : [currentEntity.usedSample];
+
+      for (const sample of samples) {
+        // Skip if not an object with @id
+        if (!sample || typeof sample !== "object" || !sample["@id"]) continue;
+
+        const result = findPathToTarget(sample, currentPath);
+        if (result) return result;
+      }
+    }
+
+    // Check usedInstrument relationship (if exists)
+    if (currentEntity.usedInstrument) {
+      const instruments = Array.isArray(currentEntity.usedInstrument)
+        ? currentEntity.usedInstrument
+        : [currentEntity.usedInstrument];
+
+      for (const instrument of instruments) {
+        // Skip if not an object with @id
+        if (!instrument || typeof instrument !== "object" || !instrument["@id"])
+          continue;
+
+        const result = findPathToTarget(instrument, currentPath);
+        if (result) return result;
+      }
+    }
+
+    // No path found via this node
+    return null;
+  };
+
+  // Start the search from the root entity
+  return findPathToTarget(rootEntity);
+};

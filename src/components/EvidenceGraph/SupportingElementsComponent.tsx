@@ -1,10 +1,9 @@
 // src/components/GraphViewer/SupportingElementsComponent.tsx
-import React, { useState } from "react"; // Removed useEffect
+import React, { useState } from "react";
 import styled from "styled-components";
-// Removed axios import
 import { Link } from "react-router-dom";
+import { findPathInFullGraph } from "../../utils/pathfindingUtils";
 
-// Keep styled components as they are...
 const Container = styled.div`
   margin-top: ${({ theme }) => theme.spacing.lg};
   width: 100%;
@@ -98,6 +97,21 @@ const NoDataMessage = styled.p`
   padding: ${({ theme }) => theme.spacing.md};
 `;
 
+const RelationshipButton = styled.button`
+  background-color: ${({ theme }) => theme.colors.secondary};
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  margin-left: 8px;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.primaryDark};
+  }
+`;
+
 interface SupportingElement {
   "@id": string;
   name: string;
@@ -114,14 +128,14 @@ interface SupportData {
   instruments: SupportingElement[];
 }
 
-// --- New Props Interface ---
 interface SupportingElementsComponentProps {
   data: SupportData | null;
+  evidenceGraphData?: any;
 }
 
 const SupportingElementsComponent: React.FC<
   SupportingElementsComponentProps
-> = ({ data: supportData }) => {
+> = ({ data: supportData, evidenceGraphData }) => {
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({
@@ -143,6 +157,21 @@ const SupportingElementsComponent: React.FC<
   const extractArkIdentifier = (url: string) => {
     const match = url.match(/(ark:.+)/);
     return match ? match[1] : url;
+  };
+
+  const showRelationship = (elementId: string) => {
+    if (!evidenceGraphData) {
+      console.warn("Evidence graph data is not available");
+      return;
+    }
+
+    const path = findPathInFullGraph(evidenceGraphData, elementId);
+
+    if (path) {
+      console.log("Path from root to element:", path);
+    } else {
+      console.log("No path found to element:", elementId);
+    }
   };
 
   const hasSupportingElements =
@@ -185,6 +214,7 @@ const SupportingElementsComponent: React.FC<
                     <tr>
                       <TableHeaderCell>Name</TableHeaderCell>
                       <TableHeaderCell>Description</TableHeaderCell>
+                      <TableHeaderCell>Actions</TableHeaderCell>
                     </tr>
                   </TableHead>
                   <tbody>
@@ -200,6 +230,13 @@ const SupportingElementsComponent: React.FC<
                         <DescriptionCell>
                           {element.description || "No description provided."}{" "}
                         </DescriptionCell>
+                        <TableCell>
+                          <RelationshipButton
+                            onClick={() => showRelationship(element["@id"])}
+                          >
+                            Show Relationship
+                          </RelationshipButton>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </tbody>

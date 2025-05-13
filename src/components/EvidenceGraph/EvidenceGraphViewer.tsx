@@ -537,7 +537,10 @@ const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({
         <GraphRenderer rawData={evidenceGraphData} />
       </ReactFlowProvider>
 
-      <SupportingElementsComponent data={supportData} />
+      <SupportingElementsComponent
+        data={supportData}
+        evidenceGraphData={evidenceGraphData}
+      />
     </Container>
   );
 };
