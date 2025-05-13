@@ -4,7 +4,7 @@ import styled from "styled-components";
 import axios from "axios";
 
 // Types and Components
-import { RawGraphData } from "../types";
+import { RawGraphData, SupportData, SupportingElement } from "../types";
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import Alert from "../components/common/Alert";
@@ -45,7 +45,11 @@ const ArkIdDisplay = styled.div`
 
 const GraphContainer = styled.div`
   width: 100%;
-  height: 75vh;
+  /* Removed fixed height: 75vh;
+     The EvidenceGraphViewer component should manage the height of its
+     internal graph visualization (e.g., setting it to ~70-75vh).
+     This container will then expand to fit both the graph
+     and any supporting elements rendered below it by EvidenceGraphViewer. */
   margin: 0 auto;
 `;
 
@@ -73,21 +77,144 @@ const Footer = styled.footer`
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 
+// --- Support Data Extraction Logic ---
+interface TraverseParams {
+  node: any;
+  results: SupportData;
+  seenIds: Set<string>;
+}
+
+const traverseAndCollect = ({
+  node,
+  results,
+  seenIds,
+}: TraverseParams): void => {
+  if (
+    !node ||
+    typeof node !== "object" ||
+    !node["@id"] ||
+    seenIds.has(node["@id"])
+  ) {
+    return;
+  }
+  seenIds.add(node["@id"]);
+
+  let nodeTypes: string[] = [];
+  if (typeof node["@type"] === "string") nodeTypes = [node["@type"]];
+  else if (Array.isArray(node["@type"])) nodeTypes = node["@type"];
+  else nodeTypes = ["Unknown"];
+
+  const outputElement: SupportingElement = {
+    "@id": node["@id"],
+    name: node.name || "N/A",
+    description: node.description || "",
+    "@type": node["@type"] || "Unknown",
+  };
+
+  if (
+    nodeTypes.some((t) => t.includes("Dataset")) &&
+    !results.datasets.some((el) => el["@id"] === node["@id"])
+  )
+    results.datasets.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Software")) &&
+    !results.software.some((el) => el["@id"] === node["@id"])
+  )
+    results.software.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Computation")) &&
+    !results.computations.some((el) => el["@id"] === node["@id"])
+  )
+    results.computations.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Sample")) &&
+    !results.samples.some((el) => el["@id"] === node["@id"])
+  )
+    results.samples.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Experiment")) &&
+    !results.experiments.some((el) => el["@id"] === node["@id"])
+  )
+    results.experiments.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Instrument")) &&
+    !results.instruments.some((el) => el["@id"] === node["@id"])
+  )
+    results.instruments.push(outputElement);
+
+  const relationshipKeys = [
+    "generatedBy",
+    "usedDataset",
+    "usedSoftware",
+    "usedSample",
+    "usedInstrument",
+    "hasPart",
+  ];
+
+  for (const key of relationshipKeys) {
+    const relatedItems = node[key];
+    if (!relatedItems) continue;
+
+    const itemsToProcess = Array.isArray(relatedItems)
+      ? relatedItems
+      : [relatedItems];
+
+    for (const item of itemsToProcess) {
+      if (item && typeof item === "object") {
+        traverseAndCollect({ node: item, results, seenIds });
+      }
+    }
+  }
+};
+
+const extractSupportData = (
+  graphData: RawGraphData | null
+): SupportData | null => {
+  if (
+    !graphData ||
+    !graphData["@graph"] ||
+    typeof graphData["@graph"] !== "object" // Note: @graph can be an array or object
+  ) {
+    return null;
+  }
+
+  const results: SupportData = {
+    datasets: [],
+    software: [],
+    computations: [],
+    samples: [],
+    experiments: [],
+    instruments: [],
+  };
+  const seenIds = new Set<string>();
+
+  const graphContent = graphData["@graph"];
+  if (Array.isArray(graphContent)) {
+    graphContent.forEach((item) =>
+      traverseAndCollect({ node: item, results, seenIds })
+    );
+  } else if (typeof graphContent === "object" && graphContent !== null) {
+    traverseAndCollect({ node: graphContent, results, seenIds });
+  }
+
+  const hasData = Object.values(results).some((arr) => arr.length > 0);
+  return hasData ? results : null;
+};
+// --- End of Support Data Extraction Logic ---
+
 const EvidenceGraphPage: React.FC = () => {
-  // Extract ARK ID from URL path
   const location = window.location.pathname;
   const arkId = location.includes("/evidence/")
     ? location.split("/evidence/")[1]
     : "";
 
   const [evidenceGraph, setEvidenceGraph] = useState<RawGraphData | null>(null);
+  const [supportData, setSupportData] = useState<SupportData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Get auth context
   const { isLoggedIn } = useContext(AuthContext);
 
-  // Function to fetch evidence graph by ID
   const fetchEvidenceGraphById = async (graphId: string) => {
     try {
       const token = localStorage.getItem("token");
@@ -95,10 +222,7 @@ const EvidenceGraphPage: React.FC = () => {
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
-
-      const response = await axios.get(`${API_URL}/${graphId}`, {
-        headers,
-      });
+      const response = await axios.get(`${API_URL}/${graphId}`, { headers });
       return response.data;
     } catch (error) {
       console.error("Error fetching evidence graph by ID:", error);
@@ -106,22 +230,19 @@ const EvidenceGraphPage: React.FC = () => {
     }
   };
 
-  // Function to fetch graph data for ARK
   const fetchGraphData = async (arkId: string) => {
     if (!arkId) {
       return { graph: null, error: "No ARK ID provided" };
     }
-
     try {
       const token = localStorage.getItem("token");
       const headers: Record<string, string> = {};
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
-
-      const cleanArkId = arkId.replace(/^\/|\/$/g, ""); // Remove leading/trailing slashes
+      const cleanArkId = arkId.replace(/^\/|\/$/g, "");
       const url = `${API_URL}/${cleanArkId}`;
-      console.log("Requesting URL:", url);
+      console.log("Requesting URL for evidence graph:", url);
 
       const response = await axios.get(url, {
         headers,
@@ -129,16 +250,13 @@ const EvidenceGraphPage: React.FC = () => {
         maxRedirects: 5,
         withCredentials: true,
       });
-
-      // Extract data from response
       const data = response.data;
-      console.log("Response data:", data);
+      console.log("Response data for evidence graph:", data);
 
       if (data["@graph"]) {
         return { graph: data, error: null };
       }
 
-      // Case 3: Item with hasEvidenceGraph reference
       if (
         data.hasEvidenceGraph ||
         (data.metadata && data.metadata.hasEvidenceGraph)
@@ -147,16 +265,13 @@ const EvidenceGraphPage: React.FC = () => {
           data.hasEvidenceGraph || data.metadata.hasEvidenceGraph;
         const graphId =
           typeof hasGraph === "string" ? hasGraph : hasGraph["@id"];
-
         const graphData = await fetchEvidenceGraphById(graphId);
-
         if (graphData && graphData["@graph"]) {
           return { graph: graphData, error: null };
         } else {
           return { graph: null, error: "Referenced evidence graph not found" };
         }
       }
-
       return { graph: null, error: "No graph data found for this ARK ID" };
     } catch (err: any) {
       console.error("Error fetching graph data:", err);
@@ -171,6 +286,8 @@ const EvidenceGraphPage: React.FC = () => {
     const loadGraphData = async () => {
       setLoading(true);
       setError(null);
+      setEvidenceGraph(null);
+      setSupportData(null);
 
       const result = await fetchGraphData(arkId);
 
@@ -178,17 +295,22 @@ const EvidenceGraphPage: React.FC = () => {
         setError(result.error);
       } else if (result.graph) {
         setEvidenceGraph(result.graph);
+        const extractedSupport = extractSupportData(result.graph);
+        setSupportData(extractedSupport);
       } else {
         setError("No graph data available");
       }
-
       setLoading(false);
     };
 
-    loadGraphData();
+    if (arkId) {
+      loadGraphData();
+    } else {
+      setError("No ARK ID provided in URL.");
+      setLoading(false);
+    }
   }, [arkId, isLoggedIn]);
 
-  // Update Document Title
   useEffect(() => {
     document.title = `Evidence Graph ${
       arkId ? `for ${arkId}` : ""
@@ -210,7 +332,10 @@ const EvidenceGraphPage: React.FC = () => {
 
     return (
       <GraphContainer>
-        <EvidenceGraphViewer evidenceGraphData={evidenceGraph} />
+        <EvidenceGraphViewer
+          evidenceGraphData={evidenceGraph}
+          supportData={supportData}
+        />
       </GraphContainer>
     );
   };
