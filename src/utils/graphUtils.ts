@@ -1,10 +1,11 @@
+// src/utils/graphUtils.ts
 import {
   RawGraphEntity,
   EvidenceNodeData,
   RawGraphData,
   EvidenceNode,
   EvidenceEdge,
-} from "../types/graph"; // Adjust path if necessary
+} from "../types/graph";
 
 const MAX_LABEL_LENGTH = 50;
 
@@ -100,7 +101,7 @@ export function getDisplayableProperties(
 
   for (const key in entityData) {
     if (!excludeKeys.includes(key) && !key.startsWith("_")) {
-      properties[key] = entityData[key];
+      properties[key] = (entityData as Record<string, any>)[key];
     }
   }
   return properties;
@@ -142,40 +143,42 @@ export function createEvidenceNode(
     hasUsedSample ||
     hasUsedInstrument;
 
-  const propertyKeys = Object.keys(entityData).filter(
-    (k) =>
-      !k.startsWith("@") &&
-      k !== "name" &&
-      k !== "label" &&
-      k !== "description" &&
-      k !== "generatedBy" &&
-      k !== "usedDataset" &&
-      k !== "usedSoftware" &&
-      k !== "usedSample" &&
-      k !== "usedInstrument"
-  );
+  if (type !== "DatasetCollection") {
+    const propertyKeys = Object.keys(entityData).filter(
+      (k) =>
+        !k.startsWith("@") &&
+        k !== "name" &&
+        k !== "label" &&
+        k !== "description" &&
+        k !== "generatedBy" &&
+        k !== "usedDataset" &&
+        k !== "usedSoftware" &&
+        k !== "usedSample" &&
+        k !== "usedInstrument"
+    );
 
-  if (
-    type === "Software" &&
-    propertyKeys.length === 0 &&
-    !hasGeneratedBy &&
-    !hasUsedDataset &&
-    !hasUsedSoftware &&
-    !hasUsedSample &&
-    !hasUsedInstrument
-  ) {
-    const displayableProps = getDisplayableProperties(entityData);
-    if (Object.keys(displayableProps).length === 0) {
+    if (
+      type === "Software" &&
+      propertyKeys.length === 0 &&
+      !hasGeneratedBy &&
+      !hasUsedDataset &&
+      !hasUsedSoftware &&
+      !hasUsedSample &&
+      !hasUsedInstrument
+    ) {
+      const displayableProps = getDisplayableProperties(entityData);
+      if (Object.keys(displayableProps).length === 0) {
+        isExpandable = false;
+      }
+    }
+
+    if (
+      Object.keys(entityData).length <= 2 &&
+      entityData["@id"] &&
+      entityData["@type"]
+    ) {
       isExpandable = false;
     }
-  }
-
-  if (
-    Object.keys(entityData).length <= 2 &&
-    entityData["@id"] &&
-    entityData["@type"]
-  ) {
-    isExpandable = false;
   }
 
   const nodeData: EvidenceNodeData = {
@@ -202,7 +205,9 @@ export function createDatasetCollectionNode(
   computationId: string,
   datasets: (RawGraphEntity | string)[]
 ): EvidenceNode | null {
-  const collectionId = `${computationId}_dataset_collection_${Date.now()}`;
+  const collectionId = `${computationId}_dataset_collection_${
+    datasets.length
+  }_${Date.now()}`;
   const validDatasets = datasets
     .filter(
       (ds) =>
@@ -232,6 +237,9 @@ export function createDatasetCollectionNode(
         .split(/[/#]/)
         .pop()}`,
       count: count,
+      contains: validDatasets.map((vd) =>
+        typeof vd === "string" ? { "@id": vd } : { "@id": vd["@id"] }
+      ),
     },
     properties: {
       count: count,
@@ -247,100 +255,6 @@ export function createDatasetCollectionNode(
     position: { x: 0, y: 0 },
     data: nodeData,
   };
-}
-
-export function getInitialElements(
-  graphData: RawGraphData,
-  initialExpansionDepth: number = 2
-): {
-  nodes: EvidenceNode[];
-  edges: EvidenceEdge[];
-} {
-  if (!graphData || !graphData["@graph"]) {
-    return { nodes: [], edges: [] };
-  }
-
-  const rootEntities = Array.isArray(graphData["@graph"])
-    ? graphData["@graph"]
-    : [graphData["@graph"]];
-
-  if (!rootEntities || rootEntities.length === 0) {
-    return { nodes: [], edges: [] };
-  }
-
-  const rootEntity = rootEntities[0];
-  const rootNode = createEvidenceNode(rootEntity);
-
-  if (!rootNode) {
-    return { nodes: [], edges: [] };
-  }
-
-  let currentNodes: EvidenceNode[] = [rootNode];
-  let currentEdges: EvidenceEdge[] = [];
-  let nodesToExpandInNextLevel: EvidenceNode[] = rootNode.data.expandable
-    ? [rootNode]
-    : [];
-
-  for (let level = 0; level < initialExpansionDepth; level++) {
-    const nodesExpandedInThisLevel: EvidenceNode[] = [
-      ...nodesToExpandInNextLevel,
-    ];
-    nodesToExpandInNextLevel = [];
-
-    if (nodesExpandedInThisLevel.length === 0) {
-      break;
-    }
-
-    nodesExpandedInThisLevel.forEach((nodeToExpand) => {
-      const currentNodeInstance = currentNodes.find(
-        (n) => n.id === nodeToExpand.id
-      );
-      if (
-        !currentNodeInstance ||
-        !currentNodeInstance.data.expandable ||
-        currentNodeInstance.data._expanded
-      ) {
-        return;
-      }
-
-      const expansionResult = expandEvidenceNode(
-        currentNodeInstance,
-        currentNodes
-      );
-
-      const nodeIndex = currentNodes.findIndex((n) => n.id === nodeToExpand.id);
-
-      if (nodeIndex !== -1) {
-        const hasNewElements =
-          expansionResult.newNodes.length > 0 ||
-          expansionResult.newEdges.length > 0;
-
-        if (hasNewElements) {
-          currentNodes[nodeIndex].data._expanded = true;
-          currentNodes[nodeIndex].data.expandable = false;
-
-          expansionResult.newNodes.forEach((newNode) => {
-            if (!currentNodes.some((n) => n.id === newNode.id)) {
-              currentNodes.push(newNode);
-              if (newNode.data.expandable) {
-                nodesToExpandInNextLevel.push(newNode);
-              }
-            }
-          });
-
-          expansionResult.newEdges.forEach((newEdge) => {
-            if (!currentEdges.some((e) => e.id === newEdge.id)) {
-              currentEdges.push(newEdge);
-            }
-          });
-        } else {
-          currentNodes[nodeIndex].data.expandable = false;
-        }
-      }
-    });
-  }
-
-  return { nodes: currentNodes, edges: currentEdges };
 }
 
 export interface ExpansionResult {
@@ -361,7 +275,7 @@ export function expandEvidenceNode(
   const sourceData = node.data._sourceData;
   const result: ExpansionResult = { newNodes: [], newEdges: [] };
 
-  if (!sourceData || node.data._expanded || !node.data.expandable) {
+  if (!sourceData || !node.data.expandable) {
     return result;
   }
 
@@ -376,7 +290,9 @@ export function expandEvidenceNode(
       computationData !== null &&
       computationData["@id"]
     ) {
-      const computationNode = createEvidenceNode(computationData);
+      const computationNode = createEvidenceNode(
+        computationData as RawGraphEntity
+      );
       if (computationNode) {
         if (!nodeExists(computationNode.id)) {
           result.newNodes.push(computationNode);
@@ -387,7 +303,6 @@ export function expandEvidenceNode(
           target: computationNode.id,
           type: "smoothstep",
           label: "generated by",
-          animated: false,
         });
       }
     }
@@ -407,12 +322,10 @@ export function expandEvidenceNode(
         typeof software === "string"
           ? { "@id": software, "@type": "evi:Software" }
           : software;
-      if (
-        typeof softwareObject === "object" &&
-        softwareObject !== null &&
-        softwareObject["@id"]
-      ) {
-        const softwareNode = createEvidenceNode(softwareObject);
+      if (softwareObject && softwareObject["@id"]) {
+        const softwareNode = createEvidenceNode(
+          softwareObject as RawGraphEntity
+        );
         if (softwareNode) {
           if (!nodeExists(softwareNode.id)) {
             result.newNodes.push(softwareNode);
@@ -423,7 +336,6 @@ export function expandEvidenceNode(
             target: softwareNode.id,
             type: "smoothstep",
             label: "used software",
-            animated: false,
           });
         }
       }
@@ -438,7 +350,7 @@ export function expandEvidenceNode(
       ? sourceData.usedDataset
       : [sourceData.usedDataset];
     const validDatasetInputs = datasets.filter(
-      (ds) =>
+      (ds): ds is RawGraphEntity | string =>
         ds && (typeof ds === "string" || (typeof ds === "object" && ds["@id"]))
     );
 
@@ -448,12 +360,10 @@ export function expandEvidenceNode(
         typeof dsInput === "string"
           ? { "@id": dsInput, "@type": "evi:Dataset" }
           : dsInput;
-      if (
-        typeof datasetInputObject === "object" &&
-        datasetInputObject !== null &&
-        datasetInputObject["@id"]
-      ) {
-        const datasetNode = createEvidenceNode(datasetInputObject);
+      if (datasetInputObject && datasetInputObject["@id"]) {
+        const datasetNode = createEvidenceNode(
+          datasetInputObject as RawGraphEntity
+        );
         if (datasetNode) {
           if (!nodeExists(datasetNode.id)) {
             result.newNodes.push(datasetNode);
@@ -464,14 +374,13 @@ export function expandEvidenceNode(
             target: datasetNode.id,
             type: "smoothstep",
             label: "used dataset",
-            animated: false,
           });
         }
       }
     } else if (validDatasetInputs.length > 1) {
       const collectionNode = createDatasetCollectionNode(
         nodeId,
-        validDatasetInputs as (RawGraphEntity | string)[]
+        validDatasetInputs
       );
       if (collectionNode) {
         if (!nodeExists(collectionNode.id)) {
@@ -483,7 +392,6 @@ export function expandEvidenceNode(
           target: collectionNode.id,
           type: "smoothstep",
           label: "used dataset",
-          animated: false,
         });
       }
     }
@@ -507,7 +415,7 @@ export function expandEvidenceNode(
         sampleObject !== null &&
         sampleObject["@id"]
       ) {
-        const sampleNode = createEvidenceNode(sampleObject);
+        const sampleNode = createEvidenceNode(sampleObject as RawGraphEntity);
         if (sampleNode) {
           if (!nodeExists(sampleNode.id)) {
             result.newNodes.push(sampleNode);
@@ -518,7 +426,6 @@ export function expandEvidenceNode(
             target: sampleNode.id,
             type: "smoothstep",
             label: "used sample",
-            animated: false,
           });
         }
       }
@@ -543,7 +450,9 @@ export function expandEvidenceNode(
         instrumentObject !== null &&
         instrumentObject["@id"]
       ) {
-        const instrumentNode = createEvidenceNode(instrumentObject);
+        const instrumentNode = createEvidenceNode(
+          instrumentObject as RawGraphEntity
+        );
         if (instrumentNode) {
           if (!nodeExists(instrumentNode.id)) {
             result.newNodes.push(instrumentNode);
@@ -554,7 +463,6 @@ export function expandEvidenceNode(
             target: instrumentNode.id,
             type: "smoothstep",
             label: "used instrument",
-            animated: false,
           });
         }
       }
@@ -566,68 +474,445 @@ export function expandEvidenceNode(
 
 export function expandDatasetCollectionNode(
   collectionNode: EvidenceNode,
-  currentNodes: EvidenceNode[]
+  currentNodes: EvidenceNode[],
+  targetDatasetId?: string
 ): CollectionExpansionResult {
   const nodeId = collectionNode.id;
-  const result: ExpansionResult = { newNodes: [], newEdges: [] };
   const originalData = collectionNode.data;
-  const remaining = originalData._remainingDatasets;
+  const result: ExpansionResult = { newNodes: [], newEdges: [] };
 
-  let updatedCollectionData: Partial<EvidenceNodeData> = { expandable: false };
+  let datasetToExpandEntity: RawGraphEntity | undefined = undefined;
+  let remainingAfterExpansion = [...(originalData._remainingDatasets || [])];
 
-  if (!remaining || remaining.length === 0) {
-    return {
-      newNodes: [],
-      newEdges: [],
-      updatedCollectionData: { expandable: false },
-    };
-  }
+  if (targetDatasetId) {
+    const targetIndex = remainingAfterExpansion.findIndex(
+      (dsEntry) =>
+        (typeof dsEntry === "string" ? dsEntry : dsEntry["@id"]) ===
+        targetDatasetId
+    );
 
-  const datasetToExpand = remaining[0];
-  if (
-    typeof datasetToExpand === "object" &&
-    datasetToExpand !== null &&
-    datasetToExpand["@id"]
-  ) {
-    const datasetNode = createEvidenceNode(datasetToExpand);
-    const nodeExists = (id: string) =>
-      currentNodes.some((n) => n.id === id) ||
-      result.newNodes.some((n) => n.id === id);
-
-    if (datasetNode) {
-      if (!nodeExists(datasetNode.id)) {
-        result.newNodes.push(datasetNode);
-      }
-      result.newEdges.push({
-        id: `${nodeId}_contains_${datasetNode.id}_${
-          originalData._expandedCount || 0
-        }`,
-        source: nodeId,
-        target: datasetNode.id,
-        type: "smoothstep",
-        label: "contains",
-        animated: false,
-      });
+    if (targetIndex > -1) {
+      const foundDatasetEntry = remainingAfterExpansion.splice(
+        targetIndex,
+        1
+      )[0];
+      datasetToExpandEntity =
+        typeof foundDatasetEntry === "string"
+          ? ({
+              "@id": foundDatasetEntry,
+              "@type": "evi:Dataset",
+              name: foundDatasetEntry,
+            } as RawGraphEntity)
+          : foundDatasetEntry;
+    } else {
+      console.warn(
+        `Target dataset ${targetDatasetId} not found in remaining for collection ${collectionNode.id}.`
+      );
+      return {
+        newNodes: [],
+        newEdges: [],
+        updatedCollectionData: {
+          _remainingDatasets: remainingAfterExpansion,
+          expandable: remainingAfterExpansion.length > 0,
+          label:
+            remainingAfterExpansion.length > 0
+              ? `Input Datasets (${remainingAfterExpansion.length} more)`
+              : `Input Datasets (All Shown)`,
+          displayName:
+            remainingAfterExpansion.length > 0
+              ? `Datasets (${remainingAfterExpansion.length})`
+              : `Datasets (All)`,
+        },
+      };
+    }
+  } else {
+    if (remainingAfterExpansion.length > 0) {
+      const firstDatasetEntry = remainingAfterExpansion.shift();
+      datasetToExpandEntity =
+        typeof firstDatasetEntry === "string"
+          ? ({
+              "@id": firstDatasetEntry,
+              "@type": "evi:Dataset",
+              name: firstDatasetEntry,
+            } as RawGraphEntity)
+          : firstDatasetEntry;
     }
   }
 
-  const nextRemaining = remaining.slice(1);
+  if (!datasetToExpandEntity || !datasetToExpandEntity["@id"]) {
+    return {
+      newNodes: [],
+      newEdges: [],
+      updatedCollectionData: {
+        _remainingDatasets: [],
+        _expandedCount: originalData._expandedCount,
+        expandable: false,
+        label: `Input Datasets (All Shown)`,
+        displayName: `Datasets (All)`,
+      },
+    };
+  }
+
+  const datasetNode = createEvidenceNode(datasetToExpandEntity);
+  const nodeExists = (id: string) =>
+    currentNodes.some((n) => n.id === id) ||
+    result.newNodes.some((n) => n.id === id);
+
+  if (datasetNode) {
+    if (!nodeExists(datasetNode.id)) {
+      result.newNodes.push(datasetNode);
+    }
+    result.newEdges.push({
+      id: `${nodeId}_contains_${datasetNode.id}_${
+        originalData._expandedCount || 0
+      }`,
+      source: nodeId,
+      target: datasetNode.id,
+      type: "smoothstep",
+      label: "contains",
+    });
+  }
+
   const nextExpandedCount = (originalData._expandedCount || 0) + 1;
-  const nextExpandable = nextRemaining.length > 0;
+  const nextExpandable = remainingAfterExpansion.length > 0;
   const nextLabel = nextExpandable
-    ? `Input Datasets (${nextRemaining.length} more)`
+    ? `Input Datasets (${remainingAfterExpansion.length} more)`
     : `Input Datasets (All Shown)`;
   const nextDisplayName = nextExpandable
-    ? `Datasets (${nextRemaining.length})`
+    ? `Datasets (${remainingAfterExpansion.length})`
     : `Datasets (All)`;
 
-  updatedCollectionData = {
-    _remainingDatasets: nextRemaining,
+  const updatedCollectionData: Partial<EvidenceNodeData> = {
+    _remainingDatasets: remainingAfterExpansion,
     _expandedCount: nextExpandedCount,
     expandable: nextExpandable,
     label: nextLabel,
     displayName: nextDisplayName,
   };
 
-  return { ...result, updatedCollectionData: updatedCollectionData };
+  return { ...result, updatedCollectionData };
+}
+
+interface BuildGraphElementsOptions {
+  initialDepth?: number;
+  targetPath?: string[];
+}
+
+export function buildGraphElements(
+  graphData: RawGraphData,
+  options: BuildGraphElementsOptions
+): {
+  nodes: EvidenceNode[];
+  edges: EvidenceEdge[];
+  pathToHighlight?: { nodes: string[]; edges: string[] };
+} {
+  if (!graphData || !graphData["@graph"]) {
+    return { nodes: [], edges: [] };
+  }
+
+  const rootEntities = Array.isArray(graphData["@graph"])
+    ? graphData["@graph"]
+    : [graphData["@graph"]];
+
+  if (!rootEntities || rootEntities.length === 0) {
+    return { nodes: [], edges: [] };
+  }
+
+  const rootEntity = rootEntities[0];
+  const rootNode = createEvidenceNode(rootEntity);
+
+  if (!rootNode) {
+    return { nodes: [], edges: [] };
+  }
+
+  let allNodesMasterList: EvidenceNode[] = [rootNode];
+  let allEdgesMasterList: EvidenceEdge[] = [];
+  let highlightedPathOutput: { nodes: string[]; edges: string[] } | undefined =
+    undefined;
+
+  const currentNodesMap = new Map<string, EvidenceNode>(
+    allNodesMasterList.map((n) => [n.id, JSON.parse(JSON.stringify(n))])
+  ); // Deep copy for manipulation
+
+  if (options.targetPath && options.targetPath.length > 0) {
+    console.log("Building graph for target path:", options.targetPath);
+    highlightedPathOutput = { nodes: [], edges: [] };
+
+    if (options.targetPath[0] !== rootNode.id) {
+      console.warn(
+        "Target path does not start with the graph's root node. Path expansion aborted."
+      );
+      return { nodes: [rootNode], edges: [], pathToHighlight: undefined };
+    }
+    highlightedPathOutput.nodes.push(rootNode.id);
+
+    let currentParentIdInPath = rootNode.id;
+
+    for (let i = 0; i < options.targetPath.length - 1; i++) {
+      const actualTargetIdInPath = options.targetPath[i + 1];
+      let parentNodeToExpand = currentNodesMap.get(currentParentIdInPath);
+
+      if (!parentNodeToExpand) {
+        console.warn(
+          `[Path Expansion] Current parent node ${currentParentIdInPath} not found. Stopping path expansion.`
+        );
+        break;
+      }
+
+      // Ensure expandable for this step
+      parentNodeToExpand.data = {
+        ...parentNodeToExpand.data,
+        expandable: true,
+        _expanded: false,
+      };
+
+      const regularExpansion = expandEvidenceNode(
+        parentNodeToExpand,
+        Array.from(currentNodesMap.values())
+      );
+
+      // Update parent node's state after expansion attempt
+      parentNodeToExpand.data._expanded = true;
+      currentNodesMap.set(parentNodeToExpand.id, parentNodeToExpand);
+
+      // Add newly discovered nodes and edges from regular expansion
+      regularExpansion.newNodes.forEach((newNode) => {
+        if (!currentNodesMap.has(newNode.id)) {
+          currentNodesMap.set(newNode.id, JSON.parse(JSON.stringify(newNode)));
+        }
+      });
+      regularExpansion.newEdges.forEach((newEdge) => {
+        if (!allEdgesMasterList.some((e) => e.id === newEdge.id)) {
+          allEdgesMasterList.push(newEdge);
+        }
+      });
+
+      // Now, check if actualTargetIdInPath is directly connected or via a new collection
+      let foundDirectly =
+        currentNodesMap.has(actualTargetIdInPath) &&
+        allEdgesMasterList.some(
+          (e) =>
+            (e.source === currentParentIdInPath &&
+              e.target === actualTargetIdInPath) ||
+            (e.target === currentParentIdInPath &&
+              e.source === actualTargetIdInPath)
+        );
+
+      let collectionNodeMediary: EvidenceNode | undefined = undefined;
+
+      if (!foundDirectly) {
+        // Check if a collection was created that might contain actualTargetIdInPath
+        collectionNodeMediary = regularExpansion.newNodes.find(
+          (n) =>
+            n.data.type === "DatasetCollection" &&
+            (n.data._remainingDatasets || []).some(
+              (ds) =>
+                (typeof ds === "string" ? ds : ds["@id"]) ===
+                actualTargetIdInPath
+            )
+        );
+      }
+
+      if (foundDirectly) {
+        // Target is directly connected
+        highlightedPathOutput.nodes.push(actualTargetIdInPath);
+        const edgeToHighlight = allEdgesMasterList.find(
+          (e) =>
+            (e.source === currentParentIdInPath &&
+              e.target === actualTargetIdInPath) ||
+            (e.target === currentParentIdInPath &&
+              e.source === actualTargetIdInPath)
+        );
+        if (edgeToHighlight) {
+          highlightedPathOutput.edges.push(edgeToHighlight.id);
+        } else {
+          console.warn(
+            `[Path Expansion] Direct edge for ${currentParentIdInPath} -> ${actualTargetIdInPath} not found, though target node exists.`
+          );
+        }
+        currentParentIdInPath = actualTargetIdInPath; // Move to next step in path
+      } else if (collectionNodeMediary) {
+        // Target is inside a newly created collection
+        console.log(
+          `[Path Expansion] Target ${actualTargetIdInPath} is in collection ${collectionNodeMediary.id}. Expanding collection.`
+        );
+
+        // 1. Highlight path to collection
+        highlightedPathOutput.nodes.push(collectionNodeMediary.id);
+        const edgeToCollection = allEdgesMasterList.find(
+          (e) =>
+            e.source === currentParentIdInPath &&
+            e.target === collectionNodeMediary!.id
+        );
+        if (edgeToCollection) {
+          highlightedPathOutput.edges.push(edgeToCollection.id);
+        } else {
+          console.warn(
+            `[Path Expansion] Edge to collection ${collectionNodeMediary.id} not found.`
+          );
+        }
+
+        // 2. Expand the collection to reveal actualTargetIdInPath
+        let collectionToExpand = currentNodesMap.get(collectionNodeMediary.id); // Get mutable copy
+        if (!collectionToExpand) {
+          // Should exist as it was just added
+          console.error("Critical: Collection node disappeared from map.");
+          break;
+        }
+        collectionToExpand.data = {
+          ...collectionToExpand.data,
+          expandable: true,
+          _expanded: false,
+        }; // Ensure it can be expanded
+
+        const collectionExpansionResult = expandDatasetCollectionNode(
+          collectionToExpand,
+          Array.from(currentNodesMap.values()),
+          actualTargetIdInPath
+        );
+
+        // Update collection node state
+        collectionToExpand.data = {
+          ...collectionToExpand.data,
+          ...collectionExpansionResult.updatedCollectionData,
+        };
+        currentNodesMap.set(collectionToExpand.id, collectionToExpand);
+
+        collectionExpansionResult.newNodes.forEach((newNode) => {
+          if (!currentNodesMap.has(newNode.id)) {
+            currentNodesMap.set(
+              newNode.id,
+              JSON.parse(JSON.stringify(newNode))
+            );
+          }
+        });
+        collectionExpansionResult.newEdges.forEach((newEdge) => {
+          if (!allEdgesMasterList.some((e) => e.id === newEdge.id)) {
+            allEdgesMasterList.push(newEdge);
+          }
+        });
+
+        // 3. Highlight path from collection to target
+        if (currentNodesMap.has(actualTargetIdInPath)) {
+          highlightedPathOutput.nodes.push(actualTargetIdInPath);
+          const edgeFromCollection = allEdgesMasterList.find(
+            (e) =>
+              e.source === collectionNodeMediary!.id &&
+              e.target === actualTargetIdInPath
+          );
+          if (edgeFromCollection) {
+            highlightedPathOutput.edges.push(edgeFromCollection.id);
+          } else {
+            console.warn(
+              `[Path Expansion] Edge from collection ${collectionNodeMediary.id} to ${actualTargetIdInPath} not found.`
+            );
+          }
+          currentParentIdInPath = actualTargetIdInPath; // Move to next step in path
+        } else {
+          console.warn(
+            `[Path Expansion] Target ${actualTargetIdInPath} not found after expanding collection ${collectionNodeMediary.id}. Stopping path.`
+          );
+          break;
+        }
+      } else {
+        // Target not found directly or via a new collection
+        console.warn(
+          `[Path Expansion] Child ${actualTargetIdInPath} not found after expanding ${currentParentIdInPath}. Cannot proceed with path segment.`
+        );
+        // Also check if actualTargetIdInPath was already present but not connected from currentParentIdInPath
+        const targetNodeExists = currentNodesMap.has(actualTargetIdInPath);
+        console.warn(
+          `[Path Expansion] Details: Target node ${actualTargetIdInPath} ${
+            targetNodeExists ? "exists" : "does not exist"
+          } in map. No valid connection from ${currentParentIdInPath}.`
+        );
+        break;
+      }
+    }
+    allNodesMasterList = Array.from(currentNodesMap.values());
+  } else if (options.initialDepth !== undefined && options.initialDepth > 0) {
+    console.log("Building graph with initial depth:", options.initialDepth);
+    let nodesToExpandInNextLevel: string[] = [];
+    if (rootNode.data.expandable && !rootNode.data._expanded) {
+      nodesToExpandInNextLevel.push(rootNode.id);
+    }
+
+    for (let level = 0; level < options.initialDepth; level++) {
+      const expandingNowIds = [...nodesToExpandInNextLevel];
+      nodesToExpandInNextLevel = [];
+      if (expandingNowIds.length === 0) break;
+
+      expandingNowIds.forEach((nodeIdToExpand) => {
+        let nodeToExpand = currentNodesMap.get(nodeIdToExpand);
+        if (
+          !nodeToExpand ||
+          !nodeToExpand.data.expandable ||
+          nodeToExpand.data._expanded
+        ) {
+          return;
+        }
+
+        const expansionResult = expandEvidenceNode(
+          nodeToExpand,
+          Array.from(currentNodesMap.values())
+        );
+
+        const hasNewElements =
+          expansionResult.newNodes.length > 0 ||
+          expansionResult.newEdges.length > 0;
+
+        nodeToExpand.data._expanded = true;
+        if (nodeToExpand.data.type !== "DatasetCollection") {
+          if (!hasNewElements) nodeToExpand.data.expandable = false;
+        }
+        currentNodesMap.set(nodeToExpand.id, nodeToExpand);
+
+        expansionResult.newNodes.forEach((newNode) => {
+          if (!currentNodesMap.has(newNode.id)) {
+            currentNodesMap.set(
+              newNode.id,
+              JSON.parse(JSON.stringify(newNode))
+            );
+            if (
+              newNode.data.expandable &&
+              newNode.data.type !== "DatasetCollection" &&
+              !newNode.data._expanded
+            ) {
+              nodesToExpandInNextLevel.push(newNode.id);
+            }
+          }
+        });
+        expansionResult.newEdges.forEach((newEdge) => {
+          if (!allEdgesMasterList.some((e) => e.id === newEdge.id)) {
+            allEdgesMasterList.push(newEdge);
+          }
+        });
+      });
+    }
+    allNodesMasterList = Array.from(currentNodesMap.values());
+  } else {
+    console.log("Building graph with root node only.");
+    allNodesMasterList = [rootNode];
+    allEdgesMasterList = [];
+  }
+
+  const finalNodeIds = new Set(allNodesMasterList.map((n) => n.id));
+  allEdgesMasterList = allEdgesMasterList.filter(
+    (e) => finalNodeIds.has(e.source) && finalNodeIds.has(e.target)
+  );
+
+  if (highlightedPathOutput) {
+    highlightedPathOutput.nodes = highlightedPathOutput.nodes.filter((nodeId) =>
+      finalNodeIds.has(nodeId)
+    );
+    highlightedPathOutput.edges = highlightedPathOutput.edges.filter((edgeId) =>
+      allEdgesMasterList.some((edge) => edge.id === edgeId)
+    );
+  }
+
+  return {
+    nodes: allNodesMasterList,
+    edges: allEdgesMasterList,
+    pathToHighlight: highlightedPathOutput,
+  };
 }

@@ -131,11 +131,13 @@ interface SupportData {
 interface SupportingElementsComponentProps {
   data: SupportData | null;
   evidenceGraphData?: any;
+  onShowRelationshipPath: (pathNodeIds: string[] | null) => void;
 }
 
 const SupportingElementsComponent: React.FC<
   SupportingElementsComponentProps
-> = ({ data: supportData, evidenceGraphData }) => {
+> = ({ data: supportData, evidenceGraphData, onShowRelationshipPath }) => {
+  // ADDED onShowRelationshipPath
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({
@@ -161,16 +163,19 @@ const SupportingElementsComponent: React.FC<
 
   const showRelationship = (elementId: string) => {
     if (!evidenceGraphData) {
-      console.warn("Evidence graph data is not available");
+      console.warn("Evidence graph data is not available for pathfinding.");
+      onShowRelationshipPath(null);
       return;
     }
 
     const path = findPathInFullGraph(evidenceGraphData, elementId);
 
-    if (path) {
+    if (path && path.length > 0) {
       console.log("Path from root to element:", path);
+      onShowRelationshipPath(path);
     } else {
       console.log("No path found to element:", elementId);
+      onShowRelationshipPath(null);
     }
   };
 
@@ -195,7 +200,6 @@ const SupportingElementsComponent: React.FC<
 
       {Object.keys(supportData).map((section) => {
         const elements = supportData[section as keyof SupportData];
-
         if (!elements || elements.length === 0) return null;
 
         return (
@@ -251,5 +255,4 @@ const SupportingElementsComponent: React.FC<
 };
 
 export default SupportingElementsComponent;
-
 export type { SupportData, SupportingElement };
