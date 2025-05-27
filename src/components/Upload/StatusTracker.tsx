@@ -11,7 +11,7 @@ interface UploadError {
 }
 
 interface StatusDetails {
-  status: string;
+  status: string; // Expecting this from API, can be empty/null
   success: boolean;
   completed: boolean;
   error?: string;
@@ -127,32 +127,58 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data: StatusDetails = await response.json();
+      // console.log("Upload status data:", data);
 
       if (isActive.current) {
-        setStatus(data.status);
+        let determinedApiStatus: string | null = null;
+
+        if (
+          data.status &&
+          typeof data.status === "string" &&
+          data.status.trim() !== ""
+        ) {
+          determinedApiStatus = data.status;
+        } else if (data.completed) {
+          // If API status is missing/invalid but it's completed, infer from success.
+          determinedApiStatus = data.success ? "Finished" : "Failed";
+        }
+
+        // Only update component status if we have a new, valid status from API or inference.
+        // This prevents setting status to null if API temporarily returns no status for an ongoing job.
+        if (determinedApiStatus) {
+          setStatus(determinedApiStatus);
+        }
+
         setDetails(data);
         setSuccess(data.success);
         setCompleted(data.completed);
 
         if (data.error) {
           setError(data.error);
-          clearInterval(intervalRef.current as unknown as number);
+          // If API reports an error, ensure status reflects failure, overriding any other status.
+          setStatus("Failed");
+          if (intervalRef.current)
+            clearInterval(intervalRef.current as unknown as number);
+          intervalRef.current = null;
           isActive.current = false;
-        }
-
-        if (data.completed || data.error) {
-          clearInterval(intervalRef.current as unknown as number);
+        } else if (data.completed) {
+          // Job is completed and no API-reported error
+          if (intervalRef.current)
+            clearInterval(intervalRef.current as unknown as number);
+          intervalRef.current = null;
           isActive.current = false;
         }
       }
-    } catch (error) {
+    } catch (err) {
       if (isActive.current) {
-        setError(`Failed to check upload status: ${(error as Error).message}`);
+        setError(`Failed to check upload status: ${(err as Error).message}`);
         setStatus("Failed");
         setSuccess(false);
-        setCompleted(true);
-        clearInterval(intervalRef.current as unknown as number);
+        setCompleted(true); // Mark as completed due to fetch error
+        if (intervalRef.current)
+          clearInterval(intervalRef.current as unknown as number);
+        intervalRef.current = null;
         isActive.current = false;
       }
     }
@@ -167,6 +193,10 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
       setSuccess(false);
       setCompleted(true);
       isActive.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current as unknown as number);
+        intervalRef.current = null;
+      }
     } else if (isUploading && submissionUUID) {
       setStatus("In Queue");
       setError(null);
@@ -177,62 +207,75 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
       if (intervalRef.current) {
         clearInterval(intervalRef.current as unknown as number);
       }
-
-      checkUploadStatus();
+      checkUploadStatus(); // Initial check
       intervalRef.current = window.setInterval(
         checkUploadStatus,
         1000
       ) as unknown as number;
     } else {
+      // Reset or initial state before any upload starts for this component instance
       setStatus(null);
       setError(null);
       setSuccess(false);
       setCompleted(false);
       isActive.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current as unknown as number);
+        intervalRef.current = null;
+      }
     }
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current as unknown as number);
+        intervalRef.current = null;
       }
       isActive.current = false;
     };
   }, [submissionUUID, uploadError, isUploading, checkUploadStatus]);
 
   const steps = ["In Queue", "Uploading Files", "Processing", "Complete"];
-  let currentStep;
+  let currentStepIndex; // Use index for clarity with steps array
   let progress;
 
   switch (status) {
     case "In Queue":
-      currentStep = 0;
+      currentStepIndex = 0;
       progress = 25;
       break;
-    case "in progress":
-      currentStep = 1;
+    case "in progress": // Assuming API might send this
+      currentStepIndex = 1;
       progress = 50;
       break;
-    case "processing":
-      currentStep = 2;
+    case "processing": // Assuming API might send this
+      currentStepIndex = 2;
       progress = 75;
       break;
-    case "finished":
-    case "Finished":
-      currentStep = success ? 3 : -1;
+    case "finished": // Legacy or alternative success status from API
+    case "Finished": // Status set by client-side logic on success
+      currentStepIndex = success ? 3 : -1; // If "Finished" but not success, it's an error display
       progress = 100;
       break;
-    case "Failed":
-      currentStep = -1;
-      progress = 100;
+    case "Failed": // Status set by client-side logic on any failure
+      currentStepIndex = -1; // Indicates failure, no active step
+      progress = 100; // Progress bar full, but red
       break;
     default:
-      currentStep = -1;
-      progress = 0;
+      currentStepIndex = -1; // Default for unknown or null status after initial render
+      progress = status ? 0 : 0; // If status is truthy but not matched, show 0 progress.
+      break;
   }
 
   const isFailed =
     status === "Failed" || Boolean(error) || (completed && !success);
 
+  if (!status && !uploadError && !(isUploading && submissionUUID)) {
+    // Only return null if there's truly nothing to show and not in an active upload attempt
+    return null;
+  }
+  // If status is null but we are expecting one (isUploading && submissionUUID),
+  // the component will render its shell, useEffect will set "In Queue"
+  // The check `if (!status) return null;` below handles if it's truly not ready.
   if (!status) return null;
 
   return (
@@ -243,32 +286,43 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
       </ProgressBarContainer>
       <StepContainer>
         {steps.map((step, index) => (
-          <Step key={index} active={index <= (currentStep ?? -1)}>
+          <Step
+            key={index}
+            active={
+              index === currentStepIndex ||
+              (currentStepIndex === 3 && index < 3 && success)
+            }
+          >
             {index + 1}. {step}
           </Step>
         ))}
       </StepContainer>
 
-      {isFailed && <ErrorMessage>{error || "Upload failed"}</ErrorMessage>}
-
-      {details && (
-        <StatusDetailsContainer>
-          <p>Status: {status}</p>
-          <p>Success: {success ? "Yes" : "No"}</p>
-          {details.result && (
-            <p>
-              View Result:{" "}
-              <ResultLink
-                href={`${BASE_URL}/${details.result}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open
-              </ResultLink>
-            </p>
-          )}
-        </StatusDetailsContainer>
+      {isFailed && (
+        <ErrorMessage>
+          {error || details?.error || "Upload failed"}
+        </ErrorMessage>
       )}
+
+      {details &&
+        (completed || status === "Finished" || status === "Failed") && (
+          <StatusDetailsContainer>
+            <p>Final Status: {status}</p>
+            <p>Success: {success ? "Yes" : "No"}</p>
+            {details.result && success && (
+              <p>
+                View Result:{" "}
+                <ResultLink
+                  href={`${BASE_URL}/${details.result}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open
+                </ResultLink>
+              </p>
+            )}
+          </StatusDetailsContainer>
+        )}
     </TrackerContainer>
   );
 };

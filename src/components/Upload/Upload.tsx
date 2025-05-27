@@ -109,9 +109,9 @@ const Upload: React.FC = () => {
     ) {
       setFile(selectedFile);
       setError("");
-      setSubmissionUUID(null);
+      setSubmissionUUID(null); // Reset submission specific states
       setUploadError(null);
-      setIsUploading(false);
+      setIsUploading(false); // Ensure not in uploading state for new file
       setJsonSuccess(false);
       setJsonError(null);
     } else {
@@ -130,14 +130,16 @@ const Upload: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       setError("Please log in before uploading");
+      // Potentially navigate to login: navigate("/login");
       return;
     }
 
     setError("");
-    setIsUploading(true);
+    setIsUploading(true); // Set for both types initially
     setUploadError(null);
     setJsonSuccess(false);
     setJsonError(null);
+    // setSubmissionUUID(null); // Already reset in handleFileChange, but good to be sure if flow changes
 
     try {
       if (file.type === "application/zip") {
@@ -156,15 +158,28 @@ const Upload: React.FC = () => {
 
         if (response.ok) {
           setSubmissionUUID(data.transactionFolder);
+          // isUploading remains true for ZIP, StatusTracker will handle setting it false
         } else {
           setUploadError({
             status: response.status.toString(),
             message: data.message || "Upload failed",
           });
+          setIsUploading(false); // Explicitly set false on initial upload error for ZIP
         }
       } else if (file.type === "application/json") {
         const fileContent = await file.text();
-        const jsonData = JSON.parse(fileContent);
+        // Basic JSON validation, though server should handle robustly
+        let jsonData;
+        try {
+          jsonData = JSON.parse(fileContent);
+        } catch (parseError) {
+          setJsonError({
+            status: "Client Error",
+            message: "Invalid JSON format.",
+          });
+          setIsUploading(false);
+          return;
+        }
 
         const response = await fetch(`${API_URL}/rocrate/metadata`, {
           method: "POST",
@@ -181,27 +196,30 @@ const Upload: React.FC = () => {
           const data = await response.json();
           setJsonError({
             status: response.status.toString(),
-            message: data.message || "Upload failed",
+            message: data.message || "Metadata upload failed",
           });
         }
+        setIsUploading(false); // JSON upload is synchronous, set false after attempt
       }
-    } catch (error) {
+    } catch (err) {
+      // This catch is for network errors or unhandled issues in the try block
       if (file.type === "application/zip") {
         setUploadError({
-          status: "Error",
-          message: "An error occurred during upload",
+          status: "Network Error",
+          message:
+            (err as Error).message || "An error occurred during ZIP upload",
         });
       } else {
         setJsonError({
-          status: "Error",
-          message: "An error occurred during upload",
+          status: "Network Error",
+          message:
+            (err as Error).message || "An error occurred during JSON upload",
         });
       }
-    } finally {
-      if (file.type === "application/json") {
-        setIsUploading(false);
-      }
+      setIsUploading(false); // Ensure uploading is false on any catch-all error
     }
+    // No finally block needed for setIsUploading(false) for ZIP, as StatusTracker manages that.
+    // For JSON, it's handled within its specific path.
   };
 
   return (
@@ -214,20 +232,25 @@ const Upload: React.FC = () => {
             id="file"
             onChange={handleFileChange}
             accept=".zip,.json"
-            disabled={isUploading}
+            disabled={isUploading && file?.type === "application/zip"} // Only disable for ZIP during its async phase
           />
           {error && <ErrorMessage>{error}</ErrorMessage>}
         </FormGroup>
 
-        <UploadButton type="submit" disabled={!file || isUploading}>
-          {isUploading ? "Uploading..." : "Upload"}
+        <UploadButton
+          type="submit"
+          disabled={!file || (isUploading && file?.type === "application/zip")}
+        >
+          {isUploading && file?.type === "application/zip"
+            ? "Uploading..."
+            : "Upload"}
         </UploadButton>
 
         {file?.type === "application/zip" && (
           <StatusTracker
             submissionUUID={submissionUUID}
             uploadError={uploadError}
-            isUploading={isUploading}
+            isUploading={isUploading && !!submissionUUID} // Pass true only if actively tracking a submission
           />
         )}
 
