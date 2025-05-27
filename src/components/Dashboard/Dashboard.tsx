@@ -282,7 +282,6 @@ const Dashboard: React.FC = () => {
                     "Upload Date"
                   )}
                 </TableHeaderCell>
-                <TableHeaderCell>Items in Crate</TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
               </tr>
             </TableHead>
@@ -307,9 +306,6 @@ const Dashboard: React.FC = () => {
                     </DescriptionCell>
                     <TableCell style={{ textAlign: "center" }}>
                       {formatDate(rocrate.uploadDate)}
-                    </TableCell>
-                    <TableCell style={{ textAlign: "center" }}>
-                      {rocrate["@graph"]?.length || 0}
                     </TableCell>
                     <TableCell>
                       <ActionButtonContainer>
