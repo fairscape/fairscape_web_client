@@ -120,15 +120,6 @@ const ButtonGroup: React.FC<ButtonGroupProps> = ({
           Evidence Graph
         </Button>
       )}
-      {showExplorerButton && explorerArkId && (
-        <LinkButton
-          href={explorerUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Explorer
-        </LinkButton>
-      )}
     </Group>
   );
 };
