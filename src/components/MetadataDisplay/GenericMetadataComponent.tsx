@@ -410,6 +410,19 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         </StyledLink>
       );
     }
+    if (id.startsWith("http://") || id.startsWith("https://")) {
+      return (
+        <StyledLink
+          href={id} // Use the id itself as the href for standard URLs
+          key={index ?? id}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {id}
+        </StyledLink>
+      );
+    }
+
     return <span key={index ?? id}>{id}</span>;
   };
 
