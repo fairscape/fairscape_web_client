@@ -248,15 +248,12 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       if (entity.contentUrl === "Embargoed") {
         contentStatus = "Embargoed";
       } else if (entity.contentUrl) {
-        // If contentUrl exists and is not Embargoed, mark as Download
-        contentStatus = "Download";
-        contentUrl = entity.contentUrl; // Use the direct contentUrl
+        contentStatus = "External";
+        contentUrl = entity.contentUrl;
       } else if (hasDistribution && entity["@id"]) {
-        // If no contentUrl but distribution exists, mark as Download via API
         contentStatus = "Download";
-        contentUrl = `${apiUrl}/download/${entity["@id"]}`; // Construct API download URL
+        contentUrl = `${apiUrl}/download/${entity["@id"]}`;
       } else {
-        // If no contentUrl and no distribution, it's likely metadata only
         contentStatus = "Metadata Only";
       }
 
@@ -402,7 +399,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
             aria-disabled={loading}
             style={loading ? { pointerEvents: "none", opacity: 0.7 } : {}}
           >
-            {loading ? "Downloading..." : "Download Complete RO-Crate"}
+            {loading ? "Downloading..." : "Download RO-Crate"}
           </DownloadButton>
         </ButtonContainer>
       )}
