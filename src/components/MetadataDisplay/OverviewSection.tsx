@@ -1,96 +1,277 @@
 import React from "react";
 import styled from "styled-components";
 import { OverviewData } from "../../utils/metadataProcessing";
-import MetadataField from "./MetadataField";
 
 const SectionContainer = styled.div`
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-`;
-
-const SummarySection = styled.div`
-  background-color: ${({ theme }) => theme.colors.background};
+  background-color: ${({ theme }) => theme.colors.background || "#f9f9f9"};
   padding: ${({ theme }) => theme.spacing.lg};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  margin-bottom: ${({ theme }) => theme.spacing.xl};
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  box-shadow: ${({ theme }) => theme.shadows?.small || "none"};
+  border: ${({ theme }) =>
+    theme.shadows?.small
+      ? "none"
+      : `1px solid ${theme.colors.border || "#ddd"}`};
 `;
 
-const SectionTitle = styled.h2`
-  font-size: 20px;
+const Header = styled.h2`
+  font-size: 24px;
   color: ${({ theme }) => theme.colors.primary};
   margin-top: 0;
   margin-bottom: ${({ theme }) => theme.spacing.md};
-`;
-
-const SummaryRow = styled.div`
-  display: flex;
-  margin-bottom: ${({ theme }) => theme.spacing.sm};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-bottom: 2px solid
+    ${({ theme }) => theme.colors.secondary || theme.colors.primary};
   padding-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
-const SummaryLabel = styled.div`
-  width: 220px;
-  font-weight: bold;
-  color: ${({ theme }) => theme.colors.primary};
+const Description = styled.p`
+  font-size: 16px;
+  line-height: 1.6;
+  color: ${({ theme }) => theme.colors.text};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
-const SummaryValue = styled.div`
-  flex: 1;
+const DetailsList = styled.div`
+  // Changed from DetailsGrid to DetailsList
+  display: flex; // Use flex for a single column layout
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.sm}; // Spacing between items
+`;
+
+const DetailItemWrapper = styled.div`
+  font-size: 15px;
+  line-height: 1.5;
+  word-break: break-word;
+
+  strong {
+    color: ${({ theme }) =>
+      theme.colors.textSlightlyLighter || theme.colors.text};
+    margin-right: ${({ theme }) =>
+      theme.spacing.xs}; /* Adjusted margin for label */
+  }
+
+  a {
+    color: ${({ theme }) => theme.colors.primary};
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
+const KeywordsContainer = styled.div`
+  margin-top: ${({ theme }) =>
+    theme.spacing.md}; /* More space before keywords */
+
+  strong {
+    color: ${({ theme }) =>
+      theme.colors.textSlightlyLighter || theme.colors.text};
+    display: block;
+    margin-bottom: ${({ theme }) =>
+      theme.spacing.sm}; /* More space for keyword label */
+  }
+`;
+
+const KeywordPill = styled.span`
+  display: inline-block;
+  background-color: ${({ theme }) =>
+    theme.colors.secondary || theme.colors.primary};
+  color: white;
+  padding: 4px 8px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: ${({ theme }) => theme.spacing.xs};
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
 interface OverviewSectionProps {
   overviewData: OverviewData;
 }
 
-const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
-  // Only filter out undefined, null, and empty strings
-  const fieldsToRender = Object.entries(overviewData)
-    .filter(
-      ([, value]) => value !== undefined && value !== null && value !== ""
-    )
-    .map(([key, value]) => {
-      let label = key.replace(/_/g, " ").replace(/([A-Z])/g, " $1");
-      label = label.charAt(0).toUpperCase() + label.slice(1);
+const DetailDisplay: React.FC<{
+  label: string;
+  value: any;
+  isLink?: boolean;
+  href?: string;
+  isEmail?: boolean;
+  isArk?: boolean;
+}> = ({ label, value, isLink, href, isEmail, isArk }) => {
+  if (
+    value === undefined ||
+    value === null ||
+    (typeof value === "string" &&
+      value.trim() === "" &&
+      typeof value !== "boolean")
+  ) {
+    return null;
+  }
 
-      // Custom label mappings
-      if (key === "id_value") label = "ROCrate ID";
-      if (key === "release_date") label = "Release Date";
-      if (key === "license_value") label = "License";
-      if (key === "formatted_size") label = "Size";
-      if (key === "content_size") label = "Size";
-      if (key === "principal_investigator") label = "Principal Investigator";
-      if (key === "contact_email") label = "Contact Email";
-      if (key === "human_subject") label = "Human Subject Data";
-      if (key === "confidentiality_level") label = "Confidentiality Level";
-      if (key === "related_publications") label = "Related Publications";
+  let displayValue: React.ReactNode = String(value);
 
-      return { key, label, value };
-    });
+  if (isArk && typeof value === "string") {
+    const arkLink = value.startsWith("ark:")
+      ? `https://n2t.net/${value}`
+      : value.startsWith("http")
+      ? value
+      : null;
+    if (arkLink) {
+      displayValue = (
+        <a href={arkLink} target="_blank" rel="noopener noreferrer">
+          {value}
+        </a>
+      );
+    }
+  } else if (isLink) {
+    const targetHref =
+      href ||
+      (typeof value === "string" &&
+      (value.startsWith("http") || value.startsWith("https"))
+        ? value
+        : undefined);
+    if (targetHref) {
+      displayValue = (
+        <a href={targetHref} target="_blank" rel="noopener noreferrer">
+          {value}
+        </a>
+      );
+    }
+  } else if (isEmail && typeof value === "string") {
+    displayValue = <a href={`mailto:${value}`}>{value}</a>;
+  } else if (typeof value === "boolean") {
+    displayValue = value ? "Yes" : "No";
+  } else if (Array.isArray(value)) {
+    displayValue = (
+      <div style={{ marginTop: "4px" }}>
+        {value.map((item, index) => (
+          <div key={index} style={{ marginLeft: "10px", marginBottom: "2px" }}>
+            {typeof item === "string" &&
+            (item.startsWith("http") ||
+              item.startsWith("https://") ||
+              item.startsWith("doi:")) ? (
+              <a
+                href={
+                  item.startsWith("doi:")
+                    ? `https://doi.org/${item.substring(4)}`
+                    : item
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {item}
+              </a>
+            ) : (
+              String(item)
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-  // Always render the container even if we don't have many fields
   return (
-    <SectionContainer>
-      <SummarySection>
-        <SectionTitle>Overview</SectionTitle>
-        {fieldsToRender.length > 0 ? (
-          fieldsToRender.map(({ key, label, value }) => (
-            <SummaryRow key={key}>
-              <SummaryLabel>{label}</SummaryLabel>
-              <SummaryValue id={key.replace(/_/g, "-")}>
-                {React.createElement(MetadataField, {
-                  label: "",
-                  value: value,
-                })}
-              </SummaryValue>
-            </SummaryRow>
-          ))
-        ) : (
-          <SummaryRow>
-            <SummaryValue>No overview data available</SummaryValue>
-          </SummaryRow>
-        )}
-      </SummarySection>
+    <DetailItemWrapper>
+      <strong>{label}:</strong> {displayValue}
+    </DetailItemWrapper>
+  );
+};
+
+const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
+  if (!overviewData || Object.keys(overviewData).length === 0) {
+    return <p>No overview data available.</p>;
+  }
+
+  const {
+    id_value,
+    doi,
+    externalUrl,
+    release_date,
+    content_size,
+    description,
+    authors,
+    publisher,
+    principal_investigator,
+    contact_email,
+    license_value,
+    confidentiality_level,
+    keywords,
+    citation,
+    human_subject,
+    funding,
+    completeness,
+    related_publications,
+  } = overviewData;
+
+  const keywordsArray = Array.isArray(keywords)
+    ? keywords
+    : typeof keywords === "string"
+    ? keywords
+        .split(/[,;]\s*/)
+        .map((k) => k.trim())
+        .filter((k) => k)
+    : [];
+
+  return (
+    <SectionContainer data-testid="overview-section">
+      <Header>Overview</Header>
+      {description && <Description>{description}</Description>}
+
+      <DetailsList>
+        {" "}
+        {/* Changed to DetailsList */}
+        <DetailDisplay label="ARK Identifier" value={id_value} isArk={true} />
+        <DetailDisplay
+          label="DOI"
+          value={doi}
+          isLink={true}
+          href={doi ? `https://doi.org/${doi.replace(/^doi:/, "")}` : undefined}
+        />
+        <DetailDisplay label="External URL" value={externalUrl} isLink={true} />
+        <DetailDisplay
+          label="Release Date"
+          value={
+            release_date
+              ? new Date(release_date).toLocaleDateString()
+              : undefined
+          }
+        />
+        <DetailDisplay label="Author(s)" value={authors} />
+        <DetailDisplay label="Publisher" value={publisher} />
+        <DetailDisplay
+          label="Principal Investigator"
+          value={principal_investigator}
+        />
+        <DetailDisplay
+          label="Contact Email"
+          value={contact_email}
+          isEmail={true}
+        />
+        <DetailDisplay label="License" value={license_value} isLink={true} />
+        <DetailDisplay label="Content Size" value={content_size} />
+        <DetailDisplay
+          label="Confidentiality Level"
+          value={confidentiality_level}
+        />
+        <DetailDisplay label="Citation" value={citation} />
+        <DetailDisplay label="Human Subject Data" value={human_subject} />
+        <DetailDisplay label="Funding" value={funding} />
+        <DetailDisplay label="Completeness" value={completeness} />
+        <DetailDisplay
+          label="Related Publications"
+          value={related_publications}
+        />
+      </DetailsList>
+
+      {keywordsArray.length > 0 && (
+        <KeywordsContainer>
+          <strong>Keywords:</strong>
+          <div>
+            {keywordsArray.map((keyword, index) => (
+              <KeywordPill key={index}>{keyword}</KeywordPill>
+            ))}
+          </div>
+        </KeywordsContainer>
+      )}
     </SectionContainer>
   );
 };

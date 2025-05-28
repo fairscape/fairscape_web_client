@@ -1,3 +1,4 @@
+// src/components/MetadataDisplay/ROCrateComponent.tsx
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
@@ -73,8 +74,8 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   const handleDownload = async (downloadUrl: string) => {
     const token = getToken();
 
-    if (!token) {
-      setAlertMessage("You must be logged in to download files.");
+    if (!token && !overviewData?.contentUrl) {
+      setAlertMessage("You must be logged in to download files via API.");
       setAlertType("error");
       setShowAlert(true);
       return;
@@ -88,15 +89,15 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
         url: downloadUrl,
         method: "GET",
         responseType: "blob",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       let filename = "rocrate-download.zip";
+      // Use title from overviewData (which comes from root.name) for filename
+      const crateNameForFile = overviewData?.title;
 
-      if (overviewData?.name) {
-        const sanitizedName = sanitizeFilename(overviewData.name);
+      if (crateNameForFile) {
+        const sanitizedName = sanitizeFilename(crateNameForFile);
         filename = `${sanitizedName}.zip`;
       } else {
         const contentDisposition = response.headers["content-disposition"];
@@ -170,7 +171,6 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
         }
 
         const overview = processOverview(metadata);
-        console.log("Overview data:", overview);
         setOverviewData(overview);
         categorizeEntities(metadata["@graph"] as RawGraphEntity[]);
       } catch (err: any) {
@@ -184,7 +184,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
     setLoading(true);
     setError(null);
     processAndCategorize();
-  }, [metadata, arkId, apiUrl]);
+  }, [metadata, arkId]);
 
   const categorizeEntities = (graph: RawGraphEntity[]) => {
     if (!graph || !Array.isArray(graph)) return;
@@ -193,20 +193,13 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       (e) => e["@id"] === null || e["@id"] === "ro-crate-metadata.json"
     );
 
-    if (!metadataEntity) {
-      console.error("Could not find metadata entity in RO-Crate");
-    }
-
     const rootId = metadataEntity?.about?.["@id"] || "./";
-
     const rootEntity = graph.find((entity) => entity["@id"] === rootId);
 
     if (!rootEntity && rootId !== "./") {
       console.warn(
         `Could not find specified root entity with ID: ${rootId}. Root features might be unavailable.`
       );
-    } else if (rootEntity) {
-      console.log("Found root entity:", rootEntity);
     }
 
     const entities = graph.filter(
@@ -241,7 +234,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       const id =
         entity["@id"] || `genid-${Math.random().toString(16).slice(2)}`;
 
-      let contentStatus = "Metadata Only"; // Default value
+      let contentStatus = "Metadata Only";
       let contentUrl = "";
       const hasDistribution = entity.distribution !== undefined;
 
@@ -289,17 +282,10 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       } else if (types.includes("https://w3id.org/EVI#Instrument")) {
         processedInstruments.push(item);
       } else {
-        item.type = types[0] || "Unknown";
+        item.type = (types[0] as string) || "Unknown";
         processedOther.push(item);
       }
     });
-
-    console.log("Processed datasets (Download logic):", processedDatasets);
-    console.log("Processed software (Download logic):", processedSoftware);
-    console.log(
-      "Processed computations (Download logic):",
-      processedComputations
-    );
 
     setDatasets(processedDatasets);
     setSoftware(processedSoftware);
@@ -377,7 +363,19 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
     );
 
   const tabs = generateTabs();
-  const downloadUrl = arkId ? `${apiUrl}/rocrate/download/${arkId}` : "";
+
+  let effectiveDownloadUrl = "";
+  let isExternalLink = false;
+  let requiresApiCall = false;
+
+  if (overviewData?.contentUrl && overviewData.contentUrl !== "Embargoed") {
+    effectiveDownloadUrl = overviewData.contentUrl;
+    isExternalLink = true; // It's a direct link to contentUrl
+  } else if (arkId) {
+    // Fallback to API download if no direct contentUrl or if it's embargoed (though embargoed is handled separately)
+    effectiveDownloadUrl = `${apiUrl}/rocrate/download/${arkId}`;
+    requiresApiCall = true;
+  }
 
   return (
     <Container>
@@ -385,24 +383,53 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
       {overviewData && <OverviewSection overviewData={overviewData} />}
 
-      {arkId && downloadUrl && (
+      {/* Download Button Logic */}
+      {overviewData?.contentUrl === "Embargoed" ? (
         <ButtonContainer>
           <DownloadButton
             href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              if (!loading) {
-                handleDownload(downloadUrl);
-              }
-            }}
-            data-testid="rocrate-download-button"
-            aria-disabled={loading}
-            style={loading ? { pointerEvents: "none", opacity: 0.7 } : {}}
+            onClick={(e) => e.preventDefault()}
+            data-testid="rocrate-download-button-embargoed"
+            aria-disabled={true}
+            style={{
+              pointerEvents: "none",
+              opacity: 0.7,
+              backgroundColor: "#aaa",
+            }} // Distinct styling for embargoed
           >
-            {loading ? "Downloading..." : "Download RO-Crate"}
+            Download Embargoed
           </DownloadButton>
         </ButtonContainer>
-      )}
+      ) : effectiveDownloadUrl ? (
+        <ButtonContainer>
+          <DownloadButton
+            href={isExternalLink ? effectiveDownloadUrl : "#"}
+            onClick={(e) => {
+              if (requiresApiCall) {
+                // Only preventDefault and call handleDownload if it's an API call
+                e.preventDefault();
+                if (!loading) {
+                  handleDownload(effectiveDownloadUrl);
+                }
+              }
+              // If it's an external link, the default <a> behavior will handle the navigation/download
+            }}
+            data-testid="rocrate-download-button"
+            aria-disabled={loading && requiresApiCall}
+            style={
+              loading && requiresApiCall
+                ? { pointerEvents: "none", opacity: 0.7 }
+                : {}
+            }
+            target={isExternalLink ? "_blank" : undefined} // Open external links in new tab
+            rel={isExternalLink ? "noopener noreferrer" : undefined}
+          >
+            {loading && requiresApiCall
+              ? "Downloading..."
+              : "Download RO-Crate"}
+          </DownloadButton>
+        </ButtonContainer>
+      ) : null}
 
       {showAlert && (
         <Alert

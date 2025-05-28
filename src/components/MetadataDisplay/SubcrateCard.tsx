@@ -2,6 +2,107 @@ import React from "react";
 import styled from "styled-components";
 import { SubcrateSummary } from "../../utils/metadataProcessing";
 import LoadingSpinner from "../common/LoadingSpinner";
+import Alert from "../common/Alert";
+
+const CardContainer = styled.div`
+  background-color: ${({ theme }) => theme.colors.background || "#f9f9f9"};
+  border: 1px solid ${({ theme }) => theme.colors.border || "#ddd"};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  padding: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  box-shadow: ${({ theme }) =>
+    theme.shadows?.small || "0 1px 3px rgba(0,0,0,0.05)"};
+  display: flex;
+  flex-direction: column; // Ensure button is at the bottom if content varies
+`;
+
+const CardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  padding-bottom: ${({ theme }) => theme.spacing.sm};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight || "#eee"};
+`;
+
+const SubcrateName = styled.h3`
+  font-size: 18px;
+  color: ${({ theme }) => theme.colors.primary};
+  margin: 0;
+  word-break: break-all;
+  // Name is no longer a link by default here, button will handle navigation
+`;
+
+const CardContent = styled.div`
+  flex-grow: 1; // Allows content to take available space, pushing button down
+`;
+
+const DetailsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.xs};
+  margin-bottom: ${({ theme }) =>
+    theme.spacing.md}; // Add space before the button
+`;
+
+const DetailItemWrapper = styled.div`
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-word;
+
+  strong {
+    color: ${({ theme }) =>
+      theme.colors.textSlightlyLighter || theme.colors.text};
+    margin-right: ${({ theme }) => theme.spacing.xxs};
+  }
+
+  a {
+    color: ${({ theme }) => theme.colors.primary};
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
+const KeywordsContainerStyled = styled.div`
+  margin-top: ${({ theme }) => theme.spacing.sm};
+`;
+
+const KeywordPillSubdued = styled.span`
+  display: inline-block;
+  background-color: ${({ theme }) => theme.colors.lightGrey || "#e9ecef"};
+  color: ${({ theme }) =>
+    theme.colors.textSlightlyLighter || theme.colors.text};
+  padding: 3px 7px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 12px;
+  font-weight: 400;
+  margin-right: ${({ theme }) => theme.spacing.xs};
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#ced4da"};
+`;
+
+const SubcrateLinkButton = styled.a`
+  display: inline-block;
+  align-self: flex-end; // Align button to the start of the flex container
+  margin-top: auto; // Push to bottom if CardContainer is flex column
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: white !important; // Ensure text is white
+  text-decoration: none;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-weight: bold;
+  text-align: center;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.primaryDark};
+    text-decoration: none;
+  }
+`;
 
 interface SubcrateCardProps {
   subcrate: SubcrateSummary;
@@ -9,218 +110,223 @@ interface SubcrateCardProps {
   error: string | null;
 }
 
-const SubcrateSummaryStyle = styled.div`
-  background-color: ${({ theme }) => theme.colors.background};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  padding: ${({ theme }) => theme.spacing.lg};
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  position: relative;
-`;
-
-const SubcrateError = styled.div`
-  background-color: #fff0f0;
-  padding: ${({ theme }) => theme.spacing.md};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-  border: 1px solid #ffcccb;
-`;
-
-const SubcrateTitle = styled.h3`
-  border-bottom: 2px solid ${({ theme }) => theme.colors.primary};
-  padding-bottom: ${({ theme }) => theme.spacing.sm};
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.primary};
-`;
-
-const SubcrateMetadata = styled.div`
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-`;
-
-const MetadataItem = styled.div`
-  margin-bottom: ${({ theme }) => theme.spacing.xs};
-`;
-
-const MetadataLabel = styled.span`
-  font-weight: bold;
-  color: ${({ theme }) => theme.colors.primary};
-  margin-right: ${({ theme }) => theme.spacing.sm};
-`;
-
-const MetadataValue = styled.span``;
-
-const CompactList = styled.ul`
-  margin: 0;
-  padding-left: 20px;
-
-  li {
-    margin-bottom: 4px;
+const DetailDisplay: React.FC<{
+  label: string;
+  value: any;
+  isLink?: boolean;
+  href?: string;
+  isEmail?: boolean;
+  isArk?: boolean;
+}> = ({ label, value, isLink, href, isEmail, isArk }) => {
+  if (
+    value === undefined ||
+    value === null ||
+    (typeof value === "string" &&
+      value.trim() === "" &&
+      typeof value !== "boolean")
+  ) {
+    return null;
   }
-`;
-
-const ViewFullLink = styled.div`
-  margin-top: ${({ theme }) => theme.spacing.md};
-  text-align: right;
-`;
-
-const ViewFullLinkAnchor = styled.a`
-  display: inline-block;
-  padding: 8px 15px;
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  font-weight: bold;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.primaryLight};
+  let displayValue: React.ReactNode = String(value);
+  if (isArk && typeof value === "string") {
+    const arkLink = value.startsWith("ark:")
+      ? `https://n2t.net/${value}`
+      : value.startsWith("http")
+      ? value
+      : null;
+    if (arkLink) {
+      displayValue = (
+        <a href={arkLink} target="_blank" rel="noopener noreferrer">
+          {value}
+        </a>
+      );
+    }
+  } else if (isLink) {
+    const targetHref =
+      href ||
+      (typeof value === "string" &&
+      (value.startsWith("http") || value.startsWith("https"))
+        ? value
+        : undefined);
+    if (targetHref) {
+      displayValue = (
+        <a href={targetHref} target="_blank" rel="noopener noreferrer">
+          {value}
+        </a>
+      );
+    }
+  } else if (isEmail && typeof value === "string") {
+    displayValue = <a href={`mailto:${value}`}>{value}</a>;
+  } else if (typeof value === "boolean") {
+    displayValue = value ? "Yes" : "No";
+  } else if (Array.isArray(value)) {
+    displayValue = (
+      <div style={{ marginTop: "2px" }}>
+        {value.map((item, index) => (
+          <div
+            key={index}
+            style={{ marginLeft: "8px", marginBottom: "1px", fontSize: "13px" }}
+          >
+            {typeof item === "string" &&
+            (item.startsWith("http") ||
+              item.startsWith("https://") ||
+              item.startsWith("doi:")) ? (
+              <a
+                href={
+                  item.startsWith("doi:")
+                    ? `https://doi.org/${item.substring(4)}`
+                    : item
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {item}
+              </a>
+            ) : (
+              String(item)
+            )}
+          </div>
+        ))}
+      </div>
+    );
   }
-`;
-
-const LoadingOverlay = styled.div`
-  position: absolute;
-  inset: 0;
-  background-color: rgba(255, 255, 255, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: ${({ theme }) => theme.borderRadius};
-  z-index: 1;
-`;
+  return (
+    <DetailItemWrapper>
+      <strong>{label}:</strong> {displayValue}
+    </DetailItemWrapper>
+  );
+};
 
 const SubcrateCard: React.FC<SubcrateCardProps> = ({
   subcrate,
   isLoading,
   error,
 }) => {
-  const feUrl =
-    import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
-
-  if (error) {
+  if (isLoading) {
     return (
-      <SubcrateError>
-        <SubcrateTitle>
-          {subcrate.name || subcrate.id || "Error Loading Sub-Crate"}
-        </SubcrateTitle>
-        <p>Failed to load details:</p>
-        <p>{error}</p>
-        {subcrate.metadataPath && (
-          <p>Attempted path: {subcrate.metadataPath}</p>
-        )}
-      </SubcrateError>
+      <CardContainer>
+        <LoadingSpinner />
+      </CardContainer>
+    );
+  }
+  if (error || !subcrate) {
+    return (
+      <CardContainer>
+        <Alert
+          type="error"
+          message={error || "Sub-crate data could not be loaded."}
+        />
+      </CardContainer>
     );
   }
 
+  const {
+    name,
+    description,
+    authors,
+    date,
+    size,
+    doi,
+    contact,
+    license,
+    keywords,
+    funder,
+    related_publications,
+    previewUrl, // This is the RO-Crate preview HTML for the sub-crate
+    id, // This is the sub-crate's identifier (often an ARK)
+  } = subcrate;
+
+  const keywordsArray = Array.isArray(keywords)
+    ? keywords
+    : typeof keywords === "string"
+    ? keywords
+        .split(/[,;]\s*/)
+        .map((k) => k.trim())
+        .filter((k) => k)
+    : [];
+
+  // Determine the link for the button
+  // Priority: previewUrl, then a resolved ARK link, then just the ID if it's a direct URL
+  let linkForButton = previewUrl;
+  let buttonText = "View Details";
+
+  if (!linkForButton) {
+    if (id?.startsWith("ark:")) {
+      linkForButton = `https://n2t.net/${id}`;
+      buttonText = "View Sub-Crate Details";
+    } else if (id?.startsWith("http")) {
+      linkForButton = id;
+      buttonText = "Open Link";
+    }
+  }
+
   return (
-    <SubcrateSummaryStyle>
-      {isLoading && (
-        <LoadingOverlay>
-          <LoadingSpinner />
-        </LoadingOverlay>
-      )}
-      <SubcrateTitle>{subcrate.name || "Unnamed Dataset"}</SubcrateTitle>
-      <SubcrateMetadata>
-        <MetadataItem>
-          <MetadataLabel>ROCrate ID:</MetadataLabel>
-          <MetadataValue>
-            <a href={`${feUrl}${subcrate.id}`}>{subcrate.id}</a>
-          </MetadataValue>
-        </MetadataItem>
-
-        {subcrate.description && (
-          <MetadataItem>
-            <MetadataLabel>Description:</MetadataLabel>
-            <MetadataValue>{subcrate.description}</MetadataValue>
-          </MetadataItem>
-        )}
-
-        {subcrate.authors && (
-          <MetadataItem>
-            <MetadataLabel>Authors:</MetadataLabel>
-            <MetadataValue>{subcrate.authors}</MetadataValue>
-          </MetadataItem>
-        )}
-
-        {subcrate.date && (
-          <MetadataItem>
-            <MetadataLabel>Date:</MetadataLabel>
-            <MetadataValue>{subcrate.date || "Not specified"}</MetadataValue>
-          </MetadataItem>
-        )}
-
-        {subcrate.size && (
-          <MetadataItem>
-            <MetadataLabel>Size:</MetadataLabel>
-            <MetadataValue>{subcrate.size}</MetadataValue>
-          </MetadataItem>
-        )}
-
-        {subcrate.doi && (
-          <MetadataItem>
-            <MetadataLabel>DOI:</MetadataLabel>
-            <MetadataValue>{subcrate.doi || "None"}</MetadataValue>
-          </MetadataItem>
-        )}
-
-        {subcrate.contact && (
-          <MetadataItem>
-            <MetadataLabel>Contact:</MetadataLabel>
-            <MetadataValue>{subcrate.contact || "Not specified"}</MetadataValue>
-          </MetadataItem>
-        )}
-
-        {subcrate.license && (
-          <MetadataItem>
-            <MetadataLabel>License:</MetadataLabel>
-            <MetadataValue>{subcrate.license}</MetadataValue>
-          </MetadataItem>
-        )}
-
-        {subcrate.keywords && subcrate.keywords.length > 0 && (
-          <MetadataItem>
-            <MetadataLabel>Keywords:</MetadataLabel>
-            <MetadataValue>
-              {typeof subcrate.keywords === "string"
-                ? subcrate.keywords
-                : subcrate.keywords.join(", ")}
-            </MetadataValue>
-          </MetadataItem>
-        )}
-
-        {subcrate.funder && (
-          <MetadataItem>
-            <MetadataLabel>Funding:</MetadataLabel>
-            <MetadataValue>{subcrate.funder}</MetadataValue>
-          </MetadataItem>
-        )}
-
-        {subcrate.related_publications &&
-          subcrate.related_publications.length > 0 && (
-            <MetadataItem>
-              <MetadataLabel>Related Publications:</MetadataLabel>
-              <MetadataValue>
-                <CompactList>
-                  {subcrate.related_publications.map((pub, idx) => (
-                    <li key={idx}>{pub}</li>
-                  ))}
-                </CompactList>
-              </MetadataValue>
-            </MetadataItem>
-          )}
-      </SubcrateMetadata>
-
-      {subcrate.id && (
-        <ViewFullLink>
-          <ViewFullLinkAnchor
-            href={`${feUrl}${subcrate.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+    <CardContainer>
+      <CardContent>
+        {" "}
+        {/* Wrap content to allow button to be pushed down */}
+        <CardHeader>
+          <SubcrateName>{name || id}</SubcrateName> {/* Display name or ID */}
+        </CardHeader>
+        {description && (
+          <p
+            style={{
+              fontSize: "14px",
+              margin: `0 0 ${({ theme }) => theme.spacing.sm} 0`,
+              color: ({ theme }) => theme.colors.textSlightlyLighter,
+            }}
           >
-            View Full Dataset Details
-          </ViewFullLinkAnchor>
-        </ViewFullLink>
+            {description}
+          </p>
+        )}
+        <DetailsList>
+          <DetailDisplay label="Identifier (ARK)" value={id} isArk={true} />
+          <DetailDisplay label="Authors" value={authors} />
+          <DetailDisplay
+            label="Date Published"
+            value={date ? new Date(date).toLocaleDateString() : undefined}
+          />
+          <DetailDisplay label="Size" value={size} />
+          <DetailDisplay
+            label="DOI"
+            value={doi}
+            isLink={true}
+            href={
+              doi ? `https://doi.org/${doi.replace(/^doi:/, "")}` : undefined
+            }
+          />
+          <DetailDisplay label="Contact" value={contact} isEmail={true} />
+          <DetailDisplay label="License" value={license} isLink={true} />
+          <DetailDisplay label="Funder" value={funder} />
+          <DetailDisplay
+            label="Related Publications"
+            value={related_publications}
+          />
+        </DetailsList>
+        {keywordsArray.length > 0 && (
+          <KeywordsContainerStyled>
+            <DetailItemWrapper>
+              <strong>Keywords:</strong>
+              <div style={{ marginTop: "4px" }}>
+                {keywordsArray.map((keyword, index) => (
+                  <KeywordPillSubdued key={index}>{keyword}</KeywordPillSubdued>
+                ))}
+              </div>
+            </DetailItemWrapper>
+          </KeywordsContainerStyled>
+        )}
+      </CardContent>
+
+      {linkForButton && (
+        <SubcrateLinkButton
+          href={linkForButton}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {buttonText}
+        </SubcrateLinkButton>
       )}
-    </SubcrateSummaryStyle>
+    </CardContainer>
   );
 };
 

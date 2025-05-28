@@ -7,131 +7,158 @@ import {
   SoftwareProperties,
   ComputationProperties,
   SchemaProperties,
+  MetadataProperty,
 } from "./metadataPropertyLists";
 import Alert from "../common/Alert";
 import SchemaPropertiesTable from "./SchemaPropertiesTable";
 
-const Container = styled.div`
-  width: 100%;
-`;
-
-const SummarySection = styled.div`
-  background-color: ${({ theme }) => theme.colors.background};
+const SectionContainer = styled.div`
+  background-color: ${({ theme }) =>
+    theme.colors.background || "#ffffff"}; /* Brighter default background */
   padding: ${({ theme }) => theme.spacing.lg};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  margin-bottom: ${({ theme }) => theme.spacing.xl};
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  box-shadow: ${({ theme }) =>
+    theme.shadows?.subtle ||
+    "0 2px 4px rgba(0,0,0,0.06)"}; /* Even softer shadow */
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"}; /* Lighter border */
 `;
 
-const SectionTitle = styled.h2`
-  font-size: 20px;
+const Header = styled.h2`
+  font-size: 22px;
   color: ${({ theme }) => theme.colors.primary};
   margin-top: 0;
   margin-bottom: ${({ theme }) => theme.spacing.md};
-`;
-
-const SummaryList = styled.div`
-  padding-right: ${({ theme }) => theme.spacing.sm};
-`;
-
-const SummaryRow = styled.div`
-  display: flex;
-  margin-bottom: ${({ theme }) => theme.spacing.sm};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   padding-bottom: ${({ theme }) => theme.spacing.sm};
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-  }
+  border-bottom: 2px solid
+    ${({ theme }) => theme.colors.secondary || theme.colors.primary};
 `;
 
-const SummaryLabel = styled.div`
-  width: 220px;
-  min-width: 220px;
-  font-weight: bold;
-  color: ${({ theme }) => theme.colors.primary};
-
-  @media (max-width: 768px) {
-    width: 100%;
-    margin-bottom: 4px;
-  }
+const DetailsGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px; // Minimal gap, border will provide separation
 `;
 
-const SummaryValue = styled.div`
-  flex: 1;
-  max-height: 300px;
-  overflow: auto;
-  word-wrap: break-word;
-  word-break: break-word; /* Use break-word for better readability than break-all */
+const DetailItemRow = styled.div`
+  display: grid;
+  // minmax for label ensures it has enough space but doesn't get too wide
+  // 1fr for value allows it to take remaining space
+  grid-template-columns: minmax(160px, 220px) 1fr;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.sm} 0; // Vertical padding per row
+  align-items: start; // Align items to the top of their cell
+  border-bottom: 1px solid
+    ${({ theme }) => theme.colors.borderLight || "#f0f0f0"}; // Very light separator
 
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.colors.background};
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: ${({ theme }) => theme.colors.border};
-    border-radius: 4px;
+  &:last-child {
+    border-bottom: none;
   }
 
   @media (max-width: 768px) {
-    width: 100%;
+    grid-template-columns: 1fr; // Stack label and value
+    gap: ${({ theme }) => theme.spacing.xs}; // Smaller gap when stacked
+    padding: ${({ theme }) => theme.spacing.sm} 0;
   }
 `;
 
-const List = styled.ul`
-  margin: 0;
-  padding-left: 20px;
+const DetailLabel = styled.div`
+  // Changed from strong to div for better control
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  padding-right: ${({ theme }) =>
+    theme.spacing.sm}; // Space between label and imaginary colon
+  line-height: 1.5; // Match DetailValue
+  word-break: break-word; // In case label is very long
+
+  @media (max-width: 768px) {
+    margin-bottom: 2px; // Space below label when stacked
+    padding-right: 0;
+  }
 `;
 
-const ListItem = styled.li`
-  margin-bottom: 4px;
+const DetailValue = styled.div`
+  font-size: 15px;
+  line-height: 1.5;
+  color: ${({ theme }) =>
+    theme.colors.textSlightlyLighter ||
+    theme.colors.text}; // Slightly lighter for value
+  word-break: break-word;
+  max-height: 300px; // Allow some scroll for very long values
+  overflow-y: auto;
+
+  a {
+    color: ${({ theme }) => theme.colors.primary};
+    text-decoration: none;
+    font-weight: 500; // Make links slightly more prominent
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 `;
 
-const CodeBlock = styled.pre`
-  background-color: ${({ theme }) => theme.colors.backgroundAlt};
+const CodeBlockStyled = styled.pre`
+  background-color: ${({ theme }) =>
+    theme.colors.backgroundAlt || "#f7f7f7"}; // Lighter code block
   padding: ${({ theme }) => theme.spacing.sm};
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   overflow-x: auto;
   font-family: monospace;
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  font-size: 0.9em;
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
 `;
 
-const ButtonLink = styled.a`
-  display: inline-block;
-  padding: 8px 16px;
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  font-weight: bold;
-  margin-top: 4px;
+const ListStyled = styled.ul`
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: disc;
+`;
+
+const ListItemStyled = styled.li`
+  margin-bottom: 5px; // Increased spacing for list items
+`;
+
+const ProminentLink = styled.a`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.secondary || "#ff8c00"} !important;
+  text-decoration: none !important; // No underline by default for these
+  display: inline-block; // Allows padding
+  padding: 3px 6px; // Add a little padding to make it look slightly button-like
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.secondary || "#ff8c00"}; // Border with secondary color
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.primaryDark};
+    background-color: ${({ theme }) => theme.colors.secondary || "#ff8c00"};
+    color: white !important;
+    text-decoration: none !important;
   }
 
-  &:disabled {
-    background-color: ${({ theme }) => theme.colors.border};
+  &.embargoed {
+    color: ${({ theme }) =>
+      theme.colors.textSlightlyLighter || "#757575"} !important;
+    border-color: ${({ theme }) => theme.colors.border || "#ccc"} !important;
+    background-color: transparent !important;
+    font-style: italic;
     cursor: not-allowed;
+    padding: 3px 6px; // Ensure padding is consistent
+    &:hover {
+      color: ${({ theme }) =>
+        theme.colors.textSlightlyLighter || "#757575"} !important;
+      background-color: transparent !important;
+    }
   }
 `;
 
-const StyledLink = styled.a`
-  color: ${({ theme }) => theme.colors.primary};
-  text-decoration: none;
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-const CustomAlert = ({ message, onClose }) => (
+const CustomAlert = ({
+  message,
+  onClose,
+}: {
+  message: string;
+  onClose: () => void;
+}) => (
   <div
     style={{
       position: "fixed",
@@ -182,7 +209,7 @@ const ModalOverlay = styled.div`
 const ModalContent = styled.div`
   background-color: ${({ theme }) => theme.colors.background};
   padding: ${({ theme }) => theme.spacing.lg};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   max-width: 800px;
   width: 90%;
   max-height: 90%;
@@ -252,7 +279,6 @@ interface GenericMetadataComponentProps {
 const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   metadata,
   type,
-  arkId,
 }) => {
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -270,61 +296,44 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
 
   const handleDownload = async (downloadUrl: string) => {
     const token = getToken();
-
     if (!token) {
       setAlertMessage("You must be logged in to download files.");
       setShowAlert(true);
       return;
     }
-
     try {
       const response = await axios({
         url: downloadUrl,
         method: "GET",
         responseType: "blob",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      // Get content type from response headers
       const contentType =
         response.headers["content-type"] || "application/octet-stream";
-
-      // Extract filename from content-disposition header
       const contentDisposition = response.headers["content-disposition"];
-      let filename = null;
+      let filename = "download";
       if (contentDisposition) {
         const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
         const matches = filenameRegex.exec(contentDisposition);
-        if (matches != null && matches[1]) {
+        if (matches?.[1]) {
           filename = matches[1].replace(/['"]/g, "");
         }
-      }
-
-      // If no filename in headers, derive from URL
-      if (!filename) {
-        // Check if URL indicates a file inside a zip
+      } else {
         if (downloadUrl.includes(".zip/")) {
-          // For files inside zips, use the inner file name
           const innerFilePath = downloadUrl.split(".zip/")[1];
-          filename = innerFilePath.split("/").pop() || "download";
+          filename = innerFilePath?.split("/").pop() || "download";
         } else {
-          // For regular files, use the last path segment
           const urlParts = downloadUrl.split("/");
-          filename = urlParts[urlParts.length - 1];
+          filename = urlParts[urlParts.length - 1] || "download";
         }
       }
-
-      // Ensure filename has appropriate extension based on content type
-      const extensionMap = {
+      const extensionMap: { [key: string]: string } = {
         "application/zip": ".zip",
         "text/csv": ".csv",
         "application/json": ".json",
         "text/plain": ".txt",
         "application/pdf": ".pdf",
       };
-
       const expectedExtension = extensionMap[contentType] || "";
       if (
         expectedExtension &&
@@ -332,12 +341,8 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
       ) {
         filename += expectedExtension;
       }
-
-      // Create blob with proper content type
-      const blobUrl = window.URL.createObjectURL(
-        new Blob([response.data], { type: contentType })
-      );
-
+      const blob = new Blob([response.data], { type: contentType });
+      const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
       link.setAttribute("download", filename);
@@ -347,20 +352,14 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
       window.URL.revokeObjectURL(blobUrl);
     } catch (error: any) {
       console.error("Download failed:", error);
-      if (error.response && error.response.status === 401) {
-        setAlertMessage(
-          "You must be a member of the group to download this data."
-        );
-      } else {
-        setAlertMessage(
-          `Download failed. Please try again. Error: ${error.message}`
-        );
-      }
+      setAlertMessage(
+        error.response?.data?.message || error.message || "Download failed."
+      );
       setShowAlert(true);
     }
   };
 
-  const getPropertyList = () => {
+  const getPropertyList = (): MetadataProperty[] => {
     switch (type) {
       case "dataset":
         return DatasetProperties;
@@ -390,39 +389,40 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     }
   };
 
-  const renderArkLink = (arkId: string | { "@id": string }, index?: number) => {
-    const id =
-      typeof arkId === "object" && arkId !== null && arkId["@id"]
-        ? arkId["@id"]
-        : String(arkId);
+  const renderLinkValue = (
+    value: string | { "@id": string },
+    index?: number,
+    isArk?: boolean
+  ) => {
+    const id = typeof value === "object" ? value["@id"] : value;
+    if (!id || typeof id !== "string")
+      return <span key={index}>{String(id)}</span>;
 
-    if (typeof id === "string" && id.startsWith("ark:")) {
-      const fullUrl = `${feUrl}${id}`;
+    if (isArk || id.startsWith("ark:")) {
+      const fullUrl = id.startsWith("ark:") ? `${feUrl}${id}` : id;
       return (
-        <StyledLink
+        <a
           href={fullUrl}
           key={index ?? id}
           target="_blank"
           rel="noopener noreferrer"
-          data-testid={`ark-link-${id}`}
         >
           {id}
-        </StyledLink>
+        </a>
       );
     }
     if (id.startsWith("http://") || id.startsWith("https://")) {
       return (
-        <StyledLink
-          href={id} // Use the id itself as the href for standard URLs
+        <a
+          href={id}
           key={index ?? id}
           target="_blank"
           rel="noopener noreferrer"
         >
           {id}
-        </StyledLink>
+        </a>
       );
     }
-
     return <span key={index ?? id}>{id}</span>;
   };
 
@@ -434,172 +434,169 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     setExpandedSchemaPropertyDetails(null);
   };
 
-  // Helper to render values inside the modal, handling URLs and ARKs
   const renderModalValueContent = (value: any): React.ReactNode => {
-    if (value === null || value === undefined) {
-      return <p>Not specified</p>;
-    }
-
-    // Check for standard URL strings first (http/https)
+    if (value === null || value === undefined) return <p>Not specified</p>;
     if (
       typeof value === "string" &&
       (value.startsWith("http://") || value.startsWith("https://"))
     ) {
       return (
-        <StyledLink href={value} target="_blank" rel="noopener noreferrer">
+        <a href={value} target="_blank" rel="noopener noreferrer">
           {value}
-        </StyledLink>
+        </a>
       );
     }
-
-    // Handle ARK links (string or object)
     if (
       (typeof value === "string" && value.startsWith("ark:")) ||
       (typeof value === "object" && value !== null && value["@id"])
     ) {
-      return renderArkLink(value);
+      return renderLinkValue(value, undefined, true);
     }
-
-    // Handle arrays
     if (Array.isArray(value)) {
-      // Check if it's an array of simple types or objects that should be stringified
-      // If *any* item is a complex object or array (not just simple link), stringify the whole thing.
-      // Otherwise, list simple primitives/links
       const allPrimitivesOrSimpleLinks = value.every(
         (item) =>
           typeof item !== "object" ||
-          item === null || // Primitive or null
+          item === null ||
           (typeof item === "string" &&
-            (item.startsWith("ark:") ||
-              item.startsWith("http://") ||
-              item.startsWith("https://"))) || // String link
-          (typeof item === "object" && item !== null && item["@id"]) // ARK object
+            (item.startsWith("ark:") || item.startsWith("http"))) ||
+          (typeof item === "object" && item !== null && item["@id"])
       );
-
       if (allPrimitivesOrSimpleLinks) {
         return (
-          // List items, recursively calling renderModalValueContent for each
-          <List>
+          <ListStyled>
             {value.map((item, index) => (
-              <ListItem key={index}>{renderModalValueContent(item)}</ListItem>
+              <ListItemStyled key={index}>
+                {renderModalValueContent(item)}
+              </ListItemStyled>
             ))}
-          </List>
+          </ListStyled>
         );
       }
-      // Otherwise, it's a complex array, stringify it
       try {
-        return <CodeBlock>{JSON.stringify(value, null, 2)}</CodeBlock>;
+        return (
+          <CodeBlockStyled>{JSON.stringify(value, null, 2)}</CodeBlockStyled>
+        );
       } catch (e) {
         return <p>[Array]</p>;
       }
     }
-
-    // Handle non-link objects
     if (typeof value === "object" && value !== null) {
       try {
-        return <CodeBlock>{JSON.stringify(value, null, 2)}</CodeBlock>;
+        return (
+          <CodeBlockStyled>{JSON.stringify(value, null, 2)}</CodeBlockStyled>
+        );
       } catch (e) {
         return <p>[Object]</p>;
       }
     }
-
-    // Handle boolean
-    if (typeof value === "boolean") {
-      return <p>{value ? "Yes" : "No"}</p>;
-    }
-
-    // Default for numbers and other primitives - render as paragraph
+    if (typeof value === "boolean") return <p>{value ? "Yes" : "No"}</p>;
     return <p>{String(value)}</p>;
   };
 
-  const formatValue = (key: string, value: any): React.ReactNode => {
-    if (value === null || value === undefined) {
-      return <span>Not specified</span>;
-    }
-
-    if (key === "command" && type === "computation") {
-      return <CodeBlock>{value}</CodeBlock>;
-    }
-
-    if (key === "properties" && type === "schema") {
-      // This should not be reached in the rendering loop,
-      // as the 'properties' row renders SchemaPropertiesTable directly.
-      return <p>Schema properties are displayed in the table below.</p>;
-    }
-
-    // Apply truncation for long string values like 'description' in the main list
-    const truncateString = (text: string, limit: number): string => {
-      if (typeof text !== "string") return String(text);
-      if (text.length <= limit) return text;
-      return text.substring(0, limit) + "...";
-    };
+  const formatMainListValue = (
+    key: string,
+    value: any,
+    propName: string
+  ): React.ReactNode => {
+    if (value === null || value === undefined) return "Not specified";
 
     if (
+      propName === "External Link" &&
       typeof value === "string" &&
-      (key === "description" || key === "schemaDescription" || key === "readme")
+      (value.startsWith("http") || value.startsWith("https://"))
     ) {
-      // Added readme as well
-      // Adjust limit as needed
-      return <span>{truncateString(value, 250)}</span>;
-    }
-
-    if (Array.isArray(value)) {
-      if (key === "keywords" || (key === "required" && type === "schema")) {
-        return <span>{value.join(", ")}</span>;
-      }
       return (
-        <List>
-          {value.map((item, index) => (
-            <ListItem key={index}>{renderArkLink(item, index)}</ListItem>
-          ))}
-        </List>
+        <ProminentLink href={value} target="_blank" rel="noopener noreferrer">
+          Open Link
+        </ProminentLink>
       );
     }
-
-    if (typeof value === "object" && value !== null) {
-      if (value["@id"]) {
-        return renderArkLink(value["@id"]);
-      }
-      try {
-        return <span>{JSON.stringify(value)}</span>;
-      } catch (e) {
-        return <span>[Object]</span>;
-      }
-    }
-
-    if (key === "contentUrl") {
+    if (propName === "Download Link") {
       if (value === "Embargoed") {
-        return <span>Embargoed</span>;
-      } else {
-        const rocrateDowloadPattern = new RegExp(`^${apiUrl}.*?download/`);
-        if (rocrateDowloadPattern.test(value)) {
+        return (
+          <ProminentLink
+            href="#"
+            onClick={(e) => e.preventDefault()}
+            className="embargoed"
+          >
+            Download Embargoed
+          </ProminentLink>
+        );
+      }
+      if (typeof value === "string" && value) {
+        const rocrateApiDownloadPattern = new RegExp(`^${apiUrl}.*?download/`);
+        if (rocrateApiDownloadPattern.test(value)) {
           return (
-            <ButtonLink
+            <ProminentLink
               href="#"
               onClick={(e) => {
                 e.preventDefault();
                 handleDownload(value);
               }}
             >
-              Download
-            </ButtonLink>
+              Download (API)
+            </ProminentLink>
           );
-        } else {
-          // For external URLs, show a standard link
+        } else if (value.startsWith("http")) {
           return (
-            <StyledLink href={value} target="_blank" rel="noopener noreferrer">
-              {value}
-            </StyledLink>
+            <ProminentLink
+              href={value}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Download File
+            </ProminentLink>
           );
         }
       }
     }
 
-    if (typeof value === "boolean") {
-      return <span>{value ? "Yes" : "No"}</span>;
-    }
+    if (key === "command" && type === "computation")
+      return <CodeBlockStyled>{value}</CodeBlockStyled>;
+    if (key === "properties" && type === "schema") return null;
 
-    return renderArkLink(String(value));
+    if (Array.isArray(value)) {
+      if (key === "keywords" || (key === "required" && type === "schema")) {
+        return value.map((k, i) => (
+          <span key={i} style={{ marginRight: "5px", display: "inline-block" }}>
+            {k}
+            {i < value.length - 1 ? "," : ""}
+          </span>
+        ));
+      }
+      return (
+        <ListStyled>
+          {value.map((item, index) => (
+            <ListItemStyled key={index}>
+              {renderLinkValue(
+                item,
+                index,
+                item?.startsWith && item.startsWith("ark:")
+              )}
+            </ListItemStyled>
+          ))}
+        </ListStyled>
+      );
+    }
+    if (typeof value === "object" && value !== null) {
+      if (value["@id"])
+        return renderLinkValue(
+          value["@id"],
+          undefined,
+          value["@id"].startsWith("ark:")
+        );
+      try {
+        return JSON.stringify(value);
+      } catch (e) {
+        return "[Object]";
+      }
+    }
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    return renderLinkValue(
+      String(value),
+      undefined,
+      key === "@id" || (typeof value === "string" && value.startsWith("ark:"))
+    );
   };
 
   if (!metadata) {
@@ -616,44 +613,48 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   const propertyList = getPropertyList();
 
   return (
-    <Container>
-      <SummarySection>
-        <SectionTitle>{getSectionTitle()}</SectionTitle>
+    <SectionContainer>
+      <Header>{getSectionTitle()}</Header>
+      <DetailsGrid>
+        {propertyList.map((prop) => {
+          const propValue = entity[prop.key];
 
-        <SummaryList>
-          {propertyList.map((prop) => {
-            const propValue = entity[prop.key];
+          // Special handling for schema properties table
+          if (prop.key === "properties" && type === "schema") {
+            return propValue !== undefined ? (
+              <DetailItemRow
+                key={prop.key}
+                style={{ gridTemplateColumns: "1fr" }}
+              >
+                {" "}
+                {/* Full width for table */}
+                <DetailLabel>{prop.name}</DetailLabel> {/* Label above table */}
+                <DetailValue
+                  style={{
+                    maxHeight: "none",
+                    overflow: "visible",
+                    gridColumn: "1 / -1",
+                  }}
+                >
+                  <SchemaPropertiesTable
+                    properties={propValue}
+                    onExpandProperty={handleExpandSchemaProperty}
+                  />
+                </DetailValue>
+              </DetailItemRow>
+            ) : null;
+          }
 
-            if (propValue !== undefined) {
-              if (prop.key === "properties" && type === "schema") {
-                return (
-                  <SummaryRow key={prop.key}>
-                    <SummaryLabel>{prop.name}</SummaryLabel>
-                    <SummaryValue
-                      style={{ maxHeight: "none", overflow: "visible" }}
-                    >
-                      <SchemaPropertiesTable
-                        properties={propValue}
-                        onExpandProperty={handleExpandSchemaProperty}
-                      />
-                    </SummaryValue>
-                  </SummaryRow>
-                );
-              }
-
-              return (
-                <SummaryRow key={prop.key}>
-                  <SummaryLabel>{prop.name}</SummaryLabel>
-                  <SummaryValue>
-                    {formatValue(prop.key, propValue)}
-                  </SummaryValue>
-                </SummaryRow>
-              );
-            }
-            return null;
-          })}
-        </SummaryList>
-      </SummarySection>
+          return propValue !== undefined ? (
+            <DetailItemRow key={prop.key}>
+              <DetailLabel>{prop.name}</DetailLabel>
+              <DetailValue>
+                {formatMainListValue(prop.key, propValue, prop.name)}
+              </DetailValue>
+            </DetailItemRow>
+          ) : null;
+        })}
+      </DetailsGrid>
 
       {showAlert && (
         <CustomAlert
@@ -666,29 +667,21 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         <ModalOverlay onClick={handleCloseModal}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalCloseButton onClick={handleCloseModal}>×</ModalCloseButton>
-
             <ModalTitle>
               Schema Property Details: {expandedSchemaPropertyDetails.name}
             </ModalTitle>
-
-            {Object.entries(expandedSchemaPropertyDetails).map(
-              ([key, value]) => {
-                if (key === "name") return null; // 'name' is in the title
-
-                return (
-                  <ModalPropertyDetail key={key}>
-                    <strong>
-                      {key.charAt(0).toUpperCase() + key.slice(1)}:
-                    </strong>
-                    {renderModalValueContent(value)}
-                  </ModalPropertyDetail>
-                );
-              }
+            {Object.entries(expandedSchemaPropertyDetails).map(([key, value]) =>
+              key === "name" ? null : (
+                <ModalPropertyDetail key={key}>
+                  <strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong>
+                  {renderModalValueContent(value)}
+                </ModalPropertyDetail>
+              )
             )}
           </ModalContent>
         </ModalOverlay>
       )}
-    </Container>
+    </SectionContainer>
   );
 };
 

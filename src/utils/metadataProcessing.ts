@@ -1,3 +1,4 @@
+// src/utils/metadataProcessing.ts
 import { Metadata, RawGraphEntity } from "../types";
 
 export const findRootEntity = (
@@ -30,8 +31,8 @@ const resolveLink = (value: any, graph: RawGraphEntity[]): string => {
 };
 
 export interface OverviewData {
-  title: string;
-  version?: string;
+  title: string; // Still needed for ROCrateComponent filename logic
+  version?: string; // Still needed for ROCrateComponent filename logic (though not displayed in OverviewSection)
   id_value: string;
   doi?: string;
   release_date?: string;
@@ -49,6 +50,8 @@ export interface OverviewData {
   funding?: string;
   completeness?: string;
   related_publications?: string[];
+  externalUrl?: string;
+  contentUrl?: string;
 }
 
 export const processOverview = (metadata: Metadata): OverviewData => {
@@ -62,7 +65,7 @@ export const processOverview = (metadata: Metadata): OverviewData => {
     if (Array.isArray(root.author)) {
       authors = root.author.join("; ");
     } else {
-      authors = root.author;
+      authors = root.author as string;
     }
   } else if (root.creator) {
     if (Array.isArray(root.creator)) {
@@ -98,9 +101,9 @@ export const processOverview = (metadata: Metadata): OverviewData => {
   let related_publications: string[] = [];
   if (root.associatedPublication) {
     if (Array.isArray(root.associatedPublication)) {
-      related_publications = root.associatedPublication;
+      related_publications = root.associatedPublication as string[];
     } else {
-      related_publications = [root.associatedPublication];
+      related_publications = [root.associatedPublication as string];
     }
   }
 
@@ -126,6 +129,8 @@ export const processOverview = (metadata: Metadata): OverviewData => {
     version: root.version || undefined,
     id_value: root["@id"] || "N/A",
     doi: doi,
+    externalUrl: root.url || undefined, // Added for external URL
+    contentUrl: root.contentUrl || undefined, // Added for content URL for download
     release_date: root.datePublished || undefined,
     content_size: root.contentSize || undefined,
     description: root.description || undefined,
@@ -280,7 +285,7 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
         const partEntity = graph.find((e) => e["@id"] === partId);
 
         if (partEntity) {
-          let metadataPath = partEntity["ro-crate-metadata"] || null;
+          let metadataPath = (partEntity as any)["ro-crate-metadata"] || null;
 
           let authors = "";
           if (partEntity.author) {
@@ -294,18 +299,21 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
           let keywords: string[] = [];
           if (partEntity.keywords) {
             if (Array.isArray(partEntity.keywords)) {
-              keywords = partEntity.keywords;
+              keywords = partEntity.keywords as string[];
             } else if (typeof partEntity.keywords === "string") {
-              keywords = [partEntity.keywords];
+              keywords = [partEntity.keywords as string];
             }
           }
 
           let related_publications: string[] = [];
           if (partEntity.associatedPublication) {
             if (Array.isArray(partEntity.associatedPublication)) {
-              related_publications = partEntity.associatedPublication;
+              related_publications =
+                partEntity.associatedPublication as string[];
             } else if (typeof partEntity.associatedPublication === "string") {
-              related_publications = [partEntity.associatedPublication];
+              related_publications = [
+                partEntity.associatedPublication as string,
+              ];
             }
           }
 
@@ -322,7 +330,7 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
             id: partEntity["@id"],
             name:
               partEntity.name ||
-              partEntity["@id"].split("/").pop() ||
+              partEntity["@id"]?.split("/").pop() ||
               partEntity["@id"],
             description: partEntity.description || undefined,
             authors: authors || undefined,
@@ -330,7 +338,10 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
             size: partEntity.contentSize || undefined,
             doi: partEntity.identifier || undefined,
             contact: partEntity.contactEmail || undefined,
-            license: partEntity.license || undefined,
+            license:
+              (partEntity.license as any)?.["@id"] ||
+              partEntity.license ||
+              undefined,
             keywords: keywords,
             funder: partEntity.funder || undefined,
             related_publications: related_publications,
@@ -376,18 +387,18 @@ export const processSingleSubcrateDetails = (
   let keywords: string[] = [];
   if (root.keywords) {
     if (Array.isArray(root.keywords)) {
-      keywords = root.keywords;
+      keywords = root.keywords as string[];
     } else if (typeof root.keywords === "string") {
-      keywords = [root.keywords];
+      keywords = [root.keywords as string];
     }
   }
 
   let related_publications: string[] = [];
   if (root.associatedPublication) {
     if (Array.isArray(root.associatedPublication)) {
-      related_publications = root.associatedPublication;
+      related_publications = root.associatedPublication as string[];
     } else if (typeof root.associatedPublication === "string") {
-      related_publications = [root.associatedPublication];
+      related_publications = [root.associatedPublication as string];
     }
   }
 
@@ -399,7 +410,7 @@ export const processSingleSubcrateDetails = (
     size: root.contentSize,
     doi: root.identifier,
     contact: root.contactEmail,
-    license: root.license,
+    license: (root.license as any)?.["@id"] || root.license || undefined,
     keywords: keywords,
     funder: root.funder,
     related_publications: related_publications,
@@ -445,7 +456,7 @@ export const determineReleaseType = (metadata: Metadata): string => {
 
   const jsonLdTypes = Array.isArray(root["@type"])
     ? root["@type"]
-    : [root["@type"]].filter(Boolean);
+    : ([root["@type"]].filter(Boolean) as string[]);
 
   const isROCrate =
     jsonLdTypes.includes("https://w3id.org/EVI#ROCrate") ||
@@ -463,9 +474,11 @@ export const determineReleaseType = (metadata: Metadata): string => {
             if (typeof part === "object" && part["@id"]) {
               const partEntity = graph.find((e) => e["@id"] === part["@id"]);
               if (partEntity && partEntity["@type"]) {
-                const partTypes = Array.isArray(partEntity["@type"])
-                  ? partEntity["@type"]
-                  : [partEntity["@type"]];
+                const partTypes = (
+                  Array.isArray(partEntity["@type"])
+                    ? partEntity["@type"]
+                    : [partEntity["@type"]]
+                ) as string[];
                 return partTypes.some(
                   (type) =>
                     type === "https://w3id.org/EVI#ROCrate" ||
@@ -476,15 +489,17 @@ export const determineReleaseType = (metadata: Metadata): string => {
             return false;
           })
         : typeof root.hasPart === "object" &&
-          root.hasPart["@id"] &&
+          (root.hasPart as any)["@id"] &&
           (() => {
             const partEntity = graph.find(
-              (e) => e["@id"] === root.hasPart["@id"]
+              (e) => e["@id"] === (root.hasPart as any)["@id"]
             );
             if (partEntity && partEntity["@type"]) {
-              const partTypes = Array.isArray(partEntity["@type"])
-                ? partEntity["@type"]
-                : [partEntity["@type"]];
+              const partTypes = (
+                Array.isArray(partEntity["@type"])
+                  ? partEntity["@type"]
+                  : [partEntity["@type"]]
+              ) as string[];
               return partTypes.some(
                 (type) =>
                   type === "https://w3id.org/EVI#ROCrate" ||
@@ -534,7 +549,7 @@ export const determineReleaseType = (metadata: Metadata): string => {
   } else {
     return (
       jsonLdTypes[0]
-        ?.split(/[#**\/**]/)
+        ?.split(/[#\/\\]/)
         .pop()
         ?.toLowerCase() || "unknown"
     );
