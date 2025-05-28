@@ -1,299 +1,355 @@
+// src/hooks/metadataService.ts
 import axios from "axios";
-import { Metadata, RawGraphData } from "../types";
+import { Metadata, RawGraphData, RawGraphEntity } from "../types";
 
 const API_URL =
   import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
 
-export interface MetadataResult {
+export interface InitialMetadataResult {
   metadata: Metadata | null;
-  evidenceGraph: RawGraphData | null;
   type: string;
   error: string | null;
   hasEvidenceGraph: boolean;
+  evidenceGraphId: string | null; // ID of the evidence graph if it exists
+}
+
+export interface EvidenceGraphBuildResult {
+  updatedMetadata: Metadata | null;
+  hasEvidenceGraph: boolean;
+  evidenceGraphId: string | null;
+  error: string | null;
 }
 
 export const metadataService = () => {
-  const fetchEvidenceGraph = async (graphId: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const evidenceResponse = await axios.get(`${API_URL}/${graphId}`, {
-        headers,
-      });
-      return evidenceResponse.data;
-    } catch (error) {
-      console.error("Error fetching evidence graph:", error);
-      return null;
-    }
-  };
-
-  const initiateEvidenceGraphBuild = async (arkId: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      await axios.post(
-        `${API_URL}/evidencegraph/build/${arkId}`,
-        {},
-        { headers }
-      );
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const metadataResponse = await axios.get(`${API_URL}/${arkId}`, {
-        headers,
-      });
-      const updatedMetadata =
-        metadataResponse.data.metadata || metadataResponse.data;
-
-      if (updatedMetadata.hasEvidenceGraph) {
-        const graphId =
-          typeof updatedMetadata.hasEvidenceGraph === "string"
-            ? updatedMetadata.hasEvidenceGraph
-            : updatedMetadata.hasEvidenceGraph["@id"];
-
-        const graph = await fetchEvidenceGraph(graphId);
-
-        return {
-          metadata: updatedMetadata,
-          evidenceGraph: graph,
-          hasEvidenceGraph: true,
-        };
-      }
-
-      return {
-        metadata: updatedMetadata,
-        evidenceGraph: null,
-        hasEvidenceGraph: false,
-      };
-    } catch (error) {
-      console.error("Error initiating evidence graph build:", error);
-      return {
-        metadata: null,
-        evidenceGraph: null,
-        hasEvidenceGraph: false,
-      };
-    }
-  };
-
-  const fetchMetadata = async (arkId: string): Promise<MetadataResult> => {
+  const getTokenHeaders = () => {
     const token = localStorage.getItem("token");
     const headers: Record<string, string> = {};
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
+    return headers;
+  };
+
+  // Fetches only the evidence graph data, given its ID
+  const fetchEvidenceGraphDataById = async (
+    graphId: string
+  ): Promise<RawGraphData | null> => {
+    console.log(
+      `[metadataService - fetchEvidenceGraphDataById] Fetching evidence graph for ID: ${graphId}`
+    );
+    try {
+      const evidenceResponse = await axios.get(
+        `${API_URL}/${graphId.replace(/^\/|\/$/g, "")}`,
+        {
+          headers: getTokenHeaders(),
+          timeout: 60000, // Longer timeout for potentially very large graphs
+        }
+      );
+      console.log(
+        `[metadataService - fetchEvidenceGraphDataById] Successfully fetched evidence graph for ID: ${graphId}`
+      );
+      return evidenceResponse.data as RawGraphData;
+    } catch (error) {
+      console.error(
+        `[metadataService - fetchEvidenceGraphDataById] Error fetching evidence graph for ID ${graphId}:`,
+        error
+      );
+      return null;
+    }
+  };
+
+  // Initiates the build process and checks if the graph becomes available by re-fetching metadata
+  const triggerEvidenceGraphBuild = async (
+    arkId: string
+  ): Promise<EvidenceGraphBuildResult> => {
+    const cleanArkId = arkId.replace(/^\/|\/$/g, "");
+    console.log(
+      `[metadataService - triggerEvidenceGraphBuild] Initiating build for ARK ID: ${cleanArkId}`
+    );
+    try {
+      const headers = getTokenHeaders();
+      if (!headers["Authorization"]) {
+        console.warn(
+          "[metadataService - triggerEvidenceGraphBuild] No token, cannot initiate build."
+        );
+        return {
+          updatedMetadata: null,
+          hasEvidenceGraph: false,
+          evidenceGraphId: null,
+          error: "User not logged in",
+        };
+      }
+
+      await axios.post(
+        `${API_URL}/evidencegraph/build/${cleanArkId}`,
+        {},
+        { headers }
+      );
+      console.log(
+        `[metadataService - triggerEvidenceGraphBuild] Build request sent for ${cleanArkId}. Waiting for potential completion (5s)...`
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for backend
+
+      // Re-fetch the primary metadata to check for hasEvidenceGraph
+      const metadataResponse = await axios.get(`${API_URL}/${cleanArkId}`, {
+        headers,
+      });
+      const updatedMetadataObject = (metadataResponse.data.metadata ||
+        metadataResponse.data) as Metadata;
+
+      if (
+        updatedMetadataObject &&
+        (updatedMetadataObject as any).hasEvidenceGraph
+      ) {
+        const graphIdValue = (updatedMetadataObject as any).hasEvidenceGraph;
+        const finalGraphId =
+          typeof graphIdValue === "string" ? graphIdValue : graphIdValue["@id"];
+        console.log(
+          `[metadataService - triggerEvidenceGraphBuild] Build successful or graph link found, evidence graph ID: ${finalGraphId}`
+        );
+        return {
+          updatedMetadata: updatedMetadataObject,
+          hasEvidenceGraph: true,
+          evidenceGraphId: finalGraphId,
+          error: null,
+        };
+      }
+      console.log(
+        `[metadataService - triggerEvidenceGraphBuild] Build initiated, but hasEvidenceGraph not found in updated metadata for ${cleanArkId}.`
+      );
+      return {
+        updatedMetadata: updatedMetadataObject,
+        hasEvidenceGraph: false,
+        evidenceGraphId: null,
+        error: null,
+      };
+    } catch (error: any) {
+      console.error(
+        `[metadataService - triggerEvidenceGraphBuild] Error during evidence graph build for ${cleanArkId}:`,
+        error
+      );
+      return {
+        updatedMetadata: null,
+        hasEvidenceGraph: false,
+        evidenceGraphId: null,
+        error:
+          error.message || "Failed to initiate or confirm evidence graph build",
+      };
+    }
+  };
+
+  // Fetches only the primary metadata and determines type and if an evidence graph *link* exists
+  const fetchInitialMetadata = async (
+    arkId: string
+  ): Promise<InitialMetadataResult> => {
+    const cleanArkId = arkId.replace(/^\/|\/$/g, "");
+    const url = `${API_URL}/${cleanArkId}`;
+    console.log(
+      `[metadataService - fetchInitialMetadata] Requesting initial metadata: ${url}`
+    );
 
     try {
-      const cleanArkId = arkId.replace(/^\/|\/$/g, "");
-      const url = `${API_URL}/${cleanArkId}`;
-      console.log("Requesting URL:", url);
       const response = await axios.get(url, {
-        headers,
-        timeout: 10000,
+        headers: getTokenHeaders(),
+        timeout: 15000, // Standard timeout for primary metadata
         maxRedirects: 5,
         withCredentials: true,
       });
 
-      let metadata = response.data.metadata || response.data;
+      let metadataObject = (response.data.metadata ||
+        response.data) as Metadata;
+      let determinedType = "unknown";
 
-      let type = "unknown";
-      if (metadata && (metadata as any)["@type"]) {
-        const typeValue = Array.isArray((metadata as any)["@type"])
-          ? (metadata as any)["@type"][1] // Assuming the second type might be more specific
-          : (metadata as any)["@type"];
-
+      if (metadataObject && (metadataObject as any)["@type"]) {
+        const typeValue = Array.isArray((metadataObject as any)["@type"])
+          ? (metadataObject as any)["@type"][1] ||
+            (metadataObject as any)["@type"][0]
+          : (metadataObject as any)["@type"];
         if (typeof typeValue === "string") {
           const typeParts = typeValue.split(/[/#]/);
-          type = typeParts[typeParts.length - 1].toLowerCase();
+          determinedType = typeParts[typeParts.length - 1].toLowerCase();
         }
       }
-      console.log("Initial metadata type:", type);
+      console.log(
+        `[metadataService - fetchInitialMetadata] Initial metadata type for ${cleanArkId}: ${determinedType}`
+      );
 
-      if (type === "rocrate") {
+      if (determinedType === "rocrate") {
         try {
+          console.log(
+            `[metadataService - fetchInitialMetadata] Type is rocrate, attempting to fetch full rocrate data for ${cleanArkId}`
+          );
           const rocrateResponse = await axios.get(
             `${API_URL}/rocrate/${cleanArkId}`,
             {
-              headers,
-              timeout: 10000,
+              headers: getTokenHeaders(),
+              timeout: 15000,
               maxRedirects: 5,
               withCredentials: true,
             }
           );
-          const rocrateResponseData = rocrateResponse.data;
-
-          if (rocrateResponseData && rocrateResponseData.metadata) {
-            const fetchedRocrateMetadata = rocrateResponseData.metadata;
-            metadata = fetchedRocrateMetadata; // Update the main metadata object with the full RO-Crate content
-
-            // Now, analyze the fetched RO-Crate metadata to refine the type
-            if (
-              fetchedRocrateMetadata &&
-              Array.isArray((fetchedRocrateMetadata as any)["@graph"])
-            ) {
-              const graphElements = (fetchedRocrateMetadata as any)["@graph"];
+          const rocrateData = rocrateResponse.data;
+          if (rocrateData && rocrateData.metadata) {
+            metadataObject = rocrateData.metadata as Metadata; // Update with full RO-Crate
+            console.log(
+              `[metadataService - fetchInitialMetadata] Successfully fetched full RO-Crate for ${cleanArkId}.`
+            );
+            if (Array.isArray((metadataObject as any)["@graph"])) {
+              const graphElements = (metadataObject as any)[
+                "@graph"
+              ] as RawGraphEntity[];
               let rocrateDatasetCount = 0;
-
               for (const element of graphElements) {
                 if (
                   element &&
                   typeof element === "object" &&
-                  (element as any)["@type"]
+                  element["@type"]
                 ) {
-                  const elementTypes = Array.isArray((element as any)["@type"])
-                    ? (element as any)["@type"]
-                    : [(element as any)["@type"]];
-
-                  const isDataset = elementTypes.some(
-                    (t: any) =>
+                  const elTypes = Array.isArray(element["@type"])
+                    ? element["@type"]
+                    : [element["@type"]];
+                  const isDs = elTypes.some(
+                    (t: string) =>
                       typeof t === "string" &&
                       (t.toLowerCase().endsWith("/dataset") ||
                         t.toLowerCase() === "dataset")
                   );
-                  const isROCrate = elementTypes.some(
-                    (t: any) =>
+                  const isRc = elTypes.some(
+                    (t: string) =>
                       typeof t === "string" &&
                       (t === "https://w3id.org/EVI#ROCrate" ||
                         t.toLowerCase().endsWith("/rocrate"))
                   );
-
-                  if (isDataset && isROCrate) {
-                    rocrateDatasetCount++;
-                  }
+                  if (isDs && isRc) rocrateDatasetCount++;
                 }
               }
-
-              console.log(
-                "RO-Crate Dataset count in @graph:",
-                rocrateDatasetCount
-              );
-
               if (rocrateDatasetCount > 1) {
-                type = "release"; // It's a release containing multiple RO-Crate datasets
+                determinedType = "release";
+                console.log(
+                  `[metadataService - fetchInitialMetadata] RO-Crate for ${cleanArkId} determined to be a 'release' (count: ${rocrateDatasetCount}).`
+                );
+              } else {
+                console.log(
+                  `[metadataService - fetchInitialMetadata] RO-Crate for ${cleanArkId} is a single RO-Crate dataset (count: ${rocrateDatasetCount}).`
+                );
               }
-              // If count is 0 or 1, type remains 'rocrate' as initially determined.
-            } else {
-              console.log(
-                "RO-Crate endpoint returned metadata but no @graph array."
-              );
-              // Metadata updated, type remains 'rocrate'
             }
           } else {
-            console.log(
-              "RO-Crate endpoint did not return expected metadata structure (no .metadata)."
+            console.warn(
+              `[metadataService - fetchInitialMetadata] RO-Crate endpoint for ${cleanArkId} did not return .metadata field.`
             );
-            // Keep original metadata and type ('rocrate')
           }
         } catch (err) {
-          console.log(
-            "RO-Crate endpoint not available or failed, keeping original metadata/type",
+          console.warn(
+            `[metadataService - fetchInitialMetadata] RO-Crate specific fetch for ${cleanArkId} failed. Keeping type as 'rocrate'.`,
             err
           );
-          // If the /rocrate call fails, keep the initial metadata and type ('rocrate')
         }
       }
+      console.log(
+        `[metadataService - fetchInitialMetadata] Final metadata type for ${cleanArkId}: ${determinedType}`
+      );
 
-      console.log("Final metadata type:", type);
+      let currentHasEvidenceGraph = false;
+      let currentEvidenceGraphId: string | null = null;
 
-      let evidenceGraph = null;
-      let hasEvidenceGraph = false;
-
-      if (metadata && (metadata as any).hasEvidenceGraph) {
-        hasEvidenceGraph = true;
-        const graphId =
-          typeof (metadata as any).hasEvidenceGraph === "string"
-            ? (metadata as any).hasEvidenceGraph
-            : (metadata as any).hasEvidenceGraph["@id"];
-
-        evidenceGraph = await fetchEvidenceGraph(graphId);
-      } else if (type !== "release" && type !== "rocrate" && token) {
-        const result = await initiateEvidenceGraphBuild(arkId);
-        if (result.hasEvidenceGraph) {
-          metadata = result.metadata || metadata;
-          evidenceGraph = result.evidenceGraph;
-          hasEvidenceGraph = true;
-        }
+      if (metadataObject && (metadataObject as any).hasEvidenceGraph) {
+        currentHasEvidenceGraph = true;
+        const graphIdValue = (metadataObject as any).hasEvidenceGraph;
+        currentEvidenceGraphId =
+          typeof graphIdValue === "string" ? graphIdValue : graphIdValue["@id"];
+        console.log(
+          `[metadataService - fetchInitialMetadata] Evidence graph link found for ${cleanArkId}: ${currentEvidenceGraphId}`
+        );
+      } else {
+        console.log(
+          `[metadataService - fetchInitialMetadata] No direct evidence graph link in metadata for ${cleanArkId}.`
+        );
       }
 
       return {
-        metadata,
-        evidenceGraph,
-        type,
+        metadata: metadataObject,
+        type: determinedType,
         error: null,
-        hasEvidenceGraph,
+        hasEvidenceGraph: currentHasEvidenceGraph,
+        evidenceGraphId: currentEvidenceGraphId,
       };
     } catch (err: any) {
-      console.error("Error fetching metadata:", err);
+      console.error(
+        `[metadataService - fetchInitialMetadata] Error fetching initial metadata for ${cleanArkId}:`,
+        err
+      );
       return {
         metadata: null,
-        evidenceGraph: null,
         type: "unknown",
-        error: err.message || "Failed to fetch metadata",
+        error: err.message || "Failed to fetch initial metadata",
         hasEvidenceGraph: false,
+        evidenceGraphId: null,
       };
     }
   };
 
   const fetchLocalData = async (
     dataFile: string = "release.json"
-  ): Promise<MetadataResult> => {
+  ): Promise<
+    InitialMetadataResult & { evidenceGraphData: RawGraphData | null }
+  > => {
+    // This function is for local dev, can load graph data directly if needed
     try {
       const response = await axios.get<Metadata>(`/data/${dataFile}`);
       const metadata = response.data;
-
-      let evidenceGraph: RawGraphData | null = null;
-      let hasEvidenceGraph = false;
+      let localEvidenceGraphData: RawGraphData | null = null;
+      let localHasEvidenceGraph = false;
+      let localEvidenceGraphId: string | null = null;
 
       try {
         const graphResponse = await axios.get<RawGraphData>(
           "/data/evidence-graph.json"
         );
-        evidenceGraph = graphResponse.data;
-        hasEvidenceGraph = true;
+        localEvidenceGraphData = graphResponse.data;
+        localHasEvidenceGraph = true;
+        if (localEvidenceGraphData && localEvidenceGraphData["@id"]) {
+          localEvidenceGraphId = localEvidenceGraphData["@id"];
+        }
       } catch (err) {
-        console.log("Local evidence graph not available");
+        console.log("Local evidence graph not available for local data");
       }
-
+      // Determine type (simplified for local)
       let type = "unknown";
       if (metadata && (metadata as any)["@type"]) {
         const typeValue = Array.isArray((metadata as any)["@type"])
           ? (metadata as any)["@type"][0]
           : (metadata as any)["@type"];
-
         if (typeof typeValue === "string") {
           const typeParts = typeValue.split(/[/#]/);
           type = typeParts[typeParts.length - 1].toLowerCase();
         }
       }
-
       return {
         metadata,
-        evidenceGraph,
         type,
         error: null,
-        hasEvidenceGraph,
+        hasEvidenceGraph: localHasEvidenceGraph,
+        evidenceGraphId: localEvidenceGraphId,
+        evidenceGraphData: localEvidenceGraphData,
       };
     } catch (err: any) {
-      console.error("Error fetching local data:", err);
       return {
         metadata: null,
-        evidenceGraph: null,
         type: "unknown",
-        error: err.message || "Failed to fetch local data",
+        error: err.message,
         hasEvidenceGraph: false,
+        evidenceGraphId: null,
+        evidenceGraphData: null,
       };
     }
   };
 
   return {
-    fetchMetadata,
+    fetchInitialMetadata,
+    fetchEvidenceGraphDataById,
+    triggerEvidenceGraphBuild,
     fetchLocalData,
   };
 };
