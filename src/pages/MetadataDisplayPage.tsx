@@ -1,4 +1,3 @@
-// src/pages/MetadataDisplayPage.tsx
 import React, { useEffect, useState, useContext, useMemo } from "react";
 import styled from "styled-components";
 
@@ -173,15 +172,7 @@ const traverseAndCollect = ({
 const extractSupportData = (
   graphData: RawGraphData | null
 ): SupportData | null => {
-  console.log(
-    "[MetadataDisplayPage - extractSupportData] Called. graphData:",
-    graphData ? "present" : "null"
-  );
   if (!graphData || !graphData["@graph"]) {
-    console.warn(
-      "[MetadataDisplayPage - extractSupportData] Invalid graphData or missing @graph.",
-      { graphData }
-    );
     return null;
   }
   const results: SupportData = {
@@ -211,17 +202,9 @@ const extractSupportData = (
       seenIds,
     });
   } else {
-    console.warn(
-      "[MetadataDisplayPage - extractSupportData] @graph is not processable.",
-      { graphEntities }
-    );
     return null;
   }
   const hasData = Object.values(results).some((arr) => arr.length > 0);
-  console.log(
-    "[MetadataDisplayPage - extractSupportData] Extraction complete. Has data:",
-    hasData
-  );
   return hasData ? results : null;
 };
 
@@ -253,7 +236,7 @@ const MetadataDisplayPage: React.FC = () => {
   const [version, setVersion] = useState<string>("1.0");
 
   const [metadata, setMetadata] = useState<Metadata | null>(null);
-  const [loading, setLoading] = useState<boolean>(true); // For initial metadata
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [determinedType, setDeterminedType] = useState<string | null>(null);
 
@@ -275,7 +258,6 @@ const MetadataDisplayPage: React.FC = () => {
   const { isLoggedIn } = useContext(AuthContext);
   const metadataServiceInstance = useMemo(() => metadataService(), []);
 
-  // Effect 1: Fetch initial metadata
   useEffect(() => {
     const fetchInitial = async () => {
       if (!arkId) {
@@ -283,9 +265,6 @@ const MetadataDisplayPage: React.FC = () => {
         setError("No ARK ID provided");
         return;
       }
-      console.log(
-        `[MetadataDisplayPage - Effect1] Fetching initial metadata for ARK: ${arkId}`
-      );
       setLoading(true);
       setError(null);
       setMetadata(null);
@@ -301,10 +280,6 @@ const MetadataDisplayPage: React.FC = () => {
       try {
         const result = await metadataServiceInstance.fetchInitialMetadata(
           arkId
-        );
-        console.log(
-          "[MetadataDisplayPage - Effect1] Initial metadata result:",
-          result
         );
         if (result.error) throw new Error(result.error);
 
@@ -343,37 +318,28 @@ const MetadataDisplayPage: React.FC = () => {
           );
           setVersion(rootVersion);
         }
-        // Determine if a build attempt is needed
         if (
           !result.hasEvidenceGraph &&
           result.type &&
           !["release", "rocrate"].includes(result.type) &&
           isLoggedIn
         ) {
-          console.log(
-            `[MetadataDisplayPage - Effect1] No evidence graph link for ${result.type}, user logged in. Flagging for build attempt.`
-          );
           setNeedsBuildAttempt(true);
         }
-        setLoading(false); // Initial metadata loaded
+        setLoading(false);
       } catch (err: any) {
         setLoading(false);
         setError(err.message || "Failed to fetch initial data");
-        console.error("[MetadataDisplayPage - Effect1] Error:", err);
       }
     };
     fetchInitial();
   }, [arkId, isLoggedIn, metadataServiceInstance]);
 
-  // Effect 2: Manage Evidence Graph (fetch or build then fetch)
   useEffect(() => {
     const manageGraph = async () => {
-      if (loading) return; // Wait for initial metadata load to complete
+      if (loading) return;
 
       if (hasEvidenceGraphLink && currentEvidenceGraphId) {
-        console.log(
-          `[MetadataDisplayPage - Effect2] Has link, fetching graph ID: ${currentEvidenceGraphId}`
-        );
         setEvidenceGraphLoading(true);
         setEvidenceGraphError(null);
         try {
@@ -384,9 +350,6 @@ const MetadataDisplayPage: React.FC = () => {
           if (graphData) {
             setEvidenceGraphData(graphData);
             setSupportData(extractSupportData(graphData));
-            console.log(
-              "[MetadataDisplayPage - Effect2] Successfully fetched and processed existing evidence graph."
-            );
           } else {
             throw new Error("Evidence graph data not found or fetch failed.");
           }
@@ -394,55 +357,34 @@ const MetadataDisplayPage: React.FC = () => {
           setEvidenceGraphError(
             err.message || "Failed to load evidence graph."
           );
-          console.error(
-            "[MetadataDisplayPage - Effect2] Error fetching existing graph:",
-            err
-          );
         } finally {
           setEvidenceGraphLoading(false);
         }
       } else if (needsBuildAttempt && arkId && isLoggedIn) {
-        console.log(
-          `[MetadataDisplayPage - Effect2] Needs build attempt for ARK: ${arkId}`
-        );
-        setEvidenceGraphLoading(true); // Indicate "building/checking"
+        setEvidenceGraphLoading(true);
         setEvidenceGraphError(null);
         try {
           const buildResult =
             await metadataServiceInstance.triggerEvidenceGraphBuild(arkId);
-          console.log(
-            "[MetadataDisplayPage - Effect2] Build trigger result:",
-            buildResult
-          );
-          setNeedsBuildAttempt(false); // Attempt made
+          setNeedsBuildAttempt(false);
 
           if (buildResult.error && !buildResult.hasEvidenceGraph) {
-            // If error and still no graph, show error
             throw new Error(buildResult.error);
           }
 
           if (buildResult.updatedMetadata) {
-            // Update main metadata if it changed
             setMetadata(buildResult.updatedMetadata);
           }
 
           setHasEvidenceGraphLink(buildResult.hasEvidenceGraph);
           setCurrentEvidenceGraphId(buildResult.evidenceGraphId);
-          // If buildResult.hasEvidenceGraph is true, the first part of this effect will pick it up in the next render cycle.
           if (!buildResult.hasEvidenceGraph) {
-            console.log(
-              "[MetadataDisplayPage - Effect2] Build attempt did not result in an available graph link."
-            );
-            setEvidenceGraphLoading(false); // Stop loading if still no graph
+            setEvidenceGraphLoading(false);
           }
         } catch (err: any) {
           setEvidenceGraphError(
             err.message ||
               "Failed to build or retrieve evidence graph after build attempt."
-          );
-          console.error(
-            "[MetadataDisplayPage - Effect2] Error during build attempt:",
-            err
           );
           setEvidenceGraphLoading(false);
         }
@@ -525,6 +467,30 @@ const MetadataDisplayPage: React.FC = () => {
                 arkId={arkId}
               />
             );
+          case "instrument":
+            return (
+              <GenericMetadataComponent
+                metadata={metadata}
+                type="instrument"
+                arkId={arkId}
+              />
+            );
+          case "sample":
+            return (
+              <GenericMetadataComponent
+                metadata={metadata}
+                type="sample"
+                arkId={arkId}
+              />
+            );
+          case "experiment":
+            return (
+              <GenericMetadataComponent
+                metadata={metadata}
+                type="experiment"
+                arkId={arkId}
+              />
+            );
           default:
             return (
               <Alert
@@ -571,7 +537,6 @@ const MetadataDisplayPage: React.FC = () => {
           );
         }
         if (!hasEvidenceGraphLink && !needsBuildAttempt) {
-          // No link and no build attempt means it's definitively not there or build failed silently before
           return (
             <Alert
               type="info"
@@ -581,13 +546,11 @@ const MetadataDisplayPage: React.FC = () => {
           );
         }
         if (!evidenceGraphData && hasEvidenceGraphLink) {
-          // Link exists, but data not loaded yet (should be covered by loading or error)
           return (
             <CenteredMessageWithSpinner message="Preparing Evidence Graph..." />
           );
         }
         if (!evidenceGraphData && !hasEvidenceGraphLink && needsBuildAttempt) {
-          // Build was attempted, but no graph resulted yet
           return (
             <CenteredMessageWithSpinner message="Evidence Graph is being prepared or was not found. Please check back or refresh." />
           );
@@ -600,7 +563,6 @@ const MetadataDisplayPage: React.FC = () => {
             />
           );
         }
-        // Fallback if logic misses a case, or if build is pending but not actively "loading"
         return (
           <Alert
             type="info"

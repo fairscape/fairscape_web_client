@@ -8,20 +8,21 @@ import {
   ComputationProperties,
   SchemaProperties,
   MetadataProperty,
+  InstrumentProperties,
+  SampleProperties,
+  ExperimentProperties,
 } from "./metadataPropertyLists";
 import Alert from "../common/Alert";
 import SchemaPropertiesTable from "./SchemaPropertiesTable";
 
 const SectionContainer = styled.div`
-  background-color: ${({ theme }) =>
-    theme.colors.background || "#ffffff"}; /* Brighter default background */
+  background-color: ${({ theme }) => theme.colors.background || "#ffffff"};
   padding: ${({ theme }) => theme.spacing.lg};
   border-radius: ${({ theme }) => theme.borderRadius.md};
   margin-bottom: ${({ theme }) => theme.spacing.lg};
   box-shadow: ${({ theme }) =>
-    theme.shadows?.subtle ||
-    "0 2px 4px rgba(0,0,0,0.06)"}; /* Even softer shadow */
-  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"}; /* Lighter border */
+    theme.shadows?.subtle || "0 2px 4px rgba(0,0,0,0.06)"};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
 `;
 
 const Header = styled.h2`
@@ -37,42 +38,38 @@ const Header = styled.h2`
 const DetailsGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2px; // Minimal gap, border will provide separation
+  gap: 2px;
 `;
 
 const DetailItemRow = styled.div`
   display: grid;
-  // minmax for label ensures it has enough space but doesn't get too wide
-  // 1fr for value allows it to take remaining space
   grid-template-columns: minmax(160px, 220px) 1fr;
   gap: ${({ theme }) => theme.spacing.md};
-  padding: ${({ theme }) => theme.spacing.sm} 0; // Vertical padding per row
-  align-items: start; // Align items to the top of their cell
+  padding: ${({ theme }) => theme.spacing.sm} 0;
+  align-items: start;
   border-bottom: 1px solid
-    ${({ theme }) => theme.colors.borderLight || "#f0f0f0"}; // Very light separator
+    ${({ theme }) => theme.colors.borderLight || "#f0f0f0"};
 
   &:last-child {
     border-bottom: none;
   }
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr; // Stack label and value
-    gap: ${({ theme }) => theme.spacing.xs}; // Smaller gap when stacked
+    grid-template-columns: 1fr;
+    gap: ${({ theme }) => theme.spacing.xs};
     padding: ${({ theme }) => theme.spacing.sm} 0;
   }
 `;
 
 const DetailLabel = styled.div`
-  // Changed from strong to div for better control
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text};
-  padding-right: ${({ theme }) =>
-    theme.spacing.sm}; // Space between label and imaginary colon
-  line-height: 1.5; // Match DetailValue
-  word-break: break-word; // In case label is very long
+  padding-right: ${({ theme }) => theme.spacing.sm};
+  line-height: 1.5;
+  word-break: break-word;
 
   @media (max-width: 768px) {
-    margin-bottom: 2px; // Space below label when stacked
+    margin-bottom: 2px;
     padding-right: 0;
   }
 `;
@@ -81,16 +78,15 @@ const DetailValue = styled.div`
   font-size: 15px;
   line-height: 1.5;
   color: ${({ theme }) =>
-    theme.colors.textSlightlyLighter ||
-    theme.colors.text}; // Slightly lighter for value
+    theme.colors.textSlightlyLighter || theme.colors.text};
   word-break: break-word;
-  max-height: 300px; // Allow some scroll for very long values
+  max-height: 300px;
   overflow-y: auto;
 
   a {
     color: ${({ theme }) => theme.colors.primary};
     text-decoration: none;
-    font-weight: 500; // Make links slightly more prominent
+    font-weight: 500;
     &:hover {
       text-decoration: underline;
     }
@@ -98,8 +94,7 @@ const DetailValue = styled.div`
 `;
 
 const CodeBlockStyled = styled.pre`
-  background-color: ${({ theme }) =>
-    theme.colors.backgroundAlt || "#f7f7f7"}; // Lighter code block
+  background-color: ${({ theme }) => theme.colors.backgroundAlt || "#f7f7f7"};
   padding: ${({ theme }) => theme.spacing.sm};
   border-radius: ${({ theme }) => theme.borderRadius.sm};
   overflow-x: auto;
@@ -118,17 +113,17 @@ const ListStyled = styled.ul`
 `;
 
 const ListItemStyled = styled.li`
-  margin-bottom: 5px; // Increased spacing for list items
+  margin-bottom: 5px;
 `;
 
 const ProminentLink = styled.a`
   font-weight: 600;
   color: ${({ theme }) => theme.colors.secondary || "#ff8c00"} !important;
-  text-decoration: none !important; // No underline by default for these
-  display: inline-block; // Allows padding
-  padding: 3px 6px; // Add a little padding to make it look slightly button-like
+  text-decoration: none !important;
+  display: inline-block;
+  padding: 3px 6px;
   border-radius: ${({ theme }) => theme.borderRadius.sm};
-  border: 1px solid ${({ theme }) => theme.colors.secondary || "#ff8c00"}; // Border with secondary color
+  border: 1px solid ${({ theme }) => theme.colors.secondary || "#ff8c00"};
 
   &:hover {
     background-color: ${({ theme }) => theme.colors.secondary || "#ff8c00"};
@@ -143,7 +138,7 @@ const ProminentLink = styled.a`
     background-color: transparent !important;
     font-style: italic;
     cursor: not-allowed;
-    padding: 3px 6px; // Ensure padding is consistent
+    padding: 3px 6px;
     &:hover {
       color: ${({ theme }) =>
         theme.colors.textSlightlyLighter || "#757575"} !important;
@@ -268,7 +263,14 @@ const ModalPropertyDetail = styled.div`
   }
 `;
 
-type EntityType = "dataset" | "software" | "computation" | "schema";
+type EntityType =
+  | "dataset"
+  | "software"
+  | "computation"
+  | "schema"
+  | "instrument"
+  | "sample"
+  | "experiment";
 
 interface GenericMetadataComponentProps {
   metadata: Metadata;
@@ -369,6 +371,12 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         return ComputationProperties;
       case "schema":
         return SchemaProperties;
+      case "instrument":
+        return InstrumentProperties;
+      case "sample":
+        return SampleProperties;
+      case "experiment":
+        return ExperimentProperties;
       default:
         return [];
     }
@@ -384,6 +392,12 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         return "Computation Details";
       case "schema":
         return "Schema Details";
+      case "instrument":
+        return "Instrument Details";
+      case "sample":
+        return "Sample Details";
+      case "experiment":
+        return "Experiment Details";
       default:
         return "Metadata Details";
     }
@@ -619,16 +633,13 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         {propertyList.map((prop) => {
           const propValue = entity[prop.key];
 
-          // Special handling for schema properties table
           if (prop.key === "properties" && type === "schema") {
             return propValue !== undefined ? (
               <DetailItemRow
                 key={prop.key}
                 style={{ gridTemplateColumns: "1fr" }}
               >
-                {" "}
-                {/* Full width for table */}
-                <DetailLabel>{prop.name}</DetailLabel> {/* Label above table */}
+                <DetailLabel>{prop.name}</DetailLabel>
                 <DetailValue
                   style={{
                     maxHeight: "none",
