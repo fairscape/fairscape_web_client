@@ -40,7 +40,6 @@ export const SoftwareProperties: MetadataProperty[] = [
   { key: "url", name: "External Link" },
   { key: "author", name: "Author(s)" },
   { key: "dateModified", name: "Last Modified" },
-  { key: "url", name: "External Link" },
   { key: "version", name: "Version" },
   { key: "keywords", name: "Keywords" },
   { key: "format", name: "Format" },
