@@ -31,8 +31,8 @@ const resolveLink = (value: any, graph: RawGraphEntity[]): string => {
 };
 
 export interface OverviewData {
-  title: string; // Still needed for ROCrateComponent filename logic
-  version?: string; // Still needed for ROCrateComponent filename logic (though not displayed in OverviewSection)
+  title: string;
+  version?: string;
   id_value: string;
   doi?: string;
   release_date?: string;
@@ -52,11 +52,13 @@ export interface OverviewData {
   related_publications?: string[];
   externalUrl?: string;
   contentUrl?: string;
+  copyright?: string; // Added copyright field
 }
 
 export const processOverview = (metadata: Metadata): OverviewData => {
   const graph = (metadata["@graph"] as RawGraphEntity[]) || [];
   const root = findRootEntity(graph);
+  console.log(root);
 
   if (!root) return {} as OverviewData;
 
@@ -129,8 +131,8 @@ export const processOverview = (metadata: Metadata): OverviewData => {
     version: root.version || undefined,
     id_value: root["@id"] || "N/A",
     doi: doi,
-    externalUrl: root.url || undefined, // Added for external URL
-    contentUrl: root.contentUrl || undefined, // Added for content URL for download
+    externalUrl: root.url || undefined,
+    contentUrl: root.contentUrl || undefined,
     release_date: root.datePublished || undefined,
     content_size: root.contentSize || undefined,
     description: root.description || undefined,
@@ -146,10 +148,13 @@ export const processOverview = (metadata: Metadata): OverviewData => {
     funding: root.funder || undefined,
     completeness: completeness || undefined,
     related_publications: related_publications,
+    copyright: root.copyrightNotice || undefined, // Added copyright processing
   };
 
   return overviewData;
 };
+
+// ... (rest of the metadataProcessing.ts file remains the same)
 
 export interface UseCasesData {
   intended_uses?: string;

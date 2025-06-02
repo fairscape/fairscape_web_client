@@ -252,7 +252,7 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
 
   if (!linkForButton) {
     if (id?.startsWith("ark:")) {
-      linkForButton = `https://n2t.net/${id}`;
+      linkForButton = `https://fairscape.net/view/${id}`;
       buttonText = "View Sub-Crate Details";
     } else if (id?.startsWith("http")) {
       linkForButton = id;

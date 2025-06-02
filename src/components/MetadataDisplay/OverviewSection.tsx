@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { OverviewData } from "../../utils/metadataProcessing";
+import { OverviewData } from "../../utils/metadataProcessing"; // Adjust path as needed
 
 const SectionContainer = styled.div`
   background-color: ${({ theme }) => theme.colors.background || "#f9f9f9"};
@@ -200,6 +200,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
     funding,
     completeness,
     related_publications,
+    copyright, // Destructure copyright
   } = overviewData;
 
   const keywordsArray = Array.isArray(keywords)
@@ -217,8 +218,6 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
       {description && <Description>{description}</Description>}
 
       <DetailsList>
-        {" "}
-        {/* Changed to DetailsList */}
         <DetailDisplay label="ARK Identifier" value={id_value} isArk={true} />
         <DetailDisplay
           label="DOI"
@@ -247,6 +246,8 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
           isEmail={true}
         />
         <DetailDisplay label="License" value={license_value} isLink={true} />
+        <DetailDisplay label="Copyright" value={copyright} />{" "}
+        {/* Added Copyright display */}
         <DetailDisplay label="Content Size" value={content_size} />
         <DetailDisplay
           label="Confidentiality Level"

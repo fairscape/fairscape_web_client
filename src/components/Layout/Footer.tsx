@@ -63,8 +63,8 @@ const Footer: React.FC = () => {
     <StyledFooter>
       <FooterContent>
         <Copyright>
-          © {new Date().getFullYear()} University of Virginia. All rights
-          reserved.
+          © {new Date().getFullYear()} The Rector and Visitors of the University
+          of Virginia.
         </Copyright>
         <Notice>
           This repository is under review for potential modification in
