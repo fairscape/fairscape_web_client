@@ -105,7 +105,7 @@ const SchemaPropertiesTable: React.FC<SchemaPropertiesTableProps> = ({
         {Object.entries(properties).map(
           ([propName, propDetails]: [string, any]) => {
             const descriptionText = propDetails.description || "No description";
-            const valueUrl = propDetails.valueUrl;
+            const valueUrl = propDetails["value-url"];
 
             const defLink = valueUrl ? (
               <StyledLink
