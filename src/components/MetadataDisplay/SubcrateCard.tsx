@@ -1,3 +1,4 @@
+// src/components/MetadataDisplay/SubcrateCard.tsx
 import React from "react";
 import styled from "styled-components";
 import { SubcrateSummary } from "../../utils/metadataProcessing";
@@ -130,7 +131,7 @@ const DetailDisplay: React.FC<{
   let displayValue: React.ReactNode = String(value);
   if (isArk && typeof value === "string") {
     const arkLink = value.startsWith("ark:")
-      ? `https://n2t.net/${value}`
+      ? `https://fairscape.net/view/${value}`
       : value.startsWith("http")
       ? value
       : null;
@@ -232,8 +233,8 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
     keywords,
     funder,
     related_publications,
-    previewUrl, // This is the RO-Crate preview HTML for the sub-crate
-    id, // This is the sub-crate's identifier (often an ARK)
+    previewUrl,
+    id,
   } = subcrate;
 
   const keywordsArray = Array.isArray(keywords)
@@ -246,18 +247,23 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
     : [];
 
   // Determine the link for the button
-  // Priority: previewUrl, then a resolved ARK link, then just the ID if it's a direct URL
-  let linkForButton = previewUrl;
-  let buttonText = "View Details";
+  let linkForButton: string | undefined = undefined;
+  let buttonText: string = "View Details"; // Default button text
 
-  if (!linkForButton) {
-    if (id?.startsWith("ark:")) {
-      linkForButton = `https://fairscape.net/view/${id}`;
-      buttonText = "View Sub-Crate Details";
-    } else if (id?.startsWith("http")) {
-      linkForButton = id;
-      buttonText = "Open Link";
-    }
+  // Priority 1: ARK ID link to FAIRSCAPE
+  if (id?.startsWith("ark:")) {
+    linkForButton = `https://fairscape.net/view/${id}`;
+    buttonText = "View on FAIRSCAPE";
+  }
+  // Priority 2: previewUrl, if no ARK ID
+  else if (previewUrl) {
+    linkForButton = previewUrl;
+    buttonText = "View Details";
+  }
+  // Priority 3: Direct HTTP link from ID, if no ARK ID or previewUrl
+  else if (id?.startsWith("http")) {
+    linkForButton = id;
+    buttonText = "Open Link";
   }
 
   return (

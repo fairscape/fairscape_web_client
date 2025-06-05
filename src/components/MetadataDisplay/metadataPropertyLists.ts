@@ -24,6 +24,7 @@ export const DatasetProperties: MetadataProperty[] = [
   { key: "description", name: "Description" },
   { key: "url", name: "External Link" },
   { key: "author", name: "Author(s)" },
+  { key: "contentSize", name: "File Size" },
   { key: "datePublished", name: "Date Published" },
   { key: "version", name: "Version" },
   { key: "keywords", name: "Keywords" },
