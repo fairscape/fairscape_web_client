@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  window.API_URL;
 
 const LoginContainer = styled.div`
   max-width: 400px;

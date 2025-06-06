@@ -8,7 +8,7 @@ import { User } from "../../types"; // Adjust path
 import { theme } from "../../styles/theme"; // Adjust path
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  window.API_URL;
 
 const ProfileContainer = styled.div`
   position: relative;

@@ -8,7 +8,7 @@ import React, {
 import axios from "axios";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  window.API_URL;
 const TOKEN_EXPIRY_HOURS = 24;
 
 // Define the AuthContext type

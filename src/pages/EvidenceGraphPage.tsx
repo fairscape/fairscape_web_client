@@ -75,7 +75,7 @@ const Footer = styled.footer`
 
 // API URL from environment variable
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  window.API_URL;
 
 // --- Support Data Extraction Logic ---
 interface TraverseParams {

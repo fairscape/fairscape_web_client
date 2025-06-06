@@ -8,7 +8,7 @@ import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  window.API_URL;
 
 const DashboardContainer = styled.div`
   padding: ${({ theme }) => theme.spacing.lg};

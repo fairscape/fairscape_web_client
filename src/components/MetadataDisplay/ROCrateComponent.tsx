@@ -53,7 +53,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   const [alertType, setAlertType] = useState<"error" | "info">("error");
 
   const apiUrl =
-    import.meta.env.VITE_FAIRSCAPE_API_URL || "https://fairscape.net/api";
+    window.API_URL;
 
   const [datasets, setDatasets] = useState<EntityItem[]>([]);
   const [software, setSoftware] = useState<EntityItem[]>([]);

@@ -9,8 +9,7 @@ import {
 
 const MAX_LABEL_LENGTH = 50;
 
-const feUrl =
-  import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
+const feUrl = window.location.origin + "/view/";
 
 export function getEntityType(typeUri: string | string[] | undefined): string {
   if (!typeUri) return "Unknown";

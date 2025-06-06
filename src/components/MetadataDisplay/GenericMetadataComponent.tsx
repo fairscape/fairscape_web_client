@@ -287,10 +287,9 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   const [expandedSchemaPropertyDetails, setExpandedSchemaPropertyDetails] =
     useState<any | null>(null);
 
-  const feUrl =
-    import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
+  const feUrl = window.location.origin + "/view/";
   const apiUrl =
-    import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+    window.API_URL;
 
   const getToken = () => {
     return localStorage.getItem("token") || "";

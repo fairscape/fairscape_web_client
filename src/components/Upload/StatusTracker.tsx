@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import styled from "styled-components";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  window.API_URL;
 const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5173";
 
 interface UploadError {

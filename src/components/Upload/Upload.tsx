@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import StatusTracker from "./StatusTracker";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  window.API_URL;
 
 interface UploadError {
   status: string;

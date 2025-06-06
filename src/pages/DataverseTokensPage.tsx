@@ -4,7 +4,7 @@ import axios, { AxiosError } from "axios";
 import { Pencil, Trash2, Save, X, Plus } from "lucide-react";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  window.API_URL;
 
 const TokensPageContainer = styled.div`
   padding: ${({ theme }) => theme.spacing.lg};

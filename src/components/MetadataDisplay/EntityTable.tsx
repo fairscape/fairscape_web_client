@@ -115,10 +115,9 @@ const EntityTable: React.FC<EntityTableProps> = ({
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
 
-  const feUrl =
-    import.meta.env.VITE_FAIRSCAPE_FE_URL || "http://localhost:5173/view/";
+  const feUrl = window.location.origin + "/view/";
   const apiUrl =
-    import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+    window.API_URL;
 
   const getToken = () => {
     return localStorage.getItem("token") || "";
@@ -185,11 +184,6 @@ const EntityTable: React.FC<EntityTableProps> = ({
   };
 
   useEffect(() => {
-    console.log(
-      "VITE_FAIRSCAPE_FE_URL:",
-      import.meta.env.VITE_FAIRSCAPE_FE_URL
-    );
-    console.log("feUrl being used:", feUrl);
     if (items.length > 0 && items[0].id) {
       console.log("First item URL:", `${feUrl}${items[0].id}`);
     }

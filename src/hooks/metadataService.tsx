@@ -3,7 +3,7 @@ import axios from "axios";
 import { Metadata, RawGraphData, RawGraphEntity } from "../types";
 
 const API_URL =
-  import.meta.env.VITE_FAIRSCAPE_API_URL || "http://localhost:8080/api";
+  window.API_URL;
 
 export interface InitialMetadataResult {
   metadata: Metadata | null;
