@@ -3,8 +3,7 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
-const API_URL =
-  window.API_URL;
+const API_URL = window.API_URL;
 
 const LoginContainer = styled.div`
   max-width: 400px;
@@ -87,7 +86,6 @@ const Login: React.FC = () => {
     const formData = new FormData();
     formData.append("username", username);
     formData.append("password", password);
-
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",

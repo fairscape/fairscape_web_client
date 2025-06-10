@@ -1,4 +1,3 @@
-// src/components/MetadataDisplay/SubcrateCard.tsx
 import React from "react";
 import styled from "styled-components";
 import { SubcrateSummary } from "../../utils/metadataProcessing";
@@ -14,7 +13,7 @@ const CardContainer = styled.div`
   box-shadow: ${({ theme }) =>
     theme.shadows?.small || "0 1px 3px rgba(0,0,0,0.05)"};
   display: flex;
-  flex-direction: column; // Ensure button is at the bottom if content varies
+  flex-direction: column;
 `;
 
 const CardHeader = styled.div`
@@ -31,19 +30,17 @@ const SubcrateName = styled.h3`
   color: ${({ theme }) => theme.colors.primary};
   margin: 0;
   word-break: break-all;
-  // Name is no longer a link by default here, button will handle navigation
 `;
 
 const CardContent = styled.div`
-  flex-grow: 1; // Allows content to take available space, pushing button down
+  flex-grow: 1;
 `;
 
 const DetailsList = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.xs};
-  margin-bottom: ${({ theme }) =>
-    theme.spacing.md}; // Add space before the button
+  margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
 const DetailItemWrapper = styled.div`
@@ -86,11 +83,11 @@ const KeywordPillSubdued = styled.span`
 
 const SubcrateLinkButton = styled.a`
   display: inline-block;
-  align-self: flex-end; // Align button to the start of the flex container
-  margin-top: auto; // Push to bottom if CardContainer is flex column
+  align-self: flex-end;
+  margin-top: auto;
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   background-color: ${({ theme }) => theme.colors.primary};
-  color: white !important; // Ensure text is white
+  color: white !important;
   text-decoration: none;
   border-radius: ${({ theme }) => theme.borderRadius.md};
   font-weight: bold;
@@ -119,6 +116,8 @@ const DetailDisplay: React.FC<{
   isEmail?: boolean;
   isArk?: boolean;
 }> = ({ label, value, isLink, href, isEmail, isArk }) => {
+  const feUrl = window.location.origin + "/view/";
+
   if (
     value === undefined ||
     value === null ||
@@ -131,7 +130,7 @@ const DetailDisplay: React.FC<{
   let displayValue: React.ReactNode = String(value);
   if (isArk && typeof value === "string") {
     const arkLink = value.startsWith("ark:")
-      ? `https://fairscape.net/view/${value}`
+      ? `${feUrl}${value}`
       : value.startsWith("http")
       ? value
       : null;
@@ -203,6 +202,8 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
   isLoading,
   error,
 }) => {
+  const feUrl = window.location.origin + "/view/";
+
   if (isLoading) {
     return (
       <CardContainer>
@@ -246,22 +247,16 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
         .filter((k) => k)
     : [];
 
-  // Determine the link for the button
   let linkForButton: string | undefined = undefined;
-  let buttonText: string = "View Details"; // Default button text
+  let buttonText: string = "View Details";
 
-  // Priority 1: ARK ID link to FAIRSCAPE
   if (id?.startsWith("ark:")) {
-    linkForButton = `https://fairscape.net/view/${id}`;
+    linkForButton = `${feUrl}${id}`;
     buttonText = "View on FAIRSCAPE";
-  }
-  // Priority 2: previewUrl, if no ARK ID
-  else if (previewUrl) {
+  } else if (previewUrl) {
     linkForButton = previewUrl;
     buttonText = "View Details";
-  }
-  // Priority 3: Direct HTTP link from ID, if no ARK ID or previewUrl
-  else if (id?.startsWith("http")) {
+  } else if (id?.startsWith("http")) {
     linkForButton = id;
     buttonText = "Open Link";
   }
@@ -269,10 +264,8 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
   return (
     <CardContainer>
       <CardContent>
-        {" "}
-        {/* Wrap content to allow button to be pushed down */}
         <CardHeader>
-          <SubcrateName>{name || id}</SubcrateName> {/* Display name or ID */}
+          <SubcrateName>{name || id}</SubcrateName>
         </CardHeader>
         {description && (
           <p

@@ -9,12 +9,11 @@ DATE=$(date '+%Y-%m-%d')
 
 # Build the Docker image with production environment variables
 docker build \
-  --build-arg VITE_FAIRSCAPE_API_URL=${PROD_API_URL} \
-  --build-arg VITE_FAIRSCAPE_FE_URL=${PROD_FE_URL} \
+  --no-cache \
   -f Dockerfile \
-  -t ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v3 .
+  -t ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v2 .
 
 
-docker push ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v3
+docker push ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v2
 
 #docker run -p 5173:80 ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}
