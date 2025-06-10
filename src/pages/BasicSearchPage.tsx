@@ -27,8 +27,7 @@ const BasicSearchPage: React.FC = () => {
       <PageTitle>Search FAIRSCAPE</PageTitle>
       <PageDescription>
         Search across research objects, datasets, software, and computations in
-        the FAIRSCAPE ecosystem using semantic, TF-IDF, or basic text search
-        methods.
+        the FAIRSCAPE ecosystem using semantic or basic text search methods.
       </PageDescription>
       <Search />
     </PageContainer>

@@ -29,7 +29,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/upload" element={<UploadPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/search" element={<SearchPage />} />
+              <Route path="/search" element={<BasicSearchPage />} />
               <Route path="/search/basic" element={<BasicSearchPage />} />
               <Route path="/compare" element={<CompareSearchPage />} />
               <Route path="/view/*" element={<MetadataDisplayPage />} />

@@ -10,9 +10,9 @@ const SearchContainer = styled.div`
 
 const SearchBox = styled.div`
   display: flex;
-  align-items: center; // Align items vertically
+  align-items: center;
   margin-bottom: ${({ theme }) => theme.spacing.lg};
-  gap: ${({ theme }) => theme.spacing.md}; // Add gap between elements
+  gap: ${({ theme }) => theme.spacing.md};
 `;
 
 const SearchInput = styled.input`
@@ -39,10 +39,10 @@ const SearchButton = styled.button<{ isLoading?: boolean }>`
   font-weight: 600;
   cursor: ${({ isLoading }) => (isLoading ? "not-allowed" : "pointer")};
   transition: background-color 0.2s ease;
-  display: flex; // For spinner alignment
-  align-items: center; // For spinner alignment
-  justify-content: center; // For spinner alignment
-  min-width: 100px; // Ensure button has some width for spinner
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
 
   &:hover:not(:disabled) {
     background-color: ${({ theme }) => theme.colors.primaryLight};
@@ -73,9 +73,8 @@ const SearchMetadataDisplay = styled.div`
 `;
 
 const ErrorMetadata = styled(SearchMetadataDisplay)`
-  background-color: #ffebee; // A light red for errors
-  color: ${({ theme }) =>
-    theme.colors.error || "#D32F2F"}; // Default error color
+  background-color: #ffebee;
+  color: ${({ theme }) => theme.colors.error || "#D32F2F"};
   border-left: 4px solid ${({ theme }) => theme.colors.error || "#D32F2F"};
 `;
 
@@ -105,7 +104,16 @@ const ResultTitle = styled.h3`
   color: ${({ theme }) => theme.colors.text};
   margin: 0;
   font-size: 1.25rem;
-  word-break: break-word; // Prevent long names from overflowing
+  word-break: break-word;
+`;
+
+const ResultTitleLink = styled.a`
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const ResultId = styled.p`
@@ -113,7 +121,16 @@ const ResultId = styled.p`
   font-size: 0.85rem;
   margin-top: ${({ theme }) => theme.spacing.xs};
   margin-bottom: ${({ theme }) => theme.spacing.sm};
-  word-break: break-all; // Allow long IDs to wrap
+  word-break: break-all;
+`;
+
+const ResultIdLink = styled.a`
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const ResultDescription = styled.p`
@@ -124,7 +141,7 @@ const ResultDescription = styled.p`
 const ScoreBadge = styled.span<{ score: number }>`
   background-color: ${({ theme, score }) =>
     score > 0.7
-      ? theme.colors.success || "#4CAF50" // Default success color
+      ? theme.colors.success || "#4CAF50"
       : score > 0.5
       ? theme.colors.primary
       : theme.colors.textSecondary};
@@ -133,7 +150,7 @@ const ScoreBadge = styled.span<{ score: number }>`
   border-radius: 16px;
   font-size: 0.75rem;
   font-weight: 600;
-  white-space: nowrap; // Prevent score from wrapping
+  white-space: nowrap;
 `;
 
 const KeywordsContainer = styled.div`
@@ -152,8 +169,8 @@ const Keyword = styled.span`
 `;
 
 const LoadingSpinner = styled.div`
-  width: 20px; // Adjusted size
-  height: 20px; // Adjusted size
+  width: 20px;
+  height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
@@ -174,15 +191,14 @@ const NoResults = styled.p`
 `;
 
 interface SearchResultItem {
-  id: string; // Corresponds to @id from backend
-  type?: string; // Corresponds to @type from backend
+  id: string;
+  type?: string;
   name?: string;
   description?: string;
   score: number;
   keywords?: string[];
 }
 
-// Adjusted to match the SearchResults model from search_models.py
 interface SearchResponseData {
   query: string;
   total_results: number;
@@ -210,7 +226,7 @@ const Search: React.FC = () => {
 
     setLoading(true);
     setSearchPerformed(true);
-    setSearchDisplayInfo(null); // Clear previous metadata/error
+    setSearchDisplayInfo(null);
 
     try {
       const response = await fetch(
@@ -228,7 +244,12 @@ const Search: React.FC = () => {
 
       const data: SearchResponseData = await response.json();
 
-      setResults(data.results || []);
+      const normalizedResults = data.results.map((result) => ({
+        ...result,
+        id: result["@id"] || result.id,
+      }));
+
+      setResults(normalizedResults || []);
       setSearchDisplayInfo({
         query: data.query,
         totalResults: data.total_results,
@@ -238,7 +259,7 @@ const Search: React.FC = () => {
       console.error("Search error:", error);
       setResults([]);
       setSearchDisplayInfo({
-        query: query, // Show the attempted query even on error
+        query: query,
         error: (error as Error).message,
       });
     } finally {
@@ -253,7 +274,6 @@ const Search: React.FC = () => {
   };
 
   const formatScore = (score: number) => {
-    // Assuming score from backend is already 0-1 range as per search_crud.py
     return `${(score * 100).toFixed(1)}%`;
   };
 
@@ -302,16 +322,23 @@ const Search: React.FC = () => {
           {results.map((result, index) => (
             <ResultCard key={`${result.id}-${index}`}>
               {" "}
-              {/* Ensure unique key if IDs can repeat */}
               <ResultHeader>
                 <ResultTitle>
-                  {index + 1}. {result.name || "N/A"}
+                  {index + 1}.{" "}
+                  <ResultTitleLink href={`/view/${result.id}`}>
+                    {result.name || "N/A"}
+                  </ResultTitleLink>
                 </ResultTitle>
                 <ScoreBadge score={result.score}>
                   {formatScore(result.score)}
                 </ScoreBadge>
               </ResultHeader>
-              <ResultId>ID: {result.id}</ResultId>
+              <ResultId>
+                ID:{" "}
+                <ResultIdLink href={`/view/${result.id}`}>
+                  {result.id}
+                </ResultIdLink>
+              </ResultId>
               {result.type && (
                 <ResultId>
                   Type:{" "}
