@@ -1,3 +1,5 @@
 #!/bin/sh
-sed -i "s|{{API_URL}}|${VITE_FAIRSCAPE_API_URL:-http://localhost:8080/api}|g" /usr/share/nginx/html/index.html
+if [ -n "$VITE_FAIRSCAPE_API_URL" ]; then
+  sed -i "s|http://localhost:8080/api|${VITE_FAIRSCAPE_API_URL}|g" /usr/share/nginx/html/index.html
+fi
 exec "$@"
