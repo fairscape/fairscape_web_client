@@ -435,6 +435,7 @@ const MetadataDisplayPage: React.FC = () => {
           case "rocrate":
             return <ROCrateComponent metadata={metadata} arkId={arkId} />;
           case "dataset":
+          case "evi:dataset":
             return (
               <GenericMetadataComponent
                 metadata={metadata}
@@ -443,6 +444,7 @@ const MetadataDisplayPage: React.FC = () => {
               />
             );
           case "software":
+          case "evi:software":
             return (
               <GenericMetadataComponent
                 metadata={metadata}
@@ -451,6 +453,7 @@ const MetadataDisplayPage: React.FC = () => {
               />
             );
           case "computation":
+          case "evi:computation":
             return (
               <GenericMetadataComponent
                 metadata={metadata}
@@ -468,6 +471,7 @@ const MetadataDisplayPage: React.FC = () => {
               />
             );
           case "instrument":
+          case "evi:instrument":
             return (
               <GenericMetadataComponent
                 metadata={metadata}
@@ -476,6 +480,7 @@ const MetadataDisplayPage: React.FC = () => {
               />
             );
           case "sample":
+          case "evi:sample":
             return (
               <GenericMetadataComponent
                 metadata={metadata}
@@ -484,6 +489,7 @@ const MetadataDisplayPage: React.FC = () => {
               />
             );
           case "experiment":
+          case "evi:experiment":
             return (
               <GenericMetadataComponent
                 metadata={metadata}

@@ -1,10 +1,12 @@
-// src/components/MetadataDisplay/ROCrateComponent.tsx
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { Metadata, RawGraphEntity } from "../../types";
 import { processOverview, OverviewData } from "../../utils/metadataProcessing";
-import OverviewSection from "./OverviewSection";
+import ConfigurableMetadataTable from "./ConfigurableMetadataTable";
+import { MetadataProperty } from "./metadataPropertyLists";
+import AdditionalPropertiesSection from "./AdditionalPropertiesSection";
+
 import TabsSection, { TabConfig } from "./TabsSection";
 import EntityTable, { EntityItem } from "./EntityTable";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -35,6 +37,27 @@ const ButtonContainer = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
+const roCrateMainProperties: MetadataProperty[] = [
+  { key: "id_value", name: "ARK Identifier" },
+  { key: "doi", name: "DOI" },
+  { key: "description", name: "Description" },
+  { key: "externalUrl", name: "External URL" },
+  { key: "release_date", name: "Date Published" },
+  { key: "authors", name: "Author(s)" },
+  { key: "publisher", name: "Publisher" },
+  { key: "principal_investigator", name: "Principal Investigator" },
+  { key: "contact_email", name: "Contact Email" },
+  { key: "license_value", name: "License" },
+  { key: "copyright", name: "Copyright" },
+  { key: "content_size", name: "Content Size" },
+  { key: "keywords", name: "Keywords" },
+  { key: "citation", name: "Citation" },
+  { key: "human_subject", name: "Human Subject Data" },
+  { key: "funding", name: "Funding" },
+  { key: "completeness", name: "Completeness" },
+  { key: "related_publications", name: "Related Publications" },
+];
+
 interface ROCrateComponentProps {
   metadata: Metadata;
   arkId?: string;
@@ -52,8 +75,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"error" | "info">("error");
 
-  const apiUrl =
-    window.API_URL;
+  const apiUrl = window.API_URL;
 
   const [datasets, setDatasets] = useState<EntityItem[]>([]);
   const [software, setSoftware] = useState<EntityItem[]>([]);
@@ -63,37 +85,48 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   const [instruments, setInstruments] = useState<EntityItem[]>([]);
   const [otherItems, setOtherItems] = useState<EntityItem[]>([]);
 
-  const getToken = () => {
-    return localStorage.getItem("token") || "";
-  };
-
-  const sanitizeFilename = (name: string): string => {
-    return name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_.-]/g, "");
-  };
+  const getToken = () => localStorage.getItem("token") || "";
+  const sanitizeFilename = (name: string): string =>
+    name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_.-]/g, "");
 
   const handleDownload = async (downloadUrl: string) => {
     const token = getToken();
 
-    if (!token && !overviewData?.contentUrl) {
+    if (
+      !token &&
+      !overviewData?.contentUrl &&
+      downloadUrl.startsWith(apiUrl || "")
+    ) {
       setAlertMessage("You must be logged in to download files via API.");
       setAlertType("error");
       setShowAlert(true);
       return;
     }
 
-    setLoading(true);
     setShowAlert(false);
+    const tempLoadingAnchor = document.querySelector(
+      `[data-testid="rocrate-download-button"]`
+    ) as HTMLAnchorElement;
+    let originalButtonText = "Download RO-Crate";
+    if (tempLoadingAnchor) {
+      originalButtonText = tempLoadingAnchor.textContent || "Download RO-Crate";
+      tempLoadingAnchor.textContent = "Downloading...";
+      tempLoadingAnchor.style.pointerEvents = "none";
+      tempLoadingAnchor.style.opacity = "0.7";
+    }
 
     try {
       const response = await axios({
         url: downloadUrl,
         method: "GET",
         responseType: "blob",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers:
+          token && downloadUrl.startsWith(apiUrl || "")
+            ? { Authorization: `Bearer ${token}` }
+            : {},
       });
 
       let filename = "rocrate-download.zip";
-      // Use title from overviewData (which comes from root.name) for filename
       const crateNameForFile = overviewData?.title;
 
       if (crateNameForFile) {
@@ -157,7 +190,11 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       setAlertType("error");
       setShowAlert(true);
     } finally {
-      setLoading(false);
+      if (tempLoadingAnchor) {
+        tempLoadingAnchor.textContent = originalButtonText;
+        tempLoadingAnchor.style.pointerEvents = "auto";
+        tempLoadingAnchor.style.opacity = "1";
+      }
     }
   };
 
@@ -243,7 +280,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       } else if (entity.contentUrl) {
         contentStatus = "External";
         contentUrl = entity.contentUrl;
-      } else if (hasDistribution && entity["@id"]) {
+      } else if (hasDistribution && entity["@id"] && apiUrl) {
         contentStatus = "Download";
         contentUrl = `${apiUrl}/download/${entity["@id"]}`;
       } else {
@@ -261,17 +298,24 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
       if (
         types.includes("https://w3id.org/EVI#Dataset") ||
-        types.includes("Dataset")
+        types.includes("Dataset") ||
+        types.includes("EVI:Dataset") ||
+        types.includes("evi:dataset")
       ) {
         processedDatasets.push(item);
       } else if (
         types.includes("https://w3id.org/EVI#Software") ||
+        types.includes("evi:software") ||
+        types.includes("Software") ||
+        types.includes("EVI:Software") ||
         types.includes("SoftwareApplication") ||
         types.includes("SoftwareSourceCode")
       ) {
         processedSoftware.push(item);
       } else if (
         types.includes("https://w3id.org/EVI#Computation") ||
+        types.includes("Computation") ||
+        types.includes("EVI:Computation") ||
         types.includes("ComputationalWorkflow")
       ) {
         processedComputations.push(item);
@@ -370,20 +414,28 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
   if (overviewData?.contentUrl && overviewData.contentUrl !== "Embargoed") {
     effectiveDownloadUrl = overviewData.contentUrl;
-    isExternalLink = true; // It's a direct link to contentUrl
-  } else if (arkId) {
-    // Fallback to API download if no direct contentUrl or if it's embargoed (though embargoed is handled separately)
+    isExternalLink = true;
+  } else if (arkId && apiUrl) {
     effectiveDownloadUrl = `${apiUrl}/rocrate/download/${arkId}`;
     requiresApiCall = true;
   }
 
   return (
     <Container>
-      {loading && overviewData && <LoadingSpinner overlay={true} />}
+      {overviewData && (
+        <ConfigurableMetadataTable
+          title="RO-Crate Details"
+          data={overviewData}
+          properties={roCrateMainProperties}
+        />
+      )}
 
-      {overviewData && <OverviewSection overviewData={overviewData} />}
+      {overviewData && overviewData.additionalCustomProperties && (
+        <AdditionalPropertiesSection
+          properties={overviewData.additionalCustomProperties}
+        />
+      )}
 
-      {/* Download Button Logic */}
       {overviewData?.contentUrl === "Embargoed" ? (
         <ButtonContainer>
           <DownloadButton
@@ -395,7 +447,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
               pointerEvents: "none",
               opacity: 0.7,
               backgroundColor: "#aaa",
-            }} // Distinct styling for embargoed
+            }}
           >
             Download Embargoed
           </DownloadButton>
@@ -405,28 +457,16 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
           <DownloadButton
             href={isExternalLink ? effectiveDownloadUrl : "#"}
             onClick={(e) => {
-              if (requiresApiCall) {
-                // Only preventDefault and call handleDownload if it's an API call
+              if (requiresApiCall || !isExternalLink) {
                 e.preventDefault();
-                if (!loading) {
-                  handleDownload(effectiveDownloadUrl);
-                }
+                handleDownload(effectiveDownloadUrl);
               }
-              // If it's an external link, the default <a> behavior will handle the navigation/download
             }}
             data-testid="rocrate-download-button"
-            aria-disabled={loading && requiresApiCall}
-            style={
-              loading && requiresApiCall
-                ? { pointerEvents: "none", opacity: 0.7 }
-                : {}
-            }
-            target={isExternalLink ? "_blank" : undefined} // Open external links in new tab
+            target={isExternalLink ? "_blank" : undefined}
             rel={isExternalLink ? "noopener noreferrer" : undefined}
           >
-            {loading && requiresApiCall
-              ? "Downloading..."
-              : "Download RO-Crate"}
+            Download RO-Crate
           </DownloadButton>
         </ButtonContainer>
       ) : null}
@@ -447,49 +487,42 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
-
           {activeTab === "datasets" && datasets.length > 0 && (
             <EntityTable
               items={datasets}
               headers={["Name", "Description", "Access", "Release Date"]}
             />
           )}
-
           {activeTab === "software" && software.length > 0 && (
             <EntityTable
               items={software}
               headers={["Name", "Description", "Access", "Release Date"]}
             />
           )}
-
           {activeTab === "computations" && computations.length > 0 && (
             <EntityTable
               items={computations}
               headers={["Name", "Description", "Access", "Date Created"]}
             />
           )}
-
           {activeTab === "samples" && samples.length > 0 && (
             <EntityTable
               items={samples}
               headers={["Name", "Description", "Identifier", "Date Created"]}
             />
           )}
-
           {activeTab === "experiments" && experiments.length > 0 && (
             <EntityTable
               items={experiments}
               headers={["Name", "Description", "Type", "Date Created"]}
             />
           )}
-
           {activeTab === "instruments" && instruments.length > 0 && (
             <EntityTable
               items={instruments}
               headers={["Name", "Description", "Manufacturer", "Date Created"]}
             />
           )}
-
           {activeTab === "other" && otherItems.length > 0 && (
             <EntityTable
               items={otherItems}

@@ -1,23 +1,47 @@
-// src/utils/metadataProcessing.ts
-import { Metadata, RawGraphEntity } from "../types";
+import { Metadata, RawGraphEntity } from "../types"; // Adjust path as needed
 
 export const findRootEntity = (
   graph: RawGraphEntity[]
 ): RawGraphEntity | undefined => {
   const metadataDescriptor = graph.find(
-    (e) => e["@id"] === "ro-crate-metadata.json" || e["@id"] === null
+    (e) =>
+      e["@id"] === "ro-crate-metadata.json" ||
+      e["@id"] === null ||
+      e["@id"] === "./ro-crate-metadata.json"
   );
 
-  const rootId = metadataDescriptor?.about?.["@id"];
+  let rootId = metadataDescriptor?.about?.["@id"];
 
-  if (rootId) {
-    return graph.find((e) => e["@id"] === rootId);
+  if (
+    !rootId &&
+    metadataDescriptor?.about &&
+    Array.isArray(metadataDescriptor.about) &&
+    metadataDescriptor.about.length > 0
+  ) {
+    rootId = metadataDescriptor.about[0]["@id"];
   }
 
-  return graph.find(
-    (e) =>
-      Array.isArray(e["@type"]) &&
-      e["@type"].includes("https://w3id.org/EVI#ROCrate")
+  if (rootId === "./" && metadataDescriptor) {
+    const mainEntity = graph.find(
+      (e) =>
+        Array.isArray(e["@type"]) &&
+        e["@type"].includes("https://w3id.org/EVI#ROCrate")
+    );
+    if (mainEntity) return mainEntity;
+  }
+
+  if (rootId) {
+    const foundRoot = graph.find((e) => e["@id"] === rootId);
+    if (foundRoot) return foundRoot;
+  }
+
+  return (
+    graph.find(
+      (e) =>
+        (Array.isArray(e["@type"]) &&
+          e["@type"].includes("https://w3id.org/EVI#ROCrate")) ||
+        e["@id"] === "./"
+    ) || graph.find((e) => e["@id"] === "./")
   );
 };
 
@@ -46,28 +70,41 @@ export interface OverviewData {
   confidentiality_level?: string;
   keywords?: string | string[];
   citation?: string;
-  human_subject?: string;
+  human_subject?: string | boolean;
   funding?: string;
   completeness?: string;
   related_publications?: string[];
   externalUrl?: string;
   contentUrl?: string;
-  copyright?: string; // Added copyright field
+  copyright?: string;
+  additionalCustomProperties?: Array<{
+    name: string;
+    value: string | string[];
+  }>;
 }
 
 export const processOverview = (metadata: Metadata): OverviewData => {
   const graph = (metadata["@graph"] as RawGraphEntity[]) || [];
   const root = findRootEntity(graph);
-  console.log(root);
 
   if (!root) return {} as OverviewData;
 
   let authors = "";
   if (root.author) {
     if (Array.isArray(root.author)) {
-      authors = root.author.join("; ");
+      authors = root.author
+        .map((a) =>
+          typeof a === "object" && a !== null && a.name ? a.name : String(a)
+        )
+        .join("; ");
+    } else if (
+      typeof root.author === "object" &&
+      root.author !== null &&
+      (root.author as any).name
+    ) {
+      authors = (root.author as any).name;
     } else {
-      authors = root.author as string;
+      authors = String(root.author);
     }
   } else if (root.creator) {
     if (Array.isArray(root.creator)) {
@@ -77,16 +114,37 @@ export const processOverview = (metadata: Metadata): OverviewData => {
     }
   }
 
-  const publisher = resolveLink(root.publisher, graph);
+  const publisherValue = root.publisher || root.sdPublisher;
+  const publisher = resolveLink(publisherValue, graph);
 
   let doi;
+  const identifiers = Array.isArray(root.identifier)
+    ? root.identifier
+    : root.identifier
+    ? [root.identifier]
+    : [];
+  const doiObject = identifiers.find(
+    (id) =>
+      typeof id === "object" && id !== null && (id as any).propertyID === "doi"
+  );
+
+  if (doiObject) {
+    doi = (doiObject as any).value || (doiObject as any)["@id"];
+  } else {
+    const doiString = identifiers.find(
+      (id) =>
+        typeof id === "string" &&
+        (id.startsWith("https://doi.org/") || id.startsWith("doi:"))
+    );
+    if (doiString) doi = doiString;
+  }
   if (
-    root.identifier &&
-    typeof root.identifier === "string" &&
-    (root.identifier.startsWith("https://doi.org/") ||
-      root.identifier.startsWith("doi:"))
+    doi &&
+    typeof doi === "string" &&
+    !doi.startsWith("https://doi.org/") &&
+    !doi.startsWith("doi:")
   ) {
-    doi = root.identifier;
+    doi = `https://doi.org/${doi.replace(/^doi:\s*/, "")}`;
   }
 
   let license_value = "";
@@ -102,59 +160,107 @@ export const processOverview = (metadata: Metadata): OverviewData => {
 
   let related_publications: string[] = [];
   if (root.associatedPublication) {
-    if (Array.isArray(root.associatedPublication)) {
-      related_publications = root.associatedPublication as string[];
-    } else {
-      related_publications = [root.associatedPublication as string];
-    }
+    const pubs = Array.isArray(root.associatedPublication)
+      ? root.associatedPublication
+      : [root.associatedPublication];
+    related_publications = pubs
+      .map((pub) => {
+        if (typeof pub === "string") return pub;
+        if (typeof pub === "object" && pub !== null) {
+          return pub["@id"] || pub.citation || pub.name || JSON.stringify(pub);
+        }
+        return String(pub);
+      })
+      .filter(Boolean);
   }
 
-  let completeness, human_subject;
+  let completeness: string | undefined;
+  let human_subject_value: string | boolean | undefined;
+  const additionalCustomProperties: Array<{
+    name: string;
+    value: string | string[];
+  }> = [];
+
   if (root.additionalProperty && Array.isArray(root.additionalProperty)) {
-    const completenessProperty = root.additionalProperty.find(
-      (p) => p.name === "Completeness"
-    );
-    if (completenessProperty) {
-      completeness = completenessProperty.value;
-    }
-
-    const humanSubjectProperty = root.additionalProperty.find(
-      (p) => p.name === "Human Subject"
-    );
-    if (humanSubjectProperty) {
-      human_subject = humanSubjectProperty.value;
-    }
+    root.additionalProperty.forEach((p) => {
+      if (p.name && p.value !== undefined && p.value !== null) {
+        if (p.name === "Completeness") {
+          completeness = String(p.value);
+        } else if (
+          p.name === "Human Subject" ||
+          p.name === "Human Subject Data"
+        ) {
+          if (typeof p.value === "string") {
+            if (p.value.toLowerCase() === "true") human_subject_value = true;
+            else if (p.value.toLowerCase() === "false")
+              human_subject_value = false;
+            else human_subject_value = p.value;
+          } else if (typeof p.value === "boolean") {
+            human_subject_value = p.value;
+          } else {
+            human_subject_value = String(p.value);
+          }
+        } else {
+          additionalCustomProperties.push({ name: p.name, value: p.value });
+        }
+      }
+    });
   }
 
-  const overviewData = {
-    title: root.name || "Untitled",
+  let keywordsValue = root.keywords;
+  if (typeof keywordsValue === "string") {
+    keywordsValue = keywordsValue
+      .split(/[,;]\s*/)
+      .map((k) => k.trim())
+      .filter((k) => k);
+  } else if (Array.isArray(keywordsValue)) {
+    keywordsValue = keywordsValue.map((k) => String(k).trim()).filter((k) => k);
+  }
+
+  const overviewData: OverviewData = {
+    title: root.name || root.headline || "Untitled",
     version: root.version || undefined,
     id_value: root["@id"] || "N/A",
     doi: doi,
     externalUrl: root.url || undefined,
     contentUrl: root.contentUrl || undefined,
-    release_date: root.datePublished || undefined,
+    release_date:
+      root.datePublished || root.dateCreated || root.dateModified || undefined,
     content_size: root.contentSize || undefined,
-    description: root.description || undefined,
+    description: root.description || root.abstract || undefined,
     authors: authors || undefined,
     publisher: publisher || undefined,
-    principal_investigator: root.principalInvestigator || undefined,
-    contact_email: root.contactEmail || undefined,
+    principal_investigator:
+      root.principalInvestigator || (root.PI as any)?.name || undefined,
+    contact_email: root.contactPoint?.email || root.contactEmail || undefined,
     license_value: license_value || undefined,
-    confidentiality_level: root.confidentialityLevel || undefined,
-    keywords: root.keywords,
+    confidentiality_level: (root as any).confidentialityLevel || undefined,
+    keywords: keywordsValue,
     citation: root.citation || undefined,
-    human_subject: human_subject || undefined,
-    funding: root.funder || undefined,
+    human_subject: human_subject_value,
+    funding: root.funder
+      ? Array.isArray(root.funder)
+        ? root.funder.map((f) => (f as any).name || String(f)).join("; ")
+        : (root.funder as any).name || String(root.funder)
+      : undefined,
     completeness: completeness || undefined,
-    related_publications: related_publications,
-    copyright: root.copyrightNotice || undefined, // Added copyright processing
+    related_publications:
+      related_publications.length > 0 ? related_publications : undefined,
+    copyright:
+      root.copyrightNotice ||
+      root.copyrightHolder?.name ||
+      (root.copyrightHolder && typeof root.copyrightHolder === "string"
+        ? root.copyrightHolder
+        : undefined) ||
+      undefined,
+    additionalCustomProperties:
+      additionalCustomProperties.length > 0
+        ? additionalCustomProperties
+        : undefined,
   };
 
   return overviewData;
 };
-
-// ... (rest of the metadataProcessing.ts file remains the same)
 
 export interface UseCasesData {
   intended_uses?: string;
@@ -171,31 +277,39 @@ export const processUseCases = (metadata: Metadata): UseCasesData => {
   let intended_uses, limitations, prohibited_uses, maintenance_plan;
   if (root.additionalProperty && Array.isArray(root.additionalProperty)) {
     const intendedUseProperty = root.additionalProperty.find(
-      (p) => p.name === "Intended Use"
+      (p) => p.name === "Intended Use" || p.name === "Intended Uses"
     );
     if (intendedUseProperty) {
-      intended_uses = intendedUseProperty.value;
+      intended_uses = Array.isArray(intendedUseProperty.value)
+        ? intendedUseProperty.value.join("\n")
+        : String(intendedUseProperty.value);
     }
 
     const limitationsProperty = root.additionalProperty.find(
       (p) => p.name === "Limitations"
     );
     if (limitationsProperty) {
-      limitations = limitationsProperty.value;
+      limitations = Array.isArray(limitationsProperty.value)
+        ? limitationsProperty.value.join("\n")
+        : String(limitationsProperty.value);
     }
 
     const prohibitedUsesProperty = root.additionalProperty.find(
       (p) => p.name === "Prohibited Uses"
     );
     if (prohibitedUsesProperty) {
-      prohibited_uses = prohibitedUsesProperty.value;
+      prohibited_uses = Array.isArray(prohibitedUsesProperty.value)
+        ? prohibitedUsesProperty.value.join("\n")
+        : String(prohibitedUsesProperty.value);
     }
 
     const maintenancePlanProperty = root.additionalProperty.find(
       (p) => p.name === "Maintenance Plan"
     );
     if (maintenancePlanProperty) {
-      maintenance_plan = maintenancePlanProperty.value;
+      maintenance_plan = Array.isArray(maintenancePlanProperty.value)
+        ? maintenancePlanProperty.value.join("\n")
+        : String(maintenancePlanProperty.value);
     }
   }
 
@@ -221,16 +335,36 @@ export const processDistribution = (metadata: Metadata): DistributionData => {
   const root = findRootEntity(graph);
   if (!root) return {};
 
-  const publisher = resolveLink(root.publisher, graph);
+  const publisherValue = root.publisher || root.sdPublisher;
+  const publisher = resolveLink(publisherValue, graph);
 
   let doi;
+  const identifiers = Array.isArray(root.identifier)
+    ? root.identifier
+    : root.identifier
+    ? [root.identifier]
+    : [];
+  const doiObject = identifiers.find(
+    (id) =>
+      typeof id === "object" && id !== null && (id as any).propertyID === "doi"
+  );
+  if (doiObject) {
+    doi = (doiObject as any).value || (doiObject as any)["@id"];
+  } else {
+    const doiString = identifiers.find(
+      (id) =>
+        typeof id === "string" &&
+        (id.startsWith("https://doi.org/") || id.startsWith("doi:"))
+    );
+    if (doiString) doi = doiString;
+  }
   if (
-    root.identifier &&
-    typeof root.identifier === "string" &&
-    (root.identifier.startsWith("https://doi.org/") ||
-      root.identifier.startsWith("doi:"))
+    doi &&
+    typeof doi === "string" &&
+    !doi.startsWith("https://doi.org/") &&
+    !doi.startsWith("doi:")
   ) {
-    doi = root.identifier;
+    doi = `https://doi.org/${doi.replace(/^doi:\s*/, "")}`;
   }
 
   let license_value = "";
@@ -246,10 +380,14 @@ export const processDistribution = (metadata: Metadata): DistributionData => {
 
   return {
     publisher: publisher || undefined,
-    host: root.distributionHost || undefined,
+    host:
+      (root as any).distributionHost ||
+      (root.distribution as any)?.contentUrl ||
+      undefined,
     license_value: license_value || undefined,
     doi: doi,
-    release_date: root.datePublished || undefined,
+    release_date:
+      root.datePublished || root.dateCreated || root.dateModified || undefined,
     version: root.version || undefined,
   };
 };
@@ -289,13 +427,39 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
         const partId = partRef["@id"];
         const partEntity = graph.find((e) => e["@id"] === partId);
 
-        if (partEntity) {
-          let metadataPath = (partEntity as any)["ro-crate-metadata"] || null;
+        if (
+          partEntity &&
+          (Array.isArray(partEntity["@type"])
+            ? partEntity["@type"].includes("https://w3id.org/EVI#ROCrate") ||
+              partEntity["@type"].includes("Dataset")
+            : partEntity["@type"] === "https://w3id.org/EVI#ROCrate" ||
+              partEntity["@type"] === "Dataset")
+        ) {
+          let metadataPath =
+            (partEntity as any)["ro-crate-metadata"] ||
+            (partId.endsWith("/")
+              ? `${partId}ro-crate-metadata.json`
+              : `${partId}/ro-crate-metadata.json`);
+          if (partId === "./") {
+            metadataPath = "ro-crate-metadata.json";
+          }
 
           let authors = "";
           if (partEntity.author) {
             if (Array.isArray(partEntity.author)) {
-              authors = partEntity.author.join("; ");
+              authors = partEntity.author
+                .map((a) =>
+                  typeof a === "object" && a !== null && a.name
+                    ? a.name
+                    : String(a)
+                )
+                .join("; ");
+            } else if (
+              typeof partEntity.author === "object" &&
+              partEntity.author !== null &&
+              (partEntity.author as any).name
+            ) {
+              authors = (partEntity.author as any).name;
             } else {
               authors = String(partEntity.author);
             }
@@ -304,52 +468,128 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
           let keywords: string[] = [];
           if (partEntity.keywords) {
             if (Array.isArray(partEntity.keywords)) {
-              keywords = partEntity.keywords as string[];
+              keywords = partEntity.keywords.map((k) => String(k));
             } else if (typeof partEntity.keywords === "string") {
-              keywords = [partEntity.keywords as string];
+              keywords = partEntity.keywords
+                .split(/[,;]\s*/)
+                .map((k) => k.trim())
+                .filter((k) => k);
             }
           }
 
           let related_publications: string[] = [];
           if (partEntity.associatedPublication) {
-            if (Array.isArray(partEntity.associatedPublication)) {
-              related_publications =
-                partEntity.associatedPublication as string[];
-            } else if (typeof partEntity.associatedPublication === "string") {
-              related_publications = [
-                partEntity.associatedPublication as string,
-              ];
-            }
+            const pubs = Array.isArray(partEntity.associatedPublication)
+              ? partEntity.associatedPublication
+              : [partEntity.associatedPublication];
+            related_publications = pubs
+              .map((pub) => {
+                if (typeof pub === "string") return pub;
+                if (typeof pub === "object" && pub !== null) {
+                  return (
+                    pub["@id"] ||
+                    pub.citation ||
+                    pub.name ||
+                    JSON.stringify(pub)
+                  );
+                }
+                return String(pub);
+              })
+              .filter(Boolean);
           }
 
           let previewUrl = null;
-          if (metadataPath) {
+          if (metadataPath && typeof metadataPath === "string") {
             const basePath = metadataPath.substring(
               0,
               metadataPath.lastIndexOf("/")
             );
             previewUrl = `/data/${basePath}/ro-crate-preview.html`;
+            if (basePath === "" && partId !== "./") {
+              previewUrl = `/data/${partId
+                .replace(/^\.\//, "")
+                .replace(/\/$/, "")}/ro-crate-preview.html`;
+            } else if (partId === "./") {
+              previewUrl = `/data/ro-crate-preview.html`;
+            }
+          }
+
+          let subcrateDOI;
+          const subIdentifiers = Array.isArray(partEntity.identifier)
+            ? partEntity.identifier
+            : partEntity.identifier
+            ? [partEntity.identifier]
+            : [];
+          const subDoiObject = subIdentifiers.find(
+            (id) =>
+              typeof id === "object" &&
+              id !== null &&
+              (id as any).propertyID === "doi"
+          );
+          if (subDoiObject) {
+            subcrateDOI =
+              (subDoiObject as any).value || (subDoiObject as any)["@id"];
+          } else {
+            const subDoiString = subIdentifiers.find(
+              (id) =>
+                typeof id === "string" &&
+                (id.startsWith("https://doi.org/") || id.startsWith("doi:"))
+            );
+            if (subDoiString) subcrateDOI = subDoiString;
+          }
+          if (
+            subcrateDOI &&
+            typeof subcrateDOI === "string" &&
+            !subcrateDOI.startsWith("https://doi.org/") &&
+            !subcrateDOI.startsWith("doi:")
+          ) {
+            subcrateDOI = `https://doi.org/${subcrateDOI.replace(
+              /^doi:\s*/,
+              ""
+            )}`;
           }
 
           return {
             id: partEntity["@id"],
             name:
               partEntity.name ||
-              partEntity["@id"]?.split("/").pop() ||
+              (typeof partEntity["@id"] === "string"
+                ? partEntity["@id"]
+                    .replace(/^\.\//, "")
+                    .split("/")
+                    .filter(Boolean)
+                    .pop()
+                : undefined) ||
               partEntity["@id"],
             description: partEntity.description || undefined,
             authors: authors || undefined,
-            date: partEntity.datePublished || undefined,
+            date:
+              partEntity.datePublished ||
+              partEntity.dateCreated ||
+              partEntity.dateModified ||
+              undefined,
             size: partEntity.contentSize || undefined,
-            doi: partEntity.identifier || undefined,
-            contact: partEntity.contactEmail || undefined,
+            doi: subcrateDOI || undefined,
+            contact:
+              partEntity.contactPoint?.email ||
+              (partEntity as any).contactEmail ||
+              undefined,
             license:
               (partEntity.license as any)?.["@id"] ||
               partEntity.license ||
               undefined,
-            keywords: keywords,
-            funder: partEntity.funder || undefined,
-            related_publications: related_publications,
+            keywords: keywords.length > 0 ? keywords : undefined,
+            funder: partEntity.funder
+              ? Array.isArray(partEntity.funder)
+                ? partEntity.funder
+                    .map((f) => (f as any).name || String(f))
+                    .join("; ")
+                : (partEntity.funder as any).name || String(partEntity.funder)
+              : undefined,
+            related_publications:
+              related_publications.length > 0
+                ? related_publications
+                : undefined,
             metadataPath: metadataPath,
             previewUrl: previewUrl,
           } as SubcrateSummary;
@@ -360,203 +600,4 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
     .filter((ref): ref is SubcrateSummary => ref !== null);
 
   return { subcrates: subcrateRefs };
-};
-
-export const processSingleSubcrateDetails = (
-  subcrateMetadata: Metadata,
-  basePath: string
-): Omit<SubcrateSummary, "id" | "metadataPath" | "previewUrl"> => {
-  const graph = (subcrateMetadata["@graph"] as RawGraphEntity[]) || [];
-  const root = findRootEntity(graph);
-  if (!root)
-    return {
-      name: "Error: No root found",
-      error: "Invalid sub-crate metadata",
-    };
-
-  let authors = "";
-  if (root.author) {
-    if (Array.isArray(root.author)) {
-      authors = root.author.join("; ");
-    } else {
-      authors = root.author.toString();
-    }
-  } else if (root.creator) {
-    if (Array.isArray(root.creator)) {
-      authors = root.creator.map((c) => resolveLink(c, graph)).join(", ");
-    } else {
-      authors = resolveLink(root.creator, graph);
-    }
-  }
-
-  let keywords: string[] = [];
-  if (root.keywords) {
-    if (Array.isArray(root.keywords)) {
-      keywords = root.keywords as string[];
-    } else if (typeof root.keywords === "string") {
-      keywords = [root.keywords as string];
-    }
-  }
-
-  let related_publications: string[] = [];
-  if (root.associatedPublication) {
-    if (Array.isArray(root.associatedPublication)) {
-      related_publications = root.associatedPublication as string[];
-    } else if (typeof root.associatedPublication === "string") {
-      related_publications = [root.associatedPublication as string];
-    }
-  }
-
-  return {
-    name: root.name || "Untitled Sub-Crate",
-    description: root.description,
-    authors: authors,
-    date: root.datePublished,
-    size: root.contentSize,
-    doi: root.identifier,
-    contact: root.contactEmail,
-    license: (root.license as any)?.["@id"] || root.license || undefined,
-    keywords: keywords,
-    funder: root.funder,
-    related_publications: related_publications,
-  };
-};
-
-export interface FallbackMetadataItem {
-  key: string;
-  label: string;
-  value: any;
-}
-
-export const processFallbackMetadata = (
-  metadata: Metadata
-): FallbackMetadataItem[] => {
-  return Object.entries(metadata)
-    .filter(([key]) => key !== "@context")
-    .map(([key, value]) => ({
-      key: key,
-      label: key,
-      value: value,
-    }));
-};
-
-export const determineReleaseType = (metadata: Metadata): string => {
-  const hasGraph =
-    metadata["@graph"] &&
-    Array.isArray(metadata["@graph"]) &&
-    metadata["@graph"].length > 0;
-
-  let root: RawGraphEntity;
-
-  if (hasGraph) {
-    const graph = metadata["@graph"] as RawGraphEntity[];
-    const foundRoot = findRootEntity(graph);
-    if (!foundRoot) {
-      return "unknown";
-    }
-    root = foundRoot;
-  } else {
-    root = metadata as unknown as RawGraphEntity;
-  }
-
-  const jsonLdTypes = Array.isArray(root["@type"])
-    ? root["@type"]
-    : ([root["@type"]].filter(Boolean) as string[]);
-
-  const isROCrate =
-    jsonLdTypes.includes("https://w3id.org/EVI#ROCrate") ||
-    jsonLdTypes.some((type) => type && type.toLowerCase().includes("rocrate"));
-
-  let hasROCrateParts = false;
-
-  if (hasGraph) {
-    const graph = metadata["@graph"] as RawGraphEntity[];
-
-    hasROCrateParts =
-      root.hasPart &&
-      (Array.isArray(root.hasPart)
-        ? root.hasPart.some((part) => {
-            if (typeof part === "object" && part["@id"]) {
-              const partEntity = graph.find((e) => e["@id"] === part["@id"]);
-              if (partEntity && partEntity["@type"]) {
-                const partTypes = (
-                  Array.isArray(partEntity["@type"])
-                    ? partEntity["@type"]
-                    : [partEntity["@type"]]
-                ) as string[];
-                return partTypes.some(
-                  (type) =>
-                    type === "https://w3id.org/EVI#ROCrate" ||
-                    (type && type.toLowerCase().includes("rocrate"))
-                );
-              }
-            }
-            return false;
-          })
-        : typeof root.hasPart === "object" &&
-          (root.hasPart as any)["@id"] &&
-          (() => {
-            const partEntity = graph.find(
-              (e) => e["@id"] === (root.hasPart as any)["@id"]
-            );
-            if (partEntity && partEntity["@type"]) {
-              const partTypes = (
-                Array.isArray(partEntity["@type"])
-                  ? partEntity["@type"]
-                  : [partEntity["@type"]]
-              ) as string[];
-              return partTypes.some(
-                (type) =>
-                  type === "https://w3id.org/EVI#ROCrate" ||
-                  (type && type.toLowerCase().includes("rocrate"))
-              );
-            }
-            return false;
-          })());
-  }
-
-  if (isROCrate && hasROCrateParts) {
-    return "release";
-  } else if (isROCrate) {
-    return "rocrate";
-  } else if (
-    jsonLdTypes.includes("https://w3id.org/EVI#Dataset") ||
-    jsonLdTypes.includes("Dataset") ||
-    jsonLdTypes.includes("EVI:Dataset")
-  ) {
-    return "dataset";
-  } else if (
-    jsonLdTypes.includes("https://w3id.org/EVI#Software") ||
-    jsonLdTypes.includes("Software") ||
-    jsonLdTypes.includes("SoftwareApplication") ||
-    jsonLdTypes.includes("SoftwareSourceCode")
-  ) {
-    return "software";
-  } else if (
-    jsonLdTypes.includes("https://w3id.org/EVI#Computation") ||
-    jsonLdTypes.includes("Computation") ||
-    jsonLdTypes.includes("ComputationalWorkflow") ||
-    jsonLdTypes.includes("HowTo")
-  ) {
-    return "computation";
-  } else if (
-    jsonLdTypes.includes("Schema") ||
-    jsonLdTypes.includes("evi:schema") ||
-    jsonLdTypes.includes("EVI:Schema")
-  ) {
-    return "schema";
-  } else if (
-    jsonLdTypes.includes("EvidenceGraph") ||
-    jsonLdTypes.includes("EVI:EvidenceGraph") ||
-    jsonLdTypes.includes("evi:EvidenceGraph")
-  ) {
-    return "evidencegraph";
-  } else {
-    return (
-      jsonLdTypes[0]
-        ?.split(/[#\/\\]/)
-        .pop()
-        ?.toLowerCase() || "unknown"
-    );
-  }
 };

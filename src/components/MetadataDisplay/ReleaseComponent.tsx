@@ -1,4 +1,3 @@
-// src/components/MetadataDisplay/ReleaseComponent.tsx
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { Metadata } from "../../types";
@@ -12,7 +11,10 @@ import {
   DistributionData,
   CompositionData,
 } from "../../utils/metadataProcessing";
-import OverviewSection from "./OverviewSection";
+import ConfigurableMetadataTable from "./ConfigurableMetadataTable";
+import { MetadataProperty } from "./metadataPropertyLists";
+import AdditionalPropertiesSection from "./AdditionalPropertiesSection";
+
 import UseCasesSection from "./UseCasesSection";
 import DistributionSection from "./DistributionSection";
 import CompositionSection from "./CompositionSection";
@@ -23,14 +25,27 @@ const Container = styled.div`
   width: 100%;
 `;
 
-const SectionHeader = styled.div`
-  margin: ${({ theme }) => theme.spacing.md} 0;
-  h2 {
-    font-size: 20px;
-    color: ${({ theme }) => theme.colors.primary};
-    margin-top: 0;
-  }
-`;
+const releaseMainProperties: MetadataProperty[] = [
+  { key: "id_value", name: "ARK Identifier" },
+  { key: "doi", name: "DOI" },
+  { key: "description", name: "Description" },
+  { key: "externalUrl", name: "External URL" },
+  { key: "release_date", name: "Release Date" },
+  { key: "authors", name: "Author(s)" },
+  { key: "publisher", name: "Publisher" },
+  { key: "principal_investigator", name: "Principal Investigator" },
+  { key: "contact_email", name: "Contact Email" },
+  { key: "license_value", name: "License" },
+  { key: "copyright", name: "Copyright" },
+  { key: "content_size", name: "Content Size" },
+  { key: "confidentiality_level", name: "Confidentiality Level" },
+  { key: "keywords", name: "Keywords" },
+  { key: "citation", name: "Citation" },
+  { key: "human_subject", name: "Human Subject Data" },
+  { key: "funding", name: "Funding" },
+  { key: "completeness", name: "Completeness" },
+  { key: "related_publications", name: "Related Publications" },
+];
 
 interface ReleaseComponentProps {
   metadata: Metadata;
@@ -44,7 +59,6 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Processed data
   const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
   const [useCasesData, setUseCasesData] = useState<UseCasesData | null>(null);
   const [distributionData, setDistributionData] =
@@ -55,13 +69,11 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
   useEffect(() => {
     try {
       setLoading(true);
-
-      // Process the metadata using utility functions
-      setOverviewData(processOverview(metadata));
+      const processedOverview = processOverview(metadata);
+      setOverviewData(processedOverview);
       setUseCasesData(processUseCases(metadata));
       setDistributionData(processDistribution(metadata));
       setCompositionData(processCompositionRefs(metadata));
-
       setLoading(false);
     } catch (err: any) {
       console.error("Error processing metadata:", err);
@@ -75,13 +87,22 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
 
   return (
     <Container>
-      {overviewData && <OverviewSection overviewData={overviewData} />}
-      {useCasesData && <UseCasesSection useCasesData={useCasesData} />}
+      {overviewData && (
+        <ConfigurableMetadataTable
+          title="Release Details"
+          data={overviewData}
+          properties={releaseMainProperties}
+        />
+      )}
+
+      {overviewData && overviewData.additionalCustomProperties && (
+        <AdditionalPropertiesSection
+          properties={overviewData.additionalCustomProperties}
+        />
+      )}
 
       {compositionData && compositionData.subcrates.length > 0 && (
-        <>
-          <CompositionSection compositionData={compositionData} />
-        </>
+        <CompositionSection compositionData={compositionData} />
       )}
 
       {distributionData && (
