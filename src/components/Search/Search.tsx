@@ -54,13 +54,15 @@ const SearchButton = styled.button<{ isLoading?: boolean }>`
   }
 `;
 
-const ComingSoonButton = styled(SearchButton)`
-  background-color: ${({ theme }) => theme.colors.textSecondary};
-  cursor: not-allowed;
-  opacity: 0.5;
+const SemanticSearchButton = styled(SearchButton)`
+  background-color: ${({ theme, isLoading }) =>
+    isLoading
+      ? theme.colors.secondary || theme.colors.primaryLight
+      : theme.colors.secondary || "#6B46C1"};
 
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.textSecondary};
+  &:hover:not(:disabled) {
+    background-color: ${({ theme }) =>
+      theme.colors.secondaryLight || "#7C3AED"};
   }
 `;
 
@@ -211,6 +213,7 @@ interface SearchDisplayInfo {
   totalResults?: number;
   timeTakenMs?: number;
   error?: string;
+  searchType?: "basic" | "semantic";
 }
 
 const Search: React.FC = () => {
@@ -221,7 +224,7 @@ const Search: React.FC = () => {
   const [searchDisplayInfo, setSearchDisplayInfo] =
     useState<SearchDisplayInfo | null>(null);
 
-  const handleSearch = async () => {
+  const handleSearch = async (searchType: "basic" | "semantic" = "basic") => {
     if (!query.trim()) return;
 
     setLoading(true);
@@ -230,7 +233,7 @@ const Search: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_URL}/search/basic?query=${encodeURIComponent(query)}`
+        `${API_URL}/search/${searchType}?query=${encodeURIComponent(query)}`
       );
 
       if (!response.ok) {
@@ -254,6 +257,7 @@ const Search: React.FC = () => {
         query: data.query,
         totalResults: data.total_results,
         timeTakenMs: data.time_taken_ms,
+        searchType: searchType,
       });
     } catch (error) {
       console.error("Search error:", error);
@@ -261,6 +265,7 @@ const Search: React.FC = () => {
       setSearchDisplayInfo({
         query: query,
         error: (error as Error).message,
+        searchType: searchType,
       });
     } finally {
       setLoading(false);
@@ -269,7 +274,7 @@ const Search: React.FC = () => {
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      handleSearch();
+      handleSearch("basic");
     }
   };
 
@@ -288,13 +293,19 @@ const Search: React.FC = () => {
           disabled={loading}
         />
         <SearchButton
-          onClick={handleSearch}
+          onClick={() => handleSearch("basic")}
           disabled={loading || !query.trim()}
           isLoading={loading}
         >
           {loading ? <LoadingSpinner /> : "Basic Search"}
         </SearchButton>
-        <ComingSoonButton disabled>Semantic Search (Soon)</ComingSoonButton>
+        <SemanticSearchButton
+          onClick={() => handleSearch("semantic")}
+          disabled={loading || !query.trim()}
+          isLoading={loading}
+        >
+          {loading ? <LoadingSpinner /> : "Semantic Search"}
+        </SemanticSearchButton>
       </SearchBox>
 
       {searchPerformed && (
@@ -302,8 +313,11 @@ const Search: React.FC = () => {
           {searchDisplayInfo && !searchDisplayInfo.error ? (
             <SearchMetadataDisplay>
               <strong>Search:</strong> {searchDisplayInfo.query} |
-              <strong> Method:</strong> Basic Text Search |
-              <strong> Results:</strong> {searchDisplayInfo.totalResults} |
+              <strong> Method:</strong>{" "}
+              {searchDisplayInfo.searchType === "semantic"
+                ? "Semantic Search"
+                : "Basic Text Search"}{" "}
+              |<strong> Results:</strong> {searchDisplayInfo.totalResults} |
               <strong> Time:</strong>{" "}
               {searchDisplayInfo.timeTakenMs?.toFixed(0)}ms
             </SearchMetadataDisplay>

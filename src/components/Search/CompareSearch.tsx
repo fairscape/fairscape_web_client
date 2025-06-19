@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 
-// Use a different API URL than your main app
-const SEARCH_API_URL =
-  import.meta.env.VITE_SEARCH_API_URL || "http://localhost:5050/api";
+const API_URL = window.API_URL;
 
 const CompareContainer = styled.div`
   max-width: 1200px;
@@ -49,54 +47,6 @@ const SearchButton = styled.button<{ isLoading?: boolean }>`
     opacity: 0.7;
     cursor: not-allowed;
   }
-`;
-
-const MethodsGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: ${({ theme }) => theme.spacing.lg};
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const SearchMethodsContainer = styled.fieldset`
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  padding: ${({ theme }) => theme.spacing.md};
-`;
-
-const SearchMethodsLegend = styled.legend`
-  padding: 0 ${({ theme }) => theme.spacing.sm};
-  color: ${({ theme }) => theme.colors.primary};
-  font-weight: 600;
-`;
-
-const RadioGroupContainer = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.spacing.md};
-  flex-direction: column;
-
-  @media (min-width: 768px) {
-    flex-direction: row;
-  }
-`;
-
-const RadioLabel = styled.label`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.xs};
-  cursor: pointer;
-
-  &:hover {
-    color: ${({ theme }) => theme.colors.primary};
-  }
-`;
-
-const RadioInput = styled.input`
-  cursor: pointer;
 `;
 
 const MetadataContainer = styled.div`
@@ -196,6 +146,16 @@ const ResultTitle = styled.h3`
   color: ${({ theme }) => theme.colors.text};
   margin: 0;
   font-size: 1.15rem;
+  word-break: break-word;
+`;
+
+const ResultTitleLink = styled.a`
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const ResultId = styled.p`
@@ -203,6 +163,16 @@ const ResultId = styled.p`
   font-size: 0.85rem;
   margin-top: ${({ theme }) => theme.spacing.xs};
   margin-bottom: ${({ theme }) => theme.spacing.sm};
+  word-break: break-all;
+`;
+
+const ResultIdLink = styled.a`
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const ResultDescription = styled.p`
@@ -213,7 +183,7 @@ const ResultDescription = styled.p`
 const ScoreBadge = styled.span<{ score: number }>`
   background-color: ${({ theme, score }) =>
     score > 0.7
-      ? theme.colors.success
+      ? theme.colors.success || "#4CAF50"
       : score > 0.5
       ? theme.colors.primary
       : theme.colors.textSecondary};
@@ -273,98 +243,86 @@ interface SearchMetadataInfo {
 
 const CompareSearch: React.FC = () => {
   const [query, setQuery] = useState("");
-  const [leftSearchType, setLeftSearchType] = useState("semantic");
-  const [rightSearchType, setRightSearchType] = useState("tfidf");
-  const [leftResults, setLeftResults] = useState<SearchResult[]>([]);
-  const [rightResults, setRightResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState({ left: false, right: false });
+  const [basicResults, setBasicResults] = useState<SearchResult[]>([]);
+  const [semanticResults, setSemanticResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState({ basic: false, semantic: false });
   const [searchPerformed, setSearchPerformed] = useState(false);
-  const [leftMetadata, setLeftMetadata] = useState<SearchMetadataInfo | null>(
+  const [basicMetadata, setBasicMetadata] = useState<SearchMetadataInfo | null>(
     null
   );
-  const [rightMetadata, setRightMetadata] = useState<SearchMetadataInfo | null>(
-    null
-  );
+  const [semanticMetadata, setSemanticMetadata] =
+    useState<SearchMetadataInfo | null>(null);
 
-  const handleSearch = async (side: "left" | "right") => {
+  const handleSearch = async (searchType: "basic" | "semantic") => {
     if (!query.trim()) return;
 
-    setLoading((prev) => ({ ...prev, [side]: true }));
+    setLoading((prev) => ({ ...prev, [searchType]: true }));
     setSearchPerformed(true);
-
-    const searchType = side === "left" ? leftSearchType : rightSearchType;
 
     try {
       const response = await fetch(
-        `${SEARCH_API_URL}/search?query=${encodeURIComponent(
-          query
-        )}&type=${searchType}`
+        `${API_URL}/search/${searchType}?query=${encodeURIComponent(query)}`
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response
+          .json()
+          .catch(() => ({ detail: "Unknown server error" }));
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
       }
 
       const data = await response.json();
 
-      if (side === "left") {
-        setLeftResults(data.results || []);
-        setLeftMetadata({
+      const normalizedResults = data.results.map((result: any) => ({
+        ...result,
+        id: result["@id"] || result.id,
+      }));
+
+      if (searchType === "basic") {
+        setBasicResults(normalizedResults || []);
+        setBasicMetadata({
           query: data.query,
           totalResults: data.total_results,
-          timeTaken: data.time_taken,
-          searchType: data.search_type,
+          timeTaken: data.time_taken_ms / 1000,
+          searchType: "Basic Text Search",
         });
       } else {
-        setRightResults(data.results || []);
-        setRightMetadata({
+        setSemanticResults(normalizedResults || []);
+        setSemanticMetadata({
           query: data.query,
           totalResults: data.total_results,
-          timeTaken: data.time_taken,
-          searchType: data.search_type,
+          timeTaken: data.time_taken_ms / 1000,
+          searchType: "Semantic Search",
         });
       }
     } catch (error) {
       console.error("Search error:", error);
-      if (side === "left") {
-        setLeftResults([]);
-        setLeftMetadata({
+      if (searchType === "basic") {
+        setBasicResults([]);
+        setBasicMetadata({
           error: (error as Error).message,
         });
       } else {
-        setRightResults([]);
-        setRightMetadata({
+        setSemanticResults([]);
+        setSemanticMetadata({
           error: (error as Error).message,
         });
       }
     } finally {
-      setLoading((prev) => ({ ...prev, [side]: false }));
+      setLoading((prev) => ({ ...prev, [searchType]: false }));
     }
   };
 
   const handleCompare = () => {
-    handleSearch("left");
-    handleSearch("right");
+    handleSearch("basic");
+    handleSearch("semantic");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleCompare();
-    }
-  };
-
-  const formatSearchType = (type?: string) => {
-    if (!type) return "";
-
-    switch (type) {
-      case "semantic":
-        return "Semantic Search";
-      case "tfidf":
-        return "TF-IDF Search";
-      case "basic":
-        return "Basic Text Search";
-      default:
-        return type;
     }
   };
 
@@ -383,118 +341,40 @@ const CompareSearch: React.FC = () => {
         />
         <SearchButton
           onClick={handleCompare}
-          disabled={loading.left || loading.right || !query.trim()}
-          isLoading={loading.left || loading.right}
+          disabled={loading.basic || loading.semantic || !query.trim()}
+          isLoading={loading.basic || loading.semantic}
         >
-          {loading.left || loading.right ? <LoadingSpinner /> : "Compare"}
+          {loading.basic || loading.semantic ? <LoadingSpinner /> : "Compare"}
         </SearchButton>
       </SearchBox>
-
-      <MethodsGrid>
-        <SearchMethodsContainer>
-          <SearchMethodsLegend>Left Search Method</SearchMethodsLegend>
-          <RadioGroupContainer>
-            <RadioLabel>
-              <RadioInput
-                type="radio"
-                name="left-search-type"
-                value="semantic"
-                checked={leftSearchType === "semantic"}
-                onChange={(e) => setLeftSearchType(e.target.value)}
-              />
-              Semantic
-            </RadioLabel>
-            <RadioLabel>
-              <RadioInput
-                type="radio"
-                name="left-search-type"
-                value="tfidf"
-                checked={leftSearchType === "tfidf"}
-                onChange={(e) => setLeftSearchType(e.target.value)}
-              />
-              TF-IDF
-            </RadioLabel>
-            <RadioLabel>
-              <RadioInput
-                type="radio"
-                name="left-search-type"
-                value="basic"
-                checked={leftSearchType === "basic"}
-                onChange={(e) => setLeftSearchType(e.target.value)}
-              />
-              Basic
-            </RadioLabel>
-          </RadioGroupContainer>
-        </SearchMethodsContainer>
-
-        <SearchMethodsContainer>
-          <SearchMethodsLegend>Right Search Method</SearchMethodsLegend>
-          <RadioGroupContainer>
-            <RadioLabel>
-              <RadioInput
-                type="radio"
-                name="right-search-type"
-                value="semantic"
-                checked={rightSearchType === "semantic"}
-                onChange={(e) => setRightSearchType(e.target.value)}
-              />
-              Semantic
-            </RadioLabel>
-            <RadioLabel>
-              <RadioInput
-                type="radio"
-                name="right-search-type"
-                value="tfidf"
-                checked={rightSearchType === "tfidf"}
-                onChange={(e) => setRightSearchType(e.target.value)}
-              />
-              TF-IDF
-            </RadioLabel>
-            <RadioLabel>
-              <RadioInput
-                type="radio"
-                name="right-search-type"
-                value="basic"
-                checked={rightSearchType === "basic"}
-                onChange={(e) => setRightSearchType(e.target.value)}
-              />
-              Basic
-            </RadioLabel>
-          </RadioGroupContainer>
-        </SearchMethodsContainer>
-      </MethodsGrid>
 
       {searchPerformed && (
         <MetadataContainer>
           <MetadataBox>
-            {leftMetadata && !leftMetadata.error ? (
+            {basicMetadata && !basicMetadata.error ? (
               <>
-                <MetadataTitle>
-                  {formatSearchType(leftMetadata.searchType)}
-                </MetadataTitle>
+                <MetadataTitle>Basic Text Search</MetadataTitle>
                 <MetadataDetails>
-                  Results: {leftMetadata.totalResults} | Time:{" "}
-                  {leftMetadata.timeTaken?.toFixed(3)}s
+                  Results: {basicMetadata.totalResults} | Time:{" "}
+                  {basicMetadata.timeTaken?.toFixed(0)}ms
                 </MetadataDetails>
               </>
-            ) : leftMetadata?.error ? (
-              <ErrorMetadata>Error: {leftMetadata.error}</ErrorMetadata>
+            ) : basicMetadata?.error ? (
+              <ErrorMetadata>Error: {basicMetadata.error}</ErrorMetadata>
             ) : null}
           </MetadataBox>
 
           <MetadataBox>
-            {rightMetadata && !rightMetadata.error ? (
+            {semanticMetadata && !semanticMetadata.error ? (
               <>
-                <MetadataTitle>
-                  {formatSearchType(rightMetadata.searchType)}
-                </MetadataTitle>
+                <MetadataTitle>Semantic Search</MetadataTitle>
                 <MetadataDetails>
-                  Results: {rightMetadata.totalResults} | Time:{" "}
-                  {rightMetadata.timeTaken?.toFixed(3)}s
+                  Results: {semanticMetadata.totalResults} | Time:{" "}
+                  {semanticMetadata.timeTaken?.toFixed(0)}sec
                 </MetadataDetails>
               </>
-            ) : rightMetadata?.error ? (
-              <ErrorMetadata>Error: {rightMetadata.error}</ErrorMetadata>
+            ) : semanticMetadata?.error ? (
+              <ErrorMetadata>Error: {semanticMetadata.error}</ErrorMetadata>
             ) : null}
           </MetadataBox>
         </MetadataContainer>
@@ -503,23 +383,31 @@ const CompareSearch: React.FC = () => {
       <ResultsGrid>
         <ResultsSection>
           <ResultsTitle>
-            {formatSearchType(leftSearchType)} Results
-            {loading.left && <LoadingIndicator />}
+            Basic Text Search Results
+            {loading.basic && <LoadingIndicator />}
           </ResultsTitle>
 
-          {leftResults.length > 0 ? (
-            leftResults.map((result, index) => (
-              <ResultCard key={`left-${result.id}`}>
+          {basicResults.length > 0 ? (
+            basicResults.map((result, index) => (
+              <ResultCard key={`basic-${result.id}`}>
                 <ResultHeader>
                   <ResultTitle>
-                    {index + 1}. {result.name || result.id}
+                    {index + 1}.{" "}
+                    <ResultTitleLink href={`/view/${result.id}`}>
+                      {result.name || "N/A"}
+                    </ResultTitleLink>
                   </ResultTitle>
                   <ScoreBadge score={result.score}>
                     {formatScore(result.score)}
                   </ScoreBadge>
                 </ResultHeader>
 
-                <ResultId>ID: {result.id}</ResultId>
+                <ResultId>
+                  ID:{" "}
+                  <ResultIdLink href={`/view/${result.id}`}>
+                    {result.id}
+                  </ResultIdLink>
+                </ResultId>
 
                 {result.description && (
                   <ResultDescription>{result.description}</ResultDescription>
@@ -534,30 +422,38 @@ const CompareSearch: React.FC = () => {
                 )}
               </ResultCard>
             ))
-          ) : searchPerformed && !loading.left ? (
+          ) : searchPerformed && !loading.basic ? (
             <NoResults>No results found.</NoResults>
           ) : null}
         </ResultsSection>
 
         <ResultsSection>
           <ResultsTitle>
-            {formatSearchType(rightSearchType)} Results
-            {loading.right && <LoadingIndicator />}
+            Semantic Search Results
+            {loading.semantic && <LoadingIndicator />}
           </ResultsTitle>
 
-          {rightResults.length > 0 ? (
-            rightResults.map((result, index) => (
-              <ResultCard key={`right-${result.id}`}>
+          {semanticResults.length > 0 ? (
+            semanticResults.map((result, index) => (
+              <ResultCard key={`semantic-${result.id}`}>
                 <ResultHeader>
                   <ResultTitle>
-                    {index + 1}. {result.name || result.id}
+                    {index + 1}.{" "}
+                    <ResultTitleLink href={`/view/${result.id}`}>
+                      {result.name || "N/A"}
+                    </ResultTitleLink>
                   </ResultTitle>
                   <ScoreBadge score={result.score}>
                     {formatScore(result.score)}
                   </ScoreBadge>
                 </ResultHeader>
 
-                <ResultId>ID: {result.id}</ResultId>
+                <ResultId>
+                  ID:{" "}
+                  <ResultIdLink href={`/view/${result.id}`}>
+                    {result.id}
+                  </ResultIdLink>
+                </ResultId>
 
                 {result.description && (
                   <ResultDescription>{result.description}</ResultDescription>
@@ -572,7 +468,7 @@ const CompareSearch: React.FC = () => {
                 )}
               </ResultCard>
             ))
-          ) : searchPerformed && !loading.right ? (
+          ) : searchPerformed && !loading.semantic ? (
             <NoResults>No results found.</NoResults>
           ) : null}
         </ResultsSection>
