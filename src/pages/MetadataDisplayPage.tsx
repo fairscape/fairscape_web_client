@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext, useMemo } from "react";
 import styled from "styled-components";
 
-import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 import ButtonGroup from "../components/MetadataDisplay/ButtonGroup";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import Alert from "../components/common/Alert";
@@ -9,18 +8,19 @@ import ReleaseComponent from "../components/MetadataDisplay/ReleaseComponent";
 import ROCrateComponent from "../components/MetadataDisplay/ROCrateComponent";
 import GenericMetadataComponent from "../components/MetadataDisplay/GenericMetadataComponent";
 import SerializationView from "../components/MetadataDisplay/SerializationView";
+import EvidenceGraphDisplayController from "../components/MetadataDisplay/EvidenceGraphDisplayController"; // New import
 
 import { AuthContext } from "../context/AuthContext";
 import metadataService from "../hooks/metadataService";
+import { useEvidenceGraphManager } from "../hooks/useEvidenceGraphManager";
 import { findRootEntity } from "../utils/metadataProcessing";
 
+import { RawGraphData, Metadata, RawGraphEntity } from "../types";
+
 import {
-  RawGraphData,
-  Metadata,
   SupportingElement,
   SupportData,
-  RawGraphEntity,
-} from "../types";
+} from "../components/EvidenceGraph/SupportingElementsComponent";
 
 const Container = styled.div`
   max-width: 1100px;
@@ -169,7 +169,7 @@ const traverseAndCollect = ({
   }
 };
 
-const extractSupportData = (
+export const extractSupportData = (
   graphData: RawGraphData | null
 ): SupportData | null => {
   if (!graphData || !graphData["@graph"]) {
@@ -208,24 +208,25 @@ const extractSupportData = (
   return hasData ? results : null;
 };
 
-const CenteredMessageWithSpinner: React.FC<{ message: string }> = ({
-  message,
-}) => (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "20px",
-    }}
-  >
-    <LoadingSpinner />
-    <p style={{ marginTop: "10px", color: "#666", textAlign: "center" }}>
-      {message}
-    </p>
-  </div>
-);
+const CenteredMessageWithSpinner: React.FC<{ message: string }> = styled(
+  ({ message, className }) => (
+    <div
+      className={className}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <LoadingSpinner />
+      <p style={{ marginTop: "10px", color: "#666", textAlign: "center" }}>
+        {message}
+      </p>
+    </div>
+  )
+)``;
 
 const MetadataDisplayPage: React.FC = () => {
   const location = window.location.pathname;
@@ -235,47 +236,32 @@ const MetadataDisplayPage: React.FC = () => {
   const [title, setTitle] = useState<string>("Data Display");
   const [version, setVersion] = useState<string>("1.0");
 
-  const [metadata, setMetadata] = useState<Metadata | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [initialMetadata, setInitialMetadata] = useState<Metadata | null>(null);
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const [initialError, setInitialError] = useState<string | null>(null);
   const [determinedType, setDeterminedType] = useState<string | null>(null);
-
-  const [evidenceGraphData, setEvidenceGraphData] =
-    useState<RawGraphData | null>(null);
-  const [supportData, setSupportData] = useState<SupportData | null>(null);
-  const [hasEvidenceGraphLink, setHasEvidenceGraphLink] =
+  const [initialHasEvidenceGraphLink, setInitialHasEvidenceGraphLink] =
     useState<boolean>(false);
-  const [currentEvidenceGraphId, setCurrentEvidenceGraphId] = useState<
+  const [initialEvidenceGraphId, setInitialEvidenceGraphId] = useState<
     string | null
   >(null);
-  const [evidenceGraphLoading, setEvidenceGraphLoading] =
-    useState<boolean>(false);
-  const [evidenceGraphError, setEvidenceGraphError] = useState<string | null>(
-    null
-  );
-  const [needsBuildAttempt, setNeedsBuildAttempt] = useState<boolean>(false);
 
   const { isLoggedIn } = useContext(AuthContext);
   const metadataServiceInstance = useMemo(() => metadataService(), []);
 
   useEffect(() => {
-    const fetchInitial = async () => {
+    const fetchInitialData = async () => {
       if (!arkId) {
-        setLoading(false);
-        setError("No ARK ID provided");
+        setInitialLoading(false);
+        setInitialError("No ARK ID provided");
         return;
       }
-      setLoading(true);
-      setError(null);
-      setMetadata(null);
+      setInitialLoading(true);
+      setInitialError(null);
+      setInitialMetadata(null);
       setDeterminedType(null);
-      setHasEvidenceGraphLink(false);
-      setCurrentEvidenceGraphId(null);
-      setEvidenceGraphData(null);
-      setSupportData(null);
-      setEvidenceGraphLoading(false);
-      setEvidenceGraphError(null);
-      setNeedsBuildAttempt(false);
+      setInitialHasEvidenceGraphLink(false);
+      setInitialEvidenceGraphId(null);
 
       try {
         const result = await metadataServiceInstance.fetchInitialMetadata(
@@ -283,10 +269,10 @@ const MetadataDisplayPage: React.FC = () => {
         );
         if (result.error) throw new Error(result.error);
 
-        setMetadata(result.metadata);
+        setInitialMetadata(result.metadata);
         setDeterminedType(result.type);
-        setHasEvidenceGraphLink(result.hasEvidenceGraph);
-        setCurrentEvidenceGraphId(result.evidenceGraphId);
+        setInitialHasEvidenceGraphLink(result.hasEvidenceGraph);
+        setInitialEvidenceGraphId(result.evidenceGraphId);
 
         if (result.metadata) {
           const graph = result.metadata["@graph"];
@@ -318,101 +304,50 @@ const MetadataDisplayPage: React.FC = () => {
           );
           setVersion(rootVersion);
         }
-        if (
-          !result.hasEvidenceGraph &&
-          result.type &&
-          !["release", "rocrate"].includes(result.type) &&
-          isLoggedIn
-        ) {
-          setNeedsBuildAttempt(true);
-        }
-        setLoading(false);
       } catch (err: any) {
-        setLoading(false);
-        setError(err.message || "Failed to fetch initial data");
+        setInitialError(err.message || "Failed to fetch initial data");
+      } finally {
+        setInitialLoading(false);
       }
     };
-    fetchInitial();
-  }, [arkId, isLoggedIn, metadataServiceInstance]);
+    fetchInitialData();
+  }, [arkId, metadataServiceInstance]);
 
-  useEffect(() => {
-    const manageGraph = async () => {
-      if (loading) return;
-
-      if (hasEvidenceGraphLink && currentEvidenceGraphId) {
-        setEvidenceGraphLoading(true);
-        setEvidenceGraphError(null);
-        try {
-          const graphData =
-            await metadataServiceInstance.fetchEvidenceGraphDataById(
-              currentEvidenceGraphId
-            );
-          if (graphData) {
-            setEvidenceGraphData(graphData);
-            setSupportData(extractSupportData(graphData));
-          } else {
-            throw new Error("Evidence graph data not found or fetch failed.");
-          }
-        } catch (err: any) {
-          setEvidenceGraphError(
-            err.message || "Failed to load evidence graph."
-          );
-        } finally {
-          setEvidenceGraphLoading(false);
-        }
-      } else if (needsBuildAttempt && arkId && isLoggedIn) {
-        setEvidenceGraphLoading(true);
-        setEvidenceGraphError(null);
-        try {
-          const buildResult =
-            await metadataServiceInstance.triggerEvidenceGraphBuild(arkId);
-          setNeedsBuildAttempt(false);
-
-          if (buildResult.error && !buildResult.hasEvidenceGraph) {
-            throw new Error(buildResult.error);
-          }
-
-          if (buildResult.updatedMetadata) {
-            setMetadata(buildResult.updatedMetadata);
-          }
-
-          setHasEvidenceGraphLink(buildResult.hasEvidenceGraph);
-          setCurrentEvidenceGraphId(buildResult.evidenceGraphId);
-          if (!buildResult.hasEvidenceGraph) {
-            setEvidenceGraphLoading(false);
-          }
-        } catch (err: any) {
-          setEvidenceGraphError(
-            err.message ||
-              "Failed to build or retrieve evidence graph after build attempt."
-          );
-          setEvidenceGraphLoading(false);
-        }
-      }
-    };
-
-    manageGraph();
-  }, [
-    loading,
+  const {
     hasEvidenceGraphLink,
     currentEvidenceGraphId,
-    needsBuildAttempt,
-    arkId,
+    evidenceGraphData,
+    supportData,
+    graphBuildStatus,
+    currentTaskId,
+    evidenceGraphError,
+    updatedMetadata,
+    isLoading: isGraphManagerLoading,
+  } = useEvidenceGraphManager({
+    arkId: arkId || null,
+    initialHasLink: initialHasEvidenceGraphLink,
+    initialGraphId: initialEvidenceGraphId,
+    initialMetadata: initialMetadata,
     isLoggedIn,
-    metadataServiceInstance,
-  ]);
+    itemType: determinedType,
+    extractSupportData,
+  });
+
+  const displayMetadata = updatedMetadata || initialMetadata;
 
   useEffect(() => {
     document.title = `${title} - FAIRSCAPE`;
   }, [title]);
 
   const renderContent = () => {
-    if (loading)
+    if (initialLoading)
       return <CenteredMessageWithSpinner message="Loading metadata..." />;
-    if (error)
-      return <Alert type="error" title="Error Loading Data" message={error} />;
+    if (initialError)
+      return (
+        <Alert type="error" title="Error Loading Data" message={initialError} />
+      );
 
-    if (view !== "graph" && !metadata) {
+    if (view !== "graph" && !displayMetadata) {
       return (
         <Alert
           type="info"
@@ -424,21 +359,25 @@ const MetadataDisplayPage: React.FC = () => {
 
     switch (view) {
       case "metadata":
-        if (!metadata)
+        if (!displayMetadata)
           return (
             <CenteredMessageWithSpinner message="Loading metadata details..." />
           );
         const metaType = determinedType || "unknown";
         switch (metaType) {
           case "release":
-            return <ReleaseComponent metadata={metadata} arkId={arkId} />;
+            return (
+              <ReleaseComponent metadata={displayMetadata} arkId={arkId} />
+            );
           case "rocrate":
-            return <ROCrateComponent metadata={metadata} arkId={arkId} />;
+            return (
+              <ROCrateComponent metadata={displayMetadata} arkId={arkId} />
+            );
           case "dataset":
           case "evi:dataset":
             return (
               <GenericMetadataComponent
-                metadata={metadata}
+                metadata={displayMetadata}
                 type="dataset"
                 arkId={arkId}
               />
@@ -447,7 +386,7 @@ const MetadataDisplayPage: React.FC = () => {
           case "evi:software":
             return (
               <GenericMetadataComponent
-                metadata={metadata}
+                metadata={displayMetadata}
                 type="software"
                 arkId={arkId}
               />
@@ -456,7 +395,7 @@ const MetadataDisplayPage: React.FC = () => {
           case "evi:computation":
             return (
               <GenericMetadataComponent
-                metadata={metadata}
+                metadata={displayMetadata}
                 type="computation"
                 arkId={arkId}
               />
@@ -465,7 +404,7 @@ const MetadataDisplayPage: React.FC = () => {
           case "evi:schema":
             return (
               <GenericMetadataComponent
-                metadata={metadata}
+                metadata={displayMetadata}
                 type="schema"
                 arkId={arkId}
               />
@@ -474,7 +413,7 @@ const MetadataDisplayPage: React.FC = () => {
           case "evi:instrument":
             return (
               <GenericMetadataComponent
-                metadata={metadata}
+                metadata={displayMetadata}
                 type="instrument"
                 arkId={arkId}
               />
@@ -483,7 +422,7 @@ const MetadataDisplayPage: React.FC = () => {
           case "evi:sample":
             return (
               <GenericMetadataComponent
-                metadata={metadata}
+                metadata={displayMetadata}
                 type="sample"
                 arkId={arkId}
               />
@@ -492,7 +431,7 @@ const MetadataDisplayPage: React.FC = () => {
           case "evi:experiment":
             return (
               <GenericMetadataComponent
-                metadata={metadata}
+                metadata={displayMetadata}
                 type="experiment"
                 arkId={arkId}
               />
@@ -508,13 +447,13 @@ const MetadataDisplayPage: React.FC = () => {
         }
 
       case "serialization":
-        if (!metadata)
+        if (!displayMetadata)
           return (
             <CenteredMessageWithSpinner message="Loading serialization data..." />
           );
         return (
           <SerializationView
-            json={JSON.stringify(metadata, null, 2)}
+            json={JSON.stringify(displayMetadata, null, 2)}
             rdfXml={null}
             turtle={null}
             showAllFormats={true}
@@ -522,58 +461,18 @@ const MetadataDisplayPage: React.FC = () => {
         );
 
       case "graph":
-        if (evidenceGraphLoading) {
-          return (
-            <CenteredMessageWithSpinner
-              message={
-                needsBuildAttempt
-                  ? "Attempting to build and load Evidence Graph..."
-                  : "Loading Evidence Graph data..."
-              }
-            />
-          );
-        }
-        if (evidenceGraphError) {
-          return (
-            <Alert
-              type="error"
-              title="Evidence Graph Error"
-              message={evidenceGraphError}
-            />
-          );
-        }
-        if (!hasEvidenceGraphLink && !needsBuildAttempt) {
-          return (
-            <Alert
-              type="info"
-              title="No Evidence Graph"
-              message="No evidence graph is associated with this item, or it could not be made available."
-            />
-          );
-        }
-        if (!evidenceGraphData && hasEvidenceGraphLink) {
-          return (
-            <CenteredMessageWithSpinner message="Preparing Evidence Graph..." />
-          );
-        }
-        if (!evidenceGraphData && !hasEvidenceGraphLink && needsBuildAttempt) {
-          return (
-            <CenteredMessageWithSpinner message="Evidence Graph is being prepared or was not found. Please check back or refresh." />
-          );
-        }
-        if (evidenceGraphData) {
-          return (
-            <EvidenceGraphViewer
-              evidenceGraphData={evidenceGraphData}
-              supportData={supportData}
-            />
-          );
-        }
         return (
-          <Alert
-            type="info"
-            title="Evidence Graph Status"
-            message="The evidence graph is either being prepared or is not available for this item."
+          <EvidenceGraphDisplayController
+            isGraphManagerLoading={isGraphManagerLoading}
+            graphBuildStatus={graphBuildStatus}
+            currentTaskId={currentTaskId}
+            evidenceGraphData={evidenceGraphData}
+            currentEvidenceGraphId={currentEvidenceGraphId}
+            evidenceGraphError={evidenceGraphError}
+            supportData={supportData}
+            isLoggedIn={isLoggedIn}
+            determinedType={determinedType}
+            hasEvidenceGraphLink={hasEvidenceGraphLink}
           />
         );
 
@@ -588,6 +487,16 @@ const MetadataDisplayPage: React.FC = () => {
     }
   };
 
+  const showEvidenceGraphButtonCondition =
+    hasEvidenceGraphLink ||
+    graphBuildStatus === "INITIATING" ||
+    graphBuildStatus === "POLLING" ||
+    graphBuildStatus === "SUCCESS" ||
+    (isLoggedIn &&
+      determinedType &&
+      !["release", "rocrate"].includes(determinedType) &&
+      (graphBuildStatus === "IDLE" || graphBuildStatus === "TIMED_OUT"));
+
   return (
     <Container>
       <Header>
@@ -598,9 +507,7 @@ const MetadataDisplayPage: React.FC = () => {
         <ButtonGroup
           currentView={view}
           onSelectView={(selectedView) => setView(selectedView as ViewType)}
-          showEvidenceGraphButton={
-            hasEvidenceGraphLink || needsBuildAttempt || evidenceGraphLoading
-          }
+          showEvidenceGraphButton={!!showEvidenceGraphButtonCondition}
           showExplorerButton={determinedType === "dataset"}
           explorerArkId={arkId}
         />

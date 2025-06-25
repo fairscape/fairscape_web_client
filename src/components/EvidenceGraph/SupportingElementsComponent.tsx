@@ -1,4 +1,3 @@
-// src/components/GraphViewer/SupportingElementsComponent.tsx
 import React, { useState, useMemo, ReactNode } from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";

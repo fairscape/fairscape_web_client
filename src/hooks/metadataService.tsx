@@ -2,22 +2,50 @@
 import axios from "axios";
 import { Metadata, RawGraphData, RawGraphEntity } from "../types";
 
-const API_URL =
-  window.API_URL;
+const API_URL = window.API_URL;
 
 export interface InitialMetadataResult {
   metadata: Metadata | null;
   type: string;
   error: string | null;
   hasEvidenceGraph: boolean;
-  evidenceGraphId: string | null; // ID of the evidence graph if it exists
+  evidenceGraphId: string | null;
 }
 
-export interface EvidenceGraphBuildResult {
+export interface EvidenceGraphBuildInitiateResult {
+  taskId: string | null;
+  statusEndpoint: string | null;
+  error: string | null;
+  message?: string;
+}
+
+export interface EvidenceGraphTaskStatus {
+  guid: string;
+  task_type: string;
+  owner_email: string;
+  naan: string;
+  postfix: string;
+  status: "PENDING" | "PROCESSING" | "SUCCESS" | "FAILURE";
+  time_created: string;
+  time_started?: string;
+  time_finished?: string;
+  result?: {
+    evidence_graph_id?: string;
+    [key: string]: any;
+  };
+  error?: {
+    message?: string;
+    details?: any;
+    [key: string]: any;
+  };
+}
+
+export interface PolledEvidenceGraphBuildResult {
   updatedMetadata: Metadata | null;
   hasEvidenceGraph: boolean;
   evidenceGraphId: string | null;
   error: string | null;
+  finalTaskStatus?: EvidenceGraphTaskStatus;
 }
 
 export const metadataService = () => {
@@ -30,7 +58,6 @@ export const metadataService = () => {
     return headers;
   };
 
-  // Fetches only the evidence graph data, given its ID
   const fetchEvidenceGraphDataById = async (
     graphId: string
   ): Promise<RawGraphData | null> => {
@@ -42,7 +69,7 @@ export const metadataService = () => {
         `${API_URL}/${graphId.replace(/^\/|\/$/g, "")}`,
         {
           headers: getTokenHeaders(),
-          timeout: 60000, // Longer timeout for potentially very large graphs
+          timeout: 60000,
         }
       );
       console.log(
@@ -58,88 +85,172 @@ export const metadataService = () => {
     }
   };
 
-  // Initiates the build process and checks if the graph becomes available by re-fetching metadata
-  const triggerEvidenceGraphBuild = async (
+  const initiateEvidenceGraphBuild = async (
     arkId: string
-  ): Promise<EvidenceGraphBuildResult> => {
+  ): Promise<EvidenceGraphBuildInitiateResult> => {
     const cleanArkId = arkId.replace(/^\/|\/$/g, "");
     console.log(
-      `[metadataService - triggerEvidenceGraphBuild] Initiating build for ARK ID: ${cleanArkId}`
+      `[metadataService - initiateEvidenceGraphBuild] Initiating build for ARK ID: ${cleanArkId}`
     );
     try {
       const headers = getTokenHeaders();
       if (!headers["Authorization"]) {
         console.warn(
-          "[metadataService - triggerEvidenceGraphBuild] No token, cannot initiate build."
+          "[metadataService - initiateEvidenceGraphBuild] No token, cannot initiate build."
         );
         return {
-          updatedMetadata: null,
-          hasEvidenceGraph: false,
-          evidenceGraphId: null,
+          taskId: null,
+          statusEndpoint: null,
           error: "User not logged in",
         };
       }
 
-      await axios.post(
+      const response = await axios.post(
         `${API_URL}/evidencegraph/build/${cleanArkId}`,
         {},
         { headers }
       );
       console.log(
-        `[metadataService - triggerEvidenceGraphBuild] Build request sent for ${cleanArkId}. Waiting for potential completion (5s)...`
-      );
-
-      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for backend
-
-      // Re-fetch the primary metadata to check for hasEvidenceGraph
-      const metadataResponse = await axios.get(`${API_URL}/${cleanArkId}`, {
-        headers,
-      });
-      const updatedMetadataObject = (metadataResponse.data.metadata ||
-        metadataResponse.data) as Metadata;
-
-      if (
-        updatedMetadataObject &&
-        (updatedMetadataObject as any).hasEvidenceGraph
-      ) {
-        const graphIdValue = (updatedMetadataObject as any).hasEvidenceGraph;
-        const finalGraphId =
-          typeof graphIdValue === "string" ? graphIdValue : graphIdValue["@id"];
-        console.log(
-          `[metadataService - triggerEvidenceGraphBuild] Build successful or graph link found, evidence graph ID: ${finalGraphId}`
-        );
-        return {
-          updatedMetadata: updatedMetadataObject,
-          hasEvidenceGraph: true,
-          evidenceGraphId: finalGraphId,
-          error: null,
-        };
-      }
-      console.log(
-        `[metadataService - triggerEvidenceGraphBuild] Build initiated, but hasEvidenceGraph not found in updated metadata for ${cleanArkId}.`
+        `[metadataService - initiateEvidenceGraphBuild] Build request sent for ${cleanArkId}. Task ID: ${response.data.task_id}`
       );
       return {
-        updatedMetadata: updatedMetadataObject,
-        hasEvidenceGraph: false,
-        evidenceGraphId: null,
+        taskId: response.data.task_id,
+        statusEndpoint: response.data.status_endpoint,
         error: null,
+        message: response.data.message,
       };
     } catch (error: any) {
       console.error(
-        `[metadataService - triggerEvidenceGraphBuild] Error during evidence graph build for ${cleanArkId}:`,
+        `[metadataService - initiateEvidenceGraphBuild] Error initiating evidence graph build for ${cleanArkId}:`,
         error
       );
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Failed to initiate evidence graph build";
       return {
-        updatedMetadata: null,
-        hasEvidenceGraph: false,
-        evidenceGraphId: null,
-        error:
-          error.message || "Failed to initiate or confirm evidence graph build",
+        taskId: null,
+        statusEndpoint: null,
+        error: errorMessage,
       };
     }
   };
 
-  // Fetches only the primary metadata and determines type and if an evidence graph *link* exists
+  const pollEvidenceGraphTaskStatus = async (
+    taskId: string,
+    arkIdToRefresh?: string,
+    pollingInterval: number = 5000,
+    maxAttempts: number = 24 // e.g., 2 minutes with 5s interval
+  ): Promise<PolledEvidenceGraphBuildResult> => {
+    console.log(
+      `[metadataService - pollEvidenceGraphTaskStatus] Polling for task ID: ${taskId}`
+    );
+    let attempts = 0;
+
+    const checkStatus = async (): Promise<PolledEvidenceGraphBuildResult> => {
+      attempts++;
+      try {
+        const response = await axios.get<EvidenceGraphTaskStatus>(
+          `${API_URL}/evidencegraph/build/status/${taskId}`,
+          { headers: getTokenHeaders() }
+        );
+        const taskData = response.data;
+
+        if (taskData.status === "SUCCESS") {
+          console.log(
+            `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} succeeded. Evidence Graph ID: ${taskData.result?.evidence_graph_id}`
+          );
+          let refreshedMetadata: Metadata | null = null;
+          if (arkIdToRefresh) {
+            try {
+              const metadataResponse = await axios.get(
+                `${API_URL}/${arkIdToRefresh.replace(/^\/|\/$/g, "")}`,
+                {
+                  headers: getTokenHeaders(),
+                }
+              );
+              refreshedMetadata = (metadataResponse.data.metadata ||
+                metadataResponse.data) as Metadata;
+            } catch (metaError) {
+              console.warn(
+                `[metadataService - pollEvidenceGraphTaskStatus] Failed to refresh primary metadata for ${arkIdToRefresh}`,
+                metaError
+              );
+            }
+          }
+          return {
+            updatedMetadata: refreshedMetadata,
+            hasEvidenceGraph: true,
+            evidenceGraphId: taskData.result?.evidence_graph_id || null,
+            error: null,
+            finalTaskStatus: taskData,
+          };
+        } else if (taskData.status === "FAILURE") {
+          console.error(
+            `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} failed. Error: ${taskData.error?.message}`
+          );
+          return {
+            updatedMetadata: null,
+            hasEvidenceGraph: false,
+            evidenceGraphId: null,
+            error: taskData.error?.message || "Evidence graph build failed",
+            finalTaskStatus: taskData,
+          };
+        } else if (
+          taskData.status === "PENDING" ||
+          taskData.status === "PROCESSING"
+        ) {
+          if (attempts >= maxAttempts) {
+            console.warn(
+              `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} timed out after ${attempts} attempts.`
+            );
+            return {
+              updatedMetadata: null,
+              hasEvidenceGraph: false,
+              evidenceGraphId: null,
+              error:
+                "Polling timed out, evidence graph build is still in progress or failed silently.",
+              finalTaskStatus: taskData,
+            };
+          }
+          console.log(
+            `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} status: ${taskData.status}. Attempt ${attempts}/${maxAttempts}. Waiting...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, pollingInterval));
+          return checkStatus();
+        } else {
+          console.error(
+            `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} has unknown status: ${taskData.status}`
+          );
+          return {
+            updatedMetadata: null,
+            hasEvidenceGraph: false,
+            evidenceGraphId: null,
+            error: `Unknown task status: ${taskData.status}`,
+            finalTaskStatus: taskData,
+          };
+        }
+      } catch (error: any) {
+        console.error(
+          `[metadataService - pollEvidenceGraphTaskStatus] Error polling status for task ${taskId}:`,
+          error
+        );
+        if (attempts >= maxAttempts) {
+          return {
+            updatedMetadata: null,
+            hasEvidenceGraph: false,
+            evidenceGraphId: null,
+            error: "Polling failed after maximum attempts.",
+            finalTaskStatus: undefined,
+          };
+        }
+        await new Promise((resolve) => setTimeout(resolve, pollingInterval));
+        return checkStatus();
+      }
+    };
+    return checkStatus();
+  };
+
   const fetchInitialMetadata = async (
     arkId: string
   ): Promise<InitialMetadataResult> => {
@@ -152,7 +263,7 @@ export const metadataService = () => {
     try {
       const response = await axios.get(url, {
         headers: getTokenHeaders(),
-        timeout: 15000, // Standard timeout for primary metadata
+        timeout: 15000,
         maxRedirects: 5,
         withCredentials: true,
       });
@@ -191,7 +302,7 @@ export const metadataService = () => {
           );
           const rocrateData = rocrateResponse.data;
           if (rocrateData && rocrateData.metadata) {
-            metadataObject = rocrateData.metadata as Metadata; // Update with full RO-Crate
+            metadataObject = rocrateData.metadata as Metadata;
             console.log(
               `[metadataService - fetchInitialMetadata] Successfully fetched full RO-Crate for ${cleanArkId}.`
             );
@@ -295,7 +406,6 @@ export const metadataService = () => {
   ): Promise<
     InitialMetadataResult & { evidenceGraphData: RawGraphData | null }
   > => {
-    // This function is for local dev, can load graph data directly if needed
     try {
       const response = await axios.get<Metadata>(`/data/${dataFile}`);
       const metadata = response.data;
@@ -315,7 +425,6 @@ export const metadataService = () => {
       } catch (err) {
         console.log("Local evidence graph not available for local data");
       }
-      // Determine type (simplified for local)
       let type = "unknown";
       if (metadata && (metadata as any)["@type"]) {
         const typeValue = Array.isArray((metadata as any)["@type"])
@@ -349,7 +458,8 @@ export const metadataService = () => {
   return {
     fetchInitialMetadata,
     fetchEvidenceGraphDataById,
-    triggerEvidenceGraphBuild,
+    initiateEvidenceGraphBuild,
+    pollEvidenceGraphTaskStatus,
     fetchLocalData,
   };
 };
