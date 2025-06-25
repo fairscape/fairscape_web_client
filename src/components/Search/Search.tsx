@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import styled from "styled-components";
 
 const API_URL = window.API_URL;
+const SEMANTIC_SEARCH_ENABLED = window.SEMANTIC_SEARCH_ENABLED || false;
 
 const SearchContainer = styled.div`
   max-width: 1200px;
@@ -54,15 +55,26 @@ const SearchButton = styled.button<{ isLoading?: boolean }>`
   }
 `;
 
-const SemanticSearchButton = styled(SearchButton)`
-  background-color: ${({ theme, isLoading }) =>
-    isLoading
+const SemanticSearchButton = styled(SearchButton)<{
+  semanticDisabled?: boolean;
+}>`
+  background-color: ${({ theme, isLoading, semanticDisabled }) =>
+    semanticDisabled
+      ? theme.colors.textSecondary || "#9E9E9E"
+      : isLoading
       ? theme.colors.secondary || theme.colors.primaryLight
       : theme.colors.secondary || "#6B46C1"};
 
   &:hover:not(:disabled) {
-    background-color: ${({ theme }) =>
-      theme.colors.secondaryLight || "#7C3AED"};
+    background-color: ${({ theme, semanticDisabled }) =>
+      semanticDisabled
+        ? theme.colors.textSecondary || "#9E9E9E"
+        : theme.colors.secondaryLight || "#7C3AED"};
+  }
+
+  &:disabled {
+    opacity: ${({ semanticDisabled }) => (semanticDisabled ? 0.5 : 0.7)};
+    cursor: not-allowed;
   }
 `;
 
@@ -227,6 +239,10 @@ const Search: React.FC = () => {
   const handleSearch = async (searchType: "basic" | "semantic" = "basic") => {
     if (!query.trim()) return;
 
+    if (searchType === "semantic" && !SEMANTIC_SEARCH_ENABLED) {
+      return;
+    }
+
     setLoading(true);
     setSearchPerformed(true);
     setSearchDisplayInfo(null);
@@ -294,14 +310,15 @@ const Search: React.FC = () => {
         />
         <SearchButton
           onClick={() => handleSearch("basic")}
-          disabled={loading || !query.trim()}
+          disabled={loading}
           isLoading={loading}
         >
           {loading ? <LoadingSpinner /> : "Basic Search"}
         </SearchButton>
         <SemanticSearchButton
           onClick={() => handleSearch("semantic")}
-          disabled={loading || !query.trim()}
+          disabled={loading || !SEMANTIC_SEARCH_ENABLED}
+          semanticDisabled={!SEMANTIC_SEARCH_ENABLED}
           isLoading={loading}
         >
           {loading ? <LoadingSpinner /> : "Semantic Search"}
@@ -335,7 +352,6 @@ const Search: React.FC = () => {
           <ResultsTitle>Search Results</ResultsTitle>
           {results.map((result, index) => (
             <ResultCard key={`${result.id}-${index}`}>
-              {" "}
               <ResultHeader>
                 <ResultTitle>
                   {index + 1}.{" "}
