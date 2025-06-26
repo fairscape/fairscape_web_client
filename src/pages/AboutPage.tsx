@@ -4,9 +4,10 @@ import styled from "styled-components";
 import { useState } from "react";
 
 const PageContainer = styled.div`
-  max-width: 1000px;
-  margin: ${({ theme }) => theme.spacing.xl} auto;
-  padding: 0 ${({ theme }) => theme.spacing.lg};
+  max-width: 1600px;
+  margin: 0 auto;
+  margin-top: calc(-${({ theme }) => theme.spacing.lg} + 0.5rem);
+  padding: 0 ${({ theme }) => theme.spacing.md};
 `;
 
 const HeaderSection = styled.header`
