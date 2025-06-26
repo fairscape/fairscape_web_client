@@ -35,12 +35,14 @@ const HeroStats = styled.div`
   justify-content: center;
   gap: ${({ theme }) => theme.spacing.lg};
   margin-top: ${({ theme }) => theme.spacing.lg};
+  flex-wrap: wrap;
 `;
 
 const StatItem = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 150px;
 `;
 
 const StatNumber = styled.span`
@@ -100,6 +102,14 @@ const OverviewSection = styled.section`
   .footnote-ref {
     text-decoration: none;
     color: ${({ theme }) => theme.colors.secondary};
+  }
+
+  .external-link {
+    color: ${({ theme }) => theme.colors.secondary};
+    text-decoration: underline;
+    &:hover {
+      color: ${({ theme }) => theme.colors.secondaryDark};
+    }
   }
 `;
 
@@ -205,7 +215,7 @@ const HomePage: React.FC = () => {
     {
       title: "FAIRSCAPE CLI",
       details:
-        "A data validation and packaging utility for the FAIRSCAPE ecosystem. Provides a command line interface that allows the client side remote teams to create RO-Crate and BagIt.",
+        "A data validation and packaging utility for the FAIRSCAPE ecosystem. Provides a command line interface that allows client-side remote teams to create RO-Crate and BagIt, structuring data for AI applications.",
       link: "https://fairscape.github.io/fairscape-cli/",
     },
     {
@@ -217,7 +227,7 @@ const HomePage: React.FC = () => {
     {
       title: "FAIRSCAPE MDS",
       details:
-        "The Metadata Service (MDS) of the FAIRSCAPE application, is the core backend service responsible for metadata managment. MDS is a RESTfull API implemented in python with the fastAPI framework. This service provides persitant globally unique identifiers (guids) as ARKS for many types of digital objects and maintains provenance metadata during the data science life-cycle.",
+        "The Metadata Service (MDS) of the FAIRSCAPE application, is the core backend service responsible for metadata management. MDS is a RESTfull API implemented in python with the fastAPI framework. This service provides persistent globally unique identifiers (guids) as ARKS for many types of digital objects and maintains provenance metadata crucial for the AI-Readiness and explainability of the data science life-cycle.",
       link: "https://github.com/fairscape/mds_python",
     },
   ];
@@ -225,24 +235,25 @@ const HomePage: React.FC = () => {
   return (
     <div>
       <HeroSection>
-        <HeroTitle>Making Scientific Data FAIR</HeroTitle>
+        <HeroTitle>Build AI-Ready Datasets with FAIRSCAPE</HeroTitle>
         <HeroSubtitle>
-          Transform your research with our comprehensive framework that
-          implements FAIR principles while tracking complete data provenance
-          through Evidence Graphs.
+          FAIRSCAPE provides a comprehensive framework to ensure your scientific
+          data is not only FAIR but also prepared for AI/ML applications,
+          underpinned by complete provenance through Evidence Graphs for
+          enhanced explainability.
         </HeroSubtitle>
         <HeroStats>
           <StatItem>
-            <StatNumber>FAIR</StatNumber>
-            <StatLabel>Best practices built-in</StatLabel>
+            <StatNumber>AI-Ready</StatNumber>
+            <StatLabel>Primed for ML & Analytics</StatLabel>
+          </StatItem>
+          <StatItem>
+            <StatNumber>FAIR Foundation</StatNumber>
+            <StatLabel>Findable, Accessible, Interoperable, Reusable</StatLabel>
           </StatItem>
           <StatItem>
             <StatNumber>Evidence Graphs</StatNumber>
-            <StatLabel>Complete provenance</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatNumber>Open Source</StatNumber>
-            <StatLabel>Transparent & extensible</StatLabel>
+            <StatLabel>For XAI & Reproducibility</StatLabel>
           </StatItem>
         </HeroStats>
       </HeroSection>
@@ -257,22 +268,32 @@ const HomePage: React.FC = () => {
                 1
               </a>
             </sup>{" "}
-            is a computational framework written in Python that implements the
-            FAIR
+            is a computational framework written in Python that supports the AI
+            Ready Criteria{" "}
+            <a
+              href="https://www.biorxiv.org/content/10.1101/2024.10.23.619844v4.full.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="external-link"
+            >
+              as detailed here
+            </a>
             <sup id="fnref:2">
               <a className="footnote-ref" href="#fn:2">
                 2
               </a>
-            </sup>{" "}
-            data principles on components such as datasets, software,
-            computations, runtime parameters, environment and personnel involved
-            in a computational analysis. It generates fully FAIR evidence of
-            correctness of the analysis by recording formal representations of
-            the components and their interactions in the form of a graph called
-            Evidence Graph. For every computational result, FAIRSCAPE creates a
-            machine interpretable Evidence Graph whose nodes and edges may
-            contain persistent identifiers with metadata resolvable to the
-            underling components.
+            </sup>
+            . It helps prepare components such as datasets, software,
+            computations, runtime parameters, environment, and personnel
+            involved in a computational analysis for AI/ML applications. It
+            generates rich evidence supporting the AI-Readiness and
+            explainability of the analysis by recording formal representations
+            of the components and their interactions in the form of a graph
+            called an Evidence Graph. For every computational result, FAIRSCAPE
+            creates a machine-interpretable Evidence Graph whose nodes and edges
+            may contain persistent identifiers with metadata resolvable to the
+            underlying components, enhancing transparency and trust in AI-driven
+            insights.
           </p>
           <p>
             FAIRSCAPE provides a command line client tool to package and
@@ -311,8 +332,8 @@ const HomePage: React.FC = () => {
         <h2>Get Started with Fairscape</h2>
         <p>
           Join the Fairscape community today and start making your scientific
-          data FAIR. Explore our documentation to learn more about how to get
-          started.
+          data AI-Ready and FAIR. Explore our documentation to learn more about
+          how to get started.
         </p>
         <CtaButton
           href="https://github.com/fairscape/"
