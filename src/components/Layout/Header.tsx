@@ -18,8 +18,6 @@ const Navbar = styled.nav`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1280px;
-  margin: 0 auto;
 `;
 
 const Brand = styled.div`

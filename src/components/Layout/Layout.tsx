@@ -13,9 +13,7 @@ const LayoutContainer = styled.div`
 const MainContent = styled.main`
   flex: 1;
   width: 100%;
-  max-width: 1280px; // Or your preferred max width
-  margin: 0 auto;
-  padding: ${({ theme }) => theme.spacing.lg};
+  padding: 1;
 `;
 
 interface LayoutProps {

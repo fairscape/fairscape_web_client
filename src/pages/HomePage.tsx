@@ -10,10 +10,12 @@ const HeroSection = styled.section`
     ${({ theme }) => theme.colors.primaryLight} 100%
   );
   color: white;
-  padding: ${({ theme }) => theme.spacing.xl} ${({ theme }) => theme.spacing.lg};
+  padding: ${({ theme }) => theme.spacing.xl} ${({ theme }) =>
+  theme.spacing.lg};
   text-align: center;
   border-radius: ${({ theme }) => theme.borderRadius};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
+  margin-top 1;
 `;
 
 const HeroTitle = styled.h1`
@@ -61,9 +63,10 @@ const MainContent = styled.main`
   grid-template-columns: 1fr 1fr;
   gap: ${({ theme }) => theme.spacing.xl};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
-  max-width: 1200px;
+  max-width: 1600px;
   margin-left: auto;
   margin-right: auto;
+  padding-top 1;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
