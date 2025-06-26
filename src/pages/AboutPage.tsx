@@ -147,9 +147,7 @@ const AboutPage: React.FC = () => {
       title:
         "FAIRSCAPE: An Evolving AI-readiness Framework for Biomedical Research",
       authors:
-        "Sadnan Al Manir†, Maxwell Adam Levinson, Justin Niestroy, Christopher Churas, Jillian A. Parker, & Timothy Clark",
-      affiliations:
-        "1 University of Virginia School of Medicine; 2 University of California San Diego School of Medicine; 3 University of Virginia School of Data Science",
+        "Sadnan Al Manir, Maxwell Adam Levinson, Justin Niestroy, Christopher Churas, Jillian A. Parker, & Timothy Clark",
       link: "https://www.biorxiv.org/content/10.1101/2024.12.23.629818v3.full.pdf",
       journal:
         "bioRxiv Preprint (Posted May 6, 2025 - Note: date in PDF differs)",
@@ -194,10 +192,10 @@ const AboutPage: React.FC = () => {
       <HeaderSection>
         <PageTitle>About FAIRSCAPE</PageTitle>
         <PageSubtitle>
-          FAIRSCAPE is an advanced computational framework designed to ensure
-          scientific data is AI-Ready and adheres to FAIR principles. It
-          facilitates the creation of transparent, reproducible, and explainable
-          biomedical research.
+          FAIRSCAPE is a computational framework designed to ensure scientific
+          data is AI-Ready and adheres to FAIR principles. It facilitates the
+          creation of transparent, reproducible, and explainable biomedical
+          research.
         </PageSubtitle>
       </HeaderSection>
 
