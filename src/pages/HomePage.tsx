@@ -215,7 +215,7 @@ const HomePage: React.FC = () => {
     {
       title: "FAIRSCAPE CLI",
       details:
-        "A data validation and packaging utility for the FAIRSCAPE ecosystem. Provides a command line interface that allows client-side remote teams to create RO-Crate and BagIt, structuring data for AI applications.",
+        "A data validation and packaging utility for the FAIRSCAPE ecosystem. Provides a command line interface that allows client-side remote teams to create RO-Crates, structuring data for AI applications.",
       link: "https://fairscape.github.io/fairscape-cli/",
     },
     {

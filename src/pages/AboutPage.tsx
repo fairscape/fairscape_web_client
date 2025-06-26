@@ -1,6 +1,7 @@
 // src/pages/AboutPage.tsx
 import React from "react";
 import styled from "styled-components";
+import { useState } from "react";
 
 const PageContainer = styled.div`
   max-width: 1000px;
@@ -200,7 +201,7 @@ const AboutPage: React.FC = () => {
       </HeaderSection>
 
       <ContentSection>
-        <h2>Our Mission and Origin</h2>
+        <h2>Background & Development</h2>
         <p>
           The FAIRSCAPE framework was developed at the University of Virginia
           (UVA) School of Medicine and School of Data Science, in collaboration
@@ -210,7 +211,7 @@ const AboutPage: React.FC = () => {
           applications.
         </p>
         <p>
-          FAIRSCAPE serves as the AI-readiness framework for the prestigious{" "}
+          FAIRSCAPE serves as the AI-readiness framework for the{" "}
           <a
             href="https://commonfund.nih.gov/bridge2ai"
             target="_blank"
