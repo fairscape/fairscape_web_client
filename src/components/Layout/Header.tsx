@@ -148,7 +148,7 @@ const Header: React.FC = () => {
           </Brand>
           <NavLinks>
             <NavItem>
-              <NavLink to="/">Home</NavLink>
+              <NavLink to="/about">About</NavLink>
             </NavItem>
             {isLoggedIn && ( // Only show Dashboard if logged in
               <NavItem>
