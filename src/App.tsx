@@ -17,6 +17,8 @@ import { GlobalStyle } from "./styles/GlobalStyles";
 import DataverseTokensPage from "./pages/DataverseTokensPage";
 import CreateRocratePage from "./pages/CreateRocratePage";
 import AboutPage from "./pages/AboutPage";
+import AIReadinessPage from "./pages/AIReadinessPage";
+import AIReadinessDefinitionsPage from "./pages/AIReadinessCriteria";
 
 function App() {
   return (
@@ -39,6 +41,14 @@ function App() {
               <Route path="/tokens" element={<DataverseTokensPage />} />
               <Route path="/create-rocrate" element={<CreateRocratePage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route
+                path="/ai-readiness-example"
+                element={<AIReadinessPage />}
+              />
+              <Route
+                path="/ai-readiness"
+                element={<AIReadinessDefinitionsPage />}
+              />
 
               <Route
                 path="*"
