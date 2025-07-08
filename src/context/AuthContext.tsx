@@ -5,13 +5,15 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import axios from "axios";
+import { jwtDecode } from "jwt-decode";
+import { DecodedToken } from "../types";
 
-const API_URL =
-  window.API_URL;
-const TOKEN_EXPIRY_HOURS = 24;
+declare global {
+  interface Window {
+    API_URL: string;
+  }
+}
 
-// Define the AuthContext type
 interface AuthContextType {
   isLoggedIn: boolean;
   token: string | null;
@@ -19,7 +21,6 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// Create context with a default value
 export const AuthContext = createContext<AuthContextType>({
   isLoggedIn: false,
   token: null,
@@ -32,124 +33,42 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
   const [token, setToken] = useState<string | null>(null);
-
-  const validateToken = useCallback(
-    async (tokenValue: string): Promise<boolean> => {
-      if (!tokenValue) return false;
-      try {
-        await axios.get(`${API_URL}/rocrate`, {
-          headers: { Authorization: `Bearer ${tokenValue}` },
-        });
-        return true;
-      } catch (error) {
-        console.error("Token validation error:", error);
-        return false;
-      }
-    },
-    []
-  );
-
-  const handleSessionExpired = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("tokenExpiry");
-    setToken(null);
-    setIsLoggedIn(false);
-    window.location.href = "/login";
-  }, []);
-
-  const setTokenExpiry = () => {
-    const expiryTime = new Date();
-    expiryTime.setHours(expiryTime.getHours() + TOKEN_EXPIRY_HOURS);
-    localStorage.setItem("tokenExpiry", expiryTime.toISOString());
-    return expiryTime;
-  };
-
-  const setupExpiryTimeout = useCallback(
-    (expiryTime: Date) => {
-      const now = new Date();
-      const timeUntilExpiry = expiryTime.getTime() - now.getTime();
-      if (timeUntilExpiry <= 0) {
-        handleSessionExpired();
-        return null;
-      }
-      return setTimeout(handleSessionExpired, timeUntilExpiry);
-    },
-    [handleSessionExpired]
-  );
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const storedToken = localStorage.getItem("token");
-      const storedExpiry = localStorage.getItem("tokenExpiry");
-
-      if (!storedToken || !storedExpiry) {
-        setIsLoggedIn(false);
-        setToken(null);
-        setIsInitialized(true);
-        return;
-      }
-
-      const expiryTime = new Date(storedExpiry);
-      if (expiryTime <= new Date()) {
-        handleSessionExpired();
-        setIsInitialized(true);
-        return;
-      }
-
-      const isValid = await validateToken(storedToken);
-      if (!isValid) {
-        handleSessionExpired();
-        setIsInitialized(true);
-        return;
-      }
-
-      setToken(storedToken);
-      setIsLoggedIn(true);
-      const timeoutId = setupExpiryTimeout(expiryTime);
-      setIsInitialized(true);
-
-      return () => {
-        if (timeoutId) clearTimeout(timeoutId);
-      };
-    };
-
-    checkAuth();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "token" && !e.newValue) {
-        setIsLoggedIn(false);
-        setToken(null);
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [validateToken, handleSessionExpired, setupExpiryTimeout]);
-
-  const login = useCallback(
-    (newToken: string) => {
-      localStorage.setItem("token", newToken);
-      setToken(newToken);
-      const expiryTime = setTokenExpiry();
-      setupExpiryTimeout(expiryTime);
-      setIsLoggedIn(true);
-    },
-    [setupExpiryTimeout]
-  );
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const logout = useCallback(() => {
     localStorage.removeItem("token");
-    localStorage.removeItem("tokenExpiry");
     setToken(null);
     setIsLoggedIn(false);
   }, []);
 
-  if (!isInitialized) {
-    return <div>Loading...</div>;
-  }
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+
+    if (!storedToken) {
+      return;
+    }
+
+    try {
+      const decodedToken: DecodedToken = jwtDecode(storedToken);
+
+      if (decodedToken.exp * 1000 < Date.now()) {
+        logout();
+      } else {
+        setToken(storedToken);
+        setIsLoggedIn(true);
+      }
+    } catch (error) {
+      console.error("Invalid token found in storage:", error);
+      logout();
+    }
+  }, [logout]);
+
+  const login = useCallback((newToken: string) => {
+    localStorage.setItem("token", newToken);
+    setToken(newToken);
+    setIsLoggedIn(true);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, token, login, logout }}>

@@ -10,6 +10,14 @@ export interface User {
   organization: string;
 }
 
+export interface DecodedToken {
+  name: string;
+  email: string;
+  iss: string;
+  sub: string;
+  exp: number;
+}
+
 export type Metadata = RawGraphEntity;
 
 export interface MetadataApiResponse {

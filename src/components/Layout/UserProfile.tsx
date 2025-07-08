@@ -1,14 +1,10 @@
-// src/components/Layout/UserProfile.tsx
 import React, { useState, useEffect, useContext, useRef } from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { AuthContext } from "../../context/AuthContext";
-import { User } from "../../types"; // Adjust path
-import { theme } from "../../styles/theme"; // Adjust path
-
-const API_URL =
-  window.API_URL;
+import { User, DecodedToken } from "../../types";
+import { theme } from "../../styles/theme";
 
 const ProfileContainer = styled.div`
   position: relative;
@@ -107,73 +103,36 @@ interface UserProfileProps {
 const UserProfile: React.FC<UserProfileProps> = ({ onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const authContext = useContext(AuthContext);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Basic error check for context
+  const authContext = useContext(AuthContext);
+
   if (!authContext) {
-    console.error("AuthContext not available in UserProfile");
-    return null; // Or some fallback UI
+    throw new Error("UserProfile must be used within an AuthProvider");
   }
-  const { logout } = authContext;
 
-  // --- Token Validation and User Fetching Logic (Adapted from original) ---
-  const validateTokenAndDecodeUser = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        handleLogout("Your session has expired. Please log in again.");
-        return;
-      }
-
-      // Optional: Add a quick local expiry check first
-      // const expiry = localStorage.getItem("tokenExpiry");
-      // if (expiry && new Date(expiry) <= new Date()) {
-      //     handleLogout("Your session has expired. Please log in again.");
-      //     return;
-      // }
-
-      // Simple validation check against an endpoint (replace /rocrate if needed)
-      const response = await fetch(`${API_URL}/rocrate`, {
-        // Or a dedicated /profile/validate endpoint
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.status === 401) {
-        handleLogout("Your session has expired. Please log in again.");
-        return;
-      }
-      if (!response.ok) {
-        // Handle other errors if needed, maybe just log them
-        console.error("Token validation failed with status:", response.status);
-        // Decide if logout is needed for non-401 errors
-        // handleLogout("Session validation failed. Please log in again.");
-        // return;
-      }
-
-      // If validation passes, decode the token
-      const decodedToken: any = jwtDecode(token); // Use 'any' or define a proper DecodedToken interface
-      setUser({
-        givenName: decodedToken.name?.split(" ")[0] || "User",
-        surname: decodedToken.name?.split(" ")[1] || "",
-        email: decodedToken.email || "N/A",
-        organization:
-          decodedToken.iss?.replace("https://", "").replace("/", "") || "N/A",
-      });
-    } catch (error) {
-      console.error("Error validating token:", error);
-      handleLogout("An error occurred with your session. Please log in again.");
-    }
-  };
+  const { isLoggedIn, token, logout } = authContext;
 
   useEffect(() => {
-    validateTokenAndDecodeUser();
-    // Optional: Refresh periodically (consider security implications)
-    // const intervalId = setInterval(validateTokenAndDecodeUser, 5 * 60 * 1000); // every 5 mins
-    // return () => clearInterval(intervalId);
-  }, []); // Run only on mount
+    if (isLoggedIn && token) {
+      try {
+        const decoded: DecodedToken = jwtDecode(token);
+        setUser({
+          givenName: decoded.name?.split(" ")[0] || "User",
+          surname: decoded.name?.split(" ")[1] || "",
+          email: decoded.email || "N/A",
+          organization:
+            decoded.iss?.replace("https://", "").replace("/", "") || "N/A",
+        });
+      } catch (error) {
+        console.error("Failed to decode JWT:", error);
+        setUser(null);
+      }
+    } else {
+      setUser(null);
+    }
+  }, [isLoggedIn, token]);
 
-  // --- Click Outside Handler ---
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -186,22 +145,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ onLogout }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  // --- End Click Outside ---
 
   const toggleDropdown = () => setDropdownVisible(!dropdownVisible);
 
-  const handleLogout = (message: string) => {
-    setUser(null);
+  const handleLogoutClick = () => {
     setDropdownVisible(false);
-    logout(); // Call context logout
-    onLogout(message); // Show alert via prop callback
+    logout();
+    onLogout("You have been logged out successfully.");
   };
 
-  const handleUserLogoutClick = () => {
-    handleLogout("You have been logged out successfully.");
-  };
-
-  if (!user) return null; // Don't render if user data not loaded yet
+  if (!user) {
+    return null;
+  }
 
   return (
     <ProfileContainer ref={dropdownRef}>
@@ -227,13 +182,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ onLogout }) => {
             }}
           />
           <DropdownLink to="/tokens" onClick={() => setDropdownVisible(false)}>
-            {/* <Settings size={18} />  */}
             Manage Tokens
           </DropdownLink>
-          <LogoutButton onClick={handleUserLogoutClick}>
-            {/* <LogOut size={18} /> */}
-            Log Out
-          </LogoutButton>
+          <LogoutButton onClick={handleLogoutClick}>Log Out</LogoutButton>
         </DropdownMenu>
       )}
     </ProfileContainer>
