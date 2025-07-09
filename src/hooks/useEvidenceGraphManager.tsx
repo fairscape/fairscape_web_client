@@ -50,7 +50,6 @@ export const useEvidenceGraphManager = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const metadataServiceInstance = useMemo(() => metadataService(), []);
-  const hasAttemptedInitialFetch = useRef(false);
   const hasAttemptedBuild = useRef(false);
 
   const resetState = useCallback(() => {
@@ -60,16 +59,8 @@ export const useEvidenceGraphManager = ({
     setCurrentTaskId(null);
     setGraphBuildStatus("IDLE");
     setIsLoading(false);
-    hasAttemptedInitialFetch.current = false;
     hasAttemptedBuild.current = false;
   }, []);
-
-  useEffect(() => {
-    setHasEvidenceGraphLink(initialHasLink);
-    setCurrentEvidenceGraphId(initialGraphId);
-    setUpdatedMetadata(null);
-    resetState();
-  }, [arkId, initialHasLink, initialGraphId, resetState]);
 
   const fetchEvidenceGraphData = useCallback(
     async (graphId: string) => {
@@ -86,6 +77,8 @@ export const useEvidenceGraphManager = ({
           const extracted = extractSupportData(graphData);
           setSupportData(extracted);
           setEvidenceGraphError(null);
+          setHasEvidenceGraphLink(true);
+          setCurrentEvidenceGraphId(graphId);
         } else {
           setEvidenceGraphError("Failed to fetch evidence graph data");
         }
@@ -182,32 +175,33 @@ export const useEvidenceGraphManager = ({
   ]);
 
   useEffect(() => {
-    if (!arkId || hasAttemptedInitialFetch.current) return;
+    if (!arkId || !itemType) {
+      resetState();
+      return;
+    }
 
-    if (!itemType) return;
-
-    hasAttemptedInitialFetch.current = true;
+    if (initialHasLink && initialGraphId) {
+      if (evidenceGraphData?.["@id"] !== initialGraphId) {
+        fetchEvidenceGraphData(initialGraphId);
+      }
+      return;
+    }
 
     const token = localStorage.getItem("token");
     const userIsLoggedIn = isLoggedIn || !!token;
 
-    if (hasEvidenceGraphLink && currentEvidenceGraphId) {
-      fetchEvidenceGraphData(currentEvidenceGraphId);
-    } else if (
-      userIsLoggedIn &&
-      itemType &&
-      !["release", "rocrate"].includes(itemType)
-    ) {
+    if (userIsLoggedIn && !["release", "rocrate"].includes(itemType)) {
       initiateBuildProcess();
     }
   }, [
     arkId,
-    hasEvidenceGraphLink,
-    currentEvidenceGraphId,
-    isLoggedIn,
     itemType,
+    initialHasLink,
+    initialGraphId,
+    isLoggedIn,
     fetchEvidenceGraphData,
     initiateBuildProcess,
+    resetState,
   ]);
 
   return {

@@ -11,6 +11,8 @@ import {
   InstrumentProperties,
   SampleProperties,
   ExperimentProperties,
+  BioChemEntityProperties,
+  GenericProperties,
 } from "./metadataPropertyLists";
 import Alert from "../common/Alert";
 import SchemaPropertiesTable from "./SchemaPropertiesTable";
@@ -270,7 +272,8 @@ type EntityType =
   | "schema"
   | "instrument"
   | "sample"
-  | "experiment";
+  | "experiment"
+  | "biochementity";
 
 interface GenericMetadataComponentProps {
   metadata: Metadata;
@@ -288,8 +291,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     useState<any | null>(null);
 
   const feUrl = window.location.origin + "/view/";
-  const apiUrl =
-    window.API_URL;
+  const apiUrl = window.API_URL;
 
   const getToken = () => {
     return localStorage.getItem("token") || "";
@@ -376,8 +378,10 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         return SampleProperties;
       case "experiment":
         return ExperimentProperties;
+      case "biochementity":
+        return BioChemEntityProperties;
       default:
-        return [];
+        return GenericProperties;
     }
   };
 
@@ -397,6 +401,8 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         return "Sample Details";
       case "experiment":
         return "Experiment Details";
+      case "biochementity":
+        return "BioChemEntity Details";
       default:
         return "Metadata Details";
     }
@@ -567,6 +573,29 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     if (key === "command" && type === "computation")
       return <CodeBlockStyled>{value}</CodeBlockStyled>;
     if (key === "properties" && type === "schema") return null;
+
+    if (key === "identifier" && type === "biochementity") {
+      if (Array.isArray(value)) {
+        return (
+          <ListStyled>
+            {value.map((item, index) => {
+              if (typeof item === "object" && item.propertyID && item.value) {
+                return (
+                  <ListItemStyled key={index}>
+                    <strong>{item.propertyID}:</strong> {item.value}
+                  </ListItemStyled>
+                );
+              }
+              return (
+                <ListItemStyled key={index}>
+                  {typeof item === "object" ? JSON.stringify(item) : item}
+                </ListItemStyled>
+              );
+            })}
+          </ListStyled>
+        );
+      }
+    }
 
     if (Array.isArray(value)) {
       if (key === "keywords" || (key === "required" && type === "schema")) {

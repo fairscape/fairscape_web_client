@@ -111,6 +111,16 @@ export const ExperimentProperties: MetadataProperty[] = [
   { key: "usedStain", name: "Used Stain" },
   { key: "generated", name: "Generated" },
 ];
+
+export const BioChemEntityProperties: MetadataProperty[] = [
+  { key: "@id", name: "Identifier (ARK)" },
+  { key: "name", name: "Name" },
+  { key: "description", name: "Description" },
+  { key: "identifier", name: "External Identifiers" },
+  { key: "associatedDisease", name: "Associated Disease" },
+  { key: "usedBy", name: "Used By" },
+];
+
 export const GenericProperties: MetadataProperty[] = [
   { key: "@id", name: "Identifier" },
   { key: "name", name: "Name" },

@@ -8,7 +8,7 @@ import ReleaseComponent from "../components/MetadataDisplay/ReleaseComponent";
 import ROCrateComponent from "../components/MetadataDisplay/ROCrateComponent";
 import GenericMetadataComponent from "../components/MetadataDisplay/GenericMetadataComponent";
 import SerializationView from "../components/MetadataDisplay/SerializationView";
-import EvidenceGraphDisplayController from "../components/MetadataDisplay/EvidenceGraphDisplayController"; // New import
+import EvidenceGraphDisplayController from "../components/MetadataDisplay/EvidenceGraphDisplayController";
 
 import { AuthContext } from "../context/AuthContext";
 import metadataService from "../hooks/metadataService";
@@ -436,12 +436,21 @@ const MetadataDisplayPage: React.FC = () => {
                 arkId={arkId}
               />
             );
+          case "biochementity":
+          case "evi:biochementity":
+            return (
+              <GenericMetadataComponent
+                metadata={displayMetadata}
+                type="biochementity"
+                arkId={arkId}
+              />
+            );
           default:
             return (
-              <Alert
-                type="warning"
-                title="Unknown Type"
-                message={`Display not configured for type: ${metaType}`}
+              <GenericMetadataComponent
+                metadata={displayMetadata}
+                type="unknown"
+                arkId={arkId}
               />
             );
         }

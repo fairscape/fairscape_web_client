@@ -1,4 +1,3 @@
-// src/hooks/metadataService.ts
 import axios from "axios";
 import { Metadata, RawGraphData, RawGraphEntity } from "../types";
 
@@ -61,9 +60,6 @@ export const metadataService = () => {
   const fetchEvidenceGraphDataById = async (
     graphId: string
   ): Promise<RawGraphData | null> => {
-    console.log(
-      `[metadataService - fetchEvidenceGraphDataById] Fetching evidence graph for ID: ${graphId}`
-    );
     try {
       const evidenceResponse = await axios.get(
         `${API_URL}/${graphId.replace(/^\/|\/$/g, "")}`,
@@ -72,15 +68,8 @@ export const metadataService = () => {
           timeout: 60000,
         }
       );
-      console.log(
-        `[metadataService - fetchEvidenceGraphDataById] Successfully fetched evidence graph for ID: ${graphId}`
-      );
       return evidenceResponse.data as RawGraphData;
     } catch (error) {
-      console.error(
-        `[metadataService - fetchEvidenceGraphDataById] Error fetching evidence graph for ID ${graphId}:`,
-        error
-      );
       return null;
     }
   };
@@ -89,15 +78,9 @@ export const metadataService = () => {
     arkId: string
   ): Promise<EvidenceGraphBuildInitiateResult> => {
     const cleanArkId = arkId.replace(/^\/|\/$/g, "");
-    console.log(
-      `[metadataService - initiateEvidenceGraphBuild] Initiating build for ARK ID: ${cleanArkId}`
-    );
     try {
       const headers = getTokenHeaders();
       if (!headers["Authorization"]) {
-        console.warn(
-          "[metadataService - initiateEvidenceGraphBuild] No token, cannot initiate build."
-        );
         return {
           taskId: null,
           statusEndpoint: null,
@@ -110,9 +93,6 @@ export const metadataService = () => {
         {},
         { headers }
       );
-      console.log(
-        `[metadataService - initiateEvidenceGraphBuild] Build request sent for ${cleanArkId}. Task ID: ${response.data.task_id}`
-      );
       return {
         taskId: response.data.task_id,
         statusEndpoint: response.data.status_endpoint,
@@ -120,10 +100,6 @@ export const metadataService = () => {
         message: response.data.message,
       };
     } catch (error: any) {
-      console.error(
-        `[metadataService - initiateEvidenceGraphBuild] Error initiating evidence graph build for ${cleanArkId}:`,
-        error
-      );
       const errorMessage =
         error.response?.data?.detail ||
         error.message ||
@@ -140,11 +116,8 @@ export const metadataService = () => {
     taskId: string,
     arkIdToRefresh?: string,
     pollingInterval: number = 5000,
-    maxAttempts: number = 24 // e.g., 2 minutes with 5s interval
+    maxAttempts: number = 24
   ): Promise<PolledEvidenceGraphBuildResult> => {
-    console.log(
-      `[metadataService - pollEvidenceGraphTaskStatus] Polling for task ID: ${taskId}`
-    );
     let attempts = 0;
 
     const checkStatus = async (): Promise<PolledEvidenceGraphBuildResult> => {
@@ -157,9 +130,6 @@ export const metadataService = () => {
         const taskData = response.data;
 
         if (taskData.status === "SUCCESS") {
-          console.log(
-            `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} succeeded. Evidence Graph ID: ${taskData.result?.evidence_graph_id}`
-          );
           let refreshedMetadata: Metadata | null = null;
           if (arkIdToRefresh) {
             try {
@@ -171,12 +141,7 @@ export const metadataService = () => {
               );
               refreshedMetadata = (metadataResponse.data.metadata ||
                 metadataResponse.data) as Metadata;
-            } catch (metaError) {
-              console.warn(
-                `[metadataService - pollEvidenceGraphTaskStatus] Failed to refresh primary metadata for ${arkIdToRefresh}`,
-                metaError
-              );
-            }
+            } catch (metaError) {}
           }
           return {
             updatedMetadata: refreshedMetadata,
@@ -186,9 +151,6 @@ export const metadataService = () => {
             finalTaskStatus: taskData,
           };
         } else if (taskData.status === "FAILURE") {
-          console.error(
-            `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} failed. Error: ${taskData.error?.message}`
-          );
           return {
             updatedMetadata: null,
             hasEvidenceGraph: false,
@@ -201,9 +163,6 @@ export const metadataService = () => {
           taskData.status === "PROCESSING"
         ) {
           if (attempts >= maxAttempts) {
-            console.warn(
-              `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} timed out after ${attempts} attempts.`
-            );
             return {
               updatedMetadata: null,
               hasEvidenceGraph: false,
@@ -213,15 +172,9 @@ export const metadataService = () => {
               finalTaskStatus: taskData,
             };
           }
-          console.log(
-            `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} status: ${taskData.status}. Attempt ${attempts}/${maxAttempts}. Waiting...`
-          );
           await new Promise((resolve) => setTimeout(resolve, pollingInterval));
           return checkStatus();
         } else {
-          console.error(
-            `[metadataService - pollEvidenceGraphTaskStatus] Task ${taskId} has unknown status: ${taskData.status}`
-          );
           return {
             updatedMetadata: null,
             hasEvidenceGraph: false,
@@ -231,10 +184,6 @@ export const metadataService = () => {
           };
         }
       } catch (error: any) {
-        console.error(
-          `[metadataService - pollEvidenceGraphTaskStatus] Error polling status for task ${taskId}:`,
-          error
-        );
         if (attempts >= maxAttempts) {
           return {
             updatedMetadata: null,
@@ -256,9 +205,6 @@ export const metadataService = () => {
   ): Promise<InitialMetadataResult> => {
     const cleanArkId = arkId.replace(/^\/|\/$/g, "");
     const url = `${API_URL}/${cleanArkId}`;
-    console.log(
-      `[metadataService - fetchInitialMetadata] Requesting initial metadata: ${url}`
-    );
 
     try {
       const response = await axios.get(url, {
@@ -282,15 +228,9 @@ export const metadataService = () => {
           determinedType = typeParts[typeParts.length - 1].toLowerCase();
         }
       }
-      console.log(
-        `[metadataService - fetchInitialMetadata] Initial metadata type for ${cleanArkId}: ${determinedType}`
-      );
 
       if (determinedType === "rocrate") {
         try {
-          console.log(
-            `[metadataService - fetchInitialMetadata] Type is rocrate, attempting to fetch full rocrate data for ${cleanArkId}`
-          );
           const rocrateResponse = await axios.get(
             `${API_URL}/rocrate/${cleanArkId}`,
             {
@@ -303,9 +243,6 @@ export const metadataService = () => {
           const rocrateData = rocrateResponse.data;
           if (rocrateData && rocrateData.metadata) {
             metadataObject = rocrateData.metadata as Metadata;
-            console.log(
-              `[metadataService - fetchInitialMetadata] Successfully fetched full RO-Crate for ${cleanArkId}.`
-            );
             if (Array.isArray((metadataObject as any)["@graph"])) {
               const graphElements = (metadataObject as any)[
                 "@graph"
@@ -337,30 +274,11 @@ export const metadataService = () => {
               }
               if (rocrateDatasetCount > 1) {
                 determinedType = "release";
-                console.log(
-                  `[metadataService - fetchInitialMetadata] RO-Crate for ${cleanArkId} determined to be a 'release' (count: ${rocrateDatasetCount}).`
-                );
-              } else {
-                console.log(
-                  `[metadataService - fetchInitialMetadata] RO-Crate for ${cleanArkId} is a single RO-Crate dataset (count: ${rocrateDatasetCount}).`
-                );
               }
             }
-          } else {
-            console.warn(
-              `[metadataService - fetchInitialMetadata] RO-Crate endpoint for ${cleanArkId} did not return .metadata field.`
-            );
           }
-        } catch (err) {
-          console.warn(
-            `[metadataService - fetchInitialMetadata] RO-Crate specific fetch for ${cleanArkId} failed. Keeping type as 'rocrate'.`,
-            err
-          );
-        }
+        } catch (err) {}
       }
-      console.log(
-        `[metadataService - fetchInitialMetadata] Final metadata type for ${cleanArkId}: ${determinedType}`
-      );
 
       let currentHasEvidenceGraph = false;
       let currentEvidenceGraphId: string | null = null;
@@ -370,13 +288,6 @@ export const metadataService = () => {
         const graphIdValue = (metadataObject as any).hasEvidenceGraph;
         currentEvidenceGraphId =
           typeof graphIdValue === "string" ? graphIdValue : graphIdValue["@id"];
-        console.log(
-          `[metadataService - fetchInitialMetadata] Evidence graph link found for ${cleanArkId}: ${currentEvidenceGraphId}`
-        );
-      } else {
-        console.log(
-          `[metadataService - fetchInitialMetadata] No direct evidence graph link in metadata for ${cleanArkId}.`
-        );
       }
 
       return {
@@ -387,10 +298,6 @@ export const metadataService = () => {
         evidenceGraphId: currentEvidenceGraphId,
       };
     } catch (err: any) {
-      console.error(
-        `[metadataService - fetchInitialMetadata] Error fetching initial metadata for ${cleanArkId}:`,
-        err
-      );
       return {
         metadata: null,
         type: "unknown",
@@ -422,9 +329,7 @@ export const metadataService = () => {
         if (localEvidenceGraphData && localEvidenceGraphData["@id"]) {
           localEvidenceGraphId = localEvidenceGraphData["@id"];
         }
-      } catch (err) {
-        console.log("Local evidence graph not available for local data");
-      }
+      } catch (err) {}
       let type = "unknown";
       if (metadata && (metadata as any)["@type"]) {
         const typeValue = Array.isArray((metadata as any)["@type"])
