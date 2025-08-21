@@ -1,4 +1,3 @@
-// src/components/common/LoadingSpinner.tsx
 import React from "react";
 import styled, { keyframes } from "styled-components";
 
@@ -7,16 +6,28 @@ const spin = keyframes`
   100% { transform: rotate(360deg); }
 `;
 
+const SpinnerContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+`;
+
 const Spinner = styled.div`
-  border: 4px solid ${({ theme }) => theme.colors.background}; // Light border
-  border-top: 4px solid ${({ theme }) => theme.colors.primary}; // Primary color for spinner part
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
   border-radius: 50%;
   width: 40px;
   height: 40px;
   animation: ${spin} 1s linear infinite;
-  margin: ${({ theme }) => theme.spacing.lg} auto; // Center it
 `;
 
-const LoadingSpinner: React.FC = () => <Spinner aria-label="Loading..." />;
+const LoadingSpinner: React.FC = () => {
+  return (
+    <SpinnerContainer>
+      <Spinner />
+    </SpinnerContainer>
+  );
+};
 
 export default LoadingSpinner;

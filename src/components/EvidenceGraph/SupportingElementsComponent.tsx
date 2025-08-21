@@ -1,7 +1,8 @@
 import React, { useState, useMemo, ReactNode } from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { findPathInFullGraph } from "../../utils/pathfindingUtils";
+import { GraphDataService } from "../../hooks/GraphDataService";
+import { RawGraphEntity } from "../../types/graph";
 
 const Container = styled.div`
   margin-top: ${({ theme }) => theme.spacing.lg};
@@ -66,25 +67,17 @@ const Table = styled.table`
   min-width: 700px;
 `;
 
-// MODIFIED TableHead styling
 const TableHead = styled.thead`
-  // Assuming theme.colors.surface is distinct from theme.colors.background
-  // Use a light grey or a specific header background from your theme if available
   background-color: ${({ theme }) => theme.colors.surface};
-  border-bottom: 2px solid ${({ theme }) => theme.colors.primary}; // Prominent bottom border
+  border-bottom: 2px solid ${({ theme }) => theme.colors.primary};
 `;
 
-// MODIFIED TableHeaderCell styling
 const TableHeaderCell = styled.th`
-  padding: ${({ theme }) =>
-    theme.spacing.sm}; // Increased padding for better spacing
+  padding: ${({ theme }) => theme.spacing.sm};
   text-align: left;
-  font-weight: bold; // Bolded text
-  font-size: 0.95rem; // Slightly larger font size for emphasis
-  color: ${({ theme }) =>
-    theme.colors.primary}; // Use primary color for header text
-  // text-transform: uppercase; // Optional: if you want uppercase headers
-  // letter-spacing: 0.5px; // Optional: for a bit more refined look
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: ${({ theme }) => theme.colors.primary};
 `;
 
 const TableRow = styled.tr`
@@ -97,19 +90,17 @@ const TableRow = styled.tr`
   }
 `;
 
-// MODIFIED TableCell styling
 const TableCell = styled.td`
-  padding: ${({ theme }) => theme.spacing.sm}; // Consistent padding with header
+  padding: ${({ theme }) => theme.spacing.sm};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  vertical-align: middle; // Center content vertically by default
+  vertical-align: middle;
   font-size: 0.9rem;
 `;
 
-// MODIFIED DescriptionCell styling
 const DescriptionCell = styled(TableCell)`
-  max-width: 400px; // Or adjust as needed
+  max-width: 400px;
   line-height: 1.4;
-  vertical-align: top; // Keep description text aligned to the top
+  vertical-align: top;
 `;
 
 const StyledLink = styled(Link)`
@@ -141,6 +132,11 @@ const RelationshipButton = styled.button`
   &:hover {
     background-color: ${({ theme }) => theme.colors.primaryDark};
   }
+
+  &:disabled {
+    background-color: ${({ theme }) => theme.colors.disabled};
+    cursor: not-allowed;
+  }
 `;
 
 const HighlightSpan = styled.span`
@@ -149,25 +145,8 @@ const HighlightSpan = styled.span`
   color: black;
 `;
 
-interface SupportingElement {
-  "@id": string;
-  name: string;
-  description: string;
-  "@type": string;
-}
-
-interface SupportData {
-  datasets: SupportingElement[];
-  software: SupportingElement[];
-  computations: SupportingElement[];
-  samples: SupportingElement[];
-  experiments: SupportingElement[];
-  instruments: SupportingElement[];
-}
-
 interface SupportingElementsComponentProps {
-  data: SupportData | null;
-  evidenceGraphData?: any;
+  dataService: GraphDataService;
   onShowRelationshipPath: (pathNodeIds: string[] | null) => void;
 }
 
@@ -191,9 +170,20 @@ const getHighlightedText = (text: string, highlight: string): ReactNode[] => {
   );
 };
 
+const extractArkIdentifier = (url: string) => {
+  const match = url.match(/(ark:.+)/);
+  return match ? match[1] : url;
+};
+
+const getEntityType = (typeUri: string | string[] | undefined): string => {
+  if (!typeUri) return "Unknown";
+  const typeString = Array.isArray(typeUri) ? typeUri[0] : typeUri;
+  return typeString.split(/[#\/]/).pop() || "Unknown";
+};
+
 const SupportingElementsComponent: React.FC<
   SupportingElementsComponentProps
-> = ({ data: supportData, evidenceGraphData, onShowRelationshipPath }) => {
+> = ({ dataService, onShowRelationshipPath }) => {
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({
@@ -206,44 +196,17 @@ const SupportingElementsComponent: React.FC<
   });
   const [searchTerm, setSearchTerm] = useState("");
 
-  const toggleSection = (section: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
+  const supportData = useMemo(() => {
+    const allNodes = dataService.getAllNodes();
 
-  const extractArkIdentifier = (url: string) => {
-    const match = url.match(/(ark:.+)/);
-    return match ? match[1] : url;
-  };
-
-  const showRelationship = (elementId: string) => {
-    if (!evidenceGraphData) {
-      console.warn("Evidence graph data is not available for pathfinding.");
-      onShowRelationshipPath(null);
-      return;
-    }
-
-    const path = findPathInFullGraph(evidenceGraphData, elementId);
-
-    if (path && path.length > 0) {
-      onShowRelationshipPath(path);
-    } else {
-      onShowRelationshipPath(null);
-    }
-  };
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const filteredSupportData = useMemo(() => {
-    if (!supportData) return null;
-    if (!searchTerm.trim()) return supportData;
-
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    const result: SupportData = {
+    const categorizedNodes: {
+      datasets: RawGraphEntity[];
+      software: RawGraphEntity[];
+      computations: RawGraphEntity[];
+      samples: RawGraphEntity[];
+      experiments: RawGraphEntity[];
+      instruments: RawGraphEntity[];
+    } = {
       datasets: [],
       software: [],
       computations: [],
@@ -252,28 +215,82 @@ const SupportingElementsComponent: React.FC<
       instruments: [],
     };
 
-    (Object.keys(supportData) as Array<keyof SupportData>).forEach((key) => {
-      const sectionElements = supportData[key];
-      if (sectionElements && Array.isArray(sectionElements)) {
-        result[key] = sectionElements.filter(
-          (element) =>
-            (element.name &&
-              element.name.toLowerCase().includes(lowerSearchTerm)) ||
-            (element.description &&
-              element.description.toLowerCase().includes(lowerSearchTerm))
-        );
-      } else {
-        result[key] = [];
+    allNodes.forEach((node) => {
+      const type = getEntityType(node["@type"]);
+
+      switch (type) {
+        case "Dataset":
+          categorizedNodes.datasets.push(node);
+          break;
+        case "Software":
+          categorizedNodes.software.push(node);
+          break;
+        case "Computation":
+          categorizedNodes.computations.push(node);
+          break;
+        case "Sample":
+          categorizedNodes.samples.push(node);
+          break;
+        case "Experiment":
+          categorizedNodes.experiments.push(node);
+          break;
+        case "Instrument":
+          categorizedNodes.instruments.push(node);
+          break;
       }
     });
+
+    return categorizedNodes;
+  }, [dataService]);
+
+  const filteredSupportData = useMemo(() => {
+    if (!searchTerm.trim()) return supportData;
+
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const result = { ...supportData };
+
+    Object.keys(result).forEach((key) => {
+      result[key as keyof typeof result] = result[
+        key as keyof typeof result
+      ].filter(
+        (element) =>
+          (element.name &&
+            element.name.toLowerCase().includes(lowerSearchTerm)) ||
+          (element.description &&
+            element.description.toLowerCase().includes(lowerSearchTerm))
+      );
+    });
+
     return result;
   }, [supportData, searchTerm]);
 
-  const hasAnyOriginalElements =
-    supportData &&
-    Object.values(supportData).some((arr) => arr && arr.length > 0);
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
-  if (!supportData || !hasAnyOriginalElements) {
+  const showRelationship = (elementId: string) => {
+    const path = dataService.findPathFromAnyOutput(elementId);
+
+    if (path && path.length > 0) {
+      onShowRelationshipPath(path);
+    } else {
+      console.warn(`No path found from outputs to ${elementId}`);
+      onShowRelationshipPath(null);
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const hasAnyElements = Object.values(supportData).some(
+    (arr) => arr.length > 0
+  );
+
+  if (!hasAnyElements) {
     return (
       <Container>
         <SectionTitle>Supporting Elements</SectionTitle>
@@ -284,9 +301,9 @@ const SupportingElementsComponent: React.FC<
     );
   }
 
-  const hasFilteredElements =
-    filteredSupportData &&
-    Object.values(filteredSupportData).some((arr) => arr && arr.length > 0);
+  const hasFilteredElements = Object.values(filteredSupportData).some(
+    (arr) => arr.length > 0
+  );
 
   return (
     <Container>
@@ -306,14 +323,10 @@ const SupportingElementsComponent: React.FC<
           No supporting elements match your search criteria.
         </NoDataMessage>
       ) : (
-        (
-          Object.keys(filteredSupportData || {}) as Array<keyof SupportData>
-        ).map((sectionKey) => {
-          if (!filteredSupportData) return null;
+        Object.entries(filteredSupportData).map(([sectionKey, elements]) => {
+          if (elements.length === 0) return null;
 
-          const elements = filteredSupportData[sectionKey];
-
-          if (!elements || elements.length === 0) return null;
+          const outputIds = dataService.getOutputNodes().map((n) => n["@id"]);
 
           return (
             <CollapsibleSection key={sectionKey}>
@@ -335,35 +348,41 @@ const SupportingElementsComponent: React.FC<
                       </tr>
                     </TableHead>
                     <tbody>
-                      {elements.map((element) => (
-                        <TableRow key={element["@id"]}>
-                          <TableCell>
-                            <StyledLink
-                              to={`/view/${extractArkIdentifier(
-                                element["@id"]
-                              )}`}
-                            >
+                      {elements.map((element) => {
+                        const isOutput = outputIds.includes(element["@id"]);
+                        return (
+                          <TableRow key={element["@id"]}>
+                            <TableCell>
+                              <StyledLink
+                                to={`/view/${extractArkIdentifier(
+                                  element["@id"]
+                                )}`}
+                              >
+                                {getHighlightedText(
+                                  element.name || element["@id"],
+                                  searchTerm
+                                )}
+                              </StyledLink>
+                              {isOutput && " (Output)"}
+                            </TableCell>
+                            <DescriptionCell>
                               {getHighlightedText(
-                                element.name || element["@id"],
+                                element.description ||
+                                  "No description provided.",
                                 searchTerm
                               )}
-                            </StyledLink>
-                          </TableCell>
-                          <DescriptionCell>
-                            {getHighlightedText(
-                              element.description || "No description provided.",
-                              searchTerm
-                            )}
-                          </DescriptionCell>
-                          <TableCell>
-                            <RelationshipButton
-                              onClick={() => showRelationship(element["@id"])}
-                            >
-                              Show Relationship
-                            </RelationshipButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </DescriptionCell>
+                            <TableCell>
+                              <RelationshipButton
+                                onClick={() => showRelationship(element["@id"])}
+                                disabled={isOutput}
+                              >
+                                {isOutput ? "Is Output" : "Show Relationship"}
+                              </RelationshipButton>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </tbody>
                   </Table>
                 </div>
@@ -377,4 +396,3 @@ const SupportingElementsComponent: React.FC<
 };
 
 export default SupportingElementsComponent;
-export type { SupportData, SupportingElement };
