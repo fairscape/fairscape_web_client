@@ -42,6 +42,7 @@ const roCrateMainProperties: MetadataProperty[] = [
   { key: "doi", name: "DOI" },
   { key: "description", name: "Description" },
   { key: "externalUrl", name: "External URL" },
+  { key: "notebookUrl", name: "Kaggle Notebook" },
   { key: "release_date", name: "Date Published" },
   { key: "authors", name: "Author(s)" },
   { key: "publisher", name: "Publisher" },
@@ -209,6 +210,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
         const overview = processOverview(metadata);
         setOverviewData(overview);
+        console.log("Overview Data:", overview);
         categorizeEntities(metadata["@graph"] as RawGraphEntity[]);
       } catch (err: any) {
         console.error("Error processing RO-Crate data:", err);

@@ -1,4 +1,4 @@
-import { Metadata, RawGraphEntity } from "../types"; // Adjust path as needed
+import { Metadata, RawGraphEntity } from "../types";
 
 export const findRootEntity = (
   graph: RawGraphEntity[]
@@ -77,6 +77,8 @@ export interface OverviewData {
   externalUrl?: string;
   contentUrl?: string;
   copyright?: string;
+  kaggleUrl?: string;
+  notebookUrl?: string;
   additionalCustomProperties?: Array<{
     name: string;
     value: string | string[];
@@ -253,6 +255,8 @@ export const processOverview = (metadata: Metadata): OverviewData => {
         ? root.copyrightHolder
         : undefined) ||
       undefined,
+    kaggleUrl: root.kaggleUrl || undefined,
+    notebookUrl: root.notebookUrl || undefined,
     additionalCustomProperties:
       additionalCustomProperties.length > 0
         ? additionalCustomProperties

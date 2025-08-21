@@ -6,6 +6,7 @@ export const ROCrateProperties: MetadataProperty[] = [
   { key: "@id", name: "Identifier (ARK)" },
   { key: "name", name: "Name" },
   { key: "description", name: "Description" },
+
   { key: "keywords", name: "Keywords" },
   { key: "author", name: "Author(s)" },
   { key: "version", name: "Version" },
@@ -22,6 +23,7 @@ export const DatasetProperties: MetadataProperty[] = [
   { key: "@id", name: "Identifier (ARK)" },
   { key: "name", name: "Name" },
   { key: "description", name: "Description" },
+  { key: "notebookUrl", name: "Kaggle Notebook" },
   { key: "url", name: "External Link" },
   { key: "author", name: "Author(s)" },
   { key: "contentSize", name: "File Size" },

@@ -84,7 +84,7 @@ const DetailValue = styled.div`
   word-break: break-word;
   max-height: 300px;
   overflow-y: auto;
-
+  padding: 1px 0;
   a {
     color: ${({ theme }) => theme.colors.primary};
     text-decoration: none;
@@ -145,6 +145,36 @@ const ProminentLink = styled.a`
       color: ${({ theme }) =>
         theme.colors.textSlightlyLighter || "#757575"} !important;
       background-color: transparent !important;
+    }
+  }
+`;
+
+const BrandLogo = styled.img`
+  height: 24px; /* Increased from 18px to make it more prominent */
+  width: auto;
+  margin-right: 8px;
+`;
+
+const BrandedButton = styled.a`
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px; /* Adjusted vertical padding for the taller logo */
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  /* Specific styles for Kaggle (no changes here) */
+  &.kaggle {
+    background-color: #ffffff;
+    color: #20beff !important;
+    border: 1px solid #20beff;
+
+    &:hover {
+      background-color: #f0faff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
     }
   }
 `;
@@ -519,6 +549,20 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   ): React.ReactNode => {
     if (value === null || value === undefined) return "Not specified";
 
+    if (key === "notebookUrl" && typeof value === "string") {
+      return (
+        <BrandedButton
+          href={value}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="kaggle"
+        >
+          <BrandLogo src="/icons/kaggle.svg" alt="Kaggle Logo" />
+          Open Notebook
+        </BrandedButton>
+      );
+    }
+
     if (
       propName === "External Link" &&
       typeof value === "string" &&
@@ -542,6 +586,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
           </ProminentLink>
         );
       }
+
       if (typeof value === "string" && value) {
         const rocrateApiDownloadPattern = new RegExp(`^${apiUrl}.*?download/`);
         if (rocrateApiDownloadPattern.test(value)) {

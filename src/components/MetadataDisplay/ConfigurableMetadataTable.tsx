@@ -69,7 +69,7 @@ const DetailValue = styled.div`
   word-break: break-word;
   max-height: 300px;
   overflow-y: auto;
-
+  padding: 1px 0;
   a {
     color: ${({ theme }) => theme.colors.primary};
     text-decoration: none;
@@ -105,6 +105,35 @@ const ListItemStyled = styled.li`
   margin-bottom: 5px;
 `;
 
+const BrandLogo = styled.img`
+  height: 24px;
+  width: auto;
+  margin-right: 8px;
+`;
+
+const BrandedButton = styled.a`
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  &.kaggle {
+    background-color: #ffffff;
+    color: #20beff !important;
+    border: 1px solid #20beff;
+
+    &:hover {
+      background-color: #f0faff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+  }
+`;
+
 interface ConfigurableMetadataTableProps {
   title: string;
   data: Record<string, any> | null;
@@ -124,7 +153,32 @@ const ConfigurableMetadataTable: React.FC<ConfigurableMetadataTableProps> = ({
     propDefinition: MetadataProperty
   ): React.ReactNode => {
     if (value === null || value === undefined) return null;
-
+    if (key === "kaggleUrl" && typeof value === "string") {
+      return (
+        <BrandedButton
+          href={value}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="kaggle"
+        >
+          <BrandLogo src="/icons/kaggle.svg" alt="Kaggle Logo" />
+          View on Kaggle
+        </BrandedButton>
+      );
+    }
+    if (key === "notebookUrl" && typeof value === "string") {
+      return (
+        <BrandedButton
+          href={value}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="kaggle"
+        >
+          <BrandLogo src="/icons/kaggle.svg" alt="Kaggle Logo" />
+          Open Notebook
+        </BrandedButton>
+      );
+    }
     if (
       propDefinition.name.toLowerCase().includes("date") &&
       typeof value === "string"
