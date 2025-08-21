@@ -1,5 +1,3 @@
-// services/GraphDataService.ts
-
 import { RawGraphData, RawGraphEntity } from "../types/graph";
 
 export class GraphDataService {

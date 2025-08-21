@@ -1,5 +1,3 @@
-// utils/graphUtils.ts
-
 import {
   RawGraphEntity,
   EvidenceNodeData,
