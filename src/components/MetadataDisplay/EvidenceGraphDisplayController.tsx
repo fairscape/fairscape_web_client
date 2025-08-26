@@ -109,9 +109,7 @@ const EvidenceGraphDisplayController: React.FC<
   }
 
   const canAttemptBuild =
-    isLoggedIn &&
-    determinedType &&
-    !["release", "rocrate"].includes(determinedType);
+    isLoggedIn && determinedType && !["release"].includes(determinedType);
 
   if (graphBuildStatus === "IDLE") {
     if (!hasEvidenceGraphLink && canAttemptBuild) {

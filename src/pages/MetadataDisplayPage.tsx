@@ -470,6 +470,23 @@ const MetadataDisplayPage: React.FC = () => {
         );
 
       case "graph":
+        // For RO-Crate, show the graph directly here
+        if (determinedType === "rocrate") {
+          return (
+            <EvidenceGraphDisplayController
+              isGraphManagerLoading={isGraphManagerLoading}
+              graphBuildStatus={graphBuildStatus}
+              currentTaskId={currentTaskId}
+              evidenceGraphData={evidenceGraphData}
+              currentEvidenceGraphId={currentEvidenceGraphId}
+              evidenceGraphError={evidenceGraphError}
+              supportData={supportData}
+              isLoggedIn={isLoggedIn}
+              determinedType={determinedType}
+              hasEvidenceGraphLink={hasEvidenceGraphLink}
+            />
+          );
+        }
         return (
           <EvidenceGraphDisplayController
             isGraphManagerLoading={isGraphManagerLoading}
@@ -503,7 +520,7 @@ const MetadataDisplayPage: React.FC = () => {
     graphBuildStatus === "SUCCESS" ||
     (isLoggedIn &&
       determinedType &&
-      !["release", "rocrate"].includes(determinedType) &&
+      !["release"].includes(determinedType) && // Only exclude "release", not "rocrate"
       (graphBuildStatus === "IDLE" || graphBuildStatus === "TIMED_OUT"));
 
   return (

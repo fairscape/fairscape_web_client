@@ -99,7 +99,7 @@ export const useEvidenceGraphManager = ({
 
     if (!userIsLoggedIn) return;
 
-    if (itemType && ["release", "rocrate"].includes(itemType)) {
+    if (itemType && ["release"].includes(itemType)) {
       setEvidenceGraphError(
         "Evidence graphs are not supported for this item type"
       );
@@ -143,7 +143,7 @@ export const useEvidenceGraphManager = ({
           setCurrentEvidenceGraphId(pollResult.evidenceGraphId);
           setGraphBuildStatus("SUCCESS");
 
-          if (pollResult.updatedMetadata) {
+          if (pollResult.updatedMetadata && itemType !== "rocrate") {
             setUpdatedMetadata(pollResult.updatedMetadata);
           }
 
@@ -190,7 +190,7 @@ export const useEvidenceGraphManager = ({
     const token = localStorage.getItem("token");
     const userIsLoggedIn = isLoggedIn || !!token;
 
-    if (userIsLoggedIn && !["release", "rocrate"].includes(itemType)) {
+    if (userIsLoggedIn && !["release"].includes(itemType)) {
       initiateBuildProcess();
     }
   }, [
