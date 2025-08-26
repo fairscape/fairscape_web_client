@@ -64,7 +64,7 @@ const EvidenceGraphDisplayController: React.FC<
     if (graphBuildStatus === "INITIATING") {
       message = "Initiating Evidence Graph build...";
     } else if (graphBuildStatus === "POLLING") {
-      message = `Building Evidence Graph (Task: ${
+      message = `Fetching Evidence Graph (Task: ${
         currentTaskId || "..."
       }). Please wait...`;
     } else if (

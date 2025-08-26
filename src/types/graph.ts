@@ -1,17 +1,22 @@
+import { Node, Edge } from "reactflow";
+
 export interface RawGraphEntity {
   "@id": string;
   "@type": string | string[];
   name?: string;
   label?: string;
   description?: string;
-  generatedBy?: RawGraphEntity;
-  usedDataset?: RawGraphEntity | RawGraphEntity[] | string | string[];
-  usedSoftware?: RawGraphEntity | string;
+  generatedBy?: { "@id": string } | Array<{ "@id": string }>;
+  usedDataset?: { "@id": string } | Array<{ "@id": string }>;
+  usedSoftware?: { "@id": string } | Array<{ "@id": string }>;
+  usedSample?: { "@id": string } | Array<{ "@id": string }>;
+  usedInstrument?: { "@id": string } | Array<{ "@id": string }>;
   [key: string]: any;
 }
 
 export interface RawGraphData {
-  "@graph": RawGraphEntity | RawGraphEntity[];
+  "@graph": { [arkId: string]: RawGraphEntity };
+  outputs?: Array<{ "@id": string }>;
   [key: string]: any;
 }
 
@@ -22,13 +27,15 @@ export interface EvidenceNodeData {
   displayName: string;
   description?: string;
   expandable: boolean;
-  properties: Record<string, any>;
-  _sourceData: RawGraphEntity;
-  _remainingDatasets?: RawGraphEntity[];
-  _expandedCount?: number;
+  properties: Record<string, any> & {
+    count?: number;
+    _childNodeIds?: string[];
+    _parentNodeId?: string;
+    _visibleChildren?: number;
+  };
+  _sourceData: RawGraphEntity | {};
   _expanded?: boolean;
 }
 
-import { Node, Edge } from "reactflow";
 export type EvidenceNode = Node<EvidenceNodeData>;
 export type EvidenceEdge = Edge;
