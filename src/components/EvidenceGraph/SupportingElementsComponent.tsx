@@ -181,6 +181,131 @@ const getEntityType = (typeUri: string | string[] | undefined): string => {
   return typeString.split(/[#\/]/).pop() || "Unknown";
 };
 
+interface TraverseParams {
+  node: RawGraphEntity;
+  results: SupportData;
+  seenIds: Set<string>;
+}
+
+const traverseAndCollect = ({
+  node,
+  results,
+  seenIds,
+}: TraverseParams): void => {
+  if (
+    !node ||
+    typeof node !== "object" ||
+    !node["@id"] ||
+    seenIds.has(node["@id"])
+  ) {
+    return;
+  }
+  seenIds.add(node["@id"]);
+  let nodeTypes: string[] =
+    typeof node["@type"] === "string"
+      ? [node["@type"]]
+      : Array.isArray(node["@type"])
+      ? node["@type"]
+      : ["Unknown"];
+  const outputElement: SupportingElement = {
+    "@id": node["@id"],
+    name: node.name || "N/A",
+    description: node.description || "",
+    "@type": node["@type"] || "Unknown",
+  };
+
+  if (
+    nodeTypes.some((t) => t.includes("Dataset")) &&
+    !results.datasets.some((el) => el["@id"] === node["@id"])
+  )
+    results.datasets.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Software")) &&
+    !results.software.some((el) => el["@id"] === node["@id"])
+  )
+    results.software.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Computation")) &&
+    !results.computations.some((el) => el["@id"] === node["@id"])
+  )
+    results.computations.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Sample")) &&
+    !results.samples.some((el) => el["@id"] === node["@id"])
+  )
+    results.samples.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Experiment")) &&
+    !results.experiments.some((el) => el["@id"] === node["@id"])
+  )
+    results.experiments.push(outputElement);
+  else if (
+    nodeTypes.some((t) => t.includes("Instrument")) &&
+    !results.instruments.some((el) => el["@id"] === node["@id"])
+  )
+    results.instruments.push(outputElement);
+
+  const relationshipKeys = [
+    "generatedBy",
+    "usedDataset",
+    "usedSoftware",
+    "usedSample",
+    "usedInstrument",
+    "hasPart",
+  ];
+  for (const key of relationshipKeys) {
+    const relatedItems = node[key];
+    if (!relatedItems) continue;
+    const itemsToProcess: any[] = Array.isArray(relatedItems)
+      ? relatedItems
+      : [relatedItems];
+    for (const item of itemsToProcess) {
+      if (item && typeof item === "object" && item["@id"]) {
+        traverseAndCollect({ node: item as RawGraphEntity, results, seenIds });
+      }
+    }
+  }
+};
+
+export const extractSupportData = (
+  graphData: RawGraphData | null
+): SupportData | null => {
+  if (!graphData || !graphData["@graph"]) {
+    return null;
+  }
+  const results: SupportData = {
+    datasets: [],
+    software: [],
+    computations: [],
+    samples: [],
+    experiments: [],
+    instruments: [],
+  };
+  const seenIds = new Set<string>();
+  const graphEntities = graphData["@graph"];
+
+  if (Array.isArray(graphEntities)) {
+    const rootEntity = findRootEntity(graphEntities);
+    if (rootEntity) {
+      traverseAndCollect({ node: rootEntity, results, seenIds });
+    } else {
+      graphEntities.forEach((entity) =>
+        traverseAndCollect({ node: entity, results, seenIds })
+      );
+    }
+  } else if (typeof graphEntities === "object" && graphEntities !== null) {
+    traverseAndCollect({
+      node: graphEntities as RawGraphEntity,
+      results,
+      seenIds,
+    });
+  } else {
+    return null;
+  }
+  const hasData = Object.values(results).some((arr) => arr.length > 0);
+  return hasData ? results : null;
+};
+
 const SupportingElementsComponent: React.FC<
   SupportingElementsComponentProps
 > = ({ dataService, onShowRelationshipPath }) => {
