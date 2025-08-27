@@ -9,7 +9,6 @@ export function useMetadataApi() {
     getRoCrate: (ark: string) =>
       http(`/rocrate/${encodeURIComponent(ark)}`, { method: "GET" }),
 
-    // optional serializations (add when your backend is ready)
     getRdfXml: (ark: string) =>
       http(`/rdf/${encodeURIComponent(ark)}`, { method: "GET" }).catch(
         () => null
