@@ -3,9 +3,9 @@ import {
   EvidenceNodeData,
   EvidenceNode,
   EvidenceEdge,
-} from "../types/graph";
+} from "../../../types/graph";
 import { GraphDataService } from "../hooks/GraphDataService";
-import { RawGraphEntity } from "../types/graph";
+import { RawGraphEntity } from "../../../types/graph";
 
 const MAX_LABEL_LENGTH = 50;
 const COLLECTION_THRESHOLD = 5;

@@ -7,7 +7,7 @@ import { EvidenceNodeData } from "../../types/graph";
 import {
   formatPropertyValue,
   getDisplayableProperties,
-} from "../../utils/graphUtils";
+} from "./utils/graphUtils";
 import styled from "styled-components"; // Ensure styled-components is imported
 
 const getNodeColor = (type: string): string => {

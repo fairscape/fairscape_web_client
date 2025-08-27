@@ -18,9 +18,9 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 
 import { RawGraphData, EvidenceNode, EvidenceEdge } from "../../types/graph";
-import { GraphDataService } from "../../hooks/GraphDataService";
-import { GraphBuilder } from "../../utils/graphUtils";
-import { getLayoutedElements } from "../../utils/layoutUtils";
+import { GraphDataService } from "./hooks/GraphDataService";
+import { GraphBuilder } from "./utils/graphUtils";
+import { getLayoutedElements } from "./utils/layoutUtils";
 import Legend from "./Legend";
 import EvidenceNodeComponent from "./EvidenceNode";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -363,7 +363,7 @@ const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({
       </ReactFlowProvider>
       <SupportingElementsComponent
         dataService={dataService}
-        supportData={supportData} 
+        supportData={supportData}
         onShowRelationshipPath={setPathToVisualize}
       />
     </Container>

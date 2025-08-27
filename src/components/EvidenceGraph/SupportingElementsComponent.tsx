@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { GraphDataService } from "../../hooks/GraphDataService";
 import { RawGraphEntity } from "../../types/graph";
-import { findRootEntity } from "../../utils/metadataProcessing";
+import { findRootEntity } from "../../components/MetadataDisplay/utils/metadataProcessing";
 
 const Container = styled.div`
   margin-top: ${({ theme }) => theme.spacing.lg};

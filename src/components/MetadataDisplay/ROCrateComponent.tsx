@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { Metadata, RawGraphEntity } from "../../types";
-import { processOverview, OverviewData } from "../../utils/metadataProcessing";
+import { processOverview, OverviewData } from "./utils/metadataProcessing";
 import ConfigurableMetadataTable from "./ConfigurableMetadataTable";
 import { MetadataProperty } from "./metadataPropertyLists";
 import AdditionalPropertiesSection from "./AdditionalPropertiesSection";

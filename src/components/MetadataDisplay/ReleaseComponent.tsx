@@ -10,7 +10,7 @@ import {
   UseCasesData,
   DistributionData,
   CompositionData,
-} from "../../utils/metadataProcessing";
+} from "./utils/metadataProcessing";
 import ConfigurableMetadataTable from "./ConfigurableMetadataTable";
 import { MetadataProperty } from "./metadataPropertyLists";
 import AdditionalPropertiesSection from "./AdditionalPropertiesSection";
