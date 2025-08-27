@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { GraphDataService } from "../../hooks/GraphDataService";
 import { RawGraphEntity } from "../../types/graph";
+import { findRootEntity } from "../../utils/metadataProcessing";
 
 const Container = styled.div`
   margin-top: ${({ theme }) => theme.spacing.lg};
@@ -84,7 +85,6 @@ const TableRow = styled.tr`
   &:nth-child(odd) {
     background-color: ${({ theme }) => theme.colors.background};
   }
-
   &:hover {
     background-color: ${({ theme }) => theme.colors.backgroundHover};
   }
@@ -106,7 +106,6 @@ const DescriptionCell = styled(TableCell)`
 const StyledLink = styled(Link)`
   color: ${({ theme }) => theme.colors.primary};
   text-decoration: none;
-
   &:hover {
     text-decoration: underline;
   }
@@ -132,7 +131,6 @@ const RelationshipButton = styled.button`
   &:hover {
     background-color: ${({ theme }) => theme.colors.primaryDark};
   }
-
   &:disabled {
     background-color: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
@@ -146,24 +144,21 @@ const HighlightSpan = styled.span`
 `;
 
 interface SupportingElementsComponentProps {
-  dataService: GraphDataService;
+  dataService: GraphDataService | null;
   onShowRelationshipPath: (pathNodeIds: string[] | null) => void;
 }
 
-const escapeRegExp = (string: string): string => {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-};
+const escapeRegExp = (s: string): string =>
+  s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const getHighlightedText = (text: string, highlight: string): ReactNode[] => {
   if (!text) return [text];
-  if (!highlight.trim()) {
-    return [text];
-  }
-  const escapedHighlight = escapeRegExp(highlight);
-  const parts = text.split(new RegExp(`(${escapedHighlight})`, "gi"));
-  return parts.map((part, index) =>
+  if (!highlight.trim()) return [text];
+  const escaped = escapeRegExp(highlight);
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return parts.map((part, i) =>
     part.toLowerCase() === highlight.toLowerCase() ? (
-      <HighlightSpan key={`${part}-${index}`}>{part}</HighlightSpan>
+      <HighlightSpan key={`${part}-${i}`}>{part}</HighlightSpan>
     ) : (
       part
     )
@@ -309,6 +304,15 @@ export const extractSupportData = (
 const SupportingElementsComponent: React.FC<
   SupportingElementsComponentProps
 > = ({ dataService, onShowRelationshipPath }) => {
+  if (!dataService) {
+    return (
+      <Container>
+        <SectionTitle>Supporting Elements</SectionTitle>
+        <NoDataMessage>Graph data not loaded yet.</NoDataMessage>
+      </Container>
+    );
+  }
+
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({
@@ -319,6 +323,7 @@ const SupportingElementsComponent: React.FC<
     experiments: false,
     instruments: false,
   });
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const supportData = useMemo(() => {
@@ -342,7 +347,6 @@ const SupportingElementsComponent: React.FC<
 
     allNodes.forEach((node) => {
       const type = getEntityType(node["@type"]);
-
       switch (type) {
         case "Dataset":
           categorizedNodes.datasets.push(node);
@@ -371,50 +375,48 @@ const SupportingElementsComponent: React.FC<
   const filteredSupportData = useMemo(() => {
     if (!searchTerm.trim()) return supportData;
 
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    const result = { ...supportData };
+    const q = searchTerm.toLowerCase();
+    const result = {
+      datasets: [] as RawGraphEntity[],
+      software: [] as RawGraphEntity[],
+      computations: [] as RawGraphEntity[],
+      samples: [] as RawGraphEntity[],
+      experiments: [] as RawGraphEntity[],
+      instruments: [] as RawGraphEntity[],
+    };
 
-    Object.keys(result).forEach((key) => {
-      result[key as keyof typeof result] = result[
-        key as keyof typeof result
-      ].filter(
-        (element) =>
-          (element.name &&
-            element.name.toLowerCase().includes(lowerSearchTerm)) ||
-          (element.description &&
-            element.description.toLowerCase().includes(lowerSearchTerm))
-      );
-    });
+    (Object.keys(supportData) as Array<keyof typeof supportData>).forEach(
+      (key) => {
+        result[key] = supportData[key].filter(
+          (el) =>
+            (el.name && el.name.toLowerCase().includes(q)) ||
+            (el.description && el.description.toLowerCase().includes(q))
+        );
+      }
+    );
 
     return result;
   }, [supportData, searchTerm]);
 
   const toggleSection = (section: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   const showRelationship = (elementId: string) => {
     const path = dataService.findPathFromAnyOutput(elementId);
-
-    if (path && path.length > 0) {
-      onShowRelationshipPath(path);
-    } else {
+    if (path && path.length > 0) onShowRelationshipPath(path);
+    else {
       console.warn(`No path found from outputs to ${elementId}`);
       onShowRelationshipPath(null);
     }
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setSearchTerm(e.target.value);
 
   const hasAnyElements = Object.values(supportData).some(
     (arr) => arr.length > 0
   );
-
   if (!hasAnyElements) {
     return (
       <Container>
@@ -429,6 +431,7 @@ const SupportingElementsComponent: React.FC<
   const hasFilteredElements = Object.values(filteredSupportData).some(
     (arr) => arr.length > 0
   );
+  const outputIds = dataService.getOutputNodes().map((n) => n["@id"]);
 
   return (
     <Container>
@@ -451,8 +454,6 @@ const SupportingElementsComponent: React.FC<
         Object.entries(filteredSupportData).map(([sectionKey, elements]) => {
           if (elements.length === 0) return null;
 
-          const outputIds = dataService.getOutputNodes().map((n) => n["@id"]);
-
           return (
             <CollapsibleSection key={sectionKey}>
               <SectionHeader onClick={() => toggleSection(sectionKey)}>
@@ -462,7 +463,7 @@ const SupportingElementsComponent: React.FC<
                 </span>
                 <span>{expandedSections[sectionKey] ? "▲" : "▼"}</span>
               </SectionHeader>
-              <SectionContent isOpen={expandedSections[sectionKey]}>
+              <SectionContent isOpen={!!expandedSections[sectionKey]}>
                 <div style={{ overflowX: "auto" }}>
                   <Table>
                     <TableHead>
@@ -473,18 +474,16 @@ const SupportingElementsComponent: React.FC<
                       </tr>
                     </TableHead>
                     <tbody>
-                      {elements.map((element) => {
-                        const isOutput = outputIds.includes(element["@id"]);
+                      {elements.map((el) => {
+                        const isOutput = outputIds.includes(el["@id"]);
                         return (
-                          <TableRow key={element["@id"]}>
+                          <TableRow key={el["@id"]}>
                             <TableCell>
                               <StyledLink
-                                to={`/view/${extractArkIdentifier(
-                                  element["@id"]
-                                )}`}
+                                to={`/view/${extractArkIdentifier(el["@id"])}`}
                               >
                                 {getHighlightedText(
-                                  element.name || element["@id"],
+                                  el.name || el["@id"],
                                   searchTerm
                                 )}
                               </StyledLink>
@@ -492,15 +491,19 @@ const SupportingElementsComponent: React.FC<
                             </TableCell>
                             <DescriptionCell>
                               {getHighlightedText(
-                                element.description ||
-                                  "No description provided.",
+                                el.description || "No description provided.",
                                 searchTerm
                               )}
                             </DescriptionCell>
                             <TableCell>
                               <RelationshipButton
-                                onClick={() => showRelationship(element["@id"])}
+                                onClick={() => showRelationship(el["@id"])}
                                 disabled={isOutput}
+                                title={
+                                  isOutput
+                                    ? "This node is already an output"
+                                    : "Show path from an output to this node"
+                                }
                               >
                                 {isOutput ? "Is Output" : "Show Relationship"}
                               </RelationshipButton>

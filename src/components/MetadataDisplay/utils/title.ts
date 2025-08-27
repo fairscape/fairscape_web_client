@@ -6,7 +6,7 @@ export function deriveTitleAndVersion(main?: any) {
 
   if (Array.isArray(main["@graph"])) {
     const root =
-      main["@graph"].find((x: any) => x?.["@id"] === "./") || main["@graph"][0];
+      main["@graph"].find((x: any) => x?.["@id"] === "./") || main["@graph"][1];
     if (root) {
       if (root.name) title = root.name;
       if (root.version) version = root.version;

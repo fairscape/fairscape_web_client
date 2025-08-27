@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import styled from "styled-components";
 import ReactFlow, {
   Controls,
   Background,
@@ -15,7 +16,6 @@ import ReactFlow, {
   EdgeChange,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import styled from "styled-components";
 
 import { RawGraphData, EvidenceNode, EvidenceEdge } from "../../types/graph";
 import { GraphDataService } from "../../hooks/GraphDataService";
@@ -29,7 +29,6 @@ import SupportingElementsComponent from "./SupportingElementsComponent";
 const Container = styled.div`
   width: 100%;
 `;
-
 const ViewerWrapper = styled.div`
   width: 100%;
   height: 550px;
@@ -38,7 +37,6 @@ const ViewerWrapper = styled.div`
   border-radius: ${({ theme }) => theme.borderRadius};
   background-color: ${({ theme }) => theme.colors.surface};
   margin-bottom: ${({ theme }) => theme.spacing.lg};
-
   .react-flow__edge {
     path {
       transition: stroke 0.2s ease, stroke-width 0.2s ease;
@@ -52,34 +50,31 @@ const ViewerWrapper = styled.div`
     }
   }
 `;
-
 const LoadingOverlay = styled.div`
   position: absolute;
   inset: 0;
-  background-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
 `;
-
 const LegendWrapper = styled.div`
   position: absolute;
   bottom: 10px;
   right: 10px;
-  background-color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.9);
   padding: 8px;
   border-radius: 4px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   z-index: 5;
   font-size: 12px;
 `;
-
 const SelectionIndicator = styled.div`
   position: absolute;
   top: 10px;
   left: 10px;
-  background-color: rgba(0, 114, 255, 0.1);
+  background: rgba(0, 114, 255, 0.1);
   color: #0056b3;
   padding: 5px 10px;
   border-radius: 4px;
@@ -89,7 +84,6 @@ const SelectionIndicator = styled.div`
 `;
 
 const nodeTypes = { evidenceNode: EvidenceNodeComponent };
-
 type RFNode = Node<EvidenceNode["data"]>;
 type RFEdge = Edge<EvidenceEdge>;
 
@@ -138,14 +132,12 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
             );
           setNodes(layoutedNodes as RFNode[]);
           setEdges(layoutedEdges as RFEdge[]);
-
-          if (fit) {
+          if (fit)
             setTimeout(() => {
               fitView({ padding: 0.15, duration: 300 });
             }, 100);
-          }
-        } catch (error) {
-          console.error("Layout failed:", error);
+        } catch (e) {
+          console.error("Layout failed:", e);
           setNodes(elements.nodes as RFNode[]);
           setEdges(elements.edges as RFEdge[]);
         } finally {
@@ -162,10 +154,9 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
       setEdges([]);
       return;
     }
-
     graphBuilderRef.current = new GraphBuilder(dataService);
 
-    if (targetPath && targetPath.length > 0) {
+    if (targetPath && targetPath.length) {
       const elements = graphBuilderRef.current.buildPathGraph(targetPath);
       setHighlightedPath({
         nodes: targetPath,
@@ -191,7 +182,6 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
       if (event.shiftKey) {
         event.preventDefault();
         event.stopPropagation();
-
         if (!pathSelectionStart) {
           setPathSelectionStart(node.id);
           setHighlightedPath({ nodes: [node.id], edges: [] });
@@ -226,7 +216,6 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
         event.stopPropagation();
         return;
       }
-
       if (!node.data.expandable) {
         event.stopPropagation();
         return;
@@ -246,29 +235,18 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
 
   const handleNodesChange: OnNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      const relevantChanges = changes.filter(
-        (change) =>
-          !isLoading || (change.type === "position" && change.dragging === true)
+      const relevant = changes.filter(
+        (c) => !isLoading || (c.type === "position" && c.dragging === true)
       );
-      if (relevantChanges.length > 0) {
-        onNodesChangeInternal(relevantChanges);
-      }
+      if (relevant.length) onNodesChangeInternal(relevant);
     },
     [isLoading, onNodesChangeInternal]
   );
 
   const handleEdgesChange: OnEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      onEdgesChangeInternal(changes);
-    },
+    (changes: EdgeChange[]) => onEdgesChangeInternal(changes),
     [onEdgesChangeInternal]
   );
-
-  const onPaneClick = useCallback(() => {
-    if (pathSelectionStart || highlightedPath.nodes.length > 0) {
-      clearHighlighting();
-    }
-  }, [clearHighlighting, pathSelectionStart, highlightedPath]);
 
   const styledNodes = nodes.map((node) => {
     const isPathNode = highlightedPath.nodes.includes(node.id);
@@ -277,14 +255,12 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
       isPathNode &&
       node.id === highlightedPath.nodes[highlightedPath.nodes.length - 1] &&
       highlightedPath.nodes.length > 1;
-
-    let pathClasses = "";
-    if (isPathNode) pathClasses += "path-highlight ";
-    if (isStartNode) pathClasses += "path-start ";
-    if (isEndNode) pathClasses += "path-end ";
-    if (node.id === pathSelectionStart) pathClasses += "path-selection-start ";
-
-    return { ...node, className: pathClasses.trim() };
+    let cls = "";
+    if (isPathNode) cls += "path-highlight ";
+    if (isStartNode) cls += "path-start ";
+    if (isEndNode) cls += "path-end ";
+    if (node.id === pathSelectionStart) cls += "path-selection-start ";
+    return { ...node, className: cls.trim() };
   });
 
   const styledEdges = edges.map((edge) => {
@@ -315,7 +291,10 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
         onEdgesChange={handleEdgesChange}
         nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
+        onPaneClick={() => {
+          if (pathSelectionStart || highlightedPath.nodes.length)
+            clearHighlighting();
+        }}
         nodesDraggable={!isLoading}
         nodesConnectable={false}
         minZoom={0.1}
@@ -339,10 +318,12 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
 
 interface EvidenceGraphViewerProps {
   evidenceGraphData: RawGraphData | null;
+  supportData?: any; // precomputed
 }
 
 const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({
   evidenceGraphData,
+  supportData,
 }) => {
   const [dataService, setDataService] = useState<GraphDataService | null>(null);
   const [pathToVisualize, setPathToVisualize] = useState<string[] | null>(null);
@@ -356,10 +337,21 @@ const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({
     }
   }, [evidenceGraphData]);
 
-  if (!dataService) {
+  if (!evidenceGraphData) {
+    // Centered spinner while EG is building / not ready
     return (
-      <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-        Evidence graph data is not available.
+      <div
+        style={{
+          height: 320,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "1px solid var(--border, #ddd)",
+          borderRadius: 6,
+          background: "white",
+        }}
+      >
+        <LoadingSpinner />
       </div>
     );
   }
@@ -371,6 +363,7 @@ const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({
       </ReactFlowProvider>
       <SupportingElementsComponent
         dataService={dataService}
+        supportData={supportData} 
         onShowRelationshipPath={setPathToVisualize}
       />
     </Container>

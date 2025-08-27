@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useContext, useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import styled from "styled-components";
+import { useParams } from "react-router-dom";
 
 import ButtonGroup from "../components/MetadataDisplay/ButtonGroup";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -8,16 +9,12 @@ import ReleaseComponent from "../components/MetadataDisplay/ReleaseComponent";
 import ROCrateComponent from "../components/MetadataDisplay/ROCrateComponent";
 import GenericMetadataComponent from "../components/MetadataDisplay/GenericMetadataComponent";
 import SerializationView from "../components/MetadataDisplay/SerializationView";
-import EvidenceGraphDisplayController from "../components/MetadataDisplay/EvidenceGraphDisplayController";
+import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 
-import { AuthContext } from "../context/AuthContext";
-import metadataService from "../hooks/metadataService";
-import { useEvidenceGraphManager } from "../hooks/useEvidenceGraphManager";
-import { findRootEntity } from "../utils/metadataProcessing";
+import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
+import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
 
-import { Metadata } from "../types";
-
-import { extractSupportData } from "../components/EvidenceGraph/SupportingElementsComponent";
+type ViewType = "metadata" | "serialization" | "graph";
 
 const Container = styled.div`
   max-width: 1100px;
@@ -26,7 +23,6 @@ const Container = styled.div`
   background-color: white;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 `;
-Container.displayName = "Container";
 
 const Header = styled.header`
   margin-bottom: 20px;
@@ -36,26 +32,22 @@ const Header = styled.header`
   padding: 20px;
   border-radius: 5px;
 `;
-Header.displayName = "Header";
 
 const PageTitle = styled.h1`
   font-size: 24px;
   margin-bottom: 5px;
   color: ${({ theme }) => theme.colors.primary};
 `;
-PageTitle.displayName = "PageTitle";
 
 const VersionInfo = styled.div`
   color: ${({ theme }) => theme.colors.textSecondary};
 `;
-VersionInfo.displayName = "VersionInfo";
 
 const ButtonGroupContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-bottom: ${({ theme }) => theme.spacing.lg};
 `;
-ButtonGroupContainer.displayName = "ButtonGroupContainer";
 
 const Footer = styled.footer`
   margin-top: 30px;
@@ -70,314 +62,140 @@ const Footer = styled.footer`
   a {
     color: ${({ theme }) => theme.colors.primary};
     text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
+  }
+  a:hover {
+    text-decoration: underline;
   }
 `;
-Footer.displayName = "Footer";
 
-type ViewType = "metadata" | "serialization" | "graph";
+const CenteredMessage: React.FC<{ message: string }> = ({ message }) => (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      padding: "20px",
+    }}
+  >
+    <LoadingSpinner />
+    <p style={{ marginTop: 10, color: "#666", textAlign: "center" }}>
+      {message}
+    </p>
+  </div>
+);
 
-const CenteredMessageWithSpinner: React.FC<{ message: string }> = styled(
-  ({ message, className }) => (
-    <div
-      className={className}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
-    >
-      <LoadingSpinner />
-      <p style={{ marginTop: "10px", color: "#666", textAlign: "center" }}>
-        {message}
-      </p>
-    </div>
-  )
-)``;
-
-const MetadataDisplayPage: React.FC = () => {
-  const location = window.location.pathname;
-  const arkId = location.includes("/view/") ? location.split("/view/")[1] : "";
+export default function MetadataDisplayPage() {
+  // Prefer router param but fall back to window path
+  const params = useParams<{ arkId?: string }>();
+  const arkId =
+    params?.arkId ??
+    (window.location.pathname.includes("/view/")
+      ? window.location.pathname.split("/view/")[1]
+      : "");
 
   const [view, setView] = useState<ViewType>("metadata");
-  const [title, setTitle] = useState<string>("Data Display");
-  const [version, setVersion] = useState<string>("1.0");
+  const { bundle, loading, error } = useMetadataBundle(arkId);
 
-  const [initialMetadata, setInitialMetadata] = useState<Metadata | null>(null);
-  const [initialLoading, setInitialLoading] = useState<boolean>(true);
-  const [initialError, setInitialError] = useState<string | null>(null);
-  const [determinedType, setDeterminedType] = useState<string | null>(null);
-  const [initialHasEvidenceGraphLink, setInitialHasEvidenceGraphLink] =
-    useState<boolean>(false);
-  const [initialEvidenceGraphId, setInitialEvidenceGraphId] = useState<
-    string | null
-  >(null);
-
-  const { isLoggedIn } = useContext(AuthContext);
-  const metadataServiceInstance = useMemo(() => metadataService(), []);
-
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      if (!arkId) {
-        setInitialLoading(false);
-        setInitialError("No ARK ID provided");
-        return;
-      }
-      setInitialLoading(true);
-      setInitialError(null);
-      setInitialMetadata(null);
-      setDeterminedType(null);
-      setInitialHasEvidenceGraphLink(false);
-      setInitialEvidenceGraphId(null);
-
-      try {
-        const result = await metadataServiceInstance.fetchInitialMetadata(
-          arkId
-        );
-        if (result.error) throw new Error(result.error);
-
-        setInitialMetadata(result.metadata);
-        setDeterminedType(result.type);
-        setInitialHasEvidenceGraphLink(result.hasEvidenceGraph);
-        setInitialEvidenceGraphId(result.evidenceGraphId);
-
-        if (result.metadata) {
-          const graph = result.metadata["@graph"];
-          let rootName = "Details",
-            rootVersion = "1.0";
-          if (graph && Array.isArray(graph)) {
-            const root = findRootEntity(graph);
-            if (root) {
-              rootName = root.name || rootName;
-              rootVersion = root.version || rootVersion;
-            }
-          } else if (
-            graph &&
-            typeof graph === "object" &&
-            !Array.isArray(graph)
-          ) {
-            rootName = (graph as any).name || rootName;
-            rootVersion = (graph as any).version || rootVersion;
-          } else if (result.metadata.name) {
-            rootName = result.metadata.name;
-            rootVersion = result.metadata.version || rootVersion;
-          }
-          setTitle(
-            rootName === "Details"
-              ? `${
-                  result.type.charAt(0).toUpperCase() + result.type.slice(1)
-                } Details`
-              : rootName
-          );
-          setVersion(rootVersion);
-        }
-      } catch (err: any) {
-        setInitialError(err.message || "Failed to fetch initial data");
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-    fetchInitialData();
-  }, [arkId, metadataServiceInstance]);
-
-  const {
-    hasEvidenceGraphLink,
-    currentEvidenceGraphId,
-    evidenceGraphData,
-    supportData,
-    graphBuildStatus,
-    currentTaskId,
-    evidenceGraphError,
-    updatedMetadata,
-    isLoading: isGraphManagerLoading,
-  } = useEvidenceGraphManager({
-    arkId: arkId || null,
-    initialHasLink: initialHasEvidenceGraphLink,
-    initialGraphId: initialEvidenceGraphId,
-    initialMetadata: initialMetadata,
-    isLoggedIn,
-    itemType: determinedType,
-    extractSupportData,
-  });
-
-  const displayMetadata = updatedMetadata || initialMetadata;
+  const { title, version } = useMemo(
+    () => deriveTitleAndVersion(bundle?.rocrate ?? bundle?.main),
+    [bundle]
+  );
 
   useEffect(() => {
     document.title = `${title} - FAIRSCAPE`;
   }, [title]);
 
-  const renderContent = () => {
-    if (initialLoading)
-      return <CenteredMessageWithSpinner message="Loading metadata..." />;
-    if (initialError)
-      return (
-        <Alert type="error" title="Error Loading Data" message={initialError} />
-      );
+  const showGraphButton = !!bundle && bundle.kind !== "release";
 
-    if (view !== "graph" && !displayMetadata) {
+  function renderContent() {
+    if (loading) return <CenteredMessage message="Loading metadata..." />;
+    if (error)
+      return <Alert type="error" title="Error Loading Data" message={error} />;
+    if (!bundle)
       return (
-        <Alert
-          type="info"
-          title="No Metadata Available"
-          message="Metadata details could not be loaded."
-        />
+        <Alert type="info" title="No Data" message="Nothing to display." />
       );
-    }
 
     switch (view) {
-      case "metadata":
-        if (!displayMetadata)
-          return (
-            <CenteredMessageWithSpinner message="Loading metadata details..." />
-          );
-        const metaType = determinedType || "unknown";
-        switch (metaType) {
+      case "metadata": {
+        const m = bundle.rocrate ?? bundle.main;
+        switch (bundle.kind) {
           case "release":
-            return (
-              <ReleaseComponent metadata={displayMetadata} arkId={arkId} />
-            );
+            return <ReleaseComponent metadata={m} arkId={arkId} />;
           case "rocrate":
-            return (
-              <ROCrateComponent metadata={displayMetadata} arkId={arkId} />
-            );
+            return <ROCrateComponent metadata={m} arkId={arkId} />;
           case "dataset":
-          case "evi:dataset":
-            return (
-              <GenericMetadataComponent
-                metadata={displayMetadata}
-                type="dataset"
-                arkId={arkId}
-              />
-            );
           case "software":
-          case "evi:software":
-            return (
-              <GenericMetadataComponent
-                metadata={displayMetadata}
-                type="software"
-                arkId={arkId}
-              />
-            );
           case "computation":
-          case "evi:computation":
-            return (
-              <GenericMetadataComponent
-                metadata={displayMetadata}
-                type="computation"
-                arkId={arkId}
-              />
-            );
           case "schema":
-          case "evi:schema":
-            return (
-              <GenericMetadataComponent
-                metadata={displayMetadata}
-                type="schema"
-                arkId={arkId}
-              />
-            );
           case "instrument":
-          case "evi:instrument":
-            return (
-              <GenericMetadataComponent
-                metadata={displayMetadata}
-                type="instrument"
-                arkId={arkId}
-              />
-            );
           case "sample":
-          case "evi:sample":
-            return (
-              <GenericMetadataComponent
-                metadata={displayMetadata}
-                type="sample"
-                arkId={arkId}
-              />
-            );
           case "experiment":
-          case "evi:experiment":
-            return (
-              <GenericMetadataComponent
-                metadata={displayMetadata}
-                type="experiment"
-                arkId={arkId}
-              />
-            );
           case "biochementity":
-          case "evi:biochementity":
-            return (
-              <GenericMetadataComponent
-                metadata={displayMetadata}
-                type="biochementity"
-                arkId={arkId}
-              />
-            );
           default:
             return (
               <GenericMetadataComponent
-                metadata={displayMetadata}
-                type="unknown"
+                metadata={m}
+                type={(bundle.kind as any) ?? "unknown"}
                 arkId={arkId}
               />
             );
         }
+      }
 
       case "serialization":
-        if (!displayMetadata)
-          return (
-            <CenteredMessageWithSpinner message="Loading serialization data..." />
-          );
         return (
           <SerializationView
-            json={JSON.stringify(displayMetadata, null, 2)}
-            rdfXml={null}
-            turtle={null}
+            json={JSON.stringify(
+              bundle.serializations?.json ?? bundle.main,
+              null,
+              2
+            )}
+            rdfXml={bundle.serializations?.rdfXml ?? null}
+            turtle={bundle.serializations?.turtle ?? null}
             showAllFormats={true}
           />
         );
 
-      case "graph":
-        // For RO-Crate, show the graph directly here
+      case "graph": {
+        if (!bundle.evidence) {
+          return (
+            <Alert
+              type="info"
+              title="Evidence Graph"
+              message="No evidence information available."
+            />
+          );
+        }
+        if (bundle.evidence.status === "failed") {
+          return (
+            <Alert
+              type="error"
+              title="Evidence Graph"
+              message={
+                bundle.evidence.error || "Failed to build evidence graph."
+              }
+            />
+          );
+        }
         return (
-          <EvidenceGraphDisplayController
-            isGraphManagerLoading={isGraphManagerLoading}
-            graphBuildStatus={graphBuildStatus}
-            currentTaskId={currentTaskId}
-            evidenceGraphData={evidenceGraphData}
-            currentEvidenceGraphId={currentEvidenceGraphId}
-            evidenceGraphError={evidenceGraphError}
-            supportData={supportData}
-            isLoggedIn={isLoggedIn}
-            determinedType={determinedType}
-            hasEvidenceGraphLink={hasEvidenceGraphLink}
+          <EvidenceGraphViewer
+            evidenceGraphData={bundle.evidence.data ?? null}
+            supportData={bundle.evidence.supportData}
           />
         );
+      }
 
       default:
         return (
           <Alert
             type="error"
             title="Invalid View"
-            message={`Unknown view selected: ${view}`}
+            message={`Unknown view: ${view}`}
           />
         );
     }
-  };
-
-  const showEvidenceGraphButtonCondition =
-    hasEvidenceGraphLink ||
-    graphBuildStatus === "INITIATING" ||
-    graphBuildStatus === "POLLING" ||
-    graphBuildStatus === "SUCCESS" ||
-    (isLoggedIn &&
-      determinedType &&
-      !["release"].includes(determinedType) && // Only exclude "release", not "rocrate"
-      (graphBuildStatus === "IDLE" || graphBuildStatus === "TIMED_OUT"));
+  }
 
   return (
     <Container>
@@ -385,19 +203,22 @@ const MetadataDisplayPage: React.FC = () => {
         <PageTitle>{title}</PageTitle>
         <VersionInfo>Version: {version}</VersionInfo>
       </Header>
+
       <ButtonGroupContainer>
         <ButtonGroup
           currentView={view}
-          onSelectView={(selectedView) => setView(selectedView as ViewType)}
-          showEvidenceGraphButton={!!showEvidenceGraphButtonCondition}
-          showExplorerButton={determinedType === "dataset"}
+          onSelectView={(v) => setView(v as ViewType)}
+          showEvidenceGraphButton={showGraphButton}
+          showExplorerButton={bundle?.kind === "dataset"}
           explorerArkId={arkId}
         />
       </ButtonGroupContainer>
+
       {renderContent()}
+
       <Footer>
-        Metadata & Provenance: This metadata and provenance were generated by
-        the FAIRSCAPE AI-readiness platform (Al Manir, et al. a2024, BioRXiv
+        Metadata &amp; Provenance: This metadata and provenance were generated
+        by the FAIRSCAPE AI-readiness platform (Al Manir, et al. a2024, BioRXiv
         2024.12.23.629818;{" "}
         <a
           href="https://doi.org/10.1101/2024.12.23.629818"
@@ -410,6 +231,4 @@ const MetadataDisplayPage: React.FC = () => {
       </Footer>
     </Container>
   );
-};
-
-export default MetadataDisplayPage;
+}
