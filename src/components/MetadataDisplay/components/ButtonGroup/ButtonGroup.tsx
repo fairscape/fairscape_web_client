@@ -70,23 +70,6 @@ const Button = styled.button<{ $active?: boolean }>`
   `}
 `;
 
-// New styled component for the link, inheriting common styles
-const LinkButton = styled.a`
-  ${BaseButtonStyles}
-  background-color: transparent; // Always like a non-active button
-  color: ${({ theme }) =>
-    theme.colors.textSecondary}; // Always like a non-active button
-
-  &:hover {
-    background-color: rgba(
-      255,
-      255,
-      255,
-      0.5
-    ); // Hover like a non-active button
-  }
-`;
-
 const ButtonGroup: React.FC<ButtonGroupProps> = ({
   currentView,
   onSelectView,

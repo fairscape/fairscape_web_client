@@ -16,26 +16,7 @@ const Container = styled.div`
   width: 100%;
 `;
 
-const DownloadButton = styled.a`
-  display: inline-block;
-  margin: ${({ theme }) => theme.spacing.md} 0;
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  font-weight: bold;
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.primaryDark};
-  }
-`;
-
-const ButtonContainer = styled.div`
-  width: 100%;
-  text-align: center;
-  margin-top: ${({ theme }) => theme.spacing.md};
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-`;
+import { ButtonContainer, DownloadButton } from "../../shared.styles";
 
 const roCrateMainProperties: MetadataProperty[] = [
   { key: "id_value", name: "ARK Identifier" },

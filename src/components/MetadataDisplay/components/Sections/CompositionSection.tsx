@@ -8,27 +8,13 @@ import {
 import SubcrateCard from "../Cards/SubcrateCard";
 import Alert from "../../../common/Alert";
 
-const SectionContainer = styled.div`
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-`;
+import { SectionContainer } from "../../shared.styles";
 
-const SectionHeader = styled.div`
-  margin: 25px 0 15px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  color: ${({ theme }) => theme.colors.primary};
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 20px;
-  color: ${({ theme }) => theme.colors.primary};
-  margin-top: 0;
-  margin-bottom: 0;
-`;
-
-const SubcratesContainer = styled.div`
-  margin-top: ${({ theme }) => theme.spacing.lg};
-`;
+import {
+  SectionHeader,
+  SectionTitle,
+  SubcratesContainer,
+} from "./CompositionSection.styles";
 
 interface CompositionSectionProps {
   compositionData: CompositionData;
@@ -37,8 +23,6 @@ interface CompositionSectionProps {
 const CompositionSection: React.FC<CompositionSectionProps> = ({
   compositionData,
 }) => {
-  // With our new approach, we don't need to fetch additional data
-  // Just use the data that's already been processed from the main graph
   const subcrates = compositionData.subcrates;
 
   if (!subcrates || subcrates.length === 0) {
@@ -65,8 +49,8 @@ const CompositionSection: React.FC<CompositionSectionProps> = ({
           <SubcrateCard
             key={subcrate.id}
             subcrate={subcrate}
-            isLoading={false} // No longer doing any loading
-            error={null} // No fetching means no errors
+            isLoading={false}
+            error={null}
           />
         ))}
       </SubcratesContainer>

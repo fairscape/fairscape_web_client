@@ -1,89 +1,15 @@
 import React from "react";
-import styled from "styled-components";
-import { OverviewData } from "../../utils/metadataProcessing"; // Adjust path as needed
+import { OverviewData } from "../../utils/metadataProcessing";
 
-const SectionContainer = styled.div`
-  background-color: ${({ theme }) => theme.colors.background || "#f9f9f9"};
-  padding: ${({ theme }) => theme.spacing.lg};
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-  box-shadow: ${({ theme }) => theme.shadows?.small || "none"};
-  border: ${({ theme }) =>
-    theme.shadows?.small
-      ? "none"
-      : `1px solid ${theme.colors.border || "#ddd"}`};
-`;
+import { SectionContainer, KeywordPill } from "../../shared.styles";
 
-const Header = styled.h2`
-  font-size: 24px;
-  color: ${({ theme }) => theme.colors.primary};
-  margin-top: 0;
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-  border-bottom: 2px solid
-    ${({ theme }) => theme.colors.secondary || theme.colors.primary};
-  padding-bottom: ${({ theme }) => theme.spacing.sm};
-`;
-
-const Description = styled.p`
-  font-size: 16px;
-  line-height: 1.6;
-  color: ${({ theme }) => theme.colors.text};
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-`;
-
-const DetailsList = styled.div`
-  // Changed from DetailsGrid to DetailsList
-  display: flex; // Use flex for a single column layout
-  flex-direction: column;
-  gap: ${({ theme }) => theme.spacing.sm}; // Spacing between items
-`;
-
-const DetailItemWrapper = styled.div`
-  font-size: 15px;
-  line-height: 1.5;
-  word-break: break-word;
-
-  strong {
-    color: ${({ theme }) =>
-      theme.colors.textSlightlyLighter || theme.colors.text};
-    margin-right: ${({ theme }) =>
-      theme.spacing.xs}; /* Adjusted margin for label */
-  }
-
-  a {
-    color: ${({ theme }) => theme.colors.primary};
-    text-decoration: none;
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-`;
-
-const KeywordsContainer = styled.div`
-  margin-top: ${({ theme }) =>
-    theme.spacing.md}; /* More space before keywords */
-
-  strong {
-    color: ${({ theme }) =>
-      theme.colors.textSlightlyLighter || theme.colors.text};
-    display: block;
-    margin-bottom: ${({ theme }) =>
-      theme.spacing.sm}; /* More space for keyword label */
-  }
-`;
-
-const KeywordPill = styled.span`
-  display: inline-block;
-  background-color: ${({ theme }) =>
-    theme.colors.secondary || theme.colors.primary};
-  color: white;
-  padding: 4px 8px;
-  border-radius: ${({ theme }) => theme.borderRadius.sm};
-  font-size: 13px;
-  font-weight: 500;
-  margin-right: ${({ theme }) => theme.spacing.xs};
-  margin-bottom: ${({ theme }) => theme.spacing.xs};
-`;
+import {
+  Header,
+  Description,
+  DetailsList,
+  DetailItemWrapper,
+  KeywordsContainer,
+} from "./OverviewSection.styles";
 
 interface OverviewSectionProps {
   overviewData: OverviewData;
