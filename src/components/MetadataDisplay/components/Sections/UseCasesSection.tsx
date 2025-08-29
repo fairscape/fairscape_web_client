@@ -1,5 +1,4 @@
 import React from "react";
-import styled from "styled-components";
 import { UseCasesData } from "../../utils/metadataProcessing";
 import MetadataField from "../Fields/MetadataField";
 
