@@ -1,10 +1,7 @@
-// src/components/MetadataDisplay/MetadataTableFallback.tsx
-// (This is the renamed MetadataView.tsx from the previous step - the table-based one)
 import React, { useState } from "react";
 import styled from "styled-components";
-import { Metadata } from "../../types"; // Adjust path
+import { Metadata } from "../../types/types";
 import MetadataField from "./MetadataField";
-import { GenericProperties } from "./metadataPropertyLists"; // Use a generic list or process all keys
 
 interface MetadataTableFallbackProps {
   metadata: Metadata;
@@ -53,11 +50,7 @@ const MetadataTableFallback: React.FC<MetadataTableFallbackProps> = ({
         </thead>
         <tbody>
           {propertiesToRender.map(([key, value]) => (
-            <MetadataField
-              key={key}
-              label={key} // Use the raw key as label
-              value={value}
-            />
+            <MetadataField key={key} label={key} value={value} />
           ))}
         </tbody>
       </MetadataTable>

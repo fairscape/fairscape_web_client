@@ -2,13 +2,13 @@ import React, { useMemo, useState, useEffect } from "react";
 import styled from "styled-components";
 import { useParams } from "react-router-dom";
 
-import ButtonGroup from "../components/MetadataDisplay/ButtonGroup";
+import ButtonGroup from "../components/MetadataDisplay/components/ButtonGroup/ButtonGroup";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import Alert from "../components/common/Alert";
 import ReleaseComponent from "../components/MetadataDisplay/ReleaseComponent";
 import ROCrateComponent from "../components/MetadataDisplay/ROCrateComponent";
 import GenericMetadataComponent from "../components/MetadataDisplay/GenericMetadataComponent";
-import SerializationView from "../components/MetadataDisplay/SerializationView";
+import SerializationView from "../components/MetadataDisplay/views/Serialization/SerializationView";
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";

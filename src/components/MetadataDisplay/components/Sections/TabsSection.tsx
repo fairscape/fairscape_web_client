@@ -1,4 +1,3 @@
-// src/components/MetadataDisplay/TabsSection.tsx
 import React, { useState } from "react";
 import styled from "styled-components";
 

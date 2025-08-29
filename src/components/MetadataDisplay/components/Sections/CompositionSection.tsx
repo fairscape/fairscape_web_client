@@ -5,8 +5,8 @@ import {
   CompositionData,
   SubcrateSummary,
 } from "../../utils/metadataProcessing";
-import SubcrateCard from "./SubcrateCard";
-import Alert from "../common/Alert";
+import SubcrateCard from "../Cards/SubcrateCard";
+import Alert from "../../../common/Alert";
 
 const SectionContainer = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.lg};

@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { MetadataProperty } from "./metadataPropertyLists";
+import { MetadataProperty } from "../../types/metadataPropertyLists";
 
 const SectionContainer = styled.div`
   background-color: ${({ theme }) => theme.colors.background || "#ffffff"};

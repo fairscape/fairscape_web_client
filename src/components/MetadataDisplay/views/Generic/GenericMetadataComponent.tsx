@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
-import { RawGraphEntity, Metadata } from "../../types";
+import { RawGraphEntity, Metadata } from "../../types/types";
 import {
   DatasetProperties,
   SoftwareProperties,
@@ -13,9 +13,9 @@ import {
   ExperimentProperties,
   BioChemEntityProperties,
   GenericProperties,
-} from "./metadataPropertyLists";
-import Alert from "../common/Alert";
-import SchemaPropertiesTable from "./SchemaPropertiesTable";
+} from "../../types/metadataPropertyLists";
+import Alert from "../../../common/Alert";
+import SchemaPropertiesTable from "../../components/Tables/SchemaPropertiesTable";
 
 const SectionContainer = styled.div`
   background-color: ${({ theme }) => theme.colors.background || "#ffffff"};

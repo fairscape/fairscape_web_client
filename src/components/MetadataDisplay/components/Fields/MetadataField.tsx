@@ -1,4 +1,3 @@
-// src/components/MetadataDisplay/MetadataField.tsx
 import React from "react";
 import styled from "styled-components";
 import { Link as RouterLink } from "react-router-dom";
@@ -50,14 +49,12 @@ interface MetadataFieldProps {
   value: any;
 }
 
-// Recursive component to render values which might be strings, links, objects, or arrays
 const RenderValue: React.FC<{ value: any }> = ({ value }) => {
   if (value === null || value === undefined) {
     return <span>N/A</span>;
   }
 
   if (isARK(value)) {
-    // Attempt to infer type for link (heuristic, might need refinement)
     const potentialType = value.includes("dataset")
       ? "Dataset"
       : value.includes("software")
@@ -83,7 +80,6 @@ const RenderValue: React.FC<{ value: any }> = ({ value }) => {
   if (isArray(value)) {
     if (value.length === 0) return <span>None</span>;
 
-    // For related publications, use a different style
     if (
       value[0] &&
       typeof value[0] === "string" &&
@@ -100,7 +96,6 @@ const RenderValue: React.FC<{ value: any }> = ({ value }) => {
       );
     }
 
-    // Default array rendering
     return (
       <span>
         {value.map((item, index) => (
@@ -114,7 +109,6 @@ const RenderValue: React.FC<{ value: any }> = ({ value }) => {
   }
 
   if (isObject(value)) {
-    // Special handling for objects with only @id (common in JSON-LD references)
     if (value["@id"] && Object.keys(value).length === 1) {
       return <RenderValue value={value["@id"]} />;
     }
@@ -126,16 +120,13 @@ const RenderValue: React.FC<{ value: any }> = ({ value }) => {
       );
     }
 
-    // For other objects, just show a simplified representation
     return <span>{JSON.stringify(value)}</span>;
   }
 
-  // Default: render as string
   return <span>{String(value)}</span>;
 };
 
 const MetadataField: React.FC<MetadataFieldProps> = ({ label, value }) => {
-  // If label is provided, render with label otherwise just render the value
   if (label) {
     return (
       <tr>
@@ -149,7 +140,6 @@ const MetadataField: React.FC<MetadataFieldProps> = ({ label, value }) => {
     );
   }
 
-  // Just render the value when no label is provided
   return (
     <ValueContainer>
       <RenderValue value={value} />

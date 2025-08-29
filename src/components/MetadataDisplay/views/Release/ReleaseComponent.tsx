@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { Metadata } from "../../types";
+import { Metadata } from "../../types/types";
 import {
   processOverview,
   processUseCases,
@@ -10,16 +10,16 @@ import {
   UseCasesData,
   DistributionData,
   CompositionData,
-} from "./utils/metadataProcessing";
-import ConfigurableMetadataTable from "./ConfigurableMetadataTable";
-import { MetadataProperty } from "./metadataPropertyLists";
-import AdditionalPropertiesSection from "./AdditionalPropertiesSection";
+} from "../../utils/metadataProcessing";
+import ConfigurableMetadataTable from "../../components/Tables/ConfigurableMetadataTable";
+import { MetadataProperty } from "../../types/metadataPropertyLists";
 
-import UseCasesSection from "./UseCasesSection";
-import DistributionSection from "./DistributionSection";
-import CompositionSection from "./CompositionSection";
-import LoadingSpinner from "../common/LoadingSpinner";
-import Alert from "../common/Alert";
+import AdditionalPropertiesSection from "../../components/Sections/AdditionalPropertiesSection";
+import UseCasesSection from "../../components/Sections/UseCasesSection";
+import DistributionSection from "../../components/Sections/DistributionSection";
+import CompositionSection from "../../components/Sections/CompositionSection";
+import LoadingSpinner from "../../../common/LoadingSpinner";
+import Alert from "../../../common/Alert";
 
 const Container = styled.div`
   width: 100%;
@@ -100,6 +100,8 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
           properties={overviewData.additionalCustomProperties}
         />
       )}
+
+      {useCasesData && <UseCasesSection useCasesData={useCasesData} />}
 
       {compositionData && compositionData.subcrates.length > 0 && (
         <CompositionSection compositionData={compositionData} />

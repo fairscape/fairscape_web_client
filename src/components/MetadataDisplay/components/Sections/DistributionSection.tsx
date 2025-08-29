@@ -2,7 +2,7 @@
 import React from "react";
 import styled from "styled-components";
 import { DistributionData } from "../../utils/metadataProcessing";
-import MetadataField from "./MetadataField";
+import MetadataField from "../Fields/MetadataField";
 
 const SectionContainer = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.lg};

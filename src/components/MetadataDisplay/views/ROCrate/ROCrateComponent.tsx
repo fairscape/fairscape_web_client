@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
-import { Metadata, RawGraphEntity } from "../../types";
-import { processOverview, OverviewData } from "./utils/metadataProcessing";
-import ConfigurableMetadataTable from "./ConfigurableMetadataTable";
-import { MetadataProperty } from "./metadataPropertyLists";
-import AdditionalPropertiesSection from "./AdditionalPropertiesSection";
+import { Metadata, RawGraphEntity } from "../../types/types";
+import { processOverview, OverviewData } from "../../utils/metadataProcessing";
+import ConfigurableMetadataTable from "../../components/Tables/ConfigurableMetadataTable";
+import { MetadataProperty } from "../../types/metadataPropertyLists";
+import AdditionalPropertiesSection from "../../components/Sections/AdditionalPropertiesSection";
 
-import TabsSection, { TabConfig } from "./TabsSection";
-import EntityTable, { EntityItem } from "./EntityTable";
-import LoadingSpinner from "../common/LoadingSpinner";
-import Alert from "../common/Alert";
+import TabsSection, { TabConfig } from "../../components/Sections/TabsSection";
+import EntityTable, { EntityItem } from "../../components/Tables/EntityTable";
+import LoadingSpinner from "../../../common/LoadingSpinner";
+import Alert from "../../../common/Alert";
 
 const Container = styled.div`
   width: 100%;

@@ -24,7 +24,7 @@ export function useMetadataBundle(ark: string) {
       setLoading(true);
       setError(null);
       try {
-        // main
+        // main metadata
         const mainResp = await metadataApi.getMain(ark);
         const main = mainResp?.metadata ?? mainResp;
         const kind = classify(main);
@@ -38,16 +38,21 @@ export function useMetadataBundle(ark: string) {
           } catch {}
         }
 
-        // serializations (optional)
+        // serializations
         let rdfXml: string | null = null;
         let turtle: string | null = null;
-        try { rdfXml = await metadataApi.getRdfXml(ark); } catch {}
-        try { turtle = await metadataApi.getTurtle(ark); } catch {}
+        try {
+          rdfXml = await metadataApi.getRdfXml(ark);
+        } catch {}
+        try {
+          turtle = await metadataApi.getTurtle(ark);
+        } catch {}
 
         // evidence (skip build for release)
         let evidence: EvidenceInfo | undefined;
         if (kind !== "release") {
-          const evId = extractEvidenceGraphId(main) ?? extractEvidenceGraphId(rocrate);
+          const evId =
+            extractEvidenceGraphId(main) ?? extractEvidenceGraphId(rocrate);
 
           if (evId) {
             const data = await evidenceApi.getEG(evId);
@@ -60,9 +65,17 @@ export function useMetadataBundle(ark: string) {
               if (poll.status === "READY" && poll.evidenceGraphId) {
                 const data = await evidenceApi.getEG(poll.evidenceGraphId);
                 const supportData = extractSupportData?.(data);
-                evidence = { id: poll.evidenceGraphId, data, supportData, status: "ready" };
+                evidence = {
+                  id: poll.evidenceGraphId,
+                  data,
+                  supportData,
+                  status: "ready",
+                };
               } else if (poll.status === "FAILED") {
-                evidence = { status: "failed", error: poll.error || "EG build failed" };
+                evidence = {
+                  status: "failed",
+                  error: poll.error || "EG build failed",
+                };
               } else {
                 evidence = { status: "building" };
               }
@@ -78,7 +91,7 @@ export function useMetadataBundle(ark: string) {
           rocrate,
           evidence,
           serializations: { json: main, rdfXml, turtle },
-          session: { isLoggedIn: !!isLoggedIn },   // <— include session
+          session: { isLoggedIn: !!isLoggedIn },
         };
 
         if (!cancelled) setBundle(next);
@@ -90,7 +103,9 @@ export function useMetadataBundle(ark: string) {
     }
 
     run();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [ark, isLoggedIn]);
 
   return { bundle, loading, error };

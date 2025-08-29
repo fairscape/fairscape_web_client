@@ -1,8 +1,8 @@
 import React from "react";
 import styled from "styled-components";
 import { SubcrateSummary } from "../../utils/metadataProcessing";
-import LoadingSpinner from "../common/LoadingSpinner";
-import Alert from "../common/Alert";
+import LoadingSpinner from "../../../common/LoadingSpinner";
+import Alert from "../../../common/Alert";
 
 const CardContainer = styled.div`
   background-color: ${({ theme }) => theme.colors.background || "#f9f9f9"};
