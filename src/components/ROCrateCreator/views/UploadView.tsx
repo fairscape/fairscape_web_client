@@ -48,14 +48,14 @@ const UploadView: React.FC<UploadViewProps> = ({
 
       <FileUploader onFilesUpload={onFilesUpload} />
 
-      {files.length > 0 && (
+      {
         <FileTrackingTable
           files={files}
           onFileTypeChange={onFileTypeChange}
           onEditMetadata={onEditFileMetadata}
           onRemoveFile={onRemoveFile}
         />
-      )}
+      }
 
       {files.length > 0 && (
         <GenerateButtonContainer>
