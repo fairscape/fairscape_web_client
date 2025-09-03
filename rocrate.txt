@@ -1,0 +1,2420 @@
+================================================================================
+FILE: ./src/components/ROCrateCreator/types.ts
+================================================================================
+
+export type FileType = "dataset" | "software";
+
+export interface ROCrateMetadata {
+  name: string;
+  organizationName: string;
+  projectName: string;
+  description: string;
+  author: string;
+  keywords: string[];
+  version: string;
+  license: string;
+}
+
+export interface BaseMetadata {
+  type: FileType;
+  name: string;
+  author: string;
+  version: string;
+  description: string;
+  keywords: string[];
+}
+
+export interface DatasetMetadata extends BaseMetadata {
+  type: "dataset";
+  datePublished: string;
+  dataFormat: string;
+  schema?: string | null;
+  generatedBy?: string | null;
+  derivedFrom?: string[];
+  usedBy?: string[];
+  associatedPublication?: string | null;
+  additionalDocumentation?: string | null;
+}
+
+export interface SoftwareMetadata extends BaseMetadata {
+  type: "software";
+  dateModified: string;
+  fileFormat: string;
+  usedByComputation?: string[];
+  associatedPublication?: string | null;
+  additionalDocumentation?: string | null;
+}
+
+export type FileMetadata = DatasetMetadata | SoftwareMetadata;
+
+export interface FileObject {
+  id: string;
+  fileData: File;
+  fileType: FileType;
+  metadata: FileMetadata;
+  metadataComplete: boolean;
+}
+
+export interface ComputationMetadata {
+  id?: string;
+  name: string;
+  runBy: string;
+  dateCreated: string;
+  description: string;
+  keywords: string[];
+  command?: string;
+  usedSoftware: string[];
+  usedDataset: string[];
+  generated: string[];
+}
+
+export interface FormFieldConfig {
+  name: string;
+  label: string;
+  type: "text" | "textarea" | "date" | "select" | "array";
+  required: boolean;
+  placeholder?: string;
+  options?: { value: string; label: string }[];
+  helperText?: string;
+}
+
+export interface FormConfig {
+  [key: string]: FormFieldConfig[];
+}
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/utils/fileTypeDetection.ts
+================================================================================
+
+import { FileType } from "../types";
+
+const SOFTWARE_EXTENSIONS = [
+  ".py",
+  ".r",
+  ".R",
+  ".js",
+  ".ts",
+  ".java",
+  ".cpp",
+  ".c",
+  ".h",
+  ".hpp",
+  ".rb",
+  ".go",
+  ".rs",
+  ".swift",
+  ".scala",
+  ".sh",
+  ".jar",
+  ".exe",
+  ".ipynb",
+  ".rmd",
+  ".Rmd",
+  ".php",
+  ".cs",
+  ".yaml",
+  ".yml",
+  ".toml",
+];
+
+const DATASET_EXTENSIONS = [
+  ".csv",
+  ".tsv",
+  ".txt",
+  ".json",
+  ".xml",
+  ".xlsx",
+  ".xls",
+  ".parquet",
+  ".feather",
+  ".h5",
+  ".hdf5",
+  ".nc",
+  ".netcdf",
+  ".zarr",
+  ".npy",
+  ".npz",
+  ".mat",
+  ".sav",
+  ".dta",
+  ".rdata",
+  ".rds",
+  ".pkl",
+  ".pickle",
+  ".msgpack",
+  ".arrow",
+  ".orc",
+  ".avro",
+  ".jsonl",
+  ".ndjson",
+  ".geojson",
+  ".shp",
+  ".gpkg",
+  ".kml",
+  ".kmz",
+  ".tiff",
+  ".tif",
+  ".fits",
+  ".fasta",
+  ".fastq",
+  ".bam",
+  ".sam",
+  ".vcf",
+  ".bed",
+  ".gff",
+  ".gtf",
+  ".pdf",
+  ".docx",
+  ".doc",
+];
+
+export function detectFileType(filename: string): FileType {
+  const extension = filename.toLowerCase().match(/\.[^.]*$/)?.[0] || "";
+
+  if (SOFTWARE_EXTENSIONS.includes(extension)) {
+    return "software";
+  }
+
+  return "dataset";
+}
+
+export function getDefaultMetadata(
+  file: File,
+  fileType: FileType,
+  author: string
+) {
+  const baseName = file.name.replace(/\.[^/.]+$/, "");
+  const baseMetadata = {
+    name: baseName,
+    author: author || "",
+    version: "1.0.0",
+    description: "",
+    keywords: [],
+  };
+
+  if (fileType === "software") {
+    return {
+      ...baseMetadata,
+      type: "software" as const,
+      dateModified: new Date().toISOString().split("T")[0],
+      fileFormat: file.type || "application/octet-stream",
+      usedByComputation: [],
+      associatedPublication: null,
+      additionalDocumentation: null,
+    };
+  } else {
+    return {
+      ...baseMetadata,
+      type: "dataset" as const,
+      datePublished: new Date().toISOString().split("T")[0],
+      dataFormat: file.type || "application/octet-stream",
+      schema: null,
+      generatedBy: null,
+      derivedFrom: [],
+      usedBy: [],
+      associatedPublication: null,
+      additionalDocumentation: null,
+    };
+  }
+}
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/components/ComputationForm.tsx
+================================================================================
+
+import React, { useState } from "react";
+import { FileObject, ComputationMetadata } from "../types";
+import {
+  ComponentContainer,
+  ComponentHeader,
+  ComponentTitle,
+  FormGrid,
+  FormGroup,
+  Label,
+  Input,
+  TextArea,
+  DragDropSection,
+  Column,
+  ColumnHeader,
+  DropZone,
+  FileItem,
+  FormActions,
+  Button,
+} from "./ComputationComponents.styles";
+
+interface ComputationFormProps {
+  files: FileObject[];
+  computation?: ComputationMetadata | null;
+  onSubmit: (computation: ComputationMetadata) => void;
+  onCancel: () => void;
+}
+
+const ComputationForm: React.FC<ComputationFormProps> = ({
+  files,
+  computation,
+  onSubmit,
+  onCancel,
+}) => {
+  const [formData, setFormData] = useState<ComputationMetadata>(
+    computation || {
+      name: "",
+      runBy: "",
+      dateCreated: new Date().toISOString().split("T")[0],
+      description: "",
+      keywords: [],
+      command: "",
+      usedSoftware: [],
+      usedDataset: [],
+      generated: [],
+    }
+  );
+
+  const [fileAssignments, setFileAssignments] = useState<{
+    available: FileObject[];
+    inputs: FileObject[];
+    outputs: FileObject[];
+    software: FileObject[];
+  }>({
+    available: files,
+    inputs: [],
+    outputs: [],
+    software: [],
+  });
+
+  const handleDragStart = (
+    e: React.DragEvent,
+    file: FileObject,
+    source: string
+  ) => {
+    e.dataTransfer.setData("fileId", file.id);
+    e.dataTransfer.setData("source", source);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, destination: string) => {
+    e.preventDefault();
+    const fileId = e.dataTransfer.getData("fileId");
+    const source = e.dataTransfer.getData("source");
+
+    if (source === destination) return;
+
+    const file = [
+      ...fileAssignments.available,
+      ...fileAssignments.inputs,
+      ...fileAssignments.outputs,
+      ...fileAssignments.software,
+    ].find((f) => f.id === fileId);
+
+    if (!file) return;
+
+    setFileAssignments((prev) => {
+      const newAssignments = { ...prev };
+
+      newAssignments[source as keyof typeof newAssignments] = newAssignments[
+        source as keyof typeof newAssignments
+      ].filter((f) => f.id !== fileId);
+
+      newAssignments[destination as keyof typeof newAssignments] = [
+        ...newAssignments[destination as keyof typeof newAssignments],
+        file,
+      ];
+
+      return newAssignments;
+    });
+  };
+
+  const handleSubmit = () => {
+    const updatedComputation: ComputationMetadata = {
+      ...formData,
+      keywords:
+        typeof formData.keywords === "string"
+          ? (formData.keywords as any).split(",").map((k: string) => k.trim())
+          : formData.keywords,
+      usedSoftware: fileAssignments.software.map((f) => f.id),
+      usedDataset: fileAssignments.inputs.map((f) => f.id),
+      generated: fileAssignments.outputs.map((f) => f.id),
+    };
+    onSubmit(updatedComputation);
+  };
+
+  const handleInputChange = (field: keyof ComputationMetadata, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const renderDropZone = (
+    columnName: string,
+    columnKey: keyof typeof fileAssignments,
+    acceptedType?: "dataset" | "software"
+  ) => (
+    <Column>
+      <ColumnHeader>{columnName}</ColumnHeader>
+      <DropZone
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, columnKey)}
+      >
+        {fileAssignments[columnKey]
+          .filter((f) => !acceptedType || f.fileType === acceptedType)
+          .map((file) => (
+            <FileItem
+              key={file.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, file, columnKey)}
+            >
+              {file.metadata.name} ({file.fileType})
+            </FileItem>
+          ))}
+      </DropZone>
+    </Column>
+  );
+
+  return (
+    <ComponentContainer>
+      <ComponentHeader>
+        <ComponentTitle>
+          {computation ? "Edit Computation" : "Add Computation"}
+        </ComponentTitle>
+      </ComponentHeader>
+
+      <FormGrid>
+        <FormGroup>
+          <Label>Computation Name *</Label>
+          <Input
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleInputChange("name", e.target.value)}
+            placeholder="e.g., Data Processing Pipeline"
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label>Run By *</Label>
+          <Input
+            type="text"
+            value={formData.runBy}
+            onChange={(e) => handleInputChange("runBy", e.target.value)}
+            placeholder="e.g., John Doe"
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label>Date Created *</Label>
+          <Input
+            type="date"
+            value={formData.dateCreated}
+            onChange={(e) => handleInputChange("dateCreated", e.target.value)}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label>Keywords</Label>
+          <Input
+            type="text"
+            value={
+              Array.isArray(formData.keywords)
+                ? formData.keywords.join(", ")
+                : formData.keywords
+            }
+            onChange={(e) => handleInputChange("keywords", e.target.value)}
+            placeholder="e.g., analysis, processing, genomics"
+          />
+        </FormGroup>
+
+        <FormGroup $fullWidth>
+          <Label>Description *</Label>
+          <TextArea
+            value={formData.description}
+            onChange={(e) => handleInputChange("description", e.target.value)}
+            placeholder="Describe what this computation does..."
+            rows={4}
+          />
+        </FormGroup>
+
+        <FormGroup $fullWidth>
+          <Label>Command (Optional)</Label>
+          <TextArea
+            value={formData.command || ""}
+            onChange={(e) => handleInputChange("command", e.target.value)}
+            placeholder="e.g., python analyze.py --input data.csv --output results.csv"
+            rows={2}
+          />
+        </FormGroup>
+      </FormGrid>
+
+      <Label style={{ marginBottom: "12px" }}>
+        Drag files to assign them to this computation:
+      </Label>
+
+      <DragDropSection>
+        {renderDropZone("Available Files", "available")}
+        {renderDropZone("Input Datasets", "inputs", "dataset")}
+        {renderDropZone("Output Datasets", "outputs", "dataset")}
+        {renderDropZone("Software Used", "software", "software")}
+      </DragDropSection>
+
+      <FormActions>
+        <Button $variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit}>Save Computation</Button>
+      </FormActions>
+    </ComponentContainer>
+  );
+};
+
+export default ComputationForm;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/components/FileUploader.styles.ts
+================================================================================
+
+import styled from "styled-components";
+
+export const UploaderContainer = styled.div`
+  background-color: ${({ theme }) => theme.colors.background || "#ffffff"};
+  padding: ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  box-shadow: ${({ theme }) =>
+    theme.shadows?.subtle || "0 2px 4px rgba(0,0,0,0.06)"};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
+`;
+
+export const UploaderHeader = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  padding-bottom: ${({ theme }) => theme.spacing.md};
+  border-bottom: 2px solid
+    ${({ theme }) => theme.colors.secondary || theme.colors.primary};
+`;
+
+export const UploaderTitle = styled.h2`
+  font-size: 22px;
+  color: ${({ theme }) => theme.colors.primary};
+  margin: 0;
+`;
+
+export const DropZone = styled.div<{ $isDragging: boolean }>`
+  border: 2px dashed
+    ${({ theme, $isDragging }) =>
+      $isDragging ? theme.colors.primary : theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  padding: ${({ theme }) => theme.spacing.xl};
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: ${({ theme, $isDragging }) =>
+    $isDragging
+      ? `${theme.colors.primary}08`
+      : theme.colors.backgroundAlt || "#f9f9f9"};
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+    background-color: ${({ theme }) => `${theme.colors.primary}05`};
+  }
+`;
+
+export const DropZoneContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+`;
+
+export const UploadIcon = styled.div`
+  color: ${({ theme }) => theme.colors.textSecondary};
+
+  svg {
+    width: 48px;
+    height: 48px;
+  }
+`;
+
+export const DropText = styled.p`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.5;
+`;
+
+export const BrowseButton = styled.button`
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.primaryDark};
+    transform: translateY(-1px);
+  }
+`;
+
+export const FileInput = styled.input`
+  display: none;
+`;
+
+export const SupportedFormats = styled.p`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 13px;
+  margin: 0;
+`;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/components/ROCrateForm.styles.ts
+================================================================================
+
+import styled from "styled-components";
+
+export const FormContainer = styled.div`
+  background-color: ${({ theme }) => theme.colors.background || "#ffffff"};
+  padding: ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  box-shadow: ${({ theme }) =>
+    theme.shadows?.subtle || "0 2px 4px rgba(0,0,0,0.06)"};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
+`;
+
+export const FormHeader = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  padding-bottom: ${({ theme }) => theme.spacing.md};
+  border-bottom: 2px solid
+    ${({ theme }) => theme.colors.secondary || theme.colors.primary};
+`;
+
+export const FormTitle = styled.h2`
+  font-size: 22px;
+  color: ${({ theme }) => theme.colors.primary};
+  margin: 0;
+`;
+
+export const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: ${({ theme }) => theme.spacing.lg};
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const FormGroup = styled.div<{ $fullWidth?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.xs};
+  grid-column: ${({ $fullWidth }) => ($fullWidth ? "1 / -1" : "auto")};
+`;
+
+export const Label = styled.label`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 14px;
+`;
+
+export const Input = styled.input`
+  padding: ${({ theme }) => theme.spacing.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 15px;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}20;
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textSecondary};
+  }
+`;
+
+export const TextArea = styled.textarea`
+  padding: ${({ theme }) => theme.spacing.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}20;
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textSecondary};
+  }
+`;
+
+export const RequiredIndicator = styled.span`
+  color: ${({ theme }) => theme.colors.error || "#dc3545"};
+  margin-left: 2px;
+`;
+
+export const HelperText = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-top: -4px;
+`;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/components/ComputationComponents.styles.ts
+================================================================================
+
+import styled from "styled-components";
+
+export const ComponentContainer = styled.div`
+  background-color: ${({ theme }) => theme.colors.background || "#ffffff"};
+  padding: ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  box-shadow: ${({ theme }) =>
+    theme.shadows?.subtle || "0 2px 4px rgba(0,0,0,0.06)"};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
+`;
+
+export const ComponentHeader = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  padding-bottom: ${({ theme }) => theme.spacing.md};
+  border-bottom: 2px solid
+    ${({ theme }) => theme.colors.secondary || theme.colors.primary};
+`;
+
+export const ComponentTitle = styled.h2`
+  font-size: 22px;
+  color: ${({ theme }) => theme.colors.primary};
+  margin: 0;
+`;
+
+// Table Specific Styles
+export const TableHeaderWithAction = styled(ComponentHeader)`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+export const AddButton = styled.button`
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.primaryDark};
+    transform: translateY(-1px);
+  }
+`;
+
+export const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+export const TableHead = styled.thead``;
+export const TableBody = styled.tbody``;
+
+export const TableRow = styled.tr`
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.backgroundAlt || "#f9f9f9"};
+  }
+`;
+
+export const TableHeaderCell = styled.th`
+  text-align: left;
+  padding: ${({ theme }) => theme.spacing.md};
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 14px;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.border};
+`;
+
+export const TableCell = styled.td`
+  padding: ${({ theme }) => theme.spacing.md};
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+export const EmptyState = styled.div`
+  text-align: center;
+  padding: ${({ theme }) => theme.spacing.xl};
+  color: ${({ theme }) => theme.colors.textSecondary};
+`;
+
+// Form Specific Styles
+export const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: ${({ theme }) => theme.spacing.lg};
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const FormGroup = styled.div<{ $fullWidth?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.xs};
+  grid-column: ${({ $fullWidth }) => ($fullWidth ? "1 / -1" : "auto")};
+`;
+
+export const Label = styled.label`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 14px;
+`;
+
+export const Input = styled.input`
+  padding: ${({ theme }) => theme.spacing.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 15px;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}20;
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textSecondary};
+  }
+`;
+
+export const TextArea = styled.textarea`
+  padding: ${({ theme }) => theme.spacing.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}20;
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textSecondary};
+  }
+`;
+
+// Drag and Drop Styles
+export const DragDropSection = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+`;
+
+export const Column = styled.div`
+  min-height: 200px;
+`;
+
+export const ColumnHeader = styled.h4`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+`;
+
+export const DropZone = styled.div<{ $isDragging?: boolean }>`
+  min-height: 150px;
+  border: 2px dashed ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  padding: ${({ theme }) => theme.spacing.sm};
+  background-color: ${({ theme, $isDragging }) =>
+    $isDragging
+      ? `${theme.colors.primary}10`
+      : theme.colors.backgroundAlt || "#f9f9f9"};
+  transition: all 0.2s ease;
+`;
+
+export const FileItem = styled.div<{ $dragging?: boolean }>`
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
+  background-color: white;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
+  cursor: move;
+  font-size: 13px;
+  opacity: ${({ $dragging }) => ($dragging ? 0.5 : 1)};
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.backgroundAlt || "#f9f9f9"};
+  }
+`;
+
+// Form Actions
+export const FormActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding-top: ${({ theme }) => theme.spacing.lg};
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+
+export const Button = styled.button<{ $variant?: "primary" | "secondary" }>`
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xl};
+  background-color: ${({ theme, $variant }) =>
+    $variant === "secondary" ? "transparent" : theme.colors.primary};
+  color: ${({ theme, $variant }) =>
+    $variant === "secondary" ? theme.colors.textSecondary : "white"};
+  border: 1px solid
+    ${({ theme, $variant }) =>
+      $variant === "secondary" ? theme.colors.border : theme.colors.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${({ theme, $variant }) =>
+      $variant === "secondary"
+        ? theme.colors.backgroundAlt
+        : theme.colors.primaryDark};
+  }
+`;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/components/FileTrackingTable.styles.ts
+================================================================================
+
+import styled from "styled-components";
+
+export const TableContainer = styled.div`
+  background-color: ${({ theme }) => theme.colors.background || "#ffffff"};
+  padding: ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  box-shadow: ${({ theme }) =>
+    theme.shadows?.subtle || "0 2px 4px rgba(0,0,0,0.06)"};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
+`;
+
+export const TableHeader = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  padding-bottom: ${({ theme }) => theme.spacing.md};
+  border-bottom: 2px solid
+    ${({ theme }) => theme.colors.secondary || theme.colors.primary};
+`;
+
+export const TableTitle = styled.h2`
+  font-size: 22px;
+  color: ${({ theme }) => theme.colors.primary};
+  margin: 0;
+`;
+
+export const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+export const TableHead = styled.thead``;
+
+export const TableBody = styled.tbody``;
+
+export const TableRow = styled.tr`
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.backgroundAlt || "#f9f9f9"};
+  }
+`;
+
+export const TableHeaderCell = styled.th`
+  text-align: left;
+  padding: ${({ theme }) => theme.spacing.md};
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 14px;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.border};
+`;
+
+export const TableCell = styled.td`
+  padding: ${({ theme }) => theme.spacing.md};
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+export const FileNameCell = styled.div`
+  font-weight: 500;
+  word-break: break-word;
+  max-width: 300px;
+`;
+
+export const FileTypeSelect = styled.select`
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+export const StatusBadge = styled.span<{ $isComplete: boolean }>`
+  display: inline-block;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 12px;
+  font-weight: 600;
+  background-color: ${({ theme, $isComplete }) =>
+    $isComplete ? "#d4edda" : "#f8d7da"};
+  color: ${({ $isComplete }) => ($isComplete ? "#155724" : "#721c24")};
+`;
+
+export const ButtonGroup = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing.sm};
+`;
+
+export const ActionButton = styled.button<{
+  $variant: "primary" | "secondary";
+}>`
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
+  background-color: ${({ theme, $variant }) =>
+    $variant === "primary" ? theme.colors.primary : theme.colors.secondary};
+  color: white;
+  border: none;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${({ theme, $variant }) =>
+      $variant === "primary"
+        ? theme.colors.primaryDark
+        : theme.colors.secondaryDark};
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+export const RemoveButton = styled.button`
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
+  background-color: transparent;
+  color: ${({ theme }) => theme.colors.error || "#dc3545"};
+  border: 1px solid ${({ theme }) => theme.colors.error || "#dc3545"};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.error || "#dc3545"};
+    color: white;
+  }
+`;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/components/FileTrackingTable.tsx
+================================================================================
+
+import React from "react";
+import {
+  TableContainer,
+  TableHeader,
+  TableTitle,
+  Table,
+  TableHead,
+  TableRow,
+  TableHeaderCell,
+  TableBody,
+  TableCell,
+  FileTypeSelect,
+  StatusBadge,
+  ActionButton,
+  RemoveButton,
+  FileNameCell,
+  ButtonGroup,
+} from "./FileTrackingTable.styles";
+import { FileObject, FileType } from "../types";
+
+interface FileTrackingTableProps {
+  files: FileObject[];
+  onFileTypeChange: (fileId: string, type: FileType) => void;
+  onEditMetadata: (file: FileObject) => void;
+  onRemoveFile: (fileId: string) => void;
+}
+
+const FileTrackingTable: React.FC<FileTrackingTableProps> = ({
+  files,
+  onFileTypeChange,
+  onEditMetadata,
+  onRemoveFile,
+}) => {
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
+  return (
+    <TableContainer>
+      <TableHeader>
+        <TableTitle>Uploaded Files ({files.length})</TableTitle>
+      </TableHeader>
+
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell>File Name</TableHeaderCell>
+            <TableHeaderCell>Size</TableHeaderCell>
+            <TableHeaderCell>Type</TableHeaderCell>
+            <TableHeaderCell>Metadata Status</TableHeaderCell>
+            <TableHeaderCell>Actions</TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {files.map((file) => (
+            <TableRow key={file.id}>
+              <TableCell>
+                <FileNameCell>{file.fileData.name}</FileNameCell>
+              </TableCell>
+              <TableCell>{formatFileSize(file.fileData.size)}</TableCell>
+              <TableCell>
+                <FileTypeSelect
+                  value={file.fileType}
+                  onChange={(e) =>
+                    onFileTypeChange(file.id, e.target.value as FileType)
+                  }
+                >
+                  <option value="dataset">Dataset</option>
+                  <option value="software">Software</option>
+                  <option value="computation">Computation</option>
+                  <option value="schema">Schema</option>
+                </FileTypeSelect>
+              </TableCell>
+              <TableCell>
+                <StatusBadge $isComplete={file.metadataComplete}>
+                  {file.metadataComplete ? "Complete" : "Incomplete"}
+                </StatusBadge>
+              </TableCell>
+              <TableCell>
+                <ButtonGroup>
+                  <ActionButton
+                    onClick={() => onEditMetadata(file)}
+                    $variant={file.metadataComplete ? "secondary" : "primary"}
+                  >
+                    {file.metadataComplete ? "Edit" : "Add Metadata"}
+                  </ActionButton>
+                  <RemoveButton onClick={() => onRemoveFile(file.id)}>
+                    Remove
+                  </RemoveButton>
+                </ButtonGroup>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
+
+export default FileTrackingTable;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/components/FileUploader.tsx
+================================================================================
+
+import React, { useRef, useState, useCallback } from "react";
+import {
+  UploaderContainer,
+  UploaderHeader,
+  UploaderTitle,
+  DropZone,
+  DropZoneContent,
+  UploadIcon,
+  DropText,
+  BrowseButton,
+  FileInput,
+  SupportedFormats,
+} from "./FileUploader.styles";
+
+interface FileUploaderProps {
+  onFilesUpload: (files: File[]) => void;
+}
+
+const FileUploader: React.FC<FileUploaderProps> = ({ onFilesUpload }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+
+      const items = e.dataTransfer.items;
+      const files: File[] = [];
+
+      const processEntry = async (entry: any): Promise<void> => {
+        if (entry.isFile) {
+          return new Promise((resolve) => {
+            entry.file((file: File) => {
+              files.push(file);
+              resolve();
+            });
+          });
+        } else if (entry.isDirectory) {
+          const reader = entry.createReader();
+          return new Promise((resolve) => {
+            reader.readEntries(async (entries: any[]) => {
+              for (const subEntry of entries) {
+                await processEntry(subEntry);
+              }
+              resolve();
+            });
+          });
+        }
+      };
+
+      const processItems = async () => {
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.webkitGetAsEntry) {
+            const entry = item.webkitGetAsEntry();
+            if (entry) {
+              await processEntry(entry);
+            }
+          } else {
+            const file = item.getAsFile();
+            if (file) {
+              files.push(file);
+            }
+          }
+        }
+
+        if (files.length > 0) {
+          onFilesUpload(files);
+        }
+      };
+
+      processItems();
+    },
+    [onFilesUpload]
+  );
+
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        onFilesUpload(Array.from(files));
+      }
+      if (e.target) {
+        e.target.value = "";
+      }
+    },
+    [onFilesUpload]
+  );
+
+  const handleBrowseFiles = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleBrowseFolders = useCallback(() => {
+    folderInputRef.current?.click();
+  }, []);
+
+  return (
+    <UploaderContainer>
+      <UploaderHeader>
+        <UploaderTitle>Upload Files</UploaderTitle>
+      </UploaderHeader>
+
+      <DropZone
+        $isDragging={isDragging}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        <DropZoneContent>
+          <UploadIcon>
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 15V3M12 3L8 7M12 3L16 7"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M2 17L2.621 19.485C2.72915 19.9177 2.97882 20.3018 3.33033 20.5763C3.68184 20.8508 4.11501 21.0002 4.561 21H19.439C19.885 21.0002 20.3182 20.8508 20.6697 20.5763C21.0212 20.3018 21.2708 19.9177 21.379 19.485L22 17"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </UploadIcon>
+          <DropText>
+            Drag and drop files or folders here
+            <br />
+            or
+          </DropText>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <BrowseButton type="button" onClick={handleBrowseFiles}>
+              Browse Files
+            </BrowseButton>
+            <BrowseButton
+              type="button"
+              onClick={handleBrowseFolders}
+              style={{
+                backgroundColor: "transparent",
+                color: "#007bff",
+                border: "1px solid #007bff",
+              }}
+            >
+              Browse Folder
+            </BrowseButton>
+          </div>
+          <SupportedFormats>
+            Supports all file types - Upload single or multiple files, or entire
+            directories
+          </SupportedFormats>
+        </DropZoneContent>
+      </DropZone>
+
+      <FileInput
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileSelect}
+      />
+
+      <FileInput
+        ref={folderInputRef}
+        type="file"
+        multiple
+        onChange={handleFileSelect}
+        webkitdirectory=""
+        directory=""
+      />
+    </UploaderContainer>
+  );
+};
+
+export default FileUploader;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/components/ROCrateForm.tsx
+================================================================================
+
+import React from "react";
+import {
+  FormContainer,
+  FormHeader,
+  FormTitle,
+  FormGrid,
+  FormGroup,
+  Label,
+  Input,
+  TextArea,
+  RequiredIndicator,
+  HelperText,
+} from "./ROCrateForm.styles";
+import { ROCrateMetadata } from "../types";
+
+interface ROCrateFormProps {
+  metadata: ROCrateMetadata;
+  onChange: (metadata: ROCrateMetadata) => void;
+}
+
+const ROCrateForm: React.FC<ROCrateFormProps> = ({ metadata, onChange }) => {
+  const handleInputChange = (
+    field: keyof ROCrateMetadata,
+    value: string | string[]
+  ) => {
+    onChange({
+      ...metadata,
+      [field]: value,
+    });
+  };
+
+  const handleKeywordsChange = (value: string) => {
+    const keywords = value
+      .split(",")
+      .map((k) => k.trim())
+      .filter((k) => k);
+    handleInputChange("keywords", keywords);
+  };
+
+  return (
+    <FormContainer>
+      <FormHeader>
+        <FormTitle>RO-Crate Information</FormTitle>
+      </FormHeader>
+
+      <FormGrid>
+        <FormGroup>
+          <Label>
+            Crate Name <RequiredIndicator>*</RequiredIndicator>
+          </Label>
+          <Input
+            type="text"
+            value={metadata.name}
+            onChange={(e) => handleInputChange("name", e.target.value)}
+            placeholder="e.g., My Research Dataset"
+          />
+          <HelperText>A descriptive name for your RO-Crate package</HelperText>
+        </FormGroup>
+
+        <FormGroup>
+          <Label>
+            Organization Name <RequiredIndicator>*</RequiredIndicator>
+          </Label>
+          <Input
+            type="text"
+            value={metadata.organizationName}
+            onChange={(e) =>
+              handleInputChange("organizationName", e.target.value)
+            }
+            placeholder="e.g., University of Virginia"
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label>
+            Project Name <RequiredIndicator>*</RequiredIndicator>
+          </Label>
+          <Input
+            type="text"
+            value={metadata.projectName}
+            onChange={(e) => handleInputChange("projectName", e.target.value)}
+            placeholder="e.g., Genomic Data Analysis"
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label>Author</Label>
+          <Input
+            type="text"
+            value={metadata.author}
+            onChange={(e) => handleInputChange("author", e.target.value)}
+            placeholder="e.g., John Doe"
+          />
+          <HelperText>Primary author or creator of this RO-Crate</HelperText>
+        </FormGroup>
+
+        <FormGroup $fullWidth>
+          <Label>
+            Description <RequiredIndicator>*</RequiredIndicator>
+          </Label>
+          <TextArea
+            value={metadata.description}
+            onChange={(e) => handleInputChange("description", e.target.value)}
+            placeholder="Provide a detailed description of this RO-Crate and its contents..."
+            rows={4}
+          />
+        </FormGroup>
+
+        <FormGroup $fullWidth>
+          <Label>Keywords</Label>
+          <Input
+            type="text"
+            value={metadata.keywords.join(", ")}
+            onChange={(e) => handleKeywordsChange(e.target.value)}
+            placeholder="e.g., cancer, genomics, sequencing"
+          />
+          <HelperText>
+            Comma-separated keywords to help others discover this RO-Crate
+          </HelperText>
+        </FormGroup>
+
+        <FormGroup>
+          <Label>Version</Label>
+          <Input
+            type="text"
+            value={metadata.version}
+            onChange={(e) => handleInputChange("version", e.target.value)}
+            placeholder="1.0.0"
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label>License</Label>
+          <Input
+            type="text"
+            value={metadata.license}
+            onChange={(e) => handleInputChange("license", e.target.value)}
+            placeholder="https://creativecommons.org/licenses/by/4.0/"
+          />
+        </FormGroup>
+      </FormGrid>
+    </FormContainer>
+  );
+};
+
+export default ROCrateForm;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/components/ComputationTable.tsx
+================================================================================
+
+import React from "react";
+import { ComputationMetadata } from "../types";
+import {
+  ComponentContainer,
+  ComponentTitle,
+  TableHeaderWithAction,
+  AddButton,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+  EmptyState,
+} from "./ComputationComponents.styles";
+
+interface ComputationTableProps {
+  computations: ComputationMetadata[];
+  onAddComputation: () => void;
+  onEditComputation: (computation: ComputationMetadata) => void;
+}
+
+const ComputationTable: React.FC<ComputationTableProps> = ({
+  computations,
+  onAddComputation,
+  onEditComputation,
+}) => {
+  return (
+    <ComponentContainer>
+      <TableHeaderWithAction>
+        <ComponentTitle>Computations ({computations.length})</ComponentTitle>
+        <AddButton onClick={onAddComputation}>Add Computation</AddButton>
+      </TableHeaderWithAction>
+
+      {computations.length === 0 ? (
+        <EmptyState>
+          No computations recorded yet. Click "Add Computation" to document the
+          computational processes used to generate or process your files.
+        </EmptyState>
+      ) : (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell>Name</TableHeaderCell>
+              <TableHeaderCell>Run By</TableHeaderCell>
+              <TableHeaderCell>Date Created</TableHeaderCell>
+              <TableHeaderCell>Inputs</TableHeaderCell>
+              <TableHeaderCell>Outputs</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {computations.map((comp) => (
+              <TableRow key={comp.id} onClick={() => onEditComputation(comp)}>
+                <TableCell>{comp.name}</TableCell>
+                <TableCell>{comp.runBy}</TableCell>
+                <TableCell>{comp.dateCreated}</TableCell>
+                <TableCell>{comp.usedDataset.length} datasets</TableCell>
+                <TableCell>{comp.generated.length} datasets</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </ComponentContainer>
+  );
+};
+
+export default ComputationTable;
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/views/FormView.styles.ts
+================================================================================
+
+import styled from "styled-components";
+
+export const FormViewContainer = styled.div`
+  background-color: ${({ theme }) => theme.colors.background || "#ffffff"};
+  padding: ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  box-shadow: ${({ theme }) =>
+    theme.shadows?.subtle || "0 2px 4px rgba(0,0,0,0.06)"};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
+`;
+
+export const FormHeader = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
+  padding-bottom: ${({ theme }) => theme.spacing.lg};
+  border-bottom: 2px solid
+    ${({ theme }) => theme.colors.secondary || theme.colors.primary};
+`;
+
+export const FormTitle = styled.h2`
+  font-size: 24px;
+  color: ${({ theme }) => theme.colors.primary};
+  margin: 0 0 ${({ theme }) => theme.spacing.sm} 0;
+`;
+
+export const FileInfo = styled.div`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 14px;
+
+  strong {
+    color: ${({ theme }) => theme.colors.text};
+    font-weight: 600;
+  }
+`;
+
+export const FormBody = styled.form`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: ${({ theme }) => theme.spacing.lg};
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const FormGroup = styled.div<{ $fullWidth?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.xs};
+  grid-column: ${({ $fullWidth }) => ($fullWidth ? "1 / -1" : "auto")};
+`;
+
+export const Label = styled.label`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 14px;
+`;
+
+export const Input = styled.input`
+  padding: ${({ theme }) => theme.spacing.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 15px;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}20;
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textSecondary};
+  }
+`;
+
+export const TextArea = styled.textarea`
+  padding: ${({ theme }) => theme.spacing.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}20;
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textSecondary};
+  }
+`;
+
+export const Select = styled.select`
+  padding: ${({ theme }) => theme.spacing.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 15px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}20;
+  }
+`;
+
+export const ArrayInputContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.sm};
+`;
+
+export const ArrayItem = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing.sm};
+  align-items: center;
+`;
+
+export const AddButton = styled.button`
+  align-self: flex-start;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
+  background-color: transparent;
+  color: ${({ theme }) => theme.colors.primary};
+  border: 1px solid ${({ theme }) => theme.colors.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.primary};
+    color: white;
+  }
+`;
+
+export const RemoveButton = styled.button`
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
+  background-color: transparent;
+  color: ${({ theme }) => theme.colors.error || "#dc3545"};
+  border: 1px solid ${({ theme }) => theme.colors.error || "#dc3545"};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.error || "#dc3545"};
+    color: white;
+  }
+`;
+
+export const RequiredIndicator = styled.span`
+  color: ${({ theme }) => theme.colors.error || "#dc3545"};
+  margin-left: 2px;
+`;
+
+export const HelperText = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-top: -4px;
+`;
+
+export const FormActions = styled.div`
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-top: ${({ theme }) => theme.spacing.lg};
+  padding-top: ${({ theme }) => theme.spacing.lg};
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+
+export const SaveButton = styled.button`
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xl};
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.primaryDark};
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+export const CancelButton = styled.button`
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xl};
+  background-color: transparent;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.backgroundAlt};
+    border-color: ${({ theme }) => theme.colors.textSecondary};
+  }
+`;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/views/UploadView.tsx
+================================================================================
+
+import React from "react";
+import {
+  ViewContainer,
+  GenerateButtonContainer,
+  GenerateButton,
+} from "./UploadView.styles";
+import ROCrateForm from "../components/ROCrateForm";
+import FileUploader from "../components/FileUploader";
+import FileTrackingTable from "../components/FileTrackingTable";
+import { FileObject, ROCrateMetadata, FileType } from "../types";
+
+interface UploadViewProps {
+  roCrateMetadata: ROCrateMetadata;
+  onRoCrateMetadataChange: (metadata: ROCrateMetadata) => void;
+  files: FileObject[];
+  onFilesUpload: (files: File[]) => void;
+  onFileTypeChange: (fileId: string, type: FileType) => void;
+  onEditFileMetadata: (file: FileObject) => void;
+  onRemoveFile: (fileId: string) => void;
+  onGenerateROCrate: () => void;
+}
+
+const UploadView: React.FC<UploadViewProps> = ({
+  roCrateMetadata,
+  onRoCrateMetadataChange,
+  files,
+  onFilesUpload,
+  onFileTypeChange,
+  onEditFileMetadata,
+  onRemoveFile,
+  onGenerateROCrate,
+}) => {
+  const allFilesComplete =
+    files.length > 0 && files.every((f) => f.metadataComplete);
+  const hasRequiredRoCrateFields = !!(
+    roCrateMetadata.name &&
+    roCrateMetadata.organizationName &&
+    roCrateMetadata.projectName &&
+    roCrateMetadata.description
+  );
+
+  return (
+    <ViewContainer>
+      <ROCrateForm
+        metadata={roCrateMetadata}
+        onChange={onRoCrateMetadataChange}
+      />
+
+      <FileUploader onFilesUpload={onFilesUpload} />
+
+      {
+        <FileTrackingTable
+          files={files}
+          onFileTypeChange={onFileTypeChange}
+          onEditMetadata={onEditFileMetadata}
+          onRemoveFile={onRemoveFile}
+        />
+      }
+    </ViewContainer>
+  );
+};
+
+export default UploadView;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/views/FormView.tsx
+================================================================================
+
+import React, { useState, useEffect } from "react";
+import {
+  FormViewContainer,
+  FormHeader,
+  FormTitle,
+  FileInfo,
+  FormBody,
+  FormGroup,
+  Label,
+  Input,
+  TextArea,
+  Select,
+  ArrayInputContainer,
+  ArrayItem,
+  AddButton,
+  RemoveButton,
+  RequiredIndicator,
+  HelperText,
+  FormActions,
+  SaveButton,
+  CancelButton,
+} from "./FormView.styles";
+import { FileObject, DatasetMetadata } from "../types";
+import { formConfig } from "./formConfig";
+
+interface FormViewProps {
+  file: FileObject;
+  onSubmit: (metadata: DatasetMetadata) => void;
+  onCancel: () => void;
+}
+
+const FormView: React.FC<FormViewProps> = ({ file, onSubmit, onCancel }) => {
+  const [formData, setFormData] = useState<DatasetMetadata>(
+    file.metadata as DatasetMetadata
+  );
+
+  const fields = formConfig[file.fileType] || formConfig.dataset;
+
+  const handleFieldChange = (fieldName: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }));
+  };
+
+  const handleArrayAdd = (fieldName: string) => {
+    const currentArray = (formData as any)[fieldName] || [];
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: [...currentArray, ""],
+    }));
+  };
+
+  const handleArrayItemChange = (
+    fieldName: string,
+    index: number,
+    value: string
+  ) => {
+    const currentArray = (formData as any)[fieldName] || [];
+    const newArray = [...currentArray];
+    newArray[index] = value;
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: newArray,
+    }));
+  };
+
+  const handleArrayRemove = (fieldName: string, index: number) => {
+    const currentArray = (formData as any)[fieldName] || [];
+    const newArray = currentArray.filter((_: any, i: number) => i !== index);
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: newArray,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const renderField = (field: any) => {
+    const value = (formData as any)[field.name];
+
+    switch (field.type) {
+      case "text":
+      case "date":
+        return (
+          <Input
+            type={field.type}
+            value={value || ""}
+            onChange={(e) => handleFieldChange(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+          />
+        );
+
+      case "textarea":
+        return (
+          <TextArea
+            value={value || ""}
+            onChange={(e) => handleFieldChange(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            rows={4}
+            required={field.required}
+          />
+        );
+
+      case "select":
+        return (
+          <Select
+            value={value || ""}
+            onChange={(e) => handleFieldChange(field.name, e.target.value)}
+            required={field.required}
+          >
+            <option value="">Select...</option>
+            {field.options?.map((option: any) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        );
+
+      case "array":
+        const arrayValue = value || [];
+        return (
+          <ArrayInputContainer>
+            {arrayValue.map((item: string, index: number) => (
+              <ArrayItem key={index}>
+                <Input
+                  type="text"
+                  value={item}
+                  onChange={(e) =>
+                    handleArrayItemChange(field.name, index, e.target.value)
+                  }
+                  placeholder={`Item ${index + 1}`}
+                />
+                <RemoveButton
+                  type="button"
+                  onClick={() => handleArrayRemove(field.name, index)}
+                >
+                  Remove
+                </RemoveButton>
+              </ArrayItem>
+            ))}
+            <AddButton type="button" onClick={() => handleArrayAdd(field.name)}>
+              + Add {field.label}
+            </AddButton>
+          </ArrayInputContainer>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <FormViewContainer>
+      <FormHeader>
+        <FormTitle>Edit Metadata: {file.fileData.name}</FormTitle>
+        <FileInfo>
+          File Type: <strong>{file.fileType}</strong> | Size:{" "}
+          <strong>{(file.fileData.size / 1024).toFixed(2)} KB</strong>
+        </FileInfo>
+      </FormHeader>
+
+      <FormBody onSubmit={handleSubmit}>
+        {fields.map((field: any) => (
+          <FormGroup key={field.name} $fullWidth={field.type === "textarea"}>
+            <Label>
+              {field.label}{" "}
+              {field.required && <RequiredIndicator>*</RequiredIndicator>}
+            </Label>
+            {renderField(field)}
+            {field.helperText && <HelperText>{field.helperText}</HelperText>}
+          </FormGroup>
+        ))}
+
+        <FormActions>
+          <CancelButton type="button" onClick={onCancel}>
+            Cancel
+          </CancelButton>
+          <SaveButton type="submit">Save Metadata</SaveButton>
+        </FormActions>
+      </FormBody>
+    </FormViewContainer>
+  );
+};
+
+export default FormView;
+
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/views/UploadView.styles.ts
+================================================================================
+
+import styled from "styled-components";
+
+export const ViewContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.xl};
+`;
+
+
+================================================================================
+FILE: ./src/components/ROCrateCreator/views/formConfig.ts
+================================================================================
+
+import { FormConfig } from "../types";
+
+export const formConfig: FormConfig = {
+  dataset: [
+    {
+      name: "name",
+      label: "Dataset Name",
+      type: "text",
+      required: true,
+      placeholder: "e.g., Genomic Data Analysis",
+      helperText: "A descriptive name for this dataset",
+    },
+    {
+      name: "author",
+      label: "Author",
+      type: "text",
+      required: true,
+      placeholder: "e.g., John Doe",
+      helperText: "Primary author or creator of this dataset",
+    },
+    {
+      name: "version",
+      label: "Version",
+      type: "text",
+      required: true,
+      placeholder: "e.g., 1.0.0",
+    },
+    {
+      name: "datePublished",
+      label: "Date Published",
+      type: "date",
+      required: true,
+    },
+    {
+      name: "description",
+      label: "Description",
+      type: "textarea",
+      required: true,
+      placeholder: "Provide a detailed description of this dataset...",
+      helperText:
+        "Include information about data collection methods, scope, and purpose",
+    },
+    {
+      name: "keywords",
+      label: "Keywords",
+      type: "array",
+      required: false,
+      helperText: "Add relevant keywords for discovery",
+    },
+    {
+      name: "dataFormat",
+      label: "Data Format",
+      type: "text",
+      required: false,
+      placeholder: "e.g., CSV, JSON, HDF5",
+    },
+    {
+      name: "schema",
+      label: "Schema Reference",
+      type: "text",
+      required: false,
+      placeholder: "e.g., ark:59852/schema-...",
+      helperText:
+        "Reference to the schema that defines this dataset's structure",
+    },
+    {
+      name: "generatedBy",
+      label: "Generated By",
+      type: "text",
+      required: false,
+      placeholder: "e.g., ark:59852/computation-...",
+      helperText: "Reference to the computation that generated this dataset",
+    },
+    {
+      name: "derivedFrom",
+      label: "Derived From",
+      type: "array",
+      required: false,
+      helperText: "References to source datasets this was derived from",
+    },
+    {
+      name: "usedBy",
+      label: "Used By",
+      type: "array",
+      required: false,
+      helperText:
+        "References to computations or analyses that use this dataset",
+    },
+    {
+      name: "associatedPublication",
+      label: "Associated Publication",
+      type: "text",
+      required: false,
+      placeholder: "e.g., DOI or publication reference",
+      helperText: "Publication associated with this dataset",
+    },
+    {
+      name: "additionalDocumentation",
+      label: "Additional Documentation",
+      type: "text",
+      required: false,
+      placeholder: "e.g., URL to documentation",
+      helperText: "Link to additional documentation or resources",
+    },
+  ],
+
+  software: [
+    {
+      name: "name",
+      label: "Software Name",
+      type: "text",
+      required: true,
+      placeholder: "e.g., Data Analysis Tool v2.0",
+    },
+    {
+      name: "author",
+      label: "Author",
+      type: "text",
+      required: true,
+      placeholder: "e.g., Jane Smith",
+    },
+    {
+      name: "version",
+      label: "Version",
+      type: "text",
+      required: true,
+      placeholder: "e.g., 2.0.0",
+    },
+    {
+      name: "dateModified",
+      label: "Date Modified",
+      type: "date",
+      required: true,
+    },
+    {
+      name: "description",
+      label: "Description",
+      type: "textarea",
+      required: true,
+      placeholder: "Describe the purpose and functionality of this software...",
+    },
+    {
+      name: "keywords",
+      label: "Keywords",
+      type: "array",
+      required: false,
+    },
+    {
+      name: "fileFormat",
+      label: "File Format",
+      type: "text",
+      required: false,
+      placeholder: "e.g., Python, R, executable",
+    },
+    {
+      name: "usedByComputation",
+      label: "Used By Computation",
+      type: "array",
+      required: false,
+      helperText: "References to computations that use this software",
+    },
+    {
+      name: "associatedPublication",
+      label: "Associated Publication",
+      type: "text",
+      required: false,
+      placeholder: "e.g., DOI or publication reference",
+    },
+    {
+      name: "additionalDocumentation",
+      label: "Additional Documentation",
+      type: "text",
+      required: false,
+      placeholder: "e.g., URL to documentation",
+    },
+  ],
+
+  computation: [
+    {
+      name: "name",
+      label: "Computation Name",
+      type: "text",
+      required: true,
+      placeholder: "e.g., Seuencing Data Analysis",
+    },
+    {
+      name: "runBy",
+      label: "Run By",
+      type: "text",
+      required: true,
+      placeholder: "e.g., Research Team A",
+    },
+    {
+      name: "dateCreated",
+      label: "Date Created",
+      type: "date",
+      required: true,
+    },
+    {
+      name: "description",
+      label: "Description",
+      type: "textarea",
+      required: true,
+      placeholder: "Describe what this computation does...",
+    },
+    {
+      name: "keywords",
+      label: "Keywords",
+      type: "array",
+      required: false,
+    },
+    {
+      name: "command",
+      label: "Command",
+      type: "textarea",
+      required: false,
+      placeholder: "e.g., python analyze.py --input data.csv",
+    },
+    {
+      name: "usedSoftware",
+      label: "Used Software",
+      type: "array",
+      required: false,
+      helperText: "References to software used in this computation",
+    },
+    {
+      name: "usedDataset",
+      label: "Used Dataset",
+      type: "array",
+      required: false,
+      helperText: "References to datasets used as input",
+    },
+    {
+      name: "generated",
+      label: "Generated",
+      type: "array",
+      required: false,
+      helperText: "References to outputs generated by this computation",
+    },
+  ],
+
+  schema: [
+    {
+      name: "name",
+      label: "Schema Name",
+      type: "text",
+      required: true,
+      placeholder: "e.g., Temperature Data Schema",
+    },
+    {
+      name: "description",
+      label: "Description",
+      type: "textarea",
+      required: true,
+      placeholder: "Describe the structure and purpose of this schema...",
+    },
+    {
+      name: "published",
+      label: "Published",
+      type: "select",
+      required: false,
+      options: [
+        { value: "true", label: "Yes" },
+        { value: "false", label: "No" },
+      ],
+    },
+    {
+      name: "separator",
+      label: "Separator",
+      type: "text",
+      required: false,
+      placeholder: "e.g., comma, tab",
+    },
+    {
+      name: "header",
+      label: "Has Header",
+      type: "select",
+      required: false,
+      options: [
+        { value: "true", label: "Yes" },
+        { value: "false", label: "No" },
+      ],
+    },
+    {
+      name: "required",
+      label: "Required Fields",
+      type: "array",
+      required: false,
+      helperText: "List of required field names",
+    },
+    {
+      name: "examples",
+      label: "Examples",
+      type: "array",
+      required: false,
+      helperText: "Example values or usage",
+    },
+  ],
+};
+
+
+

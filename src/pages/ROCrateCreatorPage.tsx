@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+
 import {
   Container,
   Header,
@@ -6,10 +7,12 @@ import {
   GenerateButtonContainer,
   GenerateButton,
 } from "./ROCrateCreator.styles";
+
 import UploadView from "../components/ROCrateCreator/views/UploadView";
 import FormView from "../components/ROCrateCreator/views/FormView";
 import ComputationTable from "../components/ROCrateCreator/components/ComputationTable";
 import ComputationForm from "../components/ROCrateCreator/components/ComputationForm";
+
 import {
   FileObject,
   ROCrateMetadata,
@@ -18,6 +21,7 @@ import {
   SoftwareMetadata,
   ComputationMetadata,
 } from "../components/ROCrateCreator/types";
+
 import {
   detectFileType,
   getDefaultMetadata,
