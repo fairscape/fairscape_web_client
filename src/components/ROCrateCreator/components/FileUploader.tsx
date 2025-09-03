@@ -19,6 +19,7 @@ interface FileUploaderProps {
 const FileUploader: React.FC<FileUploaderProps> = ({ onFilesUpload }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -99,15 +100,19 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFilesUpload }) => {
       if (files && files.length > 0) {
         onFilesUpload(Array.from(files));
       }
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+      if (e.target) {
+        e.target.value = "";
       }
     },
     [onFilesUpload]
   );
 
-  const handleBrowseClick = useCallback(() => {
+  const handleBrowseFiles = useCallback(() => {
     fileInputRef.current?.click();
+  }, []);
+
+  const handleBrowseFolders = useCallback(() => {
+    folderInputRef.current?.click();
   }, []);
 
   return (
@@ -122,7 +127,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFilesUpload }) => {
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        onClick={handleBrowseClick}
       >
         <DropZoneContent>
           <UploadIcon>
@@ -154,15 +158,38 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFilesUpload }) => {
             <br />
             or
           </DropText>
-          <BrowseButton type="button">Browse Files</BrowseButton>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <BrowseButton type="button" onClick={handleBrowseFiles}>
+              Browse Files
+            </BrowseButton>
+            <BrowseButton
+              type="button"
+              onClick={handleBrowseFolders}
+              style={{
+                backgroundColor: "transparent",
+                color: "#007bff",
+                border: "1px solid #007bff",
+              }}
+            >
+              Browse Folder
+            </BrowseButton>
+          </div>
           <SupportedFormats>
-            Supports all file types - Upload single files or entire directories
+            Supports all file types - Upload single or multiple files, or entire
+            directories
           </SupportedFormats>
         </DropZoneContent>
       </DropZone>
 
       <FileInput
         ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileSelect}
+      />
+
+      <FileInput
+        ref={folderInputRef}
         type="file"
         multiple
         onChange={handleFileSelect}

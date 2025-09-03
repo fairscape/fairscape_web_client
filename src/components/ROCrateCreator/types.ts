@@ -1,4 +1,4 @@
-export type FileType = "dataset" | "software" | "computation" | "schema";
+export type FileType = "dataset" | "software";
 
 export interface ROCrateMetadata {
   name: string;
@@ -49,6 +49,19 @@ export interface FileObject {
   fileType: FileType;
   metadata: FileMetadata;
   metadataComplete: boolean;
+}
+
+export interface ComputationMetadata {
+  id?: string;
+  name: string;
+  runBy: string;
+  dateCreated: string;
+  description: string;
+  keywords: string[];
+  command?: string;
+  usedSoftware: string[];
+  usedDataset: string[];
+  generated: string[];
 }
 
 export interface FormFieldConfig {

@@ -56,21 +56,6 @@ const UploadView: React.FC<UploadViewProps> = ({
           onRemoveFile={onRemoveFile}
         />
       }
-
-      {files.length > 0 && (
-        <GenerateButtonContainer>
-          <GenerateButton
-            onClick={onGenerateROCrate}
-            disabled={!allFilesComplete || !hasRequiredRoCrateFields}
-          >
-            {!hasRequiredRoCrateFields
-              ? "Complete RO-Crate Details"
-              : !allFilesComplete
-              ? "Complete All File Metadata"
-              : "Generate RO-Crate Package"}
-          </GenerateButton>
-        </GenerateButtonContainer>
-      )}
     </ViewContainer>
   );
 };

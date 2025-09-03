@@ -5,9 +5,9 @@ import { useParams } from "react-router-dom";
 import ButtonGroup from "../components/MetadataDisplay/components/ButtonGroup/ButtonGroup";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import Alert from "../components/common/Alert";
-import ReleaseComponent from "../components/MetadataDisplay/ReleaseComponent";
-import ROCrateComponent from "../components/MetadataDisplay/ROCrateComponent";
-import GenericMetadataComponent from "../components/MetadataDisplay/GenericMetadataComponent";
+import ReleaseComponent from "../components/MetadataDisplay/views/Release/ReleaseComponent";
+import ROCrateComponent from "../components/MetadataDisplay/views/ROCrate/ROCrateComponent";
+import GenericMetadataComponent from "../components/MetadataDisplay/views/Generic/GenericMetadataComponent";
 import SerializationView from "../components/MetadataDisplay/views/Serialization/SerializationView";
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 
