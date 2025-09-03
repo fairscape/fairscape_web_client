@@ -1,238 +1,274 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import {
+  generateDataset,
+  generateSoftware,
+  register_computation as generateComputation,
+  register_schema as generateSchema, // kept import, but schema detection is stubbed below
+} from "@fairscape/utils";
 
 import {
-  Container,
-  Header,
-  PageTitle,
-  GenerateButtonContainer,
-  GenerateButton,
-} from "./ROCrateCreator.styles";
-
-import UploadView from "../components/ROCrateCreator/views/UploadView";
-import FormView from "../components/ROCrateCreator/views/FormView";
-import ComputationTable from "../components/ROCrateCreator/components/ComputationTable";
-import ComputationForm from "../components/ROCrateCreator/components/ComputationForm";
-
-import {
-  FileObject,
   ROCrateMetadata,
-  FileType,
-  DatasetMetadata,
-  SoftwareMetadata,
-  ComputationMetadata,
+  MetadataObject,
+  DataObject,
+  ComputationObject,
+  SchemaObject,
+  ObjectType,
 } from "../components/ROCrateCreator/types";
 
-import {
-  detectFileType,
-  getDefaultMetadata,
-} from "../components/ROCrateCreator/utils/fileTypeDetection";
+import { useROCrateStore } from "../components/ROCrateCreator/stores/useROCrateStore";
+import { FileProcessingService } from "../components/ROCrateCreator/services/FileProcessingService";
+import { ROCratePackager } from "../components/ROCrateCreator/services/ROCratePackager";
+// import { SchemaDetectionService } from "../components/ROCrateCreator/services/SchemaDetectionService";
+// import { CacheService } from "../components/ROCrateCreator/services/CacheService";
 
-type ViewType = "upload" | "form" | "computation-form";
+import WorkspaceView from "../components/ROCrateCreator/views/WorkspaceView";
+import MetadataEditorView from "../components/ROCrateCreator/views/MetadataEditorView";
+import ComputationWorkflowView from "../components/ROCrateCreator/views/ComputationWorkflowView";
+
+import { Container, Header, PageTitle } from "./ROCrateCreator.styles";
+
+type ViewType = "workspace" | "editor" | "computation-workflow";
+
+interface EditorContext {
+  objectId: string;
+  returnView: ViewType;
+}
+
+/** ---------------------------
+ *  PLACEHOLDER SERVICES (NO-OP)
+ *  ---------------------------
+ *  These are minimal stubs so you can wire the page without having
+ *  SchemaDetectionService or CacheService implemented yet.
+ */
+
+// Placeholder schema detector: always returns false / null
+const schemaDetector = {
+  shouldDetect: async (_file: File) => false,
+  detect: async (_file: File) => null as SchemaObject | null,
+};
+
+// Placeholder cache service: no-op load/save/clear
+const cacheService = {
+  load: async () =>
+    null as null | { root: ROCrateMetadata; objects: MetadataObject[] },
+  save: async (_state: any) => void 0,
+  clear: async () => void 0,
+};
 
 export default function ROCrateCreatorPage() {
-  const [currentView, setCurrentView] = useState<ViewType>("upload");
-  const [files, setFiles] = useState<FileObject[]>([]);
-  const [selectedFile, setSelectedFile] = useState<FileObject | null>(null);
-  const [computations, setComputations] = useState<ComputationMetadata[]>([]);
-  const [selectedComputation, setSelectedComputation] =
-    useState<ComputationMetadata | null>(null);
+  const [currentView, setCurrentView] = useState<ViewType>("workspace");
+  const [editorContext, setEditorContext] = useState<EditorContext | null>(
+    null
+  );
 
-  const [roCrateMetadata, setRoCrateMetadata] = useState<ROCrateMetadata>({
-    name: "",
-    organizationName: "",
-    projectName: "",
-    description: "",
-    author: "",
-    keywords: [],
-    version: "1.0.0",
-    license: "https://creativecommons.org/licenses/by/4.0/",
-  });
+  const {
+    crateState,
+    addObject,
+    updateObject,
+    deleteObject,
+    updateRoot,
+    validateCrate,
+    getObjectsByType,
+  } = useROCrateStore();
+
+  const fileProcessor = new FileProcessingService();
+  const packager = new ROCratePackager();
+
+  // Draft load (no-op for now via placeholder)
+  useEffect(() => {
+    const loadCached = async () => {
+      const cached = await cacheService.load();
+      if (cached) {
+        updateRoot(cached.root);
+        cached.objects.forEach((obj) => addObject(obj, false));
+      }
+    };
+    loadCached();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Draft save (no-op via placeholder)
+  useEffect(() => {
+    const saveDraft = async () => {
+      await cacheService.save(crateState);
+    };
+    const debounced = setTimeout(saveDraft, 1000);
+    return () => clearTimeout(debounced);
+  }, [crateState]);
 
   const handleFilesUpload = useCallback(
-    (uploadedFiles: File[]) => {
-      const newFileObjects: FileObject[] = uploadedFiles.map((file) => {
-        const fileType = detectFileType(file.name);
-        const metadata = getDefaultMetadata(
-          file,
-          fileType,
-          roCrateMetadata.author
-        );
+    async (files: File[]) => {
+      for (const file of files) {
+        const fileType = await fileProcessor.detectFileType(file);
+        const objectType: ObjectType =
+          fileType === "software"
+            ? "Software"
+            : fileType === "schema"
+            ? "Schema"
+            : "Dataset";
 
-        return {
-          id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          fileData: file,
-          fileType,
-          metadata: metadata as DatasetMetadata | SoftwareMetadata,
-          metadataComplete: false,
+        // If/when you implement schema upload handling, this branch will be useful.
+        if (objectType === "Schema") {
+          // Placeholder: if you later want to accept uploaded schema files directly,
+          // you can parse them and call generateSchema() here.
+          // For now, skip.
+          continue;
+        }
+
+        const baseMetadata = {
+          name: file.name.replace(/\.[^/.]+$/, ""),
+          author: crateState.root.author,
+          version: "1.0.0",
+          description: "",
+          keywords: [],
         };
+
+        let metadataObject: MetadataObject;
+
+        if (objectType === "Dataset") {
+          metadataObject = generateDataset(
+            {
+              ...baseMetadata,
+              datePublished: new Date().toISOString().split("T")[0],
+              dataFormat: file.type || "application/octet-stream",
+            },
+            file,
+            "./"
+          );
+
+          (metadataObject as DataObject).fileData = file;
+
+          // Schema detection is stubbed (always false)
+          if (await schemaDetector.shouldDetect(file)) {
+            const detectedSchema = await schemaDetector.detect(file);
+            if (detectedSchema) {
+              const schemaObject = generateSchema(detectedSchema);
+              addObject(schemaObject);
+              (metadataObject as DataObject).conformsTo = schemaObject["@id"];
+            }
+          }
+        } else {
+          // Software
+          metadataObject = generateSoftware(
+            {
+              ...baseMetadata,
+              dateModified: new Date().toISOString().split("T")[0],
+              fileFormat: file.type || "application/octet-stream",
+            },
+            file,
+            "./"
+          );
+
+          (metadataObject as DataObject).fileData = file;
+        }
+
+        addObject(metadataObject);
+      }
+    },
+    [crateState.root.author, addObject, fileProcessor]
+  );
+
+  const handleExternalRegistration = useCallback(
+    (
+      url: string,
+      type: "Dataset" | "Software",
+      metadata: Partial<MetadataObject>
+    ) => {
+      const baseMetadata = {
+        name: metadata.name || "External Resource",
+        author: metadata.author || crateState.root.author,
+        version: "1.0.0",
+        description: metadata.description || "",
+        keywords: metadata.keywords || [],
+        contentUrl: url,
+      };
+
+      let metadataObject: MetadataObject;
+
+      if (type === "Dataset") {
+        metadataObject = generateDataset({
+          ...baseMetadata,
+          datePublished: new Date().toISOString().split("T")[0],
+          dataFormat: "unknown",
+        });
+      } else {
+        metadataObject = generateSoftware({
+          ...baseMetadata,
+          dateModified: new Date().toISOString().split("T")[0],
+          fileFormat: "unknown",
+        });
+      }
+
+      addObject(metadataObject);
+    },
+    [crateState.root.author, addObject]
+  );
+
+  const handleAddComputation = useCallback(
+    (computationData: Partial<ComputationObject>) => {
+      const computation = generateComputation({
+        name: computationData.name || "",
+        runBy: computationData.runBy || crateState.root.author,
+        dateCreated: new Date().toISOString().split("T")[0],
+        description: computationData.description || "",
+        keywords: computationData.keywords || [],
+        usedSoftware: computationData.usedSoftware || [],
+        usedDataset: computationData.usedDataset || [],
+        generated: computationData.generated || [],
       });
 
-      setFiles((prev) => [...prev, ...newFileObjects]);
+      addObject(computation);
     },
-    [roCrateMetadata.author]
+    [crateState.root.author, addObject]
   );
 
-  const handleFileTypeChange = useCallback(
-    (fileId: string, newType: FileType) => {
-      setFiles((prev) =>
-        prev.map((file) => {
-          if (file.id === fileId) {
-            const metadata = getDefaultMetadata(
-              file.fileData,
-              newType,
-              roCrateMetadata.author
-            );
-            return {
-              ...file,
-              fileType: newType,
-              metadata: metadata as DatasetMetadata | SoftwareMetadata,
-              metadataComplete: false,
-            };
-          }
-          return file;
-        })
-      );
+  const openEditor = useCallback(
+    (objectId: string) => {
+      setEditorContext({ objectId, returnView: currentView });
+      setCurrentView("editor");
     },
-    [roCrateMetadata.author]
+    [currentView]
   );
 
-  const handleEditFileMetadata = useCallback((file: FileObject) => {
-    setSelectedFile(file);
-    setCurrentView("form");
-  }, []);
-
-  const handleMetadataSubmit = useCallback(
-    (updatedMetadata: DatasetMetadata | SoftwareMetadata) => {
-      if (!selectedFile) return;
-
-      setFiles((prev) =>
-        prev.map((file) => {
-          if (file.id === selectedFile.id) {
-            const isComplete = validateMetadata(updatedMetadata);
-            return {
-              ...file,
-              metadata: updatedMetadata,
-              metadataComplete: isComplete,
-            };
-          }
-          return file;
-        })
-      );
-
-      setCurrentView("upload");
-      setSelectedFile(null);
-    },
-    [selectedFile]
-  );
-
-  const validateMetadata = (
-    metadata: DatasetMetadata | SoftwareMetadata
-  ): boolean => {
-    if (metadata.type === "dataset") {
-      const ds = metadata as DatasetMetadata;
-      return !!(
-        ds.name &&
-        ds.author &&
-        ds.description &&
-        ds.datePublished &&
-        ds.version
-      );
-    } else {
-      const sw = metadata as SoftwareMetadata;
-      return !!(
-        sw.name &&
-        sw.author &&
-        sw.description &&
-        sw.dateModified &&
-        sw.version
-      );
-    }
-  };
-
-  const handleBackToUpload = useCallback(() => {
-    setCurrentView("upload");
-    setSelectedFile(null);
-    setSelectedComputation(null);
-  }, []);
-
-  const handleRemoveFile = useCallback((fileId: string) => {
-    setFiles((prev) => prev.filter((file) => file.id !== fileId));
-  }, []);
-
-  const handleAddComputation = useCallback(() => {
-    setSelectedComputation(null);
-    setCurrentView("computation-form");
-  }, []);
-
-  const handleEditComputation = useCallback(
-    (computation: ComputationMetadata) => {
-      setSelectedComputation(computation);
-      setCurrentView("computation-form");
-    },
-    []
-  );
-
-  const handleComputationSubmit = useCallback(
-    (computation: ComputationMetadata) => {
-      if (selectedComputation) {
-        setComputations((prev) =>
-          prev.map((c) => (c.id === selectedComputation.id ? computation : c))
-        );
-      } else {
-        const newComputation = {
-          ...computation,
-          id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        };
-        setComputations((prev) => [...prev, newComputation]);
+  const closeEditor = useCallback(
+    (updatedObject?: MetadataObject) => {
+      if (updatedObject) {
+        updateObject(updatedObject["@id"], updatedObject);
       }
-      setCurrentView("upload");
-      setSelectedComputation(null);
+      if (editorContext) {
+        setCurrentView(editorContext.returnView);
+        setEditorContext(null);
+      }
     },
-    [selectedComputation]
+    [editorContext, updateObject]
   );
 
-  const handleGenerateROCrate = useCallback(() => {
-    const allMetadataComplete = files.every((file) => file.metadataComplete);
-    if (!allMetadataComplete) {
+  const handleGenerateROCrate = useCallback(async () => {
+    const validation = validateCrate();
+
+    if (!validation.isValid) {
       alert(
-        "Please complete metadata for all files before generating RO-Crate"
+        `Please fix the following issues:\n${validation.errors.join("\n")}`
       );
       return;
     }
 
-    console.log("Generating RO-Crate with:", {
-      roCrateMetadata,
-      files,
-      computations,
-    });
-  }, [roCrateMetadata, files, computations]);
+    try {
+      const packageBlob = await packager.generate(crateState);
 
-  const canGenerateROCrate = () => {
-    const allFilesComplete =
-      files.length > 0 && files.every((f) => f.metadataComplete);
-    const hasRequiredRoCrateFields = !!(
-      roCrateMetadata.name &&
-      roCrateMetadata.organizationName &&
-      roCrateMetadata.projectName &&
-      roCrateMetadata.description
-    );
-    return allFilesComplete && hasRequiredRoCrateFields;
-  };
+      const url = URL.createObjectURL(packageBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${crateState.root.name || "rocrate"}-${Date.now()}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
 
-  const getGenerateButtonText = () => {
-    if (
-      !roCrateMetadata.name ||
-      !roCrateMetadata.organizationName ||
-      !roCrateMetadata.projectName ||
-      !roCrateMetadata.description
-    ) {
-      return "Complete RO-Crate Details";
+      await cacheService.clear(); // no-op for now
+    } catch (error) {
+      console.error("Failed to generate RO-Crate:", error);
+      alert("Failed to generate RO-Crate package");
     }
-    if (files.some((f) => !f.metadataComplete)) {
-      return "Complete All File Metadata";
-    }
-    return "Generate RO-Crate Package";
-  };
+  }, [crateState, validateCrate, packager]);
 
   return (
     <Container>
@@ -240,51 +276,39 @@ export default function ROCrateCreatorPage() {
         <PageTitle>Create RO-Crate Package</PageTitle>
       </Header>
 
-      {currentView === "upload" ? (
-        <>
-          <UploadView
-            roCrateMetadata={roCrateMetadata}
-            onRoCrateMetadataChange={setRoCrateMetadata}
-            files={files}
-            onFilesUpload={handleFilesUpload}
-            onFileTypeChange={handleFileTypeChange}
-            onEditFileMetadata={handleEditFileMetadata}
-            onRemoveFile={handleRemoveFile}
-          />
-
-          {files.length > 0 && (
-            <div style={{ marginTop: "24px" }}>
-              <ComputationTable
-                computations={computations}
-                onAddComputation={handleAddComputation}
-                onEditComputation={handleEditComputation}
-              />
-            </div>
-          )}
-
-          {files.length > 0 && (
-            <GenerateButtonContainer>
-              <GenerateButton
-                onClick={handleGenerateROCrate}
-                disabled={!canGenerateROCrate()}
-              >
-                {getGenerateButtonText()}
-              </GenerateButton>
-            </GenerateButtonContainer>
-          )}
-        </>
-      ) : currentView === "form" ? (
-        <FormView
-          file={selectedFile!}
-          onSubmit={handleMetadataSubmit}
-          onCancel={handleBackToUpload}
+      {currentView === "workspace" && (
+        <WorkspaceView
+          crateState={crateState}
+          onUpdateRoot={updateRoot}
+          onFilesUpload={handleFilesUpload}
+          onExternalRegistration={handleExternalRegistration}
+          onOpenEditor={openEditor}
+          onDeleteObject={deleteObject}
+          onAddComputation={() => setCurrentView("computation-workflow")}
+          onGenerateROCrate={handleGenerateROCrate}
         />
-      ) : (
-        <ComputationForm
-          files={files}
-          computation={selectedComputation}
-          onSubmit={handleComputationSubmit}
-          onCancel={handleBackToUpload}
+      )}
+
+      {currentView === "editor" && editorContext && (
+        <MetadataEditorView
+          objectId={editorContext.objectId}
+          object={crateState.objects.get(editorContext.objectId)}
+          allObjects={crateState.objects}
+          onSave={closeEditor}
+          onCancel={() => closeEditor()}
+        />
+      )}
+
+      {currentView === "computation-workflow" && (
+        <ComputationWorkflowView
+          datasets={getObjectsByType("Dataset")}
+          software={getObjectsByType("Software")}
+          existingComputations={getObjectsByType("Computation")}
+          onSave={(computation) => {
+            handleAddComputation(computation);
+            setCurrentView("workspace");
+          }}
+          onCancel={() => setCurrentView("workspace")}
         />
       )}
     </Container>

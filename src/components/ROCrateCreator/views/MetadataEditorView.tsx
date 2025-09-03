@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FormViewContainer,
   FormHeader,
@@ -20,33 +20,55 @@ import {
   SaveButton,
   CancelButton,
 } from "./FormView.styles";
-import { FileObject, DatasetMetadata } from "../types";
+
+import { MetadataObject } from "../types";
 import { formConfig } from "./formConfig";
 
-interface FormViewProps {
-  file: FileObject;
-  onSubmit: (metadata: DatasetMetadata) => void;
+interface MetadataEditorViewProps {
+  objectId: string;
+  object?: MetadataObject;
+  allObjects: Map<string, MetadataObject>;
+  onSave: (updatedObject: MetadataObject) => void;
   onCancel: () => void;
 }
 
-const FormView: React.FC<FormViewProps> = ({ file, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState<DatasetMetadata>(
-    file.metadata as DatasetMetadata
-  );
+const MetadataEditorView: React.FC<MetadataEditorViewProps> = ({
+  objectId,
+  object,
+  allObjects,
+  onSave,
+  onCancel,
+}) => {
+  const [formData, setFormData] = useState<MetadataObject | null>(null);
 
-  const fields = formConfig[file.fileType] || formConfig.dataset;
+  // Initialize local state from the incoming object
+  useEffect(() => {
+    if (object) {
+      // clone to avoid mutating the store directly
+      setFormData({ ...(object as any) });
+    } else {
+      setFormData(null);
+    }
+  }, [object]);
+
+  // Pick the right config section based on @type (defaults to dataset fields)
+  const fields = useMemo(() => {
+    const typeKey = (object?.["@type"] ?? "Dataset")
+      .toString()
+      .toLowerCase() as "dataset" | "software" | "computation" | "schema";
+    return (formConfig as any)[typeKey] ?? formConfig.dataset;
+  }, [object]);
 
   const handleFieldChange = (fieldName: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
+    if (!formData) return;
+    setFormData((prev) => ({ ...(prev as any), [fieldName]: value } as any));
   };
 
   const handleArrayAdd = (fieldName: string) => {
-    const currentArray = (formData as any)[fieldName] || [];
+    if (!formData) return;
+    const currentArray = ((formData as any)[fieldName] as any[]) ?? [];
     setFormData((prev) => ({
-      ...prev,
+      ...(prev as any),
       [fieldName]: [...currentArray, ""],
     }));
   };
@@ -56,39 +78,32 @@ const FormView: React.FC<FormViewProps> = ({ file, onSubmit, onCancel }) => {
     index: number,
     value: string
   ) => {
-    const currentArray = (formData as any)[fieldName] || [];
+    if (!formData) return;
+    const currentArray = ((formData as any)[fieldName] as any[]) ?? [];
     const newArray = [...currentArray];
     newArray[index] = value;
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: newArray,
-    }));
+    setFormData((prev) => ({ ...(prev as any), [fieldName]: newArray }));
   };
 
   const handleArrayRemove = (fieldName: string, index: number) => {
-    const currentArray = (formData as any)[fieldName] || [];
+    if (!formData) return;
+    const currentArray = ((formData as any)[fieldName] as any[]) ?? [];
     const newArray = currentArray.filter((_: any, i: number) => i !== index);
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: newArray,
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
+    setFormData((prev) => ({ ...(prev as any), [fieldName]: newArray }));
   };
 
   const renderField = (field: any) => {
+    if (!formData) return null;
     const value = (formData as any)[field.name];
 
     switch (field.type) {
       case "text":
       case "date":
+      case "number":
         return (
           <Input
             type={field.type}
-            value={value || ""}
+            value={value ?? ""}
             onChange={(e) => handleFieldChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             required={field.required}
@@ -98,7 +113,7 @@ const FormView: React.FC<FormViewProps> = ({ file, onSubmit, onCancel }) => {
       case "textarea":
         return (
           <TextArea
-            value={value || ""}
+            value={value ?? ""}
             onChange={(e) => handleFieldChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             rows={4}
@@ -109,7 +124,7 @@ const FormView: React.FC<FormViewProps> = ({ file, onSubmit, onCancel }) => {
       case "select":
         return (
           <Select
-            value={value || ""}
+            value={value ?? ""}
             onChange={(e) => handleFieldChange(field.name, e.target.value)}
             required={field.required}
           >
@@ -122,11 +137,11 @@ const FormView: React.FC<FormViewProps> = ({ file, onSubmit, onCancel }) => {
           </Select>
         );
 
-      case "array":
-        const arrayValue = value || [];
+      case "array": {
+        const arrayValue = (value ?? []) as string[];
         return (
           <ArrayInputContainer>
-            {arrayValue.map((item: string, index: number) => (
+            {arrayValue.map((item, index) => (
               <ArrayItem key={index}>
                 <Input
                   type="text"
@@ -149,19 +164,50 @@ const FormView: React.FC<FormViewProps> = ({ file, onSubmit, onCancel }) => {
             </AddButton>
           </ArrayInputContainer>
         );
+      }
 
       default:
         return null;
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData) return;
+
+    // Keep it simple—like your old FormView, rely on `required` attributes.
+    // If you want the previous “validation” property stored, you can add it here:
+    // (Comment out if you don't want it.)
+    const updated: MetadataObject = {
+      ...(formData as any),
+      // validation: { isComplete: true, missingFields: [] },
+    };
+
+    onSave(updated);
+  };
+
+  if (!object || !formData) {
+    return (
+      <FormViewContainer>
+        <FormHeader>
+          <FormTitle>Object Not Found</FormTitle>
+        </FormHeader>
+        <FormActions>
+          <CancelButton type="button" onClick={onCancel}>
+            Back to Workspace
+          </CancelButton>
+        </FormActions>
+      </FormViewContainer>
+    );
+  }
+
   return (
     <FormViewContainer>
       <FormHeader>
-        <FormTitle>Edit Metadata: {file.fileData.name}</FormTitle>
+        <FormTitle>Edit Metadata: {formData.name || "(unnamed)"}</FormTitle>
         <FileInfo>
-          File Type: <strong>{file.fileType}</strong> | Size:{" "}
-          <strong>{(file.fileData.size / 1024).toFixed(2)} KB</strong>
+          Type: <strong>{formData["@type"]}</strong> | ID:{" "}
+          <strong>{formData["@id"]}</strong>
         </FileInfo>
       </FormHeader>
 
@@ -188,4 +234,4 @@ const FormView: React.FC<FormViewProps> = ({ file, onSubmit, onCancel }) => {
   );
 };
 
-export default FormView;
+export default MetadataEditorView;

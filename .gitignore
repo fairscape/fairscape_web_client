@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+meta.txt
+meta2.txt
+rocrate.txt
+write.py

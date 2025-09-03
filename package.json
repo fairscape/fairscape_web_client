@@ -10,12 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fairscape/utils": "file:../../javascript_rocrate_utils/fairscape-utils-1.0.0.tgz",
     "@tippyjs/react": "^4.2.6",
     "axios": "^1.8.4",
     "d3": "^7.9.0",
     "dagre": "^0.8.5",
     "date-fns": "^4.1.0",
     "jsonld": "^8.3.3",
+    "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.487.0",
     "n3": "^1.25.2",
