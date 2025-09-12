@@ -1,6 +1,24 @@
 import React from "react";
 import styled from "styled-components";
 
+const SectionContainer = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+`;
+
+const SectionHeader = styled.div`
+  margin: 25px 0 15px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
+const SectionTitle = styled.h2`
+  font-size: 20px;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-top: 0;
+  margin-bottom: 0;
+`;
+
 const Container = styled.div`
   padding: 0 ${({ theme }) => theme.spacing.lg}
     ${({ theme }) => theme.spacing.lg};
@@ -71,30 +89,35 @@ const AdditionalPropertiesSection: React.FC<
   }
 
   return (
-    <Container data-testid="additional-properties-section">
-      {properties.map((prop, index) => (
-        <PropertyItem key={index}>
-          <h3>{prop.name}</h3>
-          {Array.isArray(prop.value) ? (
-            <div className="value-content">
-              <ul>
-                {prop.value.map((item, itemIndex) => (
-                  <li
-                    key={itemIndex}
-                    dangerouslySetInnerHTML={{ __html: String(item) }}
-                  />
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <div
-              className="value-content"
-              dangerouslySetInnerHTML={{ __html: String(prop.value) }}
-            />
-          )}
-        </PropertyItem>
-      ))}
-    </Container>
+    <SectionContainer data-testid="additional-properties-section">
+      <SectionHeader>
+        <SectionTitle>Additional Properties</SectionTitle>
+      </SectionHeader>
+      <Container>
+        {properties.map((prop, index) => (
+          <PropertyItem key={index}>
+            <h3>{prop.name}</h3>
+            {Array.isArray(prop.value) ? (
+              <div className="value-content">
+                <ul>
+                  {prop.value.map((item, itemIndex) => (
+                    <li
+                      key={itemIndex}
+                      dangerouslySetInnerHTML={{ __html: String(item) }}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div
+                className="value-content"
+                dangerouslySetInnerHTML={{ __html: String(prop.value) }}
+              />
+            )}
+          </PropertyItem>
+        ))}
+      </Container>
+    </SectionContainer>
   );
 };
 

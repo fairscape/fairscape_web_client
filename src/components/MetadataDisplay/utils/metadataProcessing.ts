@@ -266,6 +266,26 @@ export const processOverview = (metadata: Metadata): OverviewData => {
   return overviewData;
 };
 
+export interface RAIData {
+  dataUseCases?: string;
+  dataLimitations?: string;
+  dataBiases?: string;
+  dataMaintenancePlan?: string;
+}
+
+export const processRAI = (metadata: Metadata): RAIData => {
+  const graph = (metadata["@graph"] as RawGraphEntity[]) || [];
+  const root = findRootEntity(graph);
+  if (!root) return {};
+
+  return {
+    dataUseCases: root["rai:dataUseCases"] || undefined,
+    dataLimitations: root["rai:dataLimitations"] || undefined,
+    dataBiases: root["rai:dataBiases"] || undefined,
+    dataMaintenancePlan: root["rai:dataMaintenancePlan"] || undefined,
+  };
+};
+
 export interface UseCasesData {
   intended_uses?: string;
   limitations?: string;

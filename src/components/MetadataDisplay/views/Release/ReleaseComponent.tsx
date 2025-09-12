@@ -3,11 +3,11 @@ import styled from "styled-components";
 import { Metadata } from "../../types/types";
 import {
   processOverview,
-  processUseCases,
+  processRAI,
   processDistribution,
   processCompositionRefs,
   OverviewData,
-  UseCasesData,
+  RAIData,
   DistributionData,
   CompositionData,
 } from "../../utils/metadataProcessing";
@@ -15,11 +15,13 @@ import ConfigurableMetadataTable from "../../components/Tables/ConfigurableMetad
 import { MetadataProperty } from "../../types/metadataPropertyLists";
 
 import AdditionalPropertiesSection from "../../components/Sections/AdditionalPropertiesSection";
-import UseCasesSection from "../../components/Sections/UseCasesSection";
+import RAISection from "../../components/Sections/RAISection";
 import DistributionSection from "../../components/Sections/DistributionSection";
 import CompositionSection from "../../components/Sections/CompositionSection";
 import LoadingSpinner from "../../../common/LoadingSpinner";
 import Alert from "../../../common/Alert";
+
+import { SectionContainer } from "../../shared.styles";
 
 const Container = styled.div`
   width: 100%;
@@ -60,7 +62,7 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
-  const [useCasesData, setUseCasesData] = useState<UseCasesData | null>(null);
+  const [raiData, setRaiData] = useState<RAIData | null>(null);
   const [distributionData, setDistributionData] =
     useState<DistributionData | null>(null);
   const [compositionData, setCompositionData] =
@@ -71,7 +73,7 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
       setLoading(true);
       const processedOverview = processOverview(metadata);
       setOverviewData(processedOverview);
-      setUseCasesData(processUseCases(metadata));
+      setRaiData(processRAI(metadata));
       setDistributionData(processDistribution(metadata));
       setCompositionData(processCompositionRefs(metadata));
       setLoading(false);
@@ -94,14 +96,13 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
           properties={releaseMainProperties}
         />
       )}
+      {raiData && <RAISection raiData={raiData} />}
 
       {overviewData && overviewData.additionalCustomProperties && (
         <AdditionalPropertiesSection
           properties={overviewData.additionalCustomProperties}
         />
       )}
-
-      {useCasesData && <UseCasesSection useCasesData={useCasesData} />}
 
       {compositionData && compositionData.subcrates.length > 0 && (
         <CompositionSection compositionData={compositionData} />

@@ -1,14 +1,10 @@
-// src/components/MetadataDisplay/CompositionSection.tsx
-import React, { useState } from "react";
-import styled from "styled-components";
+import React from "react";
 import {
   CompositionData,
   SubcrateSummary,
 } from "../../utils/metadataProcessing";
 import SubcrateCard from "../Cards/SubcrateCard";
 import Alert from "../../../common/Alert";
-
-import { SectionContainer } from "../../shared.styles";
 
 import {
   SectionHeader,
@@ -27,7 +23,7 @@ const CompositionSection: React.FC<CompositionSectionProps> = ({
 
   if (!subcrates || subcrates.length === 0) {
     return (
-      <SectionContainer>
+      <>
         <SectionHeader>
           <SectionTitle>Composition</SectionTitle>
         </SectionHeader>
@@ -35,12 +31,12 @@ const CompositionSection: React.FC<CompositionSectionProps> = ({
           type="info"
           message="No sub-components (parts) found in this RO-Crate."
         />
-      </SectionContainer>
+      </>
     );
   }
 
   return (
-    <SectionContainer>
+    <>
       <SectionHeader>
         <SectionTitle>Composition (Datasets {subcrates.length})</SectionTitle>
       </SectionHeader>
@@ -54,7 +50,7 @@ const CompositionSection: React.FC<CompositionSectionProps> = ({
           />
         ))}
       </SubcratesContainer>
-    </SectionContainer>
+    </>
   );
 };
 
