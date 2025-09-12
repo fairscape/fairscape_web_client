@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useMetadataApi } from "../api/metadataApi";
 import { useEvidenceApi } from "../api/evidenceApi";
-import { classify } from "../utils/classify";
+import { classify, classifyROCrate } from "../utils/classify";
 import { extractEvidenceGraphId } from "../utils/evidence";
 import type { MetadataBundle, EvidenceInfo } from "../types/types";
 import { extractSupportData } from "../../../components/EvidenceGraph/SupportingElementsComponent";
@@ -27,13 +27,16 @@ export function useMetadataBundle(ark: string) {
       try {
         const mainResp = await metadataApi.getMain(ark);
         const main = mainResp?.metadata ?? mainResp;
-        const kind = classify(main);
+        const mainKind = classify(main);
+
+        let kind = mainKind;
 
         let rocrate: any | undefined = undefined;
         if (kind === "rocrate" || kind === "release") {
           try {
             const roResp = await metadataApi.getRoCrate(ark);
             rocrate = roResp?.metadata ?? roResp;
+            kind = classifyROCrate(rocrate);
           } catch {}
         }
 
