@@ -19,7 +19,6 @@ import CreateRocratePage from "./pages/CreateRocratePage";
 import AboutPage from "./pages/AboutPage";
 import AIReadinessPage from "./pages/AIReadinessPage";
 import AIReadinessDefinitionsPage from "./pages/AIReadinessCriteria";
-import ROCrateCreatorPage from "./pages/ROCrateCreatorPage";
 
 function App() {
   return (
@@ -42,7 +41,6 @@ function App() {
               <Route path="/tokens" element={<DataverseTokensPage />} />
               <Route path="/create-rocrate" element={<CreateRocratePage />} />
               <Route path="/about" element={<AboutPage />} />
-              <Route path="/create" element={<ROCrateCreatorPage />} />
               <Route
                 path="/ai-readiness-example"
                 element={<AIReadinessPage />}

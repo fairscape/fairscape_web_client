@@ -124,14 +124,6 @@ export default function MetadataDisplayPage() {
             return <ReleaseComponent metadata={m} arkId={arkId} />;
           case "rocrate":
             return <ROCrateComponent metadata={m} arkId={arkId} />;
-          case "dataset":
-          case "software":
-          case "computation":
-          case "schema":
-          case "instrument":
-          case "sample":
-          case "experiment":
-          case "biochementity":
           default:
             return (
               <GenericMetadataComponent

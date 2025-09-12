@@ -318,7 +318,7 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
 
 interface EvidenceGraphViewerProps {
   evidenceGraphData: RawGraphData | null;
-  supportData?: any; // precomputed
+  supportData?: any;
 }
 
 const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({
@@ -338,12 +338,12 @@ const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({
   }, [evidenceGraphData]);
 
   if (!evidenceGraphData) {
-    // Centered spinner while EG is building / not ready
     return (
       <div
         style={{
           height: 320,
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           border: "1px solid var(--border, #ddd)",
@@ -352,6 +352,9 @@ const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({
         }}
       >
         <LoadingSpinner />
+        <p style={{ marginTop: 10, color: "#666" }}>
+          Building evidence graph...
+        </p>
       </div>
     );
   }

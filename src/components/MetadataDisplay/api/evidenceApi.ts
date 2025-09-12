@@ -1,8 +1,10 @@
 import { useHttp } from "./httpClient";
 
 export interface PollResult {
-  status: "PENDING" | "READY" | "FAILED";
-  evidenceGraphId?: string;
+  status: "PENDING" | "SUCCESS" | "FAILURE";
+  result?: {
+    evidence_graph_id?: string;
+  };
   error?: string;
 }
 
@@ -12,7 +14,7 @@ export function useEvidenceApi() {
   const getEG = (evidenceArkOrId: string) =>
     http(`/${encodeURIComponent(evidenceArkOrId)}`, { method: "GET" });
 
-  const buildEG = (ark: string): Promise<{ taskId: string }> =>
+  const buildEG = (ark: string): Promise<{ task_id: string }> =>
     http(`/evidencegraph/build/${encodeURIComponent(ark)}`, {
       method: "POST",
       body: {},
@@ -25,14 +27,14 @@ export function useEvidenceApi() {
     let delay = initialDelayMs;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const res: PollResult = await http(
-        `/evidencegraph/status/${encodeURIComponent(taskId)}`,
+        `/evidencegraph/build/status/${encodeURIComponent(taskId)}`,
         { method: "GET" }
       );
-      if (res.status === "READY" || res.status === "FAILED") return res;
+      if (res.status === "SUCCESS" || res.status === "FAILURE") return res;
       await new Promise((r) => setTimeout(r, delay));
       delay = Math.ceil(delay * backoff);
     }
-    return { status: "FAILED", error: "Evidence graph build timed out" };
+    return { status: "FAILURE", error: "Evidence graph build timed out" };
   }
 
   return { getEG, buildEG, pollBuild };

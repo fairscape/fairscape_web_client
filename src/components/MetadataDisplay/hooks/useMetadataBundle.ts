@@ -23,13 +23,12 @@ export function useMetadataBundle(ark: string) {
       if (!ark) return;
       setLoading(true);
       setError(null);
+
       try {
-        // main metadata
         const mainResp = await metadataApi.getMain(ark);
         const main = mainResp?.metadata ?? mainResp;
         const kind = classify(main);
 
-        // rocrate (if crate/release)
         let rocrate: any | undefined = undefined;
         if (kind === "rocrate" || kind === "release") {
           try {
@@ -38,7 +37,6 @@ export function useMetadataBundle(ark: string) {
           } catch {}
         }
 
-        // serializations
         let rdfXml: string | null = null;
         let turtle: string | null = null;
         try {
@@ -48,30 +46,52 @@ export function useMetadataBundle(ark: string) {
           turtle = await metadataApi.getTurtle(ark);
         } catch {}
 
-        // evidence (skip build for release)
-        let evidence: EvidenceInfo | undefined;
+        const initialBundle: MetadataBundle = {
+          kind,
+          main,
+          rocrate,
+          evidence: kind === "release" ? undefined : { status: "building" },
+          serializations: { json: main, rdfXml, turtle },
+          session: { isLoggedIn: !!isLoggedIn },
+        };
+
+        if (!cancelled) {
+          setBundle(initialBundle);
+          setLoading(false);
+        }
+
         if (kind !== "release") {
           const evId =
             extractEvidenceGraphId(main) ?? extractEvidenceGraphId(rocrate);
 
+          let evidence: EvidenceInfo | undefined;
+
           if (evId) {
-            const data = await evidenceApi.getEG(evId);
-            const supportData = extractSupportData?.(data);
-            evidence = { id: evId, data, supportData, status: "ready" };
-          } else {
             try {
-              const { taskId } = await evidenceApi.buildEG(ark);
-              const poll = await evidenceApi.pollBuild(taskId);
-              if (poll.status === "READY" && poll.evidenceGraphId) {
-                const data = await evidenceApi.getEG(poll.evidenceGraphId);
+              const data = await evidenceApi.getEG(evId);
+              const supportData = extractSupportData?.(data);
+              evidence = { id: evId, data, supportData, status: "ready" };
+            } catch {
+              evidence = { status: "building" };
+            }
+          }
+
+          if (!evidence || evidence.status === "building") {
+            try {
+              const { task_id } = await evidenceApi.buildEG(ark);
+              const poll = await evidenceApi.pollBuild(task_id);
+              if (poll.status === "SUCCESS" && poll.result?.evidence_graph_id) {
+                const data = await evidenceApi.getEG(
+                  poll.result.evidence_graph_id
+                );
                 const supportData = extractSupportData?.(data);
                 evidence = {
-                  id: poll.evidenceGraphId,
+                  id: poll.result?.evidence_graph_id,
                   data,
                   supportData,
                   status: "ready",
                 };
-              } else if (poll.status === "FAILED") {
+              } else if (poll.status === "FAILURE") {
                 evidence = {
                   status: "failed",
                   error: poll.error || "EG build failed",
@@ -83,21 +103,13 @@ export function useMetadataBundle(ark: string) {
               evidence = { status: "failed", error: e?.message || String(e) };
             }
           }
+
+          if (!cancelled) {
+            setBundle((prev) => (prev ? { ...prev, evidence } : null));
+          }
         }
-
-        const next: MetadataBundle = {
-          kind,
-          main,
-          rocrate,
-          evidence,
-          serializations: { json: main, rdfXml, turtle },
-          session: { isLoggedIn: !!isLoggedIn },
-        };
-
-        if (!cancelled) setBundle(next);
       } catch (err: any) {
         if (!cancelled) setError(err?.message || String(err));
-      } finally {
         if (!cancelled) setLoading(false);
       }
     }
