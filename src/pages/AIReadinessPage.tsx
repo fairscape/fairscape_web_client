@@ -19,7 +19,8 @@ export default function AIReadyScorePage() {
       ? window.location.pathname.split("/ai-ready-score/")[1]
       : "");
 
-  const { criteriaData, name, loading, error } = useAIReadyScore(arkId);
+  const { criteriaData, name, loading, error, inProgress, progressStatus } =
+    useAIReadyScore(arkId);
 
   useEffect(() => {
     document.title = `AI Readiness Score - ${name || "Dataset"} - FAIRSCAPE`;
@@ -30,7 +31,7 @@ export default function AIReadyScorePage() {
       <Container>
         <LoadingContainer>
           <LoadingSpinner />
-          <LoadingMessage>Loading AI readiness score...</LoadingMessage>
+          <LoadingMessage>Loading AI readiness score…</LoadingMessage>
         </LoadingContainer>
       </Container>
     );
@@ -48,13 +49,36 @@ export default function AIReadyScorePage() {
     );
   }
 
+  if (inProgress) {
+    return (
+      <Container>
+        <Title>{name || arkId} — AI Readiness Assessment</Title>
+        <Alert
+          type="info"
+          title="Scoring in progress"
+          message={
+            <>
+              We’ve initiated AI-Ready scoring for this RO-Crate. Current
+              status: <strong>{progressStatus || "PENDING"}</strong>. This page
+              will auto-update once the score is available.
+            </>
+          }
+        />
+        <LoadingContainer style={{ marginTop: 16 }}>
+          <LoadingSpinner />
+          <LoadingMessage>Waiting for score generation…</LoadingMessage>
+        </LoadingContainer>
+      </Container>
+    );
+  }
+
   if (!criteriaData) {
     return (
       <Container>
         <Alert
           type="info"
           title="No AI Readiness Score"
-          message="No AI readiness score data available for this dataset."
+          message="No AI readiness score data is available for this dataset yet."
         />
       </Container>
     );

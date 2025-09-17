@@ -65,14 +65,59 @@ export interface AIReadyScore {
   computability: ComputabilityScore;
 }
 
+export type TaskAccepted = {
+  message?: string;
+  task_id: string;
+  status?: string;
+  status_endpoint: string; 
+};
+
+export type TaskStatus = {
+  guid: string;
+  task_type: string; 
+  rocrate_id: string;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | string;
+  time_created?: string;
+  time_completed?: string;
+  error?: string;
+};
+
+function looksLikeScore(x: any): x is AIReadyScore {
+  return x && typeof x === "object" && "fairness" in x && "computability" in x;
+}
+
+function looksLikeAccepted(x: any): x is TaskAccepted {
+  return x && typeof x === "object" && "task_id" in x && "status_endpoint" in x;
+}
+
 export function useAIReadyScoreApi() {
   const http = useHttp();
 
   return {
-    getAIReadyScore: (ark: string): Promise<AIReadyScore> =>
-      http(`/rocrate/ai-ready-score/${encodeURIComponent(ark)}`, {
+    getAIReadyScore: async (
+      ark: string
+    ): Promise<AIReadyScore | TaskAccepted> => {
+      const res = await http(
+        `/rocrate/ai-ready-score/${encodeURIComponent(ark)}`,
+        {
+          method: "GET",
+          headers: { Accept: "application/json" },
+        }
+      );
+      return res;
+    },
+
+    getTaskStatus: async (statusRef: string): Promise<TaskStatus> => {
+      const path = statusRef.startsWith("/rocrate/ai-ready-score/status/")
+        ? statusRef
+        : `/rocrate/ai-ready-score/status/${statusRef}`;
+      return await http(path, {
         method: "GET",
         headers: { Accept: "application/json" },
-      }),
+      });
+    },
+
+    isAIReadyScore: looksLikeScore,
+    isTaskAccepted: looksLikeAccepted,
   };
 }

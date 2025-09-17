@@ -1,5 +1,4 @@
-// components/AIReadyScore/hooks/useAIReadyScore.ts
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAIReadyScoreApi, AIReadyScore } from "../api/aiReadyScoreApi";
 
 export interface CriteriaData {
@@ -14,9 +13,7 @@ export interface CriteriaData {
   description: string;
   details: string;
   criteria: string[];
-  /** Evidence/details text keyed by both snake_case and display names */
   metadata: Record<string, string>;
-  /** NEW: Met/Not Met map pulled straight from API has_content */
   metByKey: Record<string, boolean>;
 }
 
@@ -32,7 +29,6 @@ function transformScoreToMetadata(
   scores: Record<string, any>
 ): Record<string, string> {
   const metadata: Record<string, string> = {};
-
   const displayNameMappings: Record<string, string> = {
     data_documentation_template: "Data Documentation Templates",
     fit_for_purpose: "Fit for Purpose",
@@ -44,7 +40,6 @@ function transformScoreToMetadata(
     potential_sources_of_bias: "Potential Sources of Bias",
     data_quality: "Data Quality",
   };
-
   Object.entries(scores).forEach(([key, value]) => {
     if (
       value &&
@@ -53,15 +48,9 @@ function transformScoreToMetadata(
       value.details
     ) {
       const detailsStr = String(value.details);
-
-      // snake_case key
       metadata[key] = detailsStr;
-
-      // Title Cased variant
       const titleCased = titleCaseFromSnake(key);
       metadata[titleCased] = detailsStr;
-
-      // Friendly display name (if defined)
       if (displayNameMappings[key]) {
         metadata[displayNameMappings[key]] = detailsStr;
       }
@@ -70,13 +59,11 @@ function transformScoreToMetadata(
   return metadata;
 }
 
-/** NEW: Build a boolean map (met/not met) directly from has_content */
 function transformScoreToMetByKey(
   _criterionName: string,
   scores: Record<string, any>
 ): Record<string, boolean> {
   const met: Record<string, boolean> = {};
-
   const displayNameMappings: Record<string, string> = {
     data_documentation_template: "Data Documentation Templates",
     fit_for_purpose: "Fit for Purpose",
@@ -88,23 +75,15 @@ function transformScoreToMetByKey(
     potential_sources_of_bias: "Potential Sources of Bias",
     data_quality: "Data Quality",
   };
-
   Object.entries(scores).forEach(([key, value]) => {
     const has = Boolean(value?.has_content);
-
-    // snake_case key
     met[key] = has;
-
-    // Title Cased variant
     const titleCased = titleCaseFromSnake(key);
     met[titleCased] = has;
-
-    // Friendly display name (if defined)
     if (displayNameMappings[key]) {
       met[displayNameMappings[key]] = has;
     }
   });
-
   return met;
 }
 
@@ -282,42 +261,112 @@ export function transformAIReadyScore(data: AIReadyScore): CriteriaData[] {
   ];
 }
 
+type ProgressState =
+  | { inProgress: false; status?: undefined }
+  | { inProgress: true; status?: string };
+
+const POLL_INTERVAL_MS = 2500;
+const MAX_POLLS = 120;
+
 export function useAIReadyScore(arkId: string) {
   const api = useAIReadyScoreApi();
   const [criteriaData, setCriteriaData] = useState<CriteriaData[] | null>(null);
   const [name, setName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ProgressState>({
+    inProgress: false,
+  });
+  const pollCountRef = useRef(0);
+  const timerRef = useRef<number | null>(null);
+
+  const clearTimer = () => {
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const startPolling = () => {
+    setProgress({ inProgress: true, status: "PENDING" });
+    pollCountRef.current = 0;
+    clearTimer();
+    timerRef.current = window.setInterval(async () => {
+      try {
+        pollCountRef.current += 1;
+        const res = await api.getAIReadyScore(arkId);
+        if (api.isAIReadyScore(res)) {
+          setName(res?.name ?? "");
+          setCriteriaData(transformAIReadyScore(res));
+          setProgress({ inProgress: false });
+          clearTimer();
+          setLoading(false);
+          return;
+        }
+        setProgress({ inProgress: true, status: "PROCESSING" });
+        if (pollCountRef.current >= MAX_POLLS) {
+          clearTimer();
+          setError(
+            "AI-Ready scoring is taking longer than expected. Please try again later."
+          );
+          setProgress({ inProgress: false });
+        }
+      } catch (err: any) {
+        clearTimer();
+        setError(err?.message || "Failed to fetch AI readiness score");
+        setProgress({ inProgress: false });
+      }
+    }, POLL_INTERVAL_MS);
+  };
+
+  const fetchScore = async (showSpinner = true) => {
+    if (!arkId) {
+      setLoading(false);
+      return;
+    }
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const res = await api.getAIReadyScore(arkId);
+      if (api.isAIReadyScore(res)) {
+        setName(res?.name ?? "");
+        setCriteriaData(transformAIReadyScore(res));
+        setProgress({ inProgress: false });
+        setLoading(false);
+        clearTimer();
+        return;
+      }
+      setLoading(false);
+      if (timerRef.current === null) startPolling();
+    } catch (err: any) {
+      setError(err?.message || "Failed to load AI readiness score");
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
-
-    async function fetchScore() {
-      if (!arkId) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
+    (async () => {
+      if (cancelled) return;
+      clearTimer();
+      setCriteriaData(null);
+      setName("");
       setError(null);
-      try {
-        const scoreData = await api.getAIReadyScore(arkId);
-        if (!cancelled) {
-          setName(scoreData?.name ?? "");
-          setCriteriaData(transformAIReadyScore(scoreData));
-        }
-      } catch (err: any) {
-        if (!cancelled)
-          setError(err?.message || "Failed to load AI readiness score");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    fetchScore();
+      setProgress({ inProgress: false });
+      await fetchScore(true);
+    })();
     return () => {
       cancelled = true;
+      clearTimer();
     };
   }, [arkId]);
 
-  return { criteriaData, name, loading, error };
+  return {
+    criteriaData,
+    name,
+    loading,
+    error,
+    inProgress: progress.inProgress,
+    progressStatus: progress.inProgress ? progress.status : undefined,
+  };
 }
