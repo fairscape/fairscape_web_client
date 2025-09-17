@@ -42,7 +42,7 @@ function App() {
               <Route path="/create-rocrate" element={<CreateRocratePage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route
-                path="/ai-readiness-example"
+                path="/ai-ready-score/*"
                 element={<AIReadinessPage />}
               />
               <Route
