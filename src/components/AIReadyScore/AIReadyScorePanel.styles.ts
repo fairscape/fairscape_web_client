@@ -4,9 +4,11 @@ export const Layout = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
+  flex: 1;
   background: #f8f9fa;
   position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
 `;
 
 export const OverallScoreBanner = styled.div`
@@ -14,7 +16,7 @@ export const OverallScoreBanner = styled.div`
   padding: 1rem 2rem;
   text-align: center;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.8rem;
   color: white;
   background: linear-gradient(
     135deg,
@@ -22,40 +24,59 @@ export const OverallScoreBanner = styled.div`
     ${({ theme }) => theme.colors.secondary} 100%
   );
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 `;
 
 export const Body = styled.div`
   display: flex;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
 `;
 
 export const LeftNav = styled.div`
-  width: 240px;
+  width: 260px;
   background: white;
   border-right: 1px solid #e1e4e8;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
   overflow-y: auto;
+  flex-shrink: 0;
+`;
+
+export const LeftNavList = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: stretch;
+  height: 100%;
 `;
 
 export const CriteriaItem = styled.div<{
   $active: boolean;
   $accent: string;
   $bg: string;
+  $complete: boolean;
 }>`
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px;
-  margin-bottom: 8px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: ${(props) => props.$bg};
-  border-left: 3px solid ${(props) => props.$accent};
+  border-left: 4px solid ${(props) => props.$accent};
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: ${(p) =>
+    p.$complete ? "none" : "inset 0 0 0 1px rgba(231,76,60,0.25)"};
 
   ${(props) =>
     props.$active &&
     `
-    background: ${props.$bg};
     transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   `}
 
   &:hover {
@@ -63,11 +84,35 @@ export const CriteriaItem = styled.div<{
   }
 `;
 
+export const CriteriaStatus = styled.span<{ $complete: boolean }>`
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  background: ${(p) => (p.$complete ? "#d4edda" : "#f8d7da")};
+  color: ${(p) => (p.$complete ? "#155724" : "#721c24")};
+`;
+
+export const CriteriaText = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+`;
+
 export const CriteriaTitle = styled.div`
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
   color: #2c3e50;
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 export const CriteriaScoreMini = styled.div`
@@ -78,8 +123,12 @@ export const CriteriaScoreMini = styled.div`
 
 export const RightPane = styled.div<{ $accent: string }>`
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: 24px;
   overflow-y: auto;
+  overflow-x: hidden;
   background: white;
 `;
 
@@ -96,7 +145,7 @@ export const PaneTitleRow = styled.div`
 
 export const PaneTitle = styled.h2`
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
 `;
 
@@ -104,7 +153,7 @@ export const PaneScoreChip = styled.div`
   padding: 4px 12px;
   border-radius: 20px;
   border: 2px solid;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
 `;
 
@@ -116,7 +165,7 @@ export const PaneDescription = styled.p`
 
 export const SectionTitle = styled.h3<{ $accent: string }>`
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 16px;
   color: ${(props) => props.$accent};
   border-bottom: 2px solid ${(props) => props.$accent}33;
@@ -126,13 +175,15 @@ export const SectionTitle = styled.h3<{ $accent: string }>`
 export const SubCriteriaGrid = styled.div`
   display: grid;
   gap: 16px;
+  padding-bottom: 8px;
 `;
 
 export const SubCriterionCard = styled.div<{ $accent: string }>`
   background: #fafbfc;
   border: 1px solid #e1e4e8;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 16px;
+  transition: box-shadow 0.15s ease;
 
   &:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -146,7 +197,7 @@ export const SubCriterionHeader = styled.div`
 `;
 
 export const SubCriterionName = styled.span`
-  font-weight: 500;
+  font-weight: 600;
   color: #2c3e50;
   flex: 1;
 `;
@@ -155,7 +206,7 @@ export const StatusChip = styled.span<{ $met: boolean }>`
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   background: ${(props) => (props.$met ? "#d4edda" : "#f8d7da")};
   color: ${(props) => (props.$met ? "#155724" : "#721c24")};
 `;
@@ -204,12 +255,134 @@ export const TooltipInner = styled.div`
   strong {
     display: block;
     margin-top: 8px;
-    &:first-child {
-      margin-top: 0;
-    }
   }
 
   div {
     margin-top: 4px;
+  }
+`;
+
+export const ViewSwitch = styled.div`
+  position: relative;
+  flex: 1;
+  min-height: 0;
+`;
+
+export const View = styled.div<{ $visible: boolean }>`
+  display: ${(p) => (p.$visible ? "block" : "none")};
+  height: 100%;
+`;
+
+export const SummaryHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+`;
+
+export const SummaryTitle = styled.h3`
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+`;
+
+export const SummaryGrid = styled.div`
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  padding-bottom: 8px;
+`;
+
+export const SummaryCard = styled.div<{
+  $accent: string;
+  $complete: boolean;
+}>`
+  border: 1px solid #e1e4e8;
+  border-radius: 12px;
+  background: #fafbfc;
+  padding: 16px;
+  transition: box-shadow 0.18s ease, transform 0.18s ease,
+    border-color 0.18s ease;
+  cursor: pointer;
+  border-top: 4px solid ${(p) => p.$accent};
+  box-shadow: ${(p) =>
+    p.$complete ? "none" : "inset 0 0 0 1px rgba(231,76,60,0.18)"};
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    border-color: ${(p) => p.$accent};
+  }
+`;
+
+export const SummaryCardHead = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+export const SummaryCardTitle = styled.div`
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 16px;
+  flex: 1;
+`;
+
+export const SummaryScoreChip = styled.div<{ $accent: string }>`
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  border: 2px solid ${(p) => p.$accent};
+  color: ${(p) => p.$accent};
+`;
+
+export const MiniList = styled.ul`
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+`;
+
+export const MiniItem = styled.li<{ $met: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  background: ${(p) => (p.$met ? "#eef8f0" : "#fff0f0")};
+  color: ${(p) => (p.$met ? "#155724" : "#721c24")};
+  padding: 8px 10px;
+  border-radius: 8px;
+`;
+
+export const MiniIcon = styled.span<{ $met: boolean }>`
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  background: ${(p) => (p.$met ? "#d4edda" : "#f8d7da")};
+  color: ${(p) => (p.$met ? "#155724" : "#721c24")};
+`;
+
+export const BackLink = styled.button`
+  border: none;
+  background: transparent;
+  color: #3498db;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+
+  &:hover {
+    text-decoration: underline;
   }
 `;

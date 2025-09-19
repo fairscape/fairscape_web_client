@@ -1,10 +1,11 @@
-// components/AIReadyScore/AIReadyScorePanel.tsx
+// AIReadyScorePanel.tsx
 import React, { useMemo, useState } from "react";
 import { CriteriaData } from "./hooks/useAIReadyScore";
 import {
   Layout,
   Body,
   LeftNav,
+  LeftNavList, // <-- use the list wrapper
   CriteriaItem,
   CriteriaTitle,
   CriteriaScoreMini,
@@ -24,6 +25,21 @@ import {
   Tooltip,
   TooltipInner,
   OverallScoreBanner,
+  ViewSwitch,
+  View,
+  SummaryHeader,
+  SummaryTitle,
+  SummaryGrid,
+  SummaryCard,
+  SummaryCardHead,
+  SummaryCardTitle,
+  SummaryScoreChip,
+  MiniList,
+  MiniItem,
+  MiniIcon,
+  BackLink,
+  CriteriaStatus,
+  CriteriaText,
 } from "./AIReadyScorePanel.styles";
 import { AI_READY_DOCS, getSubDocsFor } from "./docs/aiReadyDocs";
 
@@ -43,6 +59,8 @@ function hexToRgba(hex: string, alpha = 0.12) {
 
 const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
   const [activeId, setActiveId] = useState<string>(criteriaData[0]?.id ?? "");
+  const [mode, setMode] = useState<"summary" | "detail">("summary");
+
   const active = useMemo(
     () => criteriaData.find((c) => c.id === activeId) ?? criteriaData[0],
     [criteriaData, activeId]
@@ -58,15 +76,17 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
   );
   const pct = Math.round((totalScore / maxTotal) * 100);
 
-  const docs = getSubDocsFor(active.id as keyof typeof AI_READY_DOCS);
+  const docsFor = (id: string) =>
+    getSubDocsFor(id as keyof typeof AI_READY_DOCS);
 
-  // UPDATED: drive "Met" directly from API has_content via metByKey map
-  const isMet = (docKey: string, displayName: string) => {
-    return active.metByKey[docKey] ?? active.metByKey[displayName] ?? false;
-  };
+  const isMet = (crit: CriteriaData, docKey: string, displayName: string) =>
+    crit.metByKey[docKey] ?? crit.metByKey[displayName] ?? false;
 
-  const evidenceFor = (docKey: string, displayName: string) =>
-    active.metadata[docKey] ?? active.metadata[displayName] ?? "";
+  const evidenceFor = (
+    crit: CriteriaData,
+    docKey: string,
+    displayName: string
+  ) => crit.metadata[docKey] ?? crit.metadata[displayName] ?? "";
 
   const formatLinks = (value: string) =>
     value.replace(
@@ -85,82 +105,143 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
 
       <Body>
         <LeftNav>
-          {criteriaData.map((c) => {
-            const bg = hexToRgba(c.color, c.id === active.id ? 0.22 : 0.12);
-            return (
-              <CriteriaItem
-                key={c.id}
-                $active={c.id === active.id}
-                $accent={c.color}
-                $bg={bg}
-                onClick={() => setActiveId(c.id)}
-                title={`${c.title} (${c.score}/${c.maxScore})`}
-              >
-                <CriteriaTitle>{c.title}</CriteriaTitle>
-                <CriteriaScoreMini>
-                  {c.score}/{c.maxScore}
-                </CriteriaScoreMini>
-              </CriteriaItem>
-            );
-          })}
+          <LeftNavList>
+            {criteriaData.map((c) => {
+              const bg = hexToRgba(c.color, c.id === active.id ? 0.22 : 0.12);
+              return (
+                <CriteriaItem
+                  key={c.id}
+                  $active={c.id === active.id}
+                  $accent={c.color}
+                  $bg={bg}
+                  $complete={c.hasMetCriteria}
+                  onClick={() => {
+                    setActiveId(c.id);
+                    setMode("detail");
+                  }}
+                  title={`${c.title} (${c.score}/${c.maxScore})`}
+                >
+                  <CriteriaStatus $complete={c.hasMetCriteria}>
+                    {c.hasMetCriteria ? "✓" : "✕"}
+                  </CriteriaStatus>
+                  <CriteriaText>
+                    <CriteriaTitle>{c.title}</CriteriaTitle>
+                    <CriteriaScoreMini>
+                      {c.score}/{c.maxScore}
+                    </CriteriaScoreMini>
+                  </CriteriaText>
+                </CriteriaItem>
+              );
+            })}
+          </LeftNavList>
         </LeftNav>
 
         <RightPane $accent={active.color}>
-          <PaneHeader>
-            <PaneTitleRow>
-              <PaneTitle style={{ color: active.color }}>
-                {active.title}
-              </PaneTitle>
-              <PaneScoreChip
-                style={{ borderColor: active.color, color: active.color }}
-              >
-                {active.score}/{active.maxScore}
-              </PaneScoreChip>
-            </PaneTitleRow>
-            <PaneDescription>{active.description}</PaneDescription>
-          </PaneHeader>
+          <ViewSwitch>
+            <View $visible={mode === "summary"}>
+              <SummaryHeader>
+                <SummaryTitle>AI Readiness Summary</SummaryTitle>
+              </SummaryHeader>
+              <SummaryGrid>
+                {criteriaData.map((c) => {
+                  const list = docsFor(c.id);
+                  return (
+                    <SummaryCard
+                      key={c.id}
+                      $accent={c.color}
+                      $complete={c.hasMetCriteria}
+                      onClick={() => {
+                        setActiveId(c.id);
+                        setMode("detail");
+                      }}
+                      title={`${c.title} (${c.score}/${c.maxScore})`}
+                    >
+                      <SummaryCardHead>
+                        <SummaryCardTitle>{c.title}</SummaryCardTitle>
+                        <SummaryScoreChip $accent={c.color}>
+                          {c.score}/{c.maxScore}
+                        </SummaryScoreChip>
+                      </SummaryCardHead>
+                      <MiniList>
+                        {list.map((d) => {
+                          const met = isMet(c, d.key, d.name);
+                          return (
+                            <MiniItem key={d.key} $met={met}>
+                              <MiniIcon $met={met}>{met ? "✓" : "✕"}</MiniIcon>
+                              <span>{d.name}</span>
+                            </MiniItem>
+                          );
+                        })}
+                      </MiniList>
+                    </SummaryCard>
+                  );
+                })}
+              </SummaryGrid>
+            </View>
 
-          <SectionTitle $accent={active.color}>Sub-criteria</SectionTitle>
-          <SubCriteriaGrid>
-            {docs.map((d) => {
-              const met = isMet(d.key, d.name);
-              const evidence = evidenceFor(d.key, d.name);
-              return (
-                <SubCriterionCard key={d.key} $accent={active.color}>
-                  <SubCriterionHeader>
-                    <SubCriterionName>{d.name}</SubCriterionName>
-                    <StatusChip $met={met}>
-                      {met ? "Met" : "Needs work"}
-                    </StatusChip>
-                    <InfoIcon tabIndex={0}>
-                      ℹ︎
-                      <Tooltip role="dialog">
-                        <TooltipInner>
-                          <strong>Definition:</strong>
-                          <div style={{ marginBottom: 8 }}>{d.definition}</div>
-                          <strong>How we check:</strong>
-                          <div style={{ marginBottom: 8 }}>{d.logic}</div>
-                          <strong>Status notes:</strong>
-                          <div>{d.statusNotes}</div>
-                        </TooltipInner>
-                      </Tooltip>
-                    </InfoIcon>
-                  </SubCriterionHeader>
+            <View $visible={mode === "detail"}>
+              <PaneHeader>
+                <PaneTitleRow>
+                  <PaneTitle style={{ color: active.color }}>
+                    {active.title}
+                  </PaneTitle>
+                  <PaneScoreChip
+                    style={{ borderColor: active.color, color: active.color }}
+                  >
+                    {active.score}/{active.maxScore}
+                  </PaneScoreChip>
+                  <BackLink onClick={() => setMode("summary")}>
+                    Back to summary
+                  </BackLink>
+                </PaneTitleRow>
+                <PaneDescription>{active.description}</PaneDescription>
+              </PaneHeader>
 
-                  {evidence && (
-                    <div style={{ marginTop: 8 }}>
-                      <strong>Evidence:</strong>
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: formatLinks(evidence),
-                        }}
-                      />
-                    </div>
-                  )}
-                </SubCriterionCard>
-              );
-            })}
-          </SubCriteriaGrid>
+              <SectionTitle $accent={active.color}>Sub-criteria</SectionTitle>
+              <SubCriteriaGrid>
+                {docsFor(active.id).map((d) => {
+                  const met = isMet(active, d.key, d.name);
+                  const evidence = evidenceFor(active, d.key, d.name);
+                  return (
+                    <SubCriterionCard key={d.key} $accent={active.color}>
+                      <SubCriterionHeader>
+                        <SubCriterionName>{d.name}</SubCriterionName>
+                        <StatusChip $met={met}>
+                          {met ? "Met" : "Needs work"}
+                        </StatusChip>
+                        <InfoIcon tabIndex={0}>
+                          ℹ︎
+                          <Tooltip role="dialog">
+                            <TooltipInner>
+                              <strong>Definition:</strong>
+                              <div style={{ marginBottom: 8 }}>
+                                {d.definition}
+                              </div>
+                              <strong>How we check:</strong>
+                              <div style={{ marginBottom: 8 }}>{d.logic}</div>
+                              <strong>Status notes:</strong>
+                              <div>{d.statusNotes}</div>
+                            </TooltipInner>
+                          </Tooltip>
+                        </InfoIcon>
+                      </SubCriterionHeader>
+
+                      {evidence && (
+                        <div style={{ marginTop: 8 }}>
+                          <strong>Evidence:</strong>
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: formatLinks(evidence),
+                            }}
+                          />
+                        </div>
+                      )}
+                    </SubCriterionCard>
+                  );
+                })}
+              </SubCriteriaGrid>
+            </View>
+          </ViewSwitch>
         </RightPane>
       </Body>
     </Layout>

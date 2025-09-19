@@ -3,18 +3,20 @@ import styled from "styled-components";
 export const Container = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 2rem;
-  min-height: 100vh;
+  height: 90vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  overflow: hidden;
 `;
 
 export const Title = styled.h1`
   color: #2c3e50;
-  margin-bottom: 2rem;
+  padding: 1rem 2rem;
+  margin: 0;
   text-align: center;
   font-size: 2.5rem;
   font-weight: 700;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 export const WheelContainer = styled.div`
