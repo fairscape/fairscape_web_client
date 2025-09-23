@@ -371,14 +371,21 @@
           "name": "ethicalReview",
           "label": "Ethical Review",
           "type": "textarea",
-          "required": false,
+          "required": true,
           "placeholder": "Details on ethical approvals and review"
         },
         {
           "name": "humanSubject",
           "label": "Human Subject Data",
           "type": "text",
-          "required": false,
+          "required": true,
+          "placeholder": "e.g., No, Yes (IRB #12345)"
+        },
+        {
+          "name": "IRB",
+          "label": "IRB Number",
+          "type": "text",
+          "required": true,
           "placeholder": "e.g., No, Yes (IRB #12345)"
         }
       ]
