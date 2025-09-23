@@ -24,8 +24,8 @@ interface FormData {
   version: string;
   doi: string;
   description: string;
-  keywords: string; // Store as comma-separated string for uncontrolled input
-  associatedPublication: string; // Store as comma-separated string
+  keywords: string;
+  associatedPublication: string;
   citation: string;
   usageInfo: string;
   funder: string;
@@ -66,7 +66,7 @@ interface InputFieldProps {
   label: string;
   field: keyof FormData;
   placeholder: string;
-  defaultValue: string; // Use defaultValue
+  defaultValue: string;
   multiline?: boolean;
   type?: "text" | "date" | "url" | "email";
   isJson?: boolean;
@@ -74,12 +74,11 @@ interface InputFieldProps {
 
 interface PreviewFieldProps {
   label: string;
-  value?: string | string[]; // Preview can still handle arrays if needed downstream
+  value?: string | string[];
   placeholder: string;
   isJson?: boolean;
 }
 
-// --- Styled Components (Unchanged from previous version) ---
 const FormContainer = styled.div`
   max-width: 1000px;
   margin: 0 auto;
@@ -340,28 +339,24 @@ const UploadedFileName = styled.div`
 // --- Component Implementation ---
 
 const ReleaseForm = () => {
-  const formRef = useRef<HTMLFormElement>(null); // Ref for the uncontrolled form
+  const formRef = useRef<HTMLFormElement>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewData, setPreviewData] = useState<Partial<FormData>>({}); // For displaying preview
+  const [previewData, setPreviewData] = useState<Partial<FormData>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedCrates, setUploadedCrates] = useState<UploadedCrateInfo[]>([]);
   const [currentStep, setCurrentStep] = useState<"upload" | "edit">("upload");
-  // State to hold the aggregated values to be used as defaultValues
   const [initialFormValues, setInitialFormValues] = useState<InitialFormValues>(
     {
-      // Set initial defaults for uncontrolled form fields here
       version: "1.0",
       release_date: new Date().toISOString().split("T")[0],
       license_value: "https://creativecommons.org/licenses/by/4.0/",
       conditionsOfAccess: "Open Access",
       additionalProperties: "[]",
       customProperties: "{}",
-      keywords: "", // Initialize string fields
+      keywords: "",
       associatedPublication: "",
-      // ... other fields default to empty string via || '' in InputField
     }
   );
-  // State to force form re-mount when initial values change
   const [formKey, setFormKey] = useState<number>(Date.now());
 
   const placeholders: Record<keyof FormData, string> = {
@@ -402,8 +397,6 @@ const ReleaseForm = () => {
     additionalProperties: `JSON array of PropertyValue objects, e.g., [{"@type": "PV", "name": "F", "value": "V"}]`,
     customProperties: `JSON object for direct merge, e.g., {"myNs:myTerm": "value"}`,
   };
-
-  // Removed handleInputChange - not needed for uncontrolled form
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -463,7 +456,7 @@ const ReleaseForm = () => {
         if (newCrates.length > 0) {
           const allCrates = [...uploadedCrates, ...newCrates];
           setUploadedCrates(allCrates);
-          updateInitialValuesFromCrates(allCrates); // Call function to update initial values
+          updateInitialValuesFromCrates(allCrates);
         }
         if (fileInputRef.current) fileInputRef.current.value = "";
       })
@@ -473,14 +466,11 @@ const ReleaseForm = () => {
       });
   };
 
-  // Function to aggregate data and update the initialFormValues state
   const updateInitialValuesFromCrates = (crates: UploadedCrateInfo[]) => {
     if (crates.length === 0) return;
 
-    // Start with current initial values to preserve defaults or previous uploads
     let aggregatedValues: InitialFormValues = { ...initialFormValues };
 
-    // Use Sets for unique aggregation where applicable (will join later for defaultValue)
     const aggregatedKeywords = new Set<string>(
       aggregatedValues.keywords
         ?.split(",")
@@ -503,7 +493,6 @@ const ReleaseForm = () => {
     crates.forEach((crate) => {
       const root = crate.rootNode;
       if (!root) return;
-      // Simple fields: Overwrite if empty or take first non-empty found
       if (!aggregatedValues.name && root.name)
         aggregatedValues.name = root.name;
       if (!aggregatedValues.description && root.description)
@@ -543,7 +532,6 @@ const ReleaseForm = () => {
         }
       }
 
-      // Aggregate keywords, authors, publications using Sets
       if (root.keywords)
         (Array.isArray(root.keywords)
           ? root.keywords
