@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { FiPlus, FiTrash2, FiX } from "react-icons/fi";
-import { generateSubCrateId } from "./utils/releaseUtils";
+import { generateSubCrateId } from "../utils/releaseUtils";
 
 interface SubCrate {
   "@id": string;
@@ -18,6 +18,7 @@ interface SubCrateManagerProps {
   onSubCratesChange: (subCrates: SubCrate[]) => void;
   existingHasPart: any[];
   onHasPartChange: (hasPart: any[]) => void;
+  disabled?: boolean;
 }
 
 const SubCrateManager: React.FC<SubCrateManagerProps> = ({
@@ -25,6 +26,7 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
   onSubCratesChange,
   existingHasPart,
   onHasPartChange,
+  disabled = false,
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSubCrate, setNewSubCrate] = useState<Partial<SubCrate>>({

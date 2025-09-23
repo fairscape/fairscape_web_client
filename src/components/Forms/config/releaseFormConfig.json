@@ -385,7 +385,7 @@
           "name": "IRB",
           "label": "IRB Number",
           "type": "text",
-          "required": true,
+          "required": false,
           "placeholder": "e.g., No, Yes (IRB #12345)"
         }
       ]
