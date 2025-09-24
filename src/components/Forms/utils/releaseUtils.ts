@@ -20,7 +20,6 @@ interface SubCrate {
 export function parseRoCrateMetadata(jsonContent: string): FormData {
   try {
     const parsed = JSON.parse(jsonContent);
-    console.log("Parsed RO-Crate:", parsed);
 
     if (
       !parsed["@graph"] ||
@@ -86,19 +85,11 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
       );
 
       if (org) {
-        const orgName = org["@id"].split("-").slice(2, -1).join(" ");
-        formData.organizationName = orgName
-          .split("-")
-          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
+        formData.organizationName = org["@id"];
       }
 
       if (proj) {
-        const projName = proj["@id"].split("-").slice(2, -1).join(" ");
-        formData.projectName = projName
-          .split("-")
-          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
+        formData.projectName = proj["@id"];
       }
     }
 
@@ -141,6 +132,22 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
       "rai:dataBiases",
       "rai:dataUseCases",
       "rai:dataReleaseMaintenancePlan",
+      "rai:dataCollection",
+      "rai:dataCollectionType",
+      "rai:dataCollectionMissingData",
+      "rai:dataCollectionRawData",
+      "rai:dataCollectionTimeframe",
+      "rai:dataImputationProtocol",
+      "rai:dataManipulationProtocol",
+      "rai:dataPreprocessingProtocol",
+      "rai:dataAnnotationProtocol",
+      "rai:dataAnnotationPlatform",
+      "rai:dataAnnotationAnalysis",
+      "rai:personalSensitiveInformation",
+      "rai:dataSocialImpact",
+      "rai:annotationsPerItem",
+      "rai:annotatorDemographics",
+      "rai:machineAnnotationTools",
     ];
 
     raiFields.forEach((field) => {
@@ -176,8 +183,6 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
     formData.humanSubject = formData.humanSubject || "";
     formData.prohibitedUses = formData.prohibitedUses || "";
 
-    console.log("Extracted Form Data:", formData);
-
     return formData;
   } catch (error) {
     console.error("Error parsing RO-Crate metadata:", error);
@@ -186,7 +191,7 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
 }
 
 export function generateReleaseJson(formData: FormData): any {
-  const NAAN = "59852";
+  const NAAN = "59853";
   const timestamp = Date.now();
   const safeName = (formData.name || "release")
     .toLowerCase()
@@ -220,23 +225,13 @@ export function generateReleaseJson(formData: FormData): any {
   if (formData.organizationName || formData.projectName) {
     releaseNode.isPartOf = [];
     if (formData.organizationName) {
-      const orgSafeName = formData.organizationName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-");
       releaseNode.isPartOf.push({
-        "@id": `ark:/${NAAN}/organization-${orgSafeName}-${timestamp
-          .toString(36)
-          .toUpperCase()}`,
+        "@id": formData.organizationName,
       });
     }
     if (formData.projectName) {
-      const projSafeName = formData.projectName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-");
       releaseNode.isPartOf.push({
-        "@id": `ark:/${NAAN}/project-${projSafeName}-${timestamp
-          .toString(36)
-          .toUpperCase()}`,
+        "@id": formData.projectName,
       });
     }
   }
@@ -308,6 +303,22 @@ export function generateReleaseJson(formData: FormData): any {
     "rai:dataBiases",
     "rai:dataUseCases",
     "rai:dataReleaseMaintenancePlan",
+    "rai:dataCollection",
+    "rai:dataCollectionType",
+    "rai:dataCollectionMissingData",
+    "rai:dataCollectionRawData",
+    "rai:dataCollectionTimeframe",
+    "rai:dataImputationProtocol",
+    "rai:dataManipulationProtocol",
+    "rai:dataPreprocessingProtocol",
+    "rai:dataAnnotationProtocol",
+    "rai:dataAnnotationPlatform",
+    "rai:dataAnnotationAnalysis",
+    "rai:personalSensitiveInformation",
+    "rai:dataSocialImpact",
+    "rai:annotationsPerItem",
+    "rai:annotatorDemographics",
+    "rai:machineAnnotationTools",
   ];
 
   raiFields.forEach((field) => {
@@ -449,7 +460,7 @@ export async function mockLLMCall(
 }
 
 export function generateSubCrateId(name: string): string {
-  const NAAN = "59852";
+  const NAAN = "59853";
   const timestamp = Date.now().toString(36).toUpperCase();
   const safeName = name
     .toLowerCase()

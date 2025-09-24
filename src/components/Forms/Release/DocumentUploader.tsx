@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import styled from "styled-components";
-import { FiUpload, FiFile } from "react-icons/fi";
+import { FiUpload, FiFile, FiSave } from "react-icons/fi";
 import { Card, StyledButton } from "../ReleaseComponents";
 
 interface UploadedFile {
@@ -13,6 +13,8 @@ interface DocumentUploaderProps {
   onDocsChange: (docs: UploadedFile[]) => void;
   onLLMAssist: (docs: UploadedFile[]) => void;
   onSkipToManual: () => void;
+  onSave?: () => void;
+  saveStatus?: "idle" | "saving" | "saved" | "error";
   isLoading: boolean;
 }
 
@@ -21,6 +23,8 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   onDocsChange,
   onLLMAssist,
   onSkipToManual,
+  onSave,
+  saveStatus = "idle",
   isLoading,
 }) => {
   const docsInputRef = useRef<HTMLInputElement>(null);
@@ -37,6 +41,19 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     }
 
     onDocsChange([...supportingDocs, ...newDocs]);
+  };
+
+  const getSaveButtonText = () => {
+    switch (saveStatus) {
+      case "saving":
+        return "Saving...";
+      case "saved":
+        return "Saved!";
+      case "error":
+        return "Save Failed";
+      default:
+        return "Save Progress";
+    }
   };
 
   return (
@@ -71,6 +88,16 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             <StyledButton variant="secondary" onClick={() => onDocsChange([])}>
               Clear Documents
             </StyledButton>
+            {onSave && (
+              <StyledButton
+                onClick={onSave}
+                variant="secondary"
+                disabled={saveStatus === "saving"}
+              >
+                <FiSave />
+                {getSaveButtonText()}
+              </StyledButton>
+            )}
           </ButtonGroup>
         </>
       )}

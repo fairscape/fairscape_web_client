@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import { FiDownload, FiChevronRight, FiChevronLeft } from "react-icons/fi";
+import {
+  FiDownload,
+  FiChevronRight,
+  FiChevronLeft,
+  FiSave,
+} from "react-icons/fi";
 import releaseFormConfig from "../components/Forms/config/releaseFormConfig.json";
 import {
   PageContainer,
@@ -11,9 +16,14 @@ import {
   generateReleaseJson,
   mockLLMCall,
 } from "../components/Forms/utils/releaseUtils";
+import {
+  saveCrate,
+  checkCrateExists,
+} from "../components/Forms/utils/storageUtils";
 import ModeSelector from "../components/Forms/Release/ModeSelector";
 import FormManager from "../components/Forms/Release/FormManager";
 import DocumentUploader from "../components/Forms/Release/DocumentUploader";
+import EditSelectionPage from "../components/Forms/Release/EditSelectionPage";
 
 interface FormData {
   [key: string]: any;
@@ -44,6 +54,9 @@ const CreateRelease: React.FC = () => {
   const [supportingDocs, setSupportingDocs] = useState<UploadedFile[]>([]);
   const [showPreview, setShowPreview] = useState(true);
   const [isLoadingLLM, setIsLoadingLLM] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const crateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -65,9 +78,7 @@ const CreateRelease: React.FC = () => {
       setIsReviewRequired(true);
       crateInputRef.current?.click();
     } else if (selectedMode === "edit") {
-      setIsReviewMode(false);
-      setIsReviewRequired(false);
-      crateInputRef.current?.click();
+      setMode("edit");
     } else {
       setMode(selectedMode);
       setIsReviewMode(false);
@@ -87,6 +98,13 @@ const CreateRelease: React.FC = () => {
       defaults.subCrates = [];
       setFormData(defaults);
     }
+  };
+
+  const handleSavedCrateSelect = (savedFormData: FormData) => {
+    setFormData(savedFormData);
+    setIsReviewMode(false);
+    setIsReviewRequired(false);
+    setMode("form");
   };
 
   const handleCrateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,7 +170,11 @@ const CreateRelease: React.FC = () => {
 
   const handleFieldChange = (fieldName: string, value: any) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    if (saveStatus === "saved") {
+      setSaveStatus("idle");
+    }
   };
+
   const handleSectionReview = (sectionId: string) => {
     setReviewState((prev) => ({
       ...prev,
@@ -162,6 +184,35 @@ const CreateRelease: React.FC = () => {
         reviewedBy: "Current User",
       },
     }));
+  };
+
+  const handleSave = async () => {
+    setSaveStatus("saving");
+
+    const crateId = formData["@id"] || formData.identifier;
+    const crateName = formData.name || formData.title || "Unnamed Crate";
+
+    if (crateId && checkCrateExists(crateId)) {
+      if (
+        !window.confirm(
+          `A saved crate with ID "${crateId}" already exists. Do you want to overwrite it?`
+        )
+      ) {
+        setSaveStatus("idle");
+        return;
+      }
+    }
+
+    const success = saveCrate(formData);
+
+    if (success) {
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } else {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      alert("Failed to save crate. Please try again.");
+    }
   };
 
   const isAllSectionsReviewed = () => {
@@ -177,20 +228,6 @@ const CreateRelease: React.FC = () => {
 
     const jsonOutput = generateReleaseJson(formData);
 
-    if (isReviewRequired) {
-      jsonOutput.reviewMetadata = {
-        reviewRequired: true,
-        reviewedSections: Object.entries(reviewState)
-          .filter(([_, state]) => state.reviewed)
-          .map(([sectionId, state]) => ({
-            sectionId,
-            reviewedAt: state.reviewedAt,
-            reviewedBy: state.reviewedBy,
-          })),
-        reviewCompletedAt: new Date().toISOString(),
-      };
-    }
-
     const blob = new Blob([JSON.stringify(jsonOutput, null, 2)], {
       type: "application/json",
     });
@@ -204,6 +241,19 @@ const CreateRelease: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const getSaveButtonText = () => {
+    switch (saveStatus) {
+      case "saving":
+        return "Saving...";
+      case "saved":
+        return "Saved!";
+      case "error":
+        return "Save Failed";
+      default:
+        return "Save Progress";
+    }
+  };
+
   const jsonPreview = generateReleaseJson(formData);
 
   return (
@@ -212,12 +262,22 @@ const CreateRelease: React.FC = () => {
 
       {mode === "choice" && <ModeSelector onModeSelect={handleModeSelection} />}
 
+      {mode === "edit" && (
+        <EditSelectionPage
+          onCrateUpload={handleCrateUpload}
+          onSavedCrateSelect={handleSavedCrateSelect}
+          onBack={() => setMode("choice")}
+        />
+      )}
+
       {mode === "new" && (
         <DocumentUploader
           supportingDocs={supportingDocs}
           onDocsChange={setSupportingDocs}
           onLLMAssist={handleLLMAssist}
           onSkipToManual={handleSkipToManual}
+          onSave={handleSave}
+          saveStatus={saveStatus}
           isLoading={isLoadingLLM}
         />
       )}
@@ -245,6 +305,16 @@ const CreateRelease: React.FC = () => {
                   ? "Download Reviewed Release"
                   : "Download Release Metadata"}
               </StyledButton>
+
+              <StyledButton
+                onClick={handleSave}
+                variant="secondary"
+                disabled={saveStatus === "saving"}
+              >
+                <FiSave />
+                {getSaveButtonText()}
+              </StyledButton>
+
               <StyledButton
                 variant="secondary"
                 onClick={() => {
@@ -254,6 +324,7 @@ const CreateRelease: React.FC = () => {
                   setReviewState({});
                   setIsReviewRequired(false);
                   setIsReviewMode(false);
+                  setSaveStatus("idle");
                 }}
               >
                 Start Over
