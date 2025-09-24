@@ -6,12 +6,11 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import UploadPage from "./pages/UploadPage";
 import DashboardPage from "./pages/DashboardPage";
-import SearchPage from "./pages/SearchPage";
 import BasicSearchPage from "./pages/BasicSearchPage";
 import CompareSearchPage from "./pages/CompareSearchPage";
 import MetadataDisplayPage from "./pages/MetadataDisplayPage";
 import EvidenceGraphPage from "./pages/EvidenceGraphPage";
-import ReleaseFormPage from "./pages/ReleaseFormPage";
+import CreateRelease from "./pages/CreateReleasePage";
 import { theme } from "./styles/theme";
 import { GlobalStyle } from "./styles/GlobalStyles";
 import DataverseTokensPage from "./pages/DataverseTokensPage";
@@ -37,14 +36,11 @@ function App() {
               <Route path="/compare" element={<CompareSearchPage />} />
               <Route path="/view/*" element={<MetadataDisplayPage />} />
               <Route path="/evidence/*" element={<EvidenceGraphPage />} />
-              <Route path="/create-release" element={<ReleaseFormPage />} />
+              <Route path="/create-release" element={<CreateRelease />} />
               <Route path="/tokens" element={<DataverseTokensPage />} />
               <Route path="/create-rocrate" element={<CreateRocratePage />} />
               <Route path="/about" element={<AboutPage />} />
-              <Route
-                path="/ai-ready-score/*"
-                element={<AIReadinessPage />}
-              />
+              <Route path="/ai-ready-score/*" element={<AIReadinessPage />} />
               <Route
                 path="/ai-readiness"
                 element={<AIReadinessDefinitionsPage />}
