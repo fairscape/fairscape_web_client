@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { FiPlus, FiTrash2, FiX } from "react-icons/fi";
-import { generateSubCrateId } from "../utils/releaseUtils";
 
 interface SubCrate {
   "@id": string;
@@ -30,6 +29,7 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSubCrate, setNewSubCrate] = useState<Partial<SubCrate>>({
+    "@id": "",
     name: "",
     description: "",
     version: "1.0",
@@ -38,14 +38,30 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
   });
 
   const handleAddSubCrate = () => {
-    if (!newSubCrate.name || !newSubCrate.description) {
-      alert("Name and description are required for sub-crates");
+    if (
+      !newSubCrate["@id"] ||
+      !newSubCrate.name ||
+      !newSubCrate.description ||
+      !newSubCrate.version ||
+      !newSubCrate.keywords
+    ) {
+      alert(
+        "ID, name, description, version, and keywords are required for sub-crates"
+      );
       return;
     }
 
-    const subCrateId = generateSubCrateId(newSubCrate.name);
+    const existingIds = [
+      ...subCrates.map((sc) => sc["@id"]),
+      ...(existingHasPart || []).map((hp) => hp["@id"]),
+    ];
+    if (existingIds.includes(newSubCrate["@id"])) {
+      alert("This ID already exists. Please use a unique ID.");
+      return;
+    }
+
     const fullSubCrate: SubCrate = {
-      "@id": subCrateId,
+      "@id": newSubCrate["@id"],
       "@type": ["Dataset", "https://w3id.org/EVI#ROCrate"],
       name: newSubCrate.name,
       description: newSubCrate.description,
@@ -57,6 +73,7 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
     onSubCratesChange([...subCrates, fullSubCrate]);
 
     setNewSubCrate({
+      "@id": "",
       name: "",
       description: "",
       version: "1.0",
@@ -71,10 +88,10 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
   };
 
   const handleRemoveExistingHasPart = (id: string) => {
-    onHasPartChange(existingHasPart.filter((hp) => hp["@id"] !== id));
+    onHasPartChange((existingHasPart || []).filter((hp) => hp["@id"] !== id));
   };
 
-  const nonSubCrateHasPart = existingHasPart.filter(
+  const nonSubCrateHasPart = (existingHasPart || []).filter(
     (hp) => !subCrates.some((sc) => sc["@id"] === hp["@id"])
   );
 
@@ -145,6 +162,24 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
 
           <FormField>
             <Label>
+              ID <Required>*</Required>
+            </Label>
+            <Input
+              type="text"
+              value={newSubCrate["@id"] || ""}
+              onChange={(e) =>
+                setNewSubCrate({ ...newSubCrate, "@id": e.target.value })
+              }
+              placeholder="e.g. ark:/12345/subcrate-1"
+            />
+            <HelpText>
+              Enter a unique ARK identifier for this sub-crate (e.g.,
+              ark:/12345/subcrate-1)
+            </HelpText>
+          </FormField>
+
+          <FormField>
+            <Label>
               Name <Required>*</Required>
             </Label>
             <Input
@@ -172,7 +207,10 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
           </FormField>
 
           <FormField>
-            <Label>Version</Label>
+            <Label>
+              Version<Required>*</Required>
+            </Label>
+
             <Input
               type="text"
               value={newSubCrate.version || ""}
@@ -184,7 +222,9 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
           </FormField>
 
           <FormField>
-            <Label>Keywords</Label>
+            <Label>
+              Keywords<Required>*</Required>
+            </Label>
             <Input
               type="text"
               value={newSubCrate.keywords || ""}
@@ -196,9 +236,7 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
           </FormField>
 
           <FormField>
-            <Label>
-              Local Path to ro-crate-metadata.json <Required>*</Required>
-            </Label>
+            <Label>Local Path to ro-crate-metadata.json</Label>
             <Input
               type="text"
               value={newSubCrate["ro-crate-metadata"] || ""}
@@ -414,6 +452,12 @@ const TextArea = styled.textarea`
     border-color: #3e7aa8;
     box-shadow: 0 0 0 2px rgba(62, 122, 168, 0.1);
   }
+`;
+
+const HelpText = styled.div`
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
 `;
 
 const ButtonGroup = styled.div`

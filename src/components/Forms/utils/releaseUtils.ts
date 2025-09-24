@@ -17,6 +17,26 @@ interface SubCrate {
   "ro-crate-metadata": string;
 }
 
+function generateArkId(
+  name: string = "release",
+  version: string = "1.0"
+): string {
+  const NAAN = "59853";
+
+  const safeName = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .substring(0, 40);
+
+  const safeVersion = version
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `ark:/${NAAN}/rocrate-${safeName}-v${safeVersion}`;
+}
+
 export function parseRoCrateMetadata(jsonContent: string): FormData {
   try {
     const parsed = JSON.parse(jsonContent);
@@ -34,6 +54,7 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
     const rootNode = parsed["@graph"][1];
     const formData: FormData = {};
 
+    formData["@id"] = rootNode["@id"] || "";
     formData.name = rootNode.name || "";
     formData.description = rootNode.description || "";
     formData.version = rootNode.version || "1.0";
@@ -105,6 +126,8 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
     formData.ethicalReview = rootNode.ethicalReview || "";
     formData.conditionsOfAccess = rootNode.conditionsOfAccess || "";
     formData.copyrightNotice = rootNode.copyrightNotice || "";
+
+    formData["@id"] = generateArkId(formData.name, formData.version);
 
     if (rootNode.keywords) {
       if (Array.isArray(rootNode.keywords)) {
@@ -191,15 +214,7 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
 }
 
 export function generateReleaseJson(formData: FormData): any {
-  const NAAN = "59853";
-  const timestamp = Date.now();
-  const safeName = (formData.name || "release")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .substring(0, 50);
-
-  const releaseId =
-    formData.identifier || `ark:/${NAAN}/rocrate-${safeName}-${timestamp}`;
+  const releaseId = generateArkId(formData.name, formData.version);
 
   const releaseNode: any = {
     "@id": releaseId,
