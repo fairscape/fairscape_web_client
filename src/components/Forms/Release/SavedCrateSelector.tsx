@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { FiClock, FiTrash2, FiArrowLeft } from "react-icons/fi";
-import { Card, StyledButton } from "../ReleaseComponents";
+import {
+  FiClock,
+  FiTrash2,
+  FiCheckCircle,
+  FiAlertCircle,
+} from "react-icons/fi";
+import { Card } from "../ReleaseComponents";
 import {
   getSavedCratesList,
   deleteSavedCrate,
@@ -10,22 +15,29 @@ import {
 
 interface SavedCrate {
   formData: any;
-  savedAt: string;
-  lastModified: string;
+  reviewState?: any;
   metadata: {
     id: string;
     name: string;
+    savedAt: string;
+    lastModified: string;
+    reviewProgress?: {
+      reviewed: number;
+      total: number;
+    };
   };
 }
 
 interface SavedCrateSelectorProps {
-  onCrateSelect: (formData: any) => void;
-  onBack: () => void;
+  onCrateSelect: (data: { formData: any; reviewState?: any }) => void;
+  onBack?: () => void;
+  hideBackButton?: boolean;
 }
 
 const SavedCrateSelector: React.FC<SavedCrateSelectorProps> = ({
   onCrateSelect,
   onBack,
+  hideBackButton = false,
 }) => {
   const [savedCrates, setSavedCrates] = useState<SavedCrate[]>([]);
 
@@ -51,9 +63,9 @@ const SavedCrateSelector: React.FC<SavedCrateSelectorProps> = ({
   };
 
   const handleLoadCrate = (crateId: string) => {
-    const formData = loadCrate(crateId);
-    if (formData) {
-      onCrateSelect(formData);
+    const data = loadCrate(crateId);
+    if (data) {
+      onCrateSelect(data);
     } else {
       alert("Failed to load the saved crate. Please try again.");
     }
@@ -75,30 +87,53 @@ const SavedCrateSelector: React.FC<SavedCrateSelectorProps> = ({
         </EmptyState>
       ) : (
         <CrateList>
-          {savedCrates.map((crate) => (
-            <CrateItem key={crate.metadata.id}>
-              <CrateInfo>
-                <CrateName>{crate.metadata.name}</CrateName>
-                <CrateId>ID: {crate.metadata.id}</CrateId>
-                <DateInfo>
-                  <FiClock size={14} />
-                  <span>Last modified: {formatDate(crate.lastModified)}</span>
-                </DateInfo>
-              </CrateInfo>
-              <ButtonGroup>
-                <LoadButton onClick={() => handleLoadCrate(crate.metadata.id)}>
-                  Load
-                </LoadButton>
-                <DeleteButton
-                  onClick={() =>
-                    handleDeleteCrate(crate.metadata.id, crate.metadata.name)
-                  }
-                >
-                  <FiTrash2 />
-                </DeleteButton>
-              </ButtonGroup>
-            </CrateItem>
-          ))}
+          {savedCrates.map((crate) => {
+            const hasReviewData = crate.metadata.reviewProgress;
+            const isFullyReviewed =
+              hasReviewData &&
+              crate.metadata.reviewProgress?.reviewed ===
+                crate.metadata.reviewProgress?.total;
+
+            return (
+              <CrateItem key={crate.metadata.id}>
+                <CrateInfo>
+                  <CrateName>{crate.metadata.name}</CrateName>
+                  <CrateId>ID: {crate.metadata.id}</CrateId>
+
+                  {hasReviewData && (
+                    <ReviewStatus complete={isFullyReviewed}>
+                      {isFullyReviewed ? <FiCheckCircle /> : <FiAlertCircle />}
+                      <span>
+                        {crate.metadata.reviewProgress?.reviewed}/
+                        {crate.metadata.reviewProgress?.total} sections reviewed
+                      </span>
+                    </ReviewStatus>
+                  )}
+
+                  <DateInfo>
+                    <FiClock size={14} />
+                    <span>
+                      Last modified: {formatDate(crate.metadata.lastModified)}
+                    </span>
+                  </DateInfo>
+                </CrateInfo>
+                <ButtonGroup>
+                  <LoadButton
+                    onClick={() => handleLoadCrate(crate.metadata.id)}
+                  >
+                    Load
+                  </LoadButton>
+                  <DeleteButton
+                    onClick={() =>
+                      handleDeleteCrate(crate.metadata.id, crate.metadata.name)
+                    }
+                  >
+                    <FiTrash2 />
+                  </DeleteButton>
+                </ButtonGroup>
+              </CrateItem>
+            );
+          })}
         </CrateList>
       )}
     </Card>
@@ -110,23 +145,6 @@ const Header = styled.div`
   align-items: center;
   gap: 20px;
   margin-bottom: 30px;
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-
-  &:hover {
-    background: #5a6268;
-  }
 `;
 
 const Title = styled.h2`
@@ -160,10 +178,11 @@ const CrateItem = styled.div`
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   background: #f8f9fa;
-  transition: background 0.2s;
+  transition: all 0.2s;
 
   &:hover {
     background: #e9ecef;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -182,6 +201,23 @@ const CrateId = styled.div`
   font-size: 14px;
   color: #666;
   margin-bottom: 8px;
+`;
+
+const ReviewStatus = styled.div<{ complete?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  background: ${(props) => (props.complete ? "#d4edda" : "#fff3cd")};
+  color: ${(props) => (props.complete ? "#155724" : "#856404")};
+  border: 1px solid ${(props) => (props.complete ? "#c3e6cb" : "#ffeeba")};
+
+  svg {
+    font-size: 14px;
+  }
 `;
 
 const DateInfo = styled.div`

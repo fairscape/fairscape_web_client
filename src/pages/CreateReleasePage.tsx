@@ -1,16 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import {
-  FiDownload,
-  FiChevronRight,
-  FiChevronLeft,
-  FiSave,
-} from "react-icons/fi";
 import releaseFormConfig from "../components/Forms/config/releaseFormConfig.json";
-import {
-  PageContainer,
-  StyledButton,
-} from "../components/Forms/ReleaseComponents";
+import { PageContainer } from "../components/Forms/ReleaseComponents";
 import {
   parseRoCrateMetadata,
   generateReleaseJson,
@@ -19,11 +10,13 @@ import {
 import {
   saveCrate,
   checkCrateExists,
+  loadCrate,
 } from "../components/Forms/utils/storageUtils";
 import ModeSelector from "../components/Forms/Release/ModeSelector";
 import FormManager from "../components/Forms/Release/FormManager";
 import DocumentUploader from "../components/Forms/Release/DocumentUploader";
 import EditSelectionPage from "../components/Forms/Release/EditSelectionPage";
+import ActionSidebar from "../components/Forms/Release/ActionSideBar";
 
 interface FormData {
   [key: string]: any;
@@ -52,7 +45,6 @@ const CreateRelease: React.FC = () => {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [uploadedCrate, setUploadedCrate] = useState<File | null>(null);
   const [supportingDocs, setSupportingDocs] = useState<UploadedFile[]>([]);
-  const [showPreview, setShowPreview] = useState(true);
   const [isLoadingLLM, setIsLoadingLLM] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -60,28 +52,33 @@ const CreateRelease: React.FC = () => {
   const crateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (mode === "form" && isReviewRequired) {
+    if (mode === "form" && isReviewRequired && !isReviewMode) {
       const initialReviewState: ReviewState = {};
       releaseFormConfig.sections.forEach((section) => {
-        initialReviewState[section.id] = {
-          reviewed: false,
-        };
+        if (!reviewState[section.id]) {
+          initialReviewState[section.id] = { reviewed: false };
+        }
       });
-      initialReviewState["subCrates"] = { reviewed: false };
-      setReviewState(initialReviewState);
+      if (!reviewState["subCrates"]) {
+        initialReviewState["subCrates"] = { reviewed: false };
+      }
+      setReviewState((prev) => ({ ...prev, ...initialReviewState }));
     }
-  }, [mode, isReviewRequired]);
+  }, [mode, isReviewRequired, isReviewMode]);
 
   const handleModeSelection = (selectedMode: "new" | "edit" | "review") => {
     if (selectedMode === "review") {
+      setMode("review");
       setIsReviewMode(true);
       setIsReviewRequired(true);
-      crateInputRef.current?.click();
     } else if (selectedMode === "edit") {
       setMode("edit");
+      setIsReviewRequired(false);
+      setIsReviewMode(false);
     } else {
       setMode(selectedMode);
       setIsReviewMode(false);
+      setIsReviewRequired(false);
       const defaults: FormData = {};
       releaseFormConfig.sections.forEach((section) => {
         section.fields.forEach((field) => {
@@ -100,10 +97,19 @@ const CreateRelease: React.FC = () => {
     }
   };
 
-  const handleSavedCrateSelect = (savedFormData: FormData) => {
-    setFormData(savedFormData);
+  const handleSavedCrateSelect = (data: {
+    formData: any;
+    reviewState?: any;
+  }) => {
+    setFormData(data.formData);
+    if (data.reviewState) {
+      setReviewState(data.reviewState);
+      const hasUnreviewed = Object.values(data.reviewState).some(
+        (state: any) => !state.reviewed
+      );
+      setIsReviewRequired(hasUnreviewed);
+    }
     setIsReviewMode(false);
-    setIsReviewRequired(false);
     setMode("form");
   };
 
@@ -118,6 +124,16 @@ const CreateRelease: React.FC = () => {
         const parsedData = parseRoCrateMetadata(content);
         setFormData(parsedData);
         setUploadedCrate(file);
+
+        if (isReviewMode) {
+          const initialReviewState: ReviewState = {};
+          releaseFormConfig.sections.forEach((section) => {
+            initialReviewState[section.id] = { reviewed: false };
+          });
+          initialReviewState["subCrates"] = { reviewed: false };
+          setReviewState(initialReviewState);
+        }
+
         setMode("form");
       } catch (error) {
         console.error("Error parsing RO-Crate:", error);
@@ -176,14 +192,19 @@ const CreateRelease: React.FC = () => {
   };
 
   const handleSectionReview = (sectionId: string) => {
-    setReviewState((prev) => ({
-      ...prev,
+    const newReviewState = {
+      ...reviewState,
       [sectionId]: {
         reviewed: true,
         reviewedAt: new Date().toISOString(),
         reviewedBy: "Current User",
       },
-    }));
+    };
+    setReviewState(newReviewState);
+
+    saveCrate(formData, newReviewState);
+    setSaveStatus("saved");
+    setTimeout(() => setSaveStatus("idle"), 2000);
   };
 
   const handleSave = async () => {
@@ -203,7 +224,10 @@ const CreateRelease: React.FC = () => {
       }
     }
 
-    const success = saveCrate(formData);
+    const success = saveCrate(
+      formData,
+      isReviewRequired ? reviewState : undefined
+    );
 
     if (success) {
       setSaveStatus("saved");
@@ -241,20 +265,23 @@ const CreateRelease: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const getSaveButtonText = () => {
-    switch (saveStatus) {
-      case "saving":
-        return "Saving...";
-      case "saved":
-        return "Saved!";
-      case "error":
-        return "Save Failed";
-      default:
-        return "Save Progress";
-    }
+  const handleStartOver = () => {
+    setMode("choice");
+    setFormData({});
+    setSupportingDocs([]);
+    setReviewState({});
+    setIsReviewRequired(false);
+    setIsReviewMode(false);
+    setSaveStatus("idle");
   };
 
-  const jsonPreview = generateReleaseJson(formData);
+  const getReviewProgress = () => {
+    const total = Object.keys(reviewState).length;
+    const reviewed = Object.values(reviewState).filter(
+      (state) => state.reviewed
+    ).length;
+    return { reviewed, total };
+  };
 
   return (
     <PageContainer>
@@ -262,11 +289,21 @@ const CreateRelease: React.FC = () => {
 
       {mode === "choice" && <ModeSelector onModeSelect={handleModeSelection} />}
 
-      {mode === "edit" && (
+      {(mode === "edit" || mode === "review") && (
         <EditSelectionPage
           onCrateUpload={handleCrateUpload}
           onSavedCrateSelect={handleSavedCrateSelect}
           onBack={() => setMode("choice")}
+          title={
+            mode === "review"
+              ? "Review Release RO-Crate"
+              : "Edit Existing RO-Crate"
+          }
+          description={
+            mode === "review"
+              ? "Upload a ro-crate-metadata.json file that needs review and approval, or continue a previously started review."
+              : "Upload an existing ro-crate-metadata.json file to edit its contents, or continue from a saved draft."
+          }
         />
       )}
 
@@ -279,6 +316,7 @@ const CreateRelease: React.FC = () => {
           onSave={handleSave}
           saveStatus={saveStatus}
           isLoading={isLoadingLLM}
+          onSavedCrateSelect={handleSavedCrateSelect}
         />
       )}
 
@@ -293,61 +331,17 @@ const CreateRelease: React.FC = () => {
               isReviewMode={isReviewMode}
               onSectionReview={handleSectionReview}
             />
-
-            <ButtonGroup style={{ marginTop: "30px" }}>
-              <StyledButton
-                onClick={handleDownload}
-                variant="primary"
-                disabled={!isAllSectionsReviewed()}
-              >
-                <FiDownload />
-                {isReviewRequired
-                  ? "Download Reviewed Release"
-                  : "Download Release Metadata"}
-              </StyledButton>
-
-              <StyledButton
-                onClick={handleSave}
-                variant="secondary"
-                disabled={saveStatus === "saving"}
-              >
-                <FiSave />
-                {getSaveButtonText()}
-              </StyledButton>
-
-              <StyledButton
-                variant="secondary"
-                onClick={() => {
-                  setMode("choice");
-                  setFormData({});
-                  setSupportingDocs([]);
-                  setReviewState({});
-                  setIsReviewRequired(false);
-                  setIsReviewMode(false);
-                  setSaveStatus("idle");
-                }}
-              >
-                Start Over
-              </StyledButton>
-            </ButtonGroup>
           </FormColumn>
 
-          <PreviewColumn showPreview={showPreview}>
-            <PreviewToggle
-              onClick={() => setShowPreview(!showPreview)}
-              title={showPreview ? "Collapse preview" : "Expand preview"}
-            >
-              {showPreview ? <FiChevronRight /> : <FiChevronLeft />}
-            </PreviewToggle>
-            {showPreview && (
-              <>
-                <PreviewHeader>JSON Preview</PreviewHeader>
-                <PreviewContent>
-                  <pre>{JSON.stringify(jsonPreview, null, 2)}</pre>
-                </PreviewContent>
-              </>
-            )}
-          </PreviewColumn>
+          <ActionSidebar
+            onDownload={handleDownload}
+            onSave={handleSave}
+            onStartOver={handleStartOver}
+            saveStatus={saveStatus}
+            isAllSectionsReviewed={isAllSectionsReviewed()}
+            isReviewRequired={isReviewRequired}
+            reviewProgress={isReviewRequired ? getReviewProgress() : undefined}
+          />
         </MainContent>
       )}
 
@@ -378,73 +372,6 @@ const MainContent = styled.div`
 const FormColumn = styled.div`
   flex: 1;
   min-width: 0;
-`;
-
-const PreviewColumn = styled.div<{ showPreview: boolean }>`
-  width: ${(props) => (props.showPreview ? "450px" : "40px")};
-  position: sticky;
-  top: 20px;
-  height: fit-content;
-  max-height: calc(100vh - 100px);
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
-`;
-
-const PreviewToggle = styled.button`
-  position: absolute;
-  left: 0;
-  top: 0;
-  background: #3e7aa8;
-  color: white;
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px 0 0 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  z-index: 1;
-
-  &:hover {
-    background: #2c5f8d;
-  }
-`;
-
-const PreviewHeader = styled.div`
-  background: #3e7aa8;
-  color: white;
-  padding: 15px 15px 15px 55px;
-  border-radius: 8px 8px 0 0;
-  font-weight: bold;
-`;
-
-const PreviewContent = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  padding: 20px;
-  overflow-y: auto;
-  flex: 1;
-  max-height: calc(100vh - 180px);
-
-  pre {
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.4;
-    color: #333;
-    white-space: pre-wrap;
-    word-break: break-all;
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 15px;
-  justify-content: center;
 `;
 
 export default CreateRelease;

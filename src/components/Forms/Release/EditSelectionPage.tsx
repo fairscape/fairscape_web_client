@@ -6,14 +6,18 @@ import SavedCrateSelector from "./SavedCrateSelector";
 
 interface EditSelectionPageProps {
   onCrateUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSavedCrateSelect: (formData: any) => void;
+  onSavedCrateSelect: (data: { formData: any; reviewState?: any }) => void;
   onBack: () => void;
+  title?: string;
+  description?: string;
 }
 
 const EditSelectionPage: React.FC<EditSelectionPageProps> = ({
   onCrateUpload,
   onSavedCrateSelect,
   onBack,
+  title = "Edit Existing RO-Crate",
+  description = "Upload an existing ro-crate-metadata.json file to edit its contents. No review will be required in edit mode.",
 }) => {
   const crateInputRef = useRef<HTMLInputElement>(null);
 
@@ -23,17 +27,14 @@ const EditSelectionPage: React.FC<EditSelectionPageProps> = ({
         <BackButton onClick={onBack}>
           <FiArrowLeft /> Back to Main Menu
         </BackButton>
-        <Title>Edit Existing RO-Crate</Title>
+        <Title>{title}</Title>
       </Header>
 
       <EditContent>
         <UploadSection>
           <Card>
             <SectionTitle>Upload RO-Crate File</SectionTitle>
-            <Description>
-              Upload an existing ro-crate-metadata.json file to edit its
-              contents.
-            </Description>
+            <Description>{description}</Description>
             <UploadButton onClick={() => crateInputRef.current?.click()}>
               <FiUpload /> Select File
             </UploadButton>
@@ -43,7 +44,6 @@ const EditSelectionPage: React.FC<EditSelectionPageProps> = ({
         <SavedSection>
           <SavedCrateSelector
             onCrateSelect={onSavedCrateSelect}
-            onBack={() => {}}
             hideBackButton={true}
           />
         </SavedSection>

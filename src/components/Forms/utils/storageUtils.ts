@@ -1,10 +1,15 @@
 interface SavedCrate {
   formData: any;
+  reviewState?: any;
   savedAt: string;
   lastModified: string;
   metadata: {
     id: string;
     name: string;
+    reviewProgress?: {
+      reviewed: number;
+      total: number;
+    };
   };
 }
 
@@ -22,7 +27,7 @@ export const generateCrateId = (name: string): string => {
     .replace(/-+/g, "-");
 };
 
-export const saveCrate = (formData: any): boolean => {
+export const saveCrate = (formData: any, reviewState?: any): boolean => {
   try {
     const crateId =
       formData["@id"] ||
@@ -33,13 +38,24 @@ export const saveCrate = (formData: any): boolean => {
     const existingSaved = getSavedCrates();
     const now = new Date().toISOString();
 
+    let reviewProgress = undefined;
+    if (reviewState) {
+      const total = Object.keys(reviewState).length;
+      const reviewed = Object.values(reviewState).filter(
+        (state: any) => state.reviewed
+      ).length;
+      reviewProgress = { reviewed, total };
+    }
+
     const savedCrate: SavedCrate = {
       formData: { ...formData, "@id": crateId },
+      reviewState,
       savedAt: existingSaved[crateId]?.savedAt || now,
       lastModified: now,
       metadata: {
         id: crateId,
         name: crateName,
+        reviewProgress,
       },
     };
 
@@ -74,10 +90,18 @@ export const getSavedCratesList = (): SavedCrate[] => {
   );
 };
 
-export const loadCrate = (id: string): any | null => {
+export const loadCrate = (
+  id: string
+): { formData: any; reviewState?: any } | null => {
   try {
     const savedCrates = getSavedCrates();
-    return savedCrates[id]?.formData || null;
+    const crate = savedCrates[id];
+    if (!crate) return null;
+
+    return {
+      formData: crate.formData,
+      reviewState: crate.reviewState,
+    };
   } catch (error) {
     console.error("Failed to load crate:", error);
     return null;
