@@ -301,8 +301,8 @@ const CreateRelease: React.FC = () => {
           }
           description={
             mode === "review"
-              ? "Upload a ro-crate-metadata.json file that needs review and approval, or continue a previously started review."
-              : "Upload an existing ro-crate-metadata.json file to edit its contents, or continue from a saved draft."
+              ? "Upload a ro-crate-metadata.json file that needs review and approval."
+              : "Upload an existing ro-crate-metadata.json file to edit its contents."
           }
         />
       )}

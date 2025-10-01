@@ -20,11 +20,11 @@ interface SavedCrate {
     id: string;
     name: string;
     savedAt: string;
-    lastModified: string;
     reviewProgress?: {
       reviewed: number;
       total: number;
     };
+    lastModified: string;
   };
 }
 
@@ -112,9 +112,7 @@ const SavedCrateSelector: React.FC<SavedCrateSelectorProps> = ({
 
                   <DateInfo>
                     <FiClock size={14} />
-                    <span>
-                      Last modified: {formatDate(crate.metadata.lastModified)}
-                    </span>
+                    <span>Last modified: {formatDate(crate.lastModified)}</span>
                   </DateInfo>
                 </CrateInfo>
                 <ButtonGroup>
