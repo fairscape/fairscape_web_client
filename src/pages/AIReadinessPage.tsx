@@ -58,7 +58,7 @@ export default function AIReadyScorePage() {
           title="Scoring in progress"
           message={
             <>
-              We’ve initiated AI-Ready scoring for this RO-Crate. Current
+              We've initiated AI-Ready scoring for this RO-Crate. Current
               status: <strong>{progressStatus || "PENDING"}</strong>. This page
               will auto-update once the score is available.
             </>

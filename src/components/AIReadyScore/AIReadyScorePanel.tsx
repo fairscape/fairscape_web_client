@@ -1,11 +1,10 @@
-// AIReadyScorePanel.tsx
 import React, { useMemo, useState } from "react";
 import { CriteriaData } from "./hooks/useAIReadyScore";
 import {
   Layout,
   Body,
   LeftNav,
-  LeftNavList, // <-- use the list wrapper
+  LeftNavList,
   CriteriaItem,
   CriteriaTitle,
   CriteriaScoreMini,
@@ -48,13 +47,31 @@ interface Props {
   datasetTitle?: string;
 }
 
-function hexToRgba(hex: string, alpha = 0.12) {
-  const h = hex.replace("#", "");
-  const bigint = parseInt(h, 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+function getScoreColor(score: number, maxScore: number): string {
+  const percentage = (score / maxScore) * 100;
+  if (percentage >= 99) return "#15803d";
+  if (percentage >= 40) return "#ea580c";
+  return "#dc2626";
+}
+
+function getScoreBackground(
+  score: number,
+  maxScore: number,
+  isActive: boolean
+): string {
+  const percentage = (score / maxScore) * 100;
+  const opacity = isActive ? 0.22 : 0.12;
+
+  if (percentage >= 99) {
+    const [r, g, b] = [21, 128, 61];
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  if (percentage >= 40) {
+    const [r, g, b] = [234, 88, 12];
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  const [r, g, b] = [220, 38, 38];
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
 const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
@@ -107,12 +124,17 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
         <LeftNav>
           <LeftNavList>
             {criteriaData.map((c) => {
-              const bg = hexToRgba(c.color, c.id === active.id ? 0.22 : 0.12);
+              const color = getScoreColor(c.score, c.maxScore);
+              const bg = getScoreBackground(
+                c.score,
+                c.maxScore,
+                c.id === active.id
+              );
               return (
                 <CriteriaItem
                   key={c.id}
                   $active={c.id === active.id}
-                  $accent={c.color}
+                  $accent={color}
                   $bg={bg}
                   $complete={c.hasMetCriteria}
                   onClick={() => {
@@ -136,7 +158,7 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
           </LeftNavList>
         </LeftNav>
 
-        <RightPane $accent={active.color}>
+        <RightPane $accent={getScoreColor(active.score, active.maxScore)}>
           <ViewSwitch>
             <View $visible={mode === "summary"}>
               <SummaryHeader>
@@ -145,10 +167,11 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
               <SummaryGrid>
                 {criteriaData.map((c) => {
                   const list = docsFor(c.id);
+                  const color = getScoreColor(c.score, c.maxScore);
                   return (
                     <SummaryCard
                       key={c.id}
-                      $accent={c.color}
+                      $accent={color}
                       $complete={c.hasMetCriteria}
                       onClick={() => {
                         setActiveId(c.id);
@@ -158,7 +181,7 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
                     >
                       <SummaryCardHead>
                         <SummaryCardTitle>{c.title}</SummaryCardTitle>
-                        <SummaryScoreChip $accent={c.color}>
+                        <SummaryScoreChip $accent={color}>
                           {c.score}/{c.maxScore}
                         </SummaryScoreChip>
                       </SummaryCardHead>
@@ -182,11 +205,18 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
             <View $visible={mode === "detail"}>
               <PaneHeader>
                 <PaneTitleRow>
-                  <PaneTitle style={{ color: active.color }}>
+                  <PaneTitle
+                    style={{
+                      color: getScoreColor(active.score, active.maxScore),
+                    }}
+                  >
                     {active.title}
                   </PaneTitle>
                   <PaneScoreChip
-                    style={{ borderColor: active.color, color: active.color }}
+                    style={{
+                      borderColor: getScoreColor(active.score, active.maxScore),
+                      color: getScoreColor(active.score, active.maxScore),
+                    }}
                   >
                     {active.score}/{active.maxScore}
                   </PaneScoreChip>
@@ -197,13 +227,20 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
                 <PaneDescription>{active.description}</PaneDescription>
               </PaneHeader>
 
-              <SectionTitle $accent={active.color}>Sub-criteria</SectionTitle>
+              <SectionTitle
+                $accent={getScoreColor(active.score, active.maxScore)}
+              >
+                Sub-criteria
+              </SectionTitle>
               <SubCriteriaGrid>
                 {docsFor(active.id).map((d) => {
                   const met = isMet(active, d.key, d.name);
                   const evidence = evidenceFor(active, d.key, d.name);
                   return (
-                    <SubCriterionCard key={d.key} $accent={active.color}>
+                    <SubCriterionCard
+                      key={d.key}
+                      $accent={getScoreColor(active.score, active.maxScore)}
+                    >
                       <SubCriterionHeader>
                         <SubCriterionName>{d.name}</SubCriterionName>
                         <StatusChip $met={met}>

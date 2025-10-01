@@ -18,11 +18,7 @@ export const OverallScoreBanner = styled.div`
   font-weight: 700;
   font-size: 1.8rem;
   color: white;
-  background: linear-gradient(
-    135deg,
-    ${({ theme }) => theme.colors.primary} 0%,
-    ${({ theme }) => theme.colors.secondary} 100%
-  );
+  background: #2c3e50;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
 `;
