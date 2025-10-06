@@ -100,6 +100,23 @@ const StyledInput = styled.input`
   }
 `;
 
+const StyledSelect = styled.select`
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.15s ease;
+  background-color: white;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: #3e7aa8;
+    box-shadow: 0 0 0 2px rgba(62, 122, 168, 0.1);
+  }
+`;
+
 const StyledTextArea = styled.textarea`
   width: 100%;
   padding: 10px 12px;
@@ -156,6 +173,49 @@ export const FormField: React.FC<FormFieldProps> = ({
         placeholder={placeholder}
         required={required}
       />
+    </FieldWrapper>
+  );
+};
+
+interface SelectFieldProps {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+  required?: boolean;
+}
+
+export const SelectField: React.FC<SelectFieldProps> = ({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+  placeholder,
+  required,
+}) => {
+  return (
+    <FieldWrapper>
+      <Label htmlFor={name}>
+        {label}
+        {required && <span className="required">*</span>}
+      </Label>
+      <StyledSelect
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+      >
+        {placeholder && <option value="">{placeholder}</option>}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </StyledSelect>
     </FieldWrapper>
   );
 };

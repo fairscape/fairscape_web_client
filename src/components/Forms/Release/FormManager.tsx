@@ -8,7 +8,12 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import releaseFormConfig from "../config/releaseFormConfig.json";
-import { Card, FormField, TextAreaField } from "./ReleaseComponents";
+import {
+  Card,
+  FormField,
+  TextAreaField,
+  SelectField,
+} from "./ReleaseComponents";
 import SubCrateManager from "./SubCrateManager";
 
 interface FormManagerProps {
@@ -138,6 +143,18 @@ const FormManager: React.FC<FormManagerProps> = ({
                         onChange={(e) =>
                           onFieldChange(field.name, e.target.value)
                         }
+                        placeholder={field.placeholder}
+                        required={field.required}
+                      />
+                    ) : field.type === "select" ? (
+                      <SelectField
+                        label={field.label}
+                        name={field.name}
+                        value={formData[field.name] || ""}
+                        onChange={(e) =>
+                          onFieldChange(field.name, e.target.value)
+                        }
+                        options={field.options || []}
                         placeholder={field.placeholder}
                         required={field.required}
                       />

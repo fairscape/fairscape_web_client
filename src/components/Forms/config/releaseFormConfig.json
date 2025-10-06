@@ -115,11 +115,57 @@
       "fields": [
         {
           "name": "license",
-          "label": "License URL",
-          "type": "url",
+          "label": "License",
+          "type": "select",
           "required": true,
-          "defaultValue": "https://creativecommons.org/licenses/by/4.0/",
-          "placeholder": "https://creativecommons.org/licenses/by/4.0/"
+          "options": [
+            {
+              "value": "https://creativecommons.org/licenses/by/4.0/",
+              "label": "CC BY 4.0 - Attribution"
+            },
+            {
+              "value": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "label": "CC BY-SA 4.0 - Attribution-ShareAlike"
+            },
+            {
+              "value": "https://creativecommons.org/licenses/by-nc/4.0/",
+              "label": "CC BY-NC 4.0 - Attribution-NonCommercial"
+            },
+            {
+              "value": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+              "label": "CC BY-NC-SA 4.0 - Attribution-NonCommercial-ShareAlike"
+            },
+            {
+              "value": "https://creativecommons.org/licenses/by-nd/4.0/",
+              "label": "CC BY-ND 4.0 - Attribution-NoDerivatives"
+            },
+            {
+              "value": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+              "label": "CC BY-NC-ND 4.0 - Attribution-NonCommercial-NoDerivatives"
+            },
+            {
+              "value": "https://creativecommons.org/publicdomain/zero/1.0/",
+              "label": "CC0 1.0 - Public Domain Dedication"
+            },
+            {
+              "value": "https://opensource.org/licenses/MIT",
+              "label": "MIT License"
+            },
+            {
+              "value": "https://opensource.org/licenses/Apache-2.0",
+              "label": "Apache License 2.0"
+            },
+            {
+              "value": "https://opensource.org/licenses/GPL-3.0",
+              "label": "GNU GPL v3.0"
+            },
+            {
+              "value": "https://opensource.org/licenses/BSD-3-Clause",
+              "label": "BSD 3-Clause License"
+            },
+            { "value": "custom", "label": "Custom/Other" }
+          ],
+          "placeholder": "Select a license"
         },
         {
           "name": "conditionsOfAccess",
@@ -137,10 +183,37 @@
         },
         {
           "name": "confidentialityLevel",
-          "label": "Confidentiality Level",
-          "type": "text",
+          "label": "Confidentiality Level (HL7 v3-Confidentiality)",
+          "type": "select",
           "required": true,
-          "placeholder": "e.g., Unrestricted, Public"
+          "options": [
+            {
+              "value": "Very Restricted",
+              "label": "V - Very Restricted (Abuse victims, legal holds, extremely high risk)"
+            },
+            {
+              "value": "Restricted",
+              "label": "R - Restricted (Stigmatizing info: mental health, HIV, substance abuse)"
+            },
+            {
+              "value": "Normal",
+              "label": "N - Normal (Standard PHI, default clinical care access)"
+            },
+            {
+              "value": "Moderate",
+              "label": "M - Moderate (Moderate risk, may include some public info)"
+            },
+            {
+              "value": "Low",
+              "label": "L - Low (De-identified/anonymized, minimal re-identification risk)"
+            },
+            {
+              "value": "Unrestricted",
+              "label": "U - Unrestricted (Public information, no restrictions)"
+            }
+          ],
+          "placeholder": "Select HL7 confidentiality level",
+          "description": "Protection level hierarchy: Very Restricted (highest) > Restricted > Normal > Moderate > Low > Unrestricted (lowest). Normal is the default for standard healthcare PHI."
         }
       ]
     },
@@ -377,16 +450,20 @@
         {
           "name": "humanSubject",
           "label": "Human Subject Data",
-          "type": "text",
+          "type": "select",
           "required": true,
-          "placeholder": "e.g., No, Yes (IRB #12345)"
+          "options": [
+            { "value": "No", "label": "No" },
+            { "value": "Yes", "label": "Yes" }
+          ],
+          "placeholder": "Select human subject data status"
         },
         {
           "name": "IRB",
           "label": "IRB Number",
           "type": "text",
           "required": false,
-          "placeholder": "e.g., No, Yes (IRB #12345)"
+          "placeholder": "IRB #12345"
         }
       ]
     },
