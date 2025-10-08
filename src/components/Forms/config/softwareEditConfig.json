@@ -1,0 +1,109 @@
+{
+  "type": "Software",
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Basic Information",
+      "fields": [
+        {
+          "name": "@id",
+          "label": "Identifier",
+          "type": "text",
+          "required": true,
+          "readonly": true
+        },
+        {
+          "name": "name",
+          "label": "Name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "description",
+          "label": "Description",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "name": "keywords",
+          "label": "Keywords",
+          "type": "text",
+          "placeholder": "Comma-separated keywords"
+        }
+      ]
+    },
+    {
+      "id": "versioning",
+      "title": "Version & Dates",
+      "fields": [
+        {
+          "name": "version",
+          "label": "Version",
+          "type": "text"
+        },
+        {
+          "name": "dateCreated",
+          "label": "Date Created",
+          "type": "date"
+        },
+        {
+          "name": "dateModified",
+          "label": "Date Modified",
+          "type": "date"
+        },
+        {
+          "name": "datePublished",
+          "label": "Date Published",
+          "type": "date"
+        }
+      ]
+    },
+    {
+      "id": "attribution",
+      "title": "Attribution",
+      "fields": [
+        {
+          "name": "author",
+          "label": "Author",
+          "type": "text"
+        },
+        {
+          "name": "maintainer",
+          "label": "Maintainer",
+          "type": "text"
+        },
+        {
+          "name": "license",
+          "label": "License",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "technical",
+      "title": "Technical Details",
+      "fields": [
+        {
+          "name": "programmingLanguage",
+          "label": "Programming Language",
+          "type": "text"
+        },
+        {
+          "name": "runtimePlatform",
+          "label": "Runtime Platform",
+          "type": "text"
+        },
+        {
+          "name": "codeRepository",
+          "label": "Code Repository",
+          "type": "text"
+        },
+        {
+          "name": "applicationCategory",
+          "label": "Application Category",
+          "type": "text"
+        }
+      ]
+    }
+  ]
+}

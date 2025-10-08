@@ -85,7 +85,6 @@ const CenteredMessage: React.FC<{ message: string }> = ({ message }) => (
 );
 
 export default function MetadataDisplayPage() {
-  // Prefer router param but fall back to window path
   const params = useParams<{ arkId?: string }>();
   const arkId =
     params?.arkId ??

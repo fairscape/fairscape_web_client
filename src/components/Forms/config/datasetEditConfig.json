@@ -1,0 +1,114 @@
+{
+  "type": "Dataset",
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Basic Information",
+      "fields": [
+        {
+          "name": "@id",
+          "label": "Identifier",
+          "type": "text",
+          "required": true,
+          "readonly": true
+        },
+        {
+          "name": "name",
+          "label": "Name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "description",
+          "label": "Description",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "name": "keywords",
+          "label": "Keywords",
+          "type": "text",
+          "placeholder": "Comma-separated keywords"
+        }
+      ]
+    },
+    {
+      "id": "versioning",
+      "title": "Version & Dates",
+      "fields": [
+        {
+          "name": "version",
+          "label": "Version",
+          "type": "text"
+        },
+        {
+          "name": "dateCreated",
+          "label": "Date Created",
+          "type": "date"
+        },
+        {
+          "name": "dateModified",
+          "label": "Date Modified",
+          "type": "date"
+        },
+        {
+          "name": "datePublished",
+          "label": "Date Published",
+          "type": "date"
+        }
+      ]
+    },
+    {
+      "id": "attribution",
+      "title": "Attribution",
+      "fields": [
+        {
+          "name": "author",
+          "label": "Author",
+          "type": "text"
+        },
+        {
+          "name": "creator",
+          "label": "Creator",
+          "type": "text"
+        },
+        {
+          "name": "publisher",
+          "label": "Publisher",
+          "type": "text"
+        },
+        {
+          "name": "license",
+          "label": "License",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "technical",
+      "title": "Technical Details",
+      "fields": [
+        {
+          "name": "encodingFormat",
+          "label": "Encoding Format",
+          "type": "text"
+        },
+        {
+          "name": "contentSize",
+          "label": "Content Size",
+          "type": "text"
+        },
+        {
+          "name": "url",
+          "label": "URL",
+          "type": "text"
+        },
+        {
+          "name": "contentUrl",
+          "label": "Content URL",
+          "type": "text"
+        }
+      ]
+    }
+  ]
+}

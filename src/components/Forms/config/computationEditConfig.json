@@ -1,0 +1,72 @@
+{
+  "type": "Computation",
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Basic Information",
+      "fields": [
+        {
+          "name": "@id",
+          "label": "Identifier",
+          "type": "text",
+          "required": true,
+          "readonly": true
+        },
+        {
+          "name": "name",
+          "label": "Name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "description",
+          "label": "Description",
+          "type": "textarea",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "execution",
+      "title": "Execution Details",
+      "fields": [
+        {
+          "name": "runBy",
+          "label": "Run By",
+          "type": "text"
+        },
+        {
+          "name": "dateCreated",
+          "label": "Date Created",
+          "type": "date"
+        },
+        {
+          "name": "command",
+          "label": "Command",
+          "type": "text"
+        },
+        {
+          "name": "usedSoftware",
+          "label": "Used Software",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "title": "Data Relations",
+      "fields": [
+        {
+          "name": "usedDataset",
+          "label": "Used Dataset",
+          "type": "text"
+        },
+        {
+          "name": "generated",
+          "label": "Generated",
+          "type": "text"
+        }
+      ]
+    }
+  ]
+}

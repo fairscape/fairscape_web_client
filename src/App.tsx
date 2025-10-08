@@ -11,6 +11,7 @@ import CompareSearchPage from "./pages/CompareSearchPage";
 import MetadataDisplayPage from "./pages/MetadataDisplayPage";
 import EvidenceGraphPage from "./pages/EvidenceGraphPage";
 import CreateRelease from "./pages/CreateReleasePage";
+import EditIdentifierPage from "./pages/EditIdentifierPage";
 import { theme } from "./styles/theme";
 import { GlobalStyle } from "./styles/GlobalStyles";
 import DataverseTokensPage from "./pages/DataverseTokensPage";
@@ -35,6 +36,7 @@ function App() {
               <Route path="/search/basic" element={<BasicSearchPage />} />
               <Route path="/compare" element={<CompareSearchPage />} />
               <Route path="/view/*" element={<MetadataDisplayPage />} />
+              <Route path="/edit/*" element={<EditIdentifierPage />} />
               <Route path="/evidence/*" element={<EvidenceGraphPage />} />
               <Route path="/create-release" element={<CreateRelease />} />
               <Route path="/tokens" element={<DataverseTokensPage />} />
@@ -45,7 +47,6 @@ function App() {
                 path="/ai-readiness"
                 element={<AIReadinessDefinitionsPage />}
               />
-
               <Route
                 path="*"
                 element={
