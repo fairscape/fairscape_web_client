@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { FiChevronRight, FiChevronDown } from "react-icons/fi";
+import { FiChevronRight, FiChevronDown, FiInfo } from "react-icons/fi";
 import { Card, FormField, TextAreaField } from "../ReleaseComponents";
+import KeywordSelector from "../Release/KeywordSelector";
 
 interface EditConfig {
   type: string;
@@ -15,6 +16,7 @@ interface EditConfig {
       required?: boolean;
       readonly?: boolean;
       placeholder?: string;
+      description?: string;
     }>;
   }>;
 }
@@ -38,6 +40,7 @@ const EditFormManager: React.FC<EditFormManagerProps> = ({
       {}
     )
   );
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   const toggleSection = (sectionId: string) => {
     setCollapsedSections((prev) => ({
@@ -60,6 +63,40 @@ const EditFormManager: React.FC<EditFormManagerProps> = ({
     ).length;
 
     return { filledFields, totalFields, filledRequired, requiredFields };
+  };
+
+  const renderField = (field: any) => {
+    if (field.type === "keywords") {
+      return (
+        <KeywordSelector
+          key={field.name}
+          value={formData[field.name] || ""}
+          onChange={(value) => onFieldChange(field.name, value)}
+          required={field.required}
+        />
+      );
+    }
+
+    const commonProps = {
+      label: field.label,
+      name: field.name,
+      value: formData[field.name] || "",
+      onChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      ) => onFieldChange(field.name, e.target.value),
+      placeholder: field.placeholder,
+      required: field.required,
+    };
+
+    if (field.type === "textarea") {
+      return <TextAreaField {...commonProps} />;
+    }
+
+    if (field.type === "identifier_list") {
+      return <FormField {...commonProps} type="text" />;
+    }
+
+    return <FormField {...commonProps} type={field.type} />;
   };
 
   return (
@@ -89,30 +126,20 @@ const EditFormManager: React.FC<EditFormManagerProps> = ({
               <SectionContent>
                 {section.fields.map((field: any) => (
                   <FieldWrapper key={field.name}>
-                    {field.type === "textarea" ? (
-                      <TextAreaField
-                        label={field.label}
-                        name={field.name}
-                        value={formData[field.name] || ""}
-                        onChange={(e) =>
-                          onFieldChange(field.name, e.target.value)
-                        }
-                        placeholder={field.placeholder}
-                        required={field.required}
-                      />
-                    ) : (
-                      <FormField
-                        label={field.label}
-                        name={field.name}
-                        type={field.type}
-                        value={formData[field.name] || ""}
-                        onChange={(e) =>
-                          onFieldChange(field.name, e.target.value)
-                        }
-                        placeholder={field.placeholder}
-                        required={field.required}
-                      />
+                    {field.description && (
+                      <InfoIconWrapper>
+                        <InfoIcon
+                          onMouseEnter={() => setActiveTooltip(field.name)}
+                          onMouseLeave={() => setActiveTooltip(null)}
+                        >
+                          <FiInfo />
+                        </InfoIcon>
+                        {activeTooltip === field.name && (
+                          <Tooltip>{field.description}</Tooltip>
+                        )}
+                      </InfoIconWrapper>
                     )}
+                    {renderField(field)}
                     {field.readonly && (
                       <ReadonlyNote>This field cannot be edited</ReadonlyNote>
                     )}
@@ -183,6 +210,54 @@ const ReadonlyNote = styled.div`
   color: ${({ theme }) => theme.colors.textSecondary};
   margin-top: 4px;
   font-style: italic;
+`;
+
+const InfoIconWrapper = styled.div`
+  position: absolute;
+  right: 5px;
+  top: 8px;
+  z-index: 10;
+`;
+
+const InfoIcon = styled.div`
+  width: 16px;
+  height: 16px;
+  cursor: help;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #3e7aa8;
+  }
+`;
+
+const Tooltip = styled.div`
+  position: absolute;
+  right: 25px;
+  top: -5px;
+  background: #333;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 13px;
+  width: 300px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  line-height: 1.4;
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: -8px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid #333;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+  }
 `;
 
 export default EditFormManager;

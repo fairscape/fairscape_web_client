@@ -23,12 +23,19 @@
           "label": "Description",
           "type": "textarea",
           "required": true
-        },
+        }
+      ]
+    },
+    {
+      "id": "keywords",
+      "title": "Keywords",
+      "fields": [
         {
           "name": "keywords",
           "label": "Keywords",
-          "type": "text",
-          "placeholder": "Comma-separated keywords"
+          "type": "keywords",
+          "required": false,
+          "placeholder": "Type to search ontology terms or add custom keywords"
         }
       ]
     },
@@ -39,22 +46,26 @@
         {
           "name": "version",
           "label": "Version",
-          "type": "text"
+          "type": "text",
+          "required": false
         },
         {
           "name": "dateCreated",
           "label": "Date Created",
-          "type": "date"
+          "type": "date",
+          "required": false
         },
         {
           "name": "dateModified",
           "label": "Date Modified",
-          "type": "date"
+          "type": "date",
+          "required": false
         },
         {
           "name": "datePublished",
           "label": "Date Published",
-          "type": "date"
+          "type": "date",
+          "required": false
         }
       ]
     },
@@ -65,17 +76,20 @@
         {
           "name": "author",
           "label": "Author",
-          "type": "text"
+          "type": "text",
+          "required": true
         },
         {
           "name": "maintainer",
           "label": "Maintainer",
-          "type": "text"
+          "type": "text",
+          "required": false
         },
         {
           "name": "license",
           "label": "License",
-          "type": "text"
+          "type": "text",
+          "required": false
         }
       ]
     },
@@ -84,24 +98,49 @@
       "title": "Technical Details",
       "fields": [
         {
+          "name": "fileFormat",
+          "label": "File Format (MIME type)",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., text/x-python, application/javascript"
+        },
+        {
           "name": "programmingLanguage",
           "label": "Programming Language",
-          "type": "text"
+          "type": "text",
+          "required": false
         },
         {
           "name": "runtimePlatform",
           "label": "Runtime Platform",
-          "type": "text"
+          "type": "text",
+          "required": false
         },
         {
           "name": "codeRepository",
           "label": "Code Repository",
-          "type": "text"
+          "type": "text",
+          "required": false
         },
         {
           "name": "applicationCategory",
           "label": "Application Category",
-          "type": "text"
+          "type": "text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "provenance",
+      "title": "Provenance",
+      "fields": [
+        {
+          "name": "usedByComputation",
+          "label": "Used By Computations",
+          "type": "identifier_list",
+          "required": false,
+          "placeholder": "ARK IDs of Computations that used this software (comma-separated)",
+          "description": "List of Computation identifiers that used this software"
         }
       ]
     }
