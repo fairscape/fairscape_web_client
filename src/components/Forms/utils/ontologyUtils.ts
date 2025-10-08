@@ -1,4 +1,4 @@
-const BIOPORTAL_API_KEY = "42d5f4e9-ec06-470e-826d-f11a159815c6";
+const BIOPORTAL_API_KEY = "FAKE-TOKEN";
 const BIOPORTAL_BASE_URL = "https://data.bioontology.org";
 
 interface OntologyResult {
