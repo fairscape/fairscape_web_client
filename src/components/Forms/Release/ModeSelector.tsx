@@ -10,23 +10,16 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onModeSelect }) => {
     <ChoiceContainer>
       <ChoiceCard onClick={() => onModeSelect("new")}>
         <ChoiceIcon>📝</ChoiceIcon>
-        <ChoiceTitle>Start New Release</ChoiceTitle>
+        <ChoiceTitle>Start/Edit a Release</ChoiceTitle>
         <ChoiceDescription>
-          Create a new release from scratch with optional AI assistance
-        </ChoiceDescription>
-      </ChoiceCard>
-
-      <ChoiceCard onClick={() => onModeSelect("edit")}>
-        <ChoiceIcon>📁</ChoiceIcon>
-        <ChoiceTitle>Create a New Release from Existing </ChoiceTitle>
-        <ChoiceDescription>
-          Upload and modify an existing ro-crate-metadata.json file
+          Create a new release from scratch with optional AI assistance or edit
+          an existing release.
         </ChoiceDescription>
       </ChoiceCard>
 
       <ChoiceCard onClick={() => onModeSelect("review")}>
         <ChoiceIcon>✅</ChoiceIcon>
-        <ChoiceTitle>Review Existing Release</ChoiceTitle>
+        <ChoiceTitle>Review an Existing Release</ChoiceTitle>
         <ChoiceDescription>
           Review and approve a release draft
         </ChoiceDescription>

@@ -15,6 +15,7 @@ import {
   SelectField,
 } from "./ReleaseComponents";
 import SubCrateManager from "./SubCrateManager";
+import KeywordSelector from "./KeywordSelector";
 
 interface FormManagerProps {
   formData: any;
@@ -135,7 +136,13 @@ const FormManager: React.FC<FormManagerProps> = ({
                         )}
                       </InfoIconWrapper>
                     )}
-                    {field.type === "textarea" ? (
+                    {field.name === "keywords" ? (
+                      <KeywordSelector
+                        value={formData[field.name] || ""}
+                        onChange={(value) => onFieldChange(field.name, value)}
+                        required={field.required}
+                      />
+                    ) : field.type === "textarea" ? (
                       <TextAreaField
                         label={field.label}
                         name={field.name}

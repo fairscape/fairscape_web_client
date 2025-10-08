@@ -23,13 +23,6 @@ const EditSelectionPage: React.FC<EditSelectionPageProps> = ({
 
   return (
     <>
-      <Header>
-        <BackButton onClick={onBack}>
-          <FiArrowLeft /> Back to Main Menu
-        </BackButton>
-        <Title>{title}</Title>
-      </Header>
-
       <EditContent>
         <UploadSection>
           <Card>
