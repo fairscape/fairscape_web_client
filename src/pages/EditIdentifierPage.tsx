@@ -19,6 +19,7 @@ import {
 import datasetConfig from "../components/Forms/config/datasetEditConfig.json";
 import softwareConfig from "../components/Forms/config/softwareEditConfig.json";
 import computationConfig from "../components/Forms/config/computationEditConfig.json";
+import roCrateConfig from "../components/Forms/config/releaseFormConfig.json";
 
 interface FormData {
   [key: string]: any;
@@ -104,6 +105,8 @@ const EditIdentifierPage: React.FC = () => {
 
     if (lowerType.includes("software")) return softwareConfig;
     if (lowerType.includes("computation")) return computationConfig;
+    if (lowerType.includes("rocrate")) return roCrateConfig;
+
     return datasetConfig;
   };
 
@@ -131,7 +134,12 @@ const EditIdentifierPage: React.FC = () => {
   const handleUpdate = async () => {
     setUpdateStatus("updating");
 
-    const payload = generateUpdatePayload(formData, extraFields, metadata);
+    const payload = generateUpdatePayload(
+      formData,
+      extraFields,
+      metadata,
+      config
+    );
 
     try {
       await editApi.updateMetadata(arkId, payload);

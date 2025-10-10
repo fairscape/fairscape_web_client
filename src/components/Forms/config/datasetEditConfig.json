@@ -104,7 +104,7 @@
       "title": "Technical Details",
       "fields": [
         {
-          "name": "encodingFormat",
+          "name": "format",
           "label": "Encoding Format (MIME type)",
           "type": "text",
           "required": true,
