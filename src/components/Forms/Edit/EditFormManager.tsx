@@ -156,7 +156,6 @@ const EditFormManager: React.FC<EditFormManagerProps> = ({
 
 const FormSection = styled(Card)`
   margin-bottom: 20px;
-  overflow: hidden;
 `;
 
 const SectionHeader = styled.div<{ collapsed?: boolean }>`

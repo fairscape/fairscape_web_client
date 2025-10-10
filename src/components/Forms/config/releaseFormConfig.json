@@ -103,7 +103,7 @@
         {
           "name": "keywords",
           "label": "Keywords",
-          "type": "text",
+          "type": "keywords",
           "required": true,
           "placeholder": "Comma-separated keywords (e.g., genomics, AI, cell maps)"
         }

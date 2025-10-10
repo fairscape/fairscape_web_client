@@ -8,6 +8,7 @@ interface OntologyResult {
   source: string;
   definition: string;
   uri: string;
+  preferred: boolean;
 }
 
 interface KeywordSelectorProps {
@@ -160,9 +161,17 @@ const KeywordSelector: React.FC<KeywordSelectorProps> = ({
               <DropdownItem
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
+                $preferred={suggestion.preferred}
               >
-                <TermName>{suggestion.term}</TermName>
-                <TermSource>{suggestion.source}</TermSource>
+                <TermName>
+                  {suggestion.term}
+                  {suggestion.preferred && (
+                    <PreferredBadge>Preferred</PreferredBadge>
+                  )}
+                </TermName>
+                <TermSource $preferred={suggestion.preferred}>
+                  {suggestion.source}
+                </TermSource>
                 <TermDefinition>{suggestion.definition}</TermDefinition>
               </DropdownItem>
             ))}
@@ -277,14 +286,17 @@ const Dropdown = styled.div`
   margin-top: -1px;
 `;
 
-const DropdownItem = styled.div`
+const DropdownItem = styled.div<{ $preferred: boolean }>`
   padding: 12px;
   cursor: pointer;
   border-bottom: 1px solid #f0f0f0;
   transition: background 0.15s;
+  background: ${(props) => (props.$preferred ? "#f0f8ff" : "white")};
+  border-left: ${(props) =>
+    props.$preferred ? "3px solid #3e7aa8" : "3px solid transparent"};
 
   &:hover {
-    background: #f8f9fa;
+    background: ${(props) => (props.$preferred ? "#e6f3ff" : "#f8f9fa")};
   }
 
   &:last-child {
@@ -296,12 +308,25 @@ const TermName = styled.div`
   font-weight: 600;
   color: #333;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
-const TermSource = styled.div`
-  font-size: 11px;
+const PreferredBadge = styled.span`
+  font-size: 10px;
+  font-weight: 700;
   color: #3e7aa8;
-  font-weight: 600;
+  background: #d4e8f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+`;
+
+const TermSource = styled.div<{ $preferred: boolean }>`
+  font-size: 11px;
+  color: ${(props) => (props.$preferred ? "#2d5a7b" : "#3e7aa8")};
+  font-weight: ${(props) => (props.$preferred ? "700" : "600")};
   text-transform: uppercase;
   margin-bottom: 4px;
 `;
