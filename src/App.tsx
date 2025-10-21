@@ -38,7 +38,7 @@ function App() {
               <Route path="/view/*" element={<MetadataDisplayPage />} />
               <Route path="/edit/*" element={<EditIdentifierPage />} />
               <Route path="/evidence/*" element={<EvidenceGraphPage />} />
-              <Route path="/create-release" element={<CreateRelease />} />
+              <Route path="/review" element={<CreateRelease />} />
               <Route path="/tokens" element={<DataverseTokensPage />} />
               <Route path="/create-rocrate" element={<CreateRocratePage />} />
               <Route path="/about" element={<AboutPage />} />

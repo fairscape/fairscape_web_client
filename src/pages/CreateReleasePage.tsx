@@ -5,13 +5,13 @@ import { PageContainer } from "../components/Forms/ReleaseComponents";
 import {
   parseRoCrateMetadata,
   generateReleaseJson,
-  mockLLMCall,
 } from "../components/Forms/utils/releaseUtils";
 import {
   saveCrate,
   checkCrateExists,
   loadCrate,
 } from "../components/Forms/utils/storageUtils";
+import { useLLMAssistApi } from "../components/Forms/api/llmAssistApi";
 import ModeSelector from "../components/Forms/Release/ModeSelector";
 import FormManager from "../components/Forms/Release/FormManager";
 import DocumentUploader from "../components/Forms/Release/DocumentUploader";
@@ -36,6 +36,8 @@ interface ReviewState {
 }
 
 const CreateRelease: React.FC = () => {
+  const llmApi = useLLMAssistApi();
+
   const [mode, setMode] = useState<
     "choice" | "new" | "edit" | "review" | "form"
   >("choice");
@@ -148,7 +150,7 @@ const CreateRelease: React.FC = () => {
   const handleLLMAssist = async (documents: UploadedFile[]) => {
     setIsLoadingLLM(true);
     try {
-      const suggestedData = await mockLLMCall(documents);
+      const suggestedData = await llmApi.processDocuments(documents);
       setFormData((prev) => ({
         ...prev,
         ...suggestedData,
