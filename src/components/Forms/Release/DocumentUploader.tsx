@@ -6,7 +6,7 @@ import SavedCrateSelector from "./SavedCrateSelector";
 
 interface UploadedFile {
   name: string;
-  content: string;
+  content: File;
 }
 
 interface DocumentUploaderProps {
@@ -35,12 +35,10 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const files = Array.from(e.target.files || []);
-    const newDocs: UploadedFile[] = [];
-
-    for (const file of files) {
-      const content = await file.text();
-      newDocs.push({ name: file.name, content });
-    }
+    const newDocs: UploadedFile[] = files.map((file) => ({
+      name: file.name,
+      content: file,
+    }));
 
     onDocsChange([...supportingDocs, ...newDocs]);
   };

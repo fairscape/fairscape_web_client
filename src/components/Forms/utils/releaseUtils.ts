@@ -446,32 +446,130 @@ export function generateReleaseJson(formData: FormData): any {
 export async function mockLLMCall(
   documents: UploadedFile[]
 ): Promise<FormData> {
-  console.log(
-    "Mock LLM processing documents:",
-    documents.map((d) => d.name)
-  );
+  const API_URL = "http://localhost:5005";
 
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const formData = new FormData();
+  documents.forEach((doc) => {
+    formData.append("files", doc.content, doc.name);
+  });
 
-  const suggestedData: FormData = {
-    name: "AI-Suggested Dataset Release",
-    description:
-      "This is a mock AI-generated description based on the uploaded documents. In production, this would analyze your documents and suggest appropriate metadata.",
-    keywords: "machine learning, dataset, artificial intelligence, research",
-    organizationName: "Research Organization",
-    projectName: "AI Research Project",
-    author: "Research Team",
-    principalInvestigator: "Dr. Example Researcher",
-    contactEmail: "research@example.org",
-    "rai:dataUseCases":
-      "Training machine learning models, academic research, benchmarking",
-    "rai:dataLimitations":
-      "Limited to specific domain, may not generalize to other contexts",
-    "rai:dataBiases": "Sample selection bias may be present",
-    "rai:dataReleaseMaintenancePlan": "Quarterly updates planned through 2026",
-  };
+  const submitResponse = await fetch(`${API_URL}/submit`, {
+    method: "POST",
+    body: formData,
+  });
 
-  return suggestedData;
+  if (!submitResponse.ok) {
+    throw new Error("Failed to submit files for processing");
+  }
+
+  const { task_id } = await submitResponse.json();
+
+  while (true) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    const statusResponse = await fetch(`${API_URL}/status/${task_id}`);
+    if (!statusResponse.ok) {
+      throw new Error("Failed to check task status");
+    }
+
+    const statusData = await statusResponse.json();
+
+    if (statusData.status === "completed") {
+      const resultResponse = await fetch(`${API_URL}/result/${task_id}`);
+      if (!resultResponse.ok) {
+        throw new Error("Failed to retrieve result");
+      }
+
+      const resultData = await resultResponse.json();
+      const roCrateJson = JSON.parse(resultData.result);
+
+      const datasetNode = roCrateJson["@graph"][1];
+
+      const parsedFormData: FormData = {
+        name: datasetNode.name || "",
+        description: datasetNode.description || "",
+        version: datasetNode.version || "1.0",
+        license: datasetNode.license || "",
+        author: datasetNode.author || "",
+        keywords: Array.isArray(datasetNode.keywords)
+          ? datasetNode.keywords.join(", ")
+          : "",
+        associatedPublication: Array.isArray(datasetNode.associatedPublication)
+          ? datasetNode.associatedPublication.join("\n")
+          : datasetNode.associatedPublication || "",
+        conditionsOfAccess: datasetNode.conditionsOfAccess || "",
+        copyrightNotice: datasetNode.copyrightNotice || "",
+        "rai:dataCollection": datasetNode["rai:dataCollection"] || "",
+        "rai:dataCollectionType": Array.isArray(
+          datasetNode["rai:dataCollectionType"]
+        )
+          ? datasetNode["rai:dataCollectionType"].join(", ")
+          : "",
+        "rai:dataCollectionMissingData":
+          datasetNode["rai:dataCollectionMissingData"] || "",
+        "rai:dataCollectionRawData":
+          datasetNode["rai:dataCollectionRawData"] || "",
+        "rai:dataCollectionTimeframe": Array.isArray(
+          datasetNode["rai:dataCollectionTimeframe"]
+        )
+          ? datasetNode["rai:dataCollectionTimeframe"].join(", ")
+          : "",
+        "rai:dataImputationProtocol":
+          datasetNode["rai:dataImputationProtocol"] || "",
+        "rai:dataManipulationProtocol":
+          datasetNode["rai:dataManipulationProtocol"] || "",
+        "rai:dataPreprocessingProtocol": Array.isArray(
+          datasetNode["rai:dataPreprocessingProtocol"]
+        )
+          ? datasetNode["rai:dataPreprocessingProtocol"].join(", ")
+          : "",
+        "rai:dataAnnotationProtocol":
+          datasetNode["rai:dataAnnotationProtocol"] || "",
+        "rai:dataAnnotationPlatform": Array.isArray(
+          datasetNode["rai:dataAnnotationPlatform"]
+        )
+          ? datasetNode["rai:dataAnnotationPlatform"].join(", ")
+          : "",
+        "rai:dataAnnotationAnalysis": Array.isArray(
+          datasetNode["rai:dataAnnotationAnalysis"]
+        )
+          ? datasetNode["rai:dataAnnotationAnalysis"].join(", ")
+          : "",
+        "rai:dataReleaseMaintenancePlan":
+          datasetNode["rai:dataReleaseMaintenancePlan"] || "",
+        "rai:personalSensitiveInformation": Array.isArray(
+          datasetNode["rai:personalSensitiveInformation"]
+        )
+          ? datasetNode["rai:personalSensitiveInformation"].join(", ")
+          : "",
+        "rai:dataSocialImpact": datasetNode["rai:dataSocialImpact"] || "",
+        "rai:dataBiases": Array.isArray(datasetNode["rai:dataBiases"])
+          ? datasetNode["rai:dataBiases"].join(", ")
+          : "",
+        "rai:dataLimitations": Array.isArray(datasetNode["rai:dataLimitations"])
+          ? datasetNode["rai:dataLimitations"].join(", ")
+          : "",
+        "rai:dataUseCases": Array.isArray(datasetNode["rai:dataUseCases"])
+          ? datasetNode["rai:dataUseCases"].join(", ")
+          : "",
+        "rai:annotationsPerItem": datasetNode["rai:annotationsPerItem"] || "",
+        "rai:annotatorDemographics": Array.isArray(
+          datasetNode["rai:annotatorDemographics"]
+        )
+          ? datasetNode["rai:annotatorDemographics"].join(", ")
+          : "",
+        "rai:machineAnnotationTools": Array.isArray(
+          datasetNode["rai:machineAnnotationTools"]
+        )
+          ? datasetNode["rai:machineAnnotationTools"].join(", ")
+          : "",
+      };
+
+      return parsedFormData;
+    } else if (statusData.status === "failed") {
+      throw new Error(`Processing failed: ${statusData.error}`);
+    }
+  }
 }
 
 export function generateSubCrateId(name: string): string {
