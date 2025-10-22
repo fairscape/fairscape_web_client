@@ -49,6 +49,9 @@ export function useMetadataBundle(ark: string) {
           turtle = await metadataApi.getTurtle(ark);
         } catch {}
 
+        const permissions = mainResp?.permissions;
+        const distribution = mainResp?.distribution;
+
         const initialBundle: MetadataBundle = {
           kind,
           main,
@@ -56,6 +59,8 @@ export function useMetadataBundle(ark: string) {
           evidence: kind === "release" ? undefined : { status: "building" },
           serializations: { json: main, rdfXml, turtle },
           session: { isLoggedIn: !!isLoggedIn },
+          permissions,
+          distribution,
         };
 
         if (!cancelled) {

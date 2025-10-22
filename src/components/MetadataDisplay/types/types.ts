@@ -2,8 +2,8 @@ export type EvidenceStatus = "ready" | "building" | "failed";
 
 export interface EvidenceInfo {
   id?: string;
-  data?: any; 
-  supportData?: any; 
+  data?: any;
+  supportData?: any;
   status: EvidenceStatus;
   error?: string;
 }
@@ -18,6 +18,18 @@ export interface SessionInfo {
   isLoggedIn: boolean;
 }
 
+export interface Permissions {
+  owner?: string;
+  group?: string;
+}
+
+export interface Distribution {
+  distributionType?: string;
+  location?: {
+    path?: string;
+  };
+}
+
 export interface MetadataBundle {
   kind: string;
   main: any;
@@ -25,4 +37,6 @@ export interface MetadataBundle {
   evidence?: EvidenceInfo;
   serializations?: Serializations;
   session: SessionInfo;
+  permissions?: Permissions;
+  distribution?: Distribution;
 }
