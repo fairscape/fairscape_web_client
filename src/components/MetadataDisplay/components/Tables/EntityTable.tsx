@@ -116,8 +116,7 @@ const EntityTable: React.FC<EntityTableProps> = ({
   const [alertMessage, setAlertMessage] = useState("");
 
   const feUrl = window.location.origin + "/view/";
-  const apiUrl =
-    window.API_URL;
+  const apiUrl = window.API_URL;
 
   const getToken = () => {
     return localStorage.getItem("token") || "";
@@ -194,41 +193,58 @@ const EntityTable: React.FC<EntityTableProps> = ({
   }
 
   const renderContentStatus = (item: EntityItem) => {
-    if (item.contentStatus === "Download" && item.contentUrl) {
-      const url = Array.isArray(item.contentUrl)
-        ? item.contentUrl[0]
-        : item.contentUrl;
+    // Normalize URL if present
+    const rawUrl = Array.isArray(item.contentUrl)
+      ? item.contentUrl[0]
+      : item.contentUrl;
 
-      const rocrateDowloadPattern = new RegExp(`^${apiUrl}.*?download/`);
+    // Regex for API-backed downloads
+    const rocrateDowloadPattern = new RegExp(`^${apiUrl}.*?download/`);
 
-      if (rocrateDowloadPattern.test(url)) {
-        return (
-          <>
-            <StyledLink
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                handleDownload(url);
-              }}
-              data-testid="entity-download-link"
-            >
-              Download
-            </StyledLink>
-          </>
-        );
-      } else {
+    if (item.contentStatus === "Download" && rawUrl) {
+      if (rocrateDowloadPattern.test(rawUrl)) {
         return (
           <StyledLink
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              handleDownload(rawUrl);
+            }}
             data-testid="entity-download-link"
+            title={rawUrl}
           >
             Download
           </StyledLink>
         );
       }
+      return (
+        <StyledLink
+          href={rawUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="entity-download-link"
+          title={rawUrl}
+        >
+          Download
+        </StyledLink>
+      );
     }
+
+    // When External, show a link labeled "Content" instead of the full URL
+    if (item.contentStatus === "External" && rawUrl) {
+      return (
+        <StyledLink
+          href={rawUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="entity-access-link"
+          title={rawUrl}
+        >
+          Content
+        </StyledLink>
+      );
+    }
+
     return item.contentStatus;
   };
 
