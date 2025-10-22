@@ -10,6 +10,7 @@ import GenericMetadataComponent from "../components/MetadataDisplay/views/Generi
 import SerializationView from "../components/MetadataDisplay/views/Serialization/SerializationView";
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 import MetadataNavigationSidebar from "../components/MetadataDisplay/components/MetadataNavigationSidebar";
+import AIReadyScoreView from "../components/MetadataDisplay/views/AIReadyScore/AIReadyScoreView";
 
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
 import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
@@ -203,13 +204,7 @@ export default function MetadataDisplayPage() {
       }
 
       case "score":
-        return (
-          <Alert
-            type="info"
-            title="AI-Ready Score"
-            message="AI-Ready Score view coming soon."
-          />
-        );
+        return <AIReadyScoreView arkId={arkId} />;
 
       default:
         return (
