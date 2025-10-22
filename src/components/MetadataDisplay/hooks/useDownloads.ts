@@ -16,7 +16,7 @@ export function useDownloads({
 
   const downloadZip = useCallback(async () => {
     try {
-      const response = await fetch(`/api/rocrate/download/${arkId}`, {
+      const response = await http(`/rocrate/download/${arkId}`, {
         credentials: "include",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,

@@ -122,7 +122,7 @@ export default function MetadataNavigationSidebar({
                     </DropdownItem>
                   </>
                 )}
-                <DropdownItem onClick={downloadZip}>Data ZIP</DropdownItem>
+                <DropdownItem onClick={downloadZip}>Data</DropdownItem>
               </DropdownMenu>
             )}
           </DownloadSection>
