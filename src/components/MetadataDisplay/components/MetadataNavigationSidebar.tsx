@@ -44,7 +44,7 @@ export default function MetadataNavigationSidebar({
   const showScoreView = bundleKind === "release" || bundleKind === "rocrate";
   const showAdvancedDownloads =
     bundleKind === "release" || bundleKind === "rocrate";
-  
+
   const showDataDownload =
     (bundleKind === "rocrate" && hasDistribution) ||
     (bundleKind !== "rocrate" && bundleKind !== "release" && hasContentUrl);
@@ -52,6 +52,11 @@ export default function MetadataNavigationSidebar({
   const handleEdit = () => {
     window.location.href = `/edit/${arkId}`;
   };
+
+  const isRoCrateLike = bundleKind === "release" || bundleKind === "rocrate";
+  const capitalize = (s: string) =>
+    s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  const kindLabel = isRoCrateLike ? "RO-Crate" : capitalize(bundleKind);
 
   return (
     <SidebarContainer>
@@ -118,7 +123,7 @@ export default function MetadataNavigationSidebar({
             {downloadOpen && (
               <DropdownMenu>
                 <DropdownItem onClick={downloadJSON}>
-                  RO-Crate JSON
+                  {kindLabel} JSON
                 </DropdownItem>
                 {showAdvancedDownloads && (
                   <>
@@ -131,7 +136,11 @@ export default function MetadataNavigationSidebar({
                   </>
                 )}
                 {showDataDownload && (
-                  <DropdownItem onClick={downloadZip}>Data</DropdownItem>
+                  <DropdownItem onClick={downloadZip}>
+                    {isRoCrateLike
+                      ? "RO-Crate Zip"
+                      : `${capitalize(bundleKind)} Data`}
+                  </DropdownItem>
                 )}
               </DropdownMenu>
             )}
