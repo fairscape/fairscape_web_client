@@ -391,18 +391,6 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
   const tabs = generateTabs();
 
-  let effectiveDownloadUrl = "";
-  let isExternalLink = false;
-  let requiresApiCall = false;
-
-  if (overviewData?.contentUrl && overviewData.contentUrl !== "Embargoed") {
-    effectiveDownloadUrl = overviewData.contentUrl;
-    isExternalLink = true;
-  } else if (arkId && apiUrl) {
-    effectiveDownloadUrl = `${apiUrl}/rocrate/download/${arkId}`;
-    requiresApiCall = true;
-  }
-
   return (
     <Container>
       {overviewData && (

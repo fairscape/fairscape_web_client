@@ -105,7 +105,6 @@ export default function MetadataDisplayPage() {
 
   const [view, setView] = useState<ViewType>("metadata");
   const { bundle, loading, error } = useMetadataBundle(arkId);
-  console.log("MetadataDisplayPage bundle:", bundle);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const { downloadZip, downloadJSON, downloadCroissant, downloadHTML } =
