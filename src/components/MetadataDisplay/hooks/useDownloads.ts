@@ -16,16 +16,11 @@ export function useDownloads({
 
   const downloadZip = useCallback(async () => {
     try {
-      const response = await http(`/rocrate/download/${arkId}`, {
+      const blob = await http(`/rocrate/download/${arkId}`, {
         credentials: "include",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        responseType: "blob",
       });
 
-      if (!response.ok) throw new Error("Download failed");
-
-      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -35,7 +30,7 @@ export function useDownloads({
     } catch (error) {
       console.error("Error downloading ZIP:", error);
     }
-  }, [arkId]);
+  }, [arkId, http]);
 
   const downloadJSON = useCallback(async () => {
     try {

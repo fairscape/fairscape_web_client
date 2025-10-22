@@ -9,6 +9,7 @@ export interface HttpOptions {
   body?: any;
   signal?: AbortSignal;
   credentials?: RequestCredentials;
+  responseType?: "json" | "text" | "blob";
 }
 
 function merge(a?: Record<string, string>, b?: Record<string, string>) {
@@ -21,7 +22,14 @@ export function useHttp() {
   const http = useCallback(
     async (path: string, options: HttpOptions = {}) => {
       const url = path.startsWith("http") ? path : `${API_URL}${path}`;
-      const { body, headers, method = "GET", signal, credentials } = options;
+      const {
+        body,
+        headers,
+        method = "GET",
+        signal,
+        credentials,
+        responseType,
+      } = options;
 
       const auth: Record<string, string> = token
         ? { Authorization: `Bearer ${token}` }
@@ -46,6 +54,10 @@ export function useHttp() {
         const text = await resp.text().catch(() => "");
         throw new Error(`HTTP ${resp.status} ${resp.statusText}: ${text}`);
       }
+
+      if (responseType === "blob") return resp.blob();
+      if (responseType === "text") return resp.text();
+
       const contentType = resp.headers.get("content-type") || "";
       if (contentType.includes("application/json")) return resp.json();
       return resp.text();
