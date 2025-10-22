@@ -105,6 +105,7 @@ export default function MetadataDisplayPage() {
 
   const [view, setView] = useState<ViewType>("metadata");
   const { bundle, loading, error } = useMetadataBundle(arkId);
+  console.log("MetadataDisplayPage bundle:", bundle);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const { downloadZip, downloadJSON, downloadCroissant, downloadHTML } =
@@ -118,6 +119,12 @@ export default function MetadataDisplayPage() {
     () => deriveTitleAndVersion(bundle?.rocrate ?? bundle?.main),
     [bundle]
   );
+
+  const metadata = useMemo(() => bundle?.rocrate ?? bundle?.main, [bundle]);
+
+  const hasDistribution = useMemo(() => !!bundle?.distribution, [bundle]);
+
+  const hasContentUrl = useMemo(() => !!metadata?.contentUrl, [metadata]);
 
   useEffect(() => {
     document.title = `${title} - FAIRSCAPE`;
@@ -255,6 +262,8 @@ export default function MetadataDisplayPage() {
             downloadJSON={downloadJSON}
             downloadCroissant={downloadCroissant}
             downloadHTML={downloadHTML}
+            hasDistribution={hasDistribution}
+            hasContentUrl={hasContentUrl}
           />
         )}
       </PageContainer>

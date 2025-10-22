@@ -419,41 +419,6 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
         />
       )}
 
-      {overviewData?.contentUrl === "Embargoed" ? (
-        <ButtonContainer>
-          <DownloadButton
-            href="#"
-            onClick={(e) => e.preventDefault()}
-            data-testid="rocrate-download-button-embargoed"
-            aria-disabled={true}
-            style={{
-              pointerEvents: "none",
-              opacity: 0.7,
-              backgroundColor: "#aaa",
-            }}
-          >
-            Download Embargoed
-          </DownloadButton>
-        </ButtonContainer>
-      ) : effectiveDownloadUrl ? (
-        <ButtonContainer>
-          <DownloadButton
-            href={isExternalLink ? effectiveDownloadUrl : "#"}
-            onClick={(e) => {
-              if (requiresApiCall || !isExternalLink) {
-                e.preventDefault();
-                handleDownload(effectiveDownloadUrl);
-              }
-            }}
-            data-testid="rocrate-download-button"
-            target={isExternalLink ? "_blank" : undefined}
-            rel={isExternalLink ? "noopener noreferrer" : undefined}
-          >
-            Download RO-Crate
-          </DownloadButton>
-        </ButtonContainer>
-      ) : null}
-
       {showAlert && (
         <Alert
           type={alertType}

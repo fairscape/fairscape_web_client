@@ -16,21 +16,43 @@ export function useDownloads({
 
   const downloadZip = useCallback(async () => {
     try {
-      const blob = await http(`/rocrate/download/${arkId}`, {
-        credentials: "include",
-        responseType: "blob",
-      });
+      const metadata = bundle?.rocrate ?? bundle?.main;
+      const hasDistribution = !!bundle?.distribution;
+      const contentUrl = metadata?.contentUrl;
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${arkId.replace(/[:/]/g, "_")}.zip`;
-      link.click();
-      URL.revokeObjectURL(url);
+      if (bundle?.kind === "rocrate" && hasDistribution) {
+        const blob = await http(`/rocrate/download/${arkId}`, {
+          credentials: "include",
+          responseType: "blob",
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${arkId.replace(/[:/]/g, "_")}.zip`;
+        link.click();
+        URL.revokeObjectURL(url);
+      } else if (contentUrl && hasDistribution) {
+        const blob = await http(contentUrl, {
+          credentials: "include",
+          responseType: "blob",
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        const filename =
+          contentUrl.split("/").pop() || arkId.replace(/[:/]/g, "_");
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+      } else if (contentUrl && !hasDistribution) {
+        window.open(contentUrl, "_blank");
+      }
     } catch (error) {
-      console.error("Error downloading ZIP:", error);
+      console.error("Error downloading data:", error);
     }
-  }, [arkId, http]);
+  }, [arkId, http, bundle]);
 
   const downloadJSON = useCallback(async () => {
     try {

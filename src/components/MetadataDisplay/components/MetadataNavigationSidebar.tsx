@@ -22,6 +22,8 @@ interface MetadataNavigationSidebarProps {
   downloadJSON: () => void;
   downloadCroissant: () => void;
   downloadHTML: () => void;
+  hasDistribution: boolean;
+  hasContentUrl: boolean;
 }
 
 export default function MetadataNavigationSidebar({
@@ -34,12 +36,18 @@ export default function MetadataNavigationSidebar({
   downloadJSON,
   downloadCroissant,
   downloadHTML,
+  hasDistribution,
+  hasContentUrl,
 }: MetadataNavigationSidebarProps) {
   const [downloadOpen, setDownloadOpen] = useState(false);
 
   const showScoreView = bundleKind === "release" || bundleKind === "rocrate";
   const showAdvancedDownloads =
     bundleKind === "release" || bundleKind === "rocrate";
+  
+  const showDataDownload =
+    (bundleKind === "rocrate" && hasDistribution) ||
+    (bundleKind !== "rocrate" && bundleKind !== "release" && hasContentUrl);
 
   const handleEdit = () => {
     window.location.href = `/edit/${arkId}`;
@@ -122,7 +130,9 @@ export default function MetadataNavigationSidebar({
                     </DropdownItem>
                   </>
                 )}
-                <DropdownItem onClick={downloadZip}>Data</DropdownItem>
+                {showDataDownload && (
+                  <DropdownItem onClick={downloadZip}>Data</DropdownItem>
+                )}
               </DropdownMenu>
             )}
           </DownloadSection>
