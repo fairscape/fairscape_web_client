@@ -1,12 +1,5 @@
 import React from "react";
 import styled from "styled-components";
-import {
-  FiDownload,
-  FiSave,
-  FiRefreshCw,
-  FiCheckCircle,
-  FiAlertCircle,
-} from "react-icons/fi";
 
 interface ActionSidebarProps {
   onDownload: () => void;
@@ -15,10 +8,9 @@ interface ActionSidebarProps {
   saveStatus: "idle" | "saving" | "saved" | "error";
   isAllSectionsReviewed: boolean;
   isReviewRequired: boolean;
-  reviewProgress?: {
-    reviewed: number;
-    total: number;
-  };
+  reviewProgress?: { reviewed: number; total: number };
+  visibility: "minimal" | "ai-ready" | "all";
+  onVisibilityChange: (visibility: "minimal" | "ai-ready" | "all") => void;
 }
 
 const ActionSidebar: React.FC<ActionSidebarProps> = ({
@@ -29,197 +21,202 @@ const ActionSidebar: React.FC<ActionSidebarProps> = ({
   isAllSectionsReviewed,
   isReviewRequired,
   reviewProgress,
+  visibility,
+  onVisibilityChange,
 }) => {
-  const getSaveButtonText = () => {
-    switch (saveStatus) {
-      case "saving":
-        return "Saving...";
-      case "saved":
-        return "Saved!";
-      case "error":
-        return "Save Failed";
-      default:
-        return "Save Progress";
-    }
-  };
-
   return (
-    <SidebarContainer>
-      <SidebarContent>
-        <Title>Actions</Title>
+    <Sidebar>
+      <SidebarSection>
+        <SectionTitle>Field Visibility</SectionTitle>
+        <VisibilityToggle>
+          <VisibilityButton
+            active={visibility === "minimal"}
+            onClick={() => onVisibilityChange("minimal")}
+          >
+            Minimal
+          </VisibilityButton>
+          <VisibilityButton
+            active={visibility === "ai-ready"}
+            onClick={() => onVisibilityChange("ai-ready")}
+          >
+            AI-Ready
+          </VisibilityButton>
+          <VisibilityButton
+            active={visibility === "all"}
+            onClick={() => onVisibilityChange("all")}
+          >
+            All Fields
+          </VisibilityButton>
+        </VisibilityToggle>
+        <VisibilityDescription>
+          {visibility === "minimal" && "Showing only required fields"}
+          {visibility === "ai-ready" && "Showing required and AI-ready fields"}
+          {visibility === "all" && "Showing all available fields"}
+        </VisibilityDescription>
+      </SidebarSection>
 
-        {isReviewRequired && reviewProgress && (
-          <ReviewStatusCard complete={isAllSectionsReviewed}>
-            <StatusIcon>
-              {isAllSectionsReviewed ? <FiCheckCircle /> : <FiAlertCircle />}
-            </StatusIcon>
-            <StatusText>
-              {isAllSectionsReviewed ? "Review Complete" : "Review Required"}
-            </StatusText>
-            <ProgressText>
-              {reviewProgress.reviewed} of {reviewProgress.total} sections
-              reviewed
-            </ProgressText>
-          </ReviewStatusCard>
-        )}
+      {isReviewRequired && reviewProgress && (
+        <SidebarSection>
+          <SectionTitle>Review Progress</SectionTitle>
+          <ProgressText>
+            {reviewProgress.reviewed} of {reviewProgress.total} sections
+            reviewed
+          </ProgressText>
+          <ProgressBar>
+            <ProgressFill
+              width={(reviewProgress.reviewed / reviewProgress.total) * 100}
+            />
+          </ProgressBar>
+        </SidebarSection>
+      )}
+
+      <SidebarSection>
+        <ActionButton onClick={onSave} disabled={saveStatus === "saving"}>
+          {saveStatus === "saving" && "Saving..."}
+          {saveStatus === "saved" && "✓ Saved"}
+          {saveStatus === "error" && "Error - Retry"}
+          {saveStatus === "idle" && "Save Progress"}
+        </ActionButton>
 
         <ActionButton
           onClick={onDownload}
-          variant="primary"
-          disabled={isReviewRequired && !isAllSectionsReviewed}
+          disabled={!isAllSectionsReviewed}
+          primary
         >
-          <FiDownload />
-          <ButtonText>
-            {isReviewRequired ? "Download Reviewed" : "Download Release"}
-          </ButtonText>
-          {isReviewRequired && !isAllSectionsReviewed && (
-            <DisabledText>Complete review first</DisabledText>
-          )}
+          Download RO-Crate
         </ActionButton>
 
-        <ActionButton
-          onClick={onSave}
-          variant="secondary"
-          disabled={saveStatus === "saving"}
-        >
-          <FiSave />
-          <ButtonText>{getSaveButtonText()}</ButtonText>
+        <ActionButton onClick={onStartOver} variant="secondary">
+          Start Over
         </ActionButton>
-
-        <Divider />
-
-        <ActionButton onClick={onStartOver} variant="danger">
-          <FiRefreshCw />
-          <ButtonText>Start Over</ButtonText>
-        </ActionButton>
-      </SidebarContent>
-    </SidebarContainer>
+      </SidebarSection>
+    </Sidebar>
   );
 };
 
-const SidebarContainer = styled.div`
-  position: sticky;
-  top: 20px;
-  width: 250px;
-  height: fit-content;
-`;
-
-const SidebarContent = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
-`;
-
-const Title = styled.h3`
-  font-size: 18px;
-  color: #3e7aa8;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #e0e0e0;
-`;
-
-const ReviewStatusCard = styled.div<{ complete: boolean }>`
-  background: ${(props) => (props.complete ? "#d4edda" : "#fff3cd")};
-  border: 1px solid ${(props) => (props.complete ? "#c3e6cb" : "#ffeeba")};
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 20px;
-  text-align: center;
-`;
-
-const StatusIcon = styled.div`
-  font-size: 24px;
-  margin-bottom: 8px;
-  color: ${(props) =>
-    props.children?.props?.children === FiCheckCircle ? "#28a745" : "#ffc107"};
-`;
-
-const StatusText = styled.div`
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
-`;
-
-const ProgressText = styled.div`
-  font-size: 12px;
-  color: #666;
-`;
-
-const ActionButton = styled.button<{ variant: string }>`
-  width: 100%;
+const Sidebar = styled.div`
+  width: 280px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 14px;
-  margin-bottom: 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  gap: 20px;
+  position: sticky;
+  top: 20px;
+`;
+
+const SidebarSection = styled.div`
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+`;
+
+const SectionTitle = styled.h3`
+  font-size: 1rem;
   font-weight: 600;
+  color: #333;
+  margin: 0 0 15px 0;
+`;
+
+const VisibilityToggle = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const VisibilityButton = styled.button<{ active: boolean }>`
+  padding: 10px 16px;
+  border: 2px solid ${(props) => (props.active ? "#3e7aa8" : "#e0e0e0")};
+  background: ${(props) => (props.active ? "#e8f4f8" : "white")};
+  color: ${(props) => (props.active ? "#3e7aa8" : "#666")};
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: ${(props) => (props.active ? "600" : "400")};
+  cursor: pointer;
   transition: all 0.2s;
 
-  ${({ variant }) => {
-    switch (variant) {
-      case "primary":
-        return `
-          background: #3e7aa8;
-          color: white;
-          &:hover:not(:disabled) {
-            background: #2c5f8d;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          }
-        `;
-      case "secondary":
-        return `
-          background: #6c757d;
-          color: white;
-          &:hover:not(:disabled) {
-            background: #5a6268;
-            transform: translateY(-2px);
-          }
-        `;
-      case "danger":
-        return `
-          background: #dc3545;
-          color: white;
-          &:hover {
-            background: #c82333;
-            transform: translateY(-2px);
-          }
-        `;
-      default:
-        return "";
-    }
-  }}
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-  }
-
-  svg {
-    font-size: 20px;
+  &:hover {
+    border-color: #3e7aa8;
+    background: ${(props) => (props.active ? "#e8f4f8" : "#f5f5f5")};
   }
 `;
 
-const ButtonText = styled.span`
-  font-size: 14px;
+const VisibilityDescription = styled.p`
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.4;
 `;
 
-const DisabledText = styled.span`
-  font-size: 11px;
-  opacity: 0.8;
+const ProgressText = styled.p`
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 10px;
 `;
 
-const Divider = styled.hr`
-  margin: 20px 0;
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div<{ width: number }>`
+  width: ${(props) => props.width}%;
+  height: 100%;
+  background: #3e7aa8;
+  transition: width 0.3s;
+`;
+
+const ActionButton = styled.button<{
+  primary?: boolean;
+  variant?: string;
+  disabled?: boolean;
+}>`
+  width: 100%;
+  padding: 12px 20px;
+  margin-bottom: 10px;
   border: none;
-  border-top: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
+  transition: all 0.2s;
+
+  background: ${(props) => {
+    if (props.disabled) return "#e0e0e0";
+    if (props.primary) return "#3e7aa8";
+    if (props.variant === "secondary") return "white";
+    return "#5a9bc4";
+  }};
+
+  color: ${(props) => {
+    if (props.disabled) return "#999";
+    if (props.variant === "secondary") return "#666";
+    return "white";
+  }};
+
+  border: ${(props) =>
+    props.variant === "secondary" ? "2px solid #e0e0e0" : "none"};
+
+  &:hover {
+    ${(props) =>
+      !props.disabled &&
+      `
+      background: ${
+        props.primary
+          ? "#2d5f7f"
+          : props.variant === "secondary"
+          ? "#f5f5f5"
+          : "#4a8aad"
+      };
+      transform: translateY(-1px);
+    `}
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 export default ActionSidebar;

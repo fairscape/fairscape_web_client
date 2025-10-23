@@ -152,7 +152,7 @@
     },
     {
       "id": "classification",
-      "title": "Classification & Keywords",
+      "title": "Keywords",
       "fields": [
         {
           "name": "keywords",
@@ -268,7 +268,7 @@
     },
     {
       "id": "rai",
-      "title": "RAI (Responsible AI)",
+      "title": "Uses Cases, Data Collection, and Limitations",
       "fields": [
         {
           "name": "rai:intendedUse",

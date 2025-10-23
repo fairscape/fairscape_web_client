@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import releaseFormConfig from "../components/Forms/config/releaseFormConfig.json";
+import releaseFormConfig from "../components/Forms/config/rocrateEditConfig.json";
 import { PageContainer } from "../components/Forms/ReleaseComponents";
 import {
   parseRoCrateMetadata,
@@ -12,6 +12,7 @@ import {
   loadCrate,
 } from "../components/Forms/utils/storageUtils";
 import { useLLMAssistApi } from "../components/Forms/api/llmAssistApi";
+import { filterFieldsByVisibility } from "../components/Forms/utils/llmUtils";
 import ModeSelector from "../components/Forms/Release/ModeSelector";
 import FormManager from "../components/Forms/Release/FormManager";
 import DocumentUploader from "../components/Forms/Release/DocumentUploader";
@@ -51,6 +52,9 @@ const CreateRelease: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [fieldVisibility, setFieldVisibility] = useState<
+    "minimal" | "ai-ready" | "all"
+  >("all");
   const crateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -209,6 +213,12 @@ const CreateRelease: React.FC = () => {
     setTimeout(() => setSaveStatus("idle"), 2000);
   };
 
+  const handleVisibilityChange = (
+    newVisibility: "minimal" | "ai-ready" | "all"
+  ) => {
+    setFieldVisibility(newVisibility);
+  };
+
   const handleSave = async () => {
     setSaveStatus("saving");
 
@@ -275,6 +285,7 @@ const CreateRelease: React.FC = () => {
     setIsReviewRequired(false);
     setIsReviewMode(false);
     setSaveStatus("idle");
+    setFieldVisibility("all");
   };
 
   const getReviewProgress = () => {
@@ -283,6 +294,10 @@ const CreateRelease: React.FC = () => {
       (state) => state.reviewed
     ).length;
     return { reviewed, total };
+  };
+
+  const getFilteredConfig = () => {
+    return filterFieldsByVisibility(releaseFormConfig, fieldVisibility);
   };
 
   return (
@@ -332,6 +347,7 @@ const CreateRelease: React.FC = () => {
               isReviewRequired={isReviewRequired}
               isReviewMode={isReviewMode}
               onSectionReview={handleSectionReview}
+              config={getFilteredConfig()}
             />
           </FormColumn>
 
@@ -343,6 +359,8 @@ const CreateRelease: React.FC = () => {
             isAllSectionsReviewed={isAllSectionsReviewed()}
             isReviewRequired={isReviewRequired}
             reviewProgress={isReviewRequired ? getReviewProgress() : undefined}
+            visibility={fieldVisibility}
+            onVisibilityChange={handleVisibilityChange}
           />
         </MainContent>
       )}
