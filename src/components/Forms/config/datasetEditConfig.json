@@ -47,7 +47,7 @@
           "name": "version",
           "label": "Version",
           "type": "text",
-          "required": false
+          "required": true
         },
         {
           "name": "dateCreated",
@@ -95,7 +95,7 @@
           "name": "license",
           "label": "License",
           "type": "text",
-          "required": false
+          "required": true
         }
       ]
     },

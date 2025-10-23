@@ -34,7 +34,7 @@
           "name": "keywords",
           "label": "Keywords",
           "type": "keywords",
-          "required": false,
+          "required": true,
           "placeholder": "Type to search ontology terms or add custom keywords"
         }
       ]

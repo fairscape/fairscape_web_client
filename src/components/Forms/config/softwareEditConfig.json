@@ -34,7 +34,7 @@
           "name": "keywords",
           "label": "Keywords",
           "type": "keywords",
-          "required": false,
+          "required": true,
           "placeholder": "Type to search ontology terms or add custom keywords"
         }
       ]
@@ -59,7 +59,7 @@
           "name": "dateModified",
           "label": "Date Modified",
           "type": "date",
-          "required": false
+          "required": true
         },
         {
           "name": "datePublished",
@@ -89,7 +89,7 @@
           "name": "license",
           "label": "License",
           "type": "text",
-          "required": false
+          "required": true
         }
       ]
     },
@@ -105,26 +105,8 @@
           "placeholder": "e.g., text/x-python, application/javascript"
         },
         {
-          "name": "programmingLanguage",
-          "label": "Programming Language",
-          "type": "text",
-          "required": false
-        },
-        {
-          "name": "runtimePlatform",
-          "label": "Runtime Platform",
-          "type": "text",
-          "required": false
-        },
-        {
           "name": "codeRepository",
           "label": "Code Repository",
-          "type": "text",
-          "required": false
-        },
-        {
-          "name": "applicationCategory",
-          "label": "Application Category",
           "type": "text",
           "required": false
         }
