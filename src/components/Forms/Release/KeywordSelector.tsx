@@ -12,7 +12,7 @@ interface OntologyResult {
 }
 
 interface KeywordSelectorProps {
-  value: string;
+  value: string | string[];
   onChange: (value: string) => void;
   required?: boolean;
 }
@@ -34,8 +34,15 @@ const KeywordSelector: React.FC<KeywordSelectorProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (value && value.trim()) {
-      const parsed = value
+    let keywordsString = "";
+    if (Array.isArray(value)) {
+      keywordsString = value.join(", ");
+    } else if (typeof value === "string") {
+      keywordsString = value;
+    }
+
+    if (keywordsString && keywordsString.trim()) {
+      const parsed = keywordsString
         .split(",")
         .map((k) => k.trim())
         .filter(Boolean);
@@ -122,10 +129,6 @@ const KeywordSelector: React.FC<KeywordSelectorProps> = ({
 
   return (
     <Container>
-      <Label>
-        Keywords
-        {required && <Required>*</Required>}
-      </Label>
       <KeywordContainer>
         {keywords.map((keyword, index) => (
           <Chip key={index}>

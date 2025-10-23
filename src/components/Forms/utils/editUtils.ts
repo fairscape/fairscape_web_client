@@ -1,184 +1,143 @@
-interface EditConfig {
-  type: string;
-  sections: Array<{
-    id: string;
-    title: string;
-    fields: Array<{
-      name: string;
-      label: string;
-      type: string;
-      required?: boolean;
-      readonly?: boolean;
-      placeholder?: string;
-      description?: string;
-    }>;
-  }>;
-}
-
-export function getAllConfigFieldNames(config: EditConfig): Set<string> {
-  const fieldNames = new Set<string>();
-  config.sections.forEach((section) => {
-    section.fields.forEach((field) => {
-      fieldNames.add(field.name);
-    });
-  });
-  return fieldNames;
-}
-
-function deserializeIdentifierValue(value: any): string {
-  if (!value) return "";
-
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => {
-        if (typeof item === "object" && item["@id"]) {
-          return item["@id"];
-        }
-        return String(item);
-      })
-      .join(", ");
-  }
-
-  if (typeof value === "object" && value["@id"]) {
-    return value["@id"];
-  }
-
-  return String(value);
-}
-
-function deserializeKeywords(value: any): string {
-  if (!value) return "";
-
-  if (Array.isArray(value)) {
-    return value.join(", ");
-  }
-
-  return String(value);
-}
-
-export function parseMetadataToForm(metadata: any, config: EditConfig): any {
+export const parseMetadataToForm = (metadata: any, config: any): any => {
   const formData: any = {};
-  const configFields = getAllConfigFieldNames(config);
 
-  configFields.forEach((fieldName) => {
-    if (metadata[fieldName] !== undefined) {
-      const field = config.sections
-        .flatMap((s) => s.fields)
-        .find((f) => f.name === fieldName);
+  if (!config || !config.sections) {
+    return formData;
+  }
 
-      if (field?.type === "identifier_list") {
-        formData[fieldName] = deserializeIdentifierValue(metadata[fieldName]);
-      } else if (field?.type === "keywords") {
-        formData[fieldName] = deserializeKeywords(metadata[fieldName]);
+  config.sections.forEach((section: any) => {
+    section.fields?.forEach((field: any) => {
+      const value = metadata[field.name];
+      if (value !== undefined) {
+        formData[field.name] = value;
       } else {
-        formData[fieldName] = metadata[fieldName];
+        formData[field.name] = field.type === "array" ? [] : "";
       }
-    } else {
-      formData[fieldName] = "";
-    }
+    });
   });
 
   return formData;
-}
+};
 
-export function extractExtraFields(metadata: any, config: EditConfig): any {
-  const configFields = getAllConfigFieldNames(config);
+export const extractExtraFields = (metadata: any, config: any): any => {
   const extraFields: any = {};
+  const knownFields = new Set<string>();
+
+  if (config && config.sections) {
+    config.sections.forEach((section: any) => {
+      section.fields?.forEach((field: any) => {
+        knownFields.add(field.name);
+      });
+    });
+  }
 
   Object.keys(metadata).forEach((key) => {
-    if (!configFields.has(key) && key !== "@context" && key !== "@type") {
+    if (!knownFields.has(key) && !key.startsWith("@")) {
       extraFields[key] = metadata[key];
     }
   });
 
   return extraFields;
-}
+};
 
-function serializeIdentifierValue(value: string, fieldType?: string): any {
-  if (!value || !value.trim()) return undefined;
-
-  if (fieldType === "identifier_list") {
-    const ids = value
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean);
-
-    if (ids.length === 0) return undefined;
-    return ids.map((id) => ({ "@id": id }));
-  }
-
-  if (value.startsWith("ark:") || value.startsWith("http")) {
-    return { "@id": value };
-  }
-
-  return value;
-}
-
-function serializeKeywords(value: string): any {
-  if (!value || !value.trim()) return undefined;
-
-  const keywords = value
-    .split(",")
-    .map((k) => k.trim())
-    .filter(Boolean);
-
-  if (keywords.length === 0) return undefined;
-  return keywords;
-}
-
-export function generateUpdatePayload(
+export const generateUpdatePayload = (
   formData: any,
   extraFields: any,
-  metadata: any,
-  config: EditConfig
-): any {
-  const serializedFormData: any = {};
+  originalMetadata: any,
+  config: any
+): any => {
+  const payload: any = {
+    ...originalMetadata,
+  };
 
-  Object.keys(formData).forEach((key) => {
-    const field = config.sections
-      .flatMap((s) => s.fields)
-      .find((f) => f.name === key);
+  if (config && config.sections) {
+    config.sections.forEach((section: any) => {
+      section.fields?.forEach((field: any) => {
+        const value = formData[field.name];
+        if (value !== undefined && value !== null && value !== "") {
+          payload[field.name] = value;
+        } else {
+          delete payload[field.name];
+        }
+      });
+    });
+  }
 
-    const value = formData[key];
+  Object.keys(extraFields).forEach((key) => {
+    payload[key] = extraFields[key];
+  });
 
-    if (value === "" || value === null || value === undefined) {
-      return;
-    }
+  return payload;
+};
 
-    if (field?.type === "identifier_list") {
-      const serialized = serializeIdentifierValue(value, field.type);
-      if (serialized !== undefined) {
-        serializedFormData[key] = serialized;
+export const filterFieldsByVisibility = (
+  config: any,
+  visibility: "minimal" | "ai-ready" | "all"
+): any => {
+  if (visibility === "all" || !config.sections) {
+    return config;
+  }
+
+  const filteredConfig = { ...config };
+  filteredConfig.sections = config.sections
+    .map((section: any) => {
+      const filteredSection = { ...section };
+
+      if (visibility === "minimal") {
+        filteredSection.fields = section.fields?.filter(
+          (field: any) => field.required
+        );
+      } else if (visibility === "ai-ready") {
+        filteredSection.fields = section.fields?.filter(
+          (field: any) => field.aiReady
+        );
       }
-    } else if (field?.type === "keywords") {
-      const serialized = serializeKeywords(value);
-      if (serialized !== undefined) {
-        serializedFormData[key] = serialized;
-      }
-    } else if (field?.type === "text" && key.includes("Schema")) {
-      const serialized = serializeIdentifierValue(value);
-      if (serialized !== undefined) {
-        serializedFormData[key] = serialized;
-      }
-    } else {
-      serializedFormData[key] = value;
+
+      return filteredSection;
+    })
+    .filter((section: any) => section.fields && section.fields.length > 0);
+
+  return filteredConfig;
+};
+
+export const isFieldEmpty = (value: any): boolean => {
+  if (value === null || value === undefined) return true;
+  if (typeof value === "string" && value.trim() === "") return true;
+  if (Array.isArray(value) && value.length === 0) return true;
+  if (typeof value === "object" && Object.keys(value).length === 0) return true;
+  return false;
+};
+
+export const initializeReviewStates = (
+  llmPopulatedFields: Set<string>,
+  formData: any,
+  config: any
+): any => {
+  const reviewStates: any = {};
+
+  llmPopulatedFields.forEach((fieldName) => {
+    const field = findFieldInConfig(fieldName, config);
+    if (field?.reviewRequired !== false) {
+      reviewStates[fieldName] = {
+        fieldName,
+        status: "pending",
+        originalValue: null,
+        llmValue: formData[fieldName],
+        timestamp: Date.now(),
+      };
     }
   });
 
-  return {
-    "@context": metadata["@context"],
-    "@type": metadata["@type"],
-    ...serializedFormData,
-    ...extraFields,
-  };
-}
+  return reviewStates;
+};
 
-export function formatDateForInput(dateString: string | undefined): string {
-  if (!dateString) return "";
-  try {
-    const date = new Date(dateString);
-    return date.toISOString().split("T")[0];
-  } catch {
-    return dateString;
+const findFieldInConfig = (fieldName: string, config: any): any => {
+  if (!config.sections) return null;
+
+  for (const section of config.sections) {
+    const field = section.fields?.find((f: any) => f.name === fieldName);
+    if (field) return field;
   }
-}
+
+  return null;
+};

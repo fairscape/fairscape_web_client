@@ -10,6 +10,8 @@
           "type": "text",
           "required": true,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "e.g., Cell Maps AI Release 1"
         },
         {
@@ -18,6 +20,8 @@
           "type": "textarea",
           "required": true,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Comprehensive description of the data release..."
         },
         {
@@ -26,6 +30,8 @@
           "type": "text",
           "required": true,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": false,
           "defaultValue": "1.0",
           "placeholder": "1.0"
         },
@@ -35,6 +41,8 @@
           "type": "select",
           "required": true,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "options": [
             {
               "value": "https://creativecommons.org/licenses/by/4.0/",
@@ -88,7 +96,10 @@
           "name": "identifier",
           "label": "DOI/Identifier",
           "type": "text",
+          "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "e.g., https://doi.org/10.18130/V3/B35XWX"
         },
         {
@@ -97,6 +108,8 @@
           "type": "date",
           "required": true,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": false,
           "defaultValue": "today"
         }
       ]
@@ -111,6 +124,8 @@
           "type": "textarea",
           "required": true,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Comma-separated list of authors"
         },
         {
@@ -119,6 +134,8 @@
           "type": "text",
           "required": false,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "e.g., Dr. Jane Smith"
         },
         {
@@ -127,6 +144,8 @@
           "type": "email",
           "required": false,
           "aiReady": false,
+          "llmExtractable": false,
+          "reviewRequired": false,
           "placeholder": "contact@example.org"
         }
       ]
@@ -141,6 +160,8 @@
           "type": "keywords",
           "required": true,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Comma-separated keywords (e.g., genomics, AI, cell maps)"
         }
       ]
@@ -155,6 +176,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Describe any access conditions or restrictions"
         },
         {
@@ -163,6 +186,8 @@
           "type": "text",
           "required": false,
           "aiReady": false,
+          "llmExtractable": false,
+          "reviewRequired": false,
           "placeholder": "© 2025 Organization Name"
         },
         {
@@ -171,6 +196,8 @@
           "type": "text",
           "required": false,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "e.g., https://dataverse.lib.virginia.edu/",
           "description": "In what repository or platform is this data published?"
         },
@@ -180,6 +207,8 @@
           "type": "select",
           "required": false,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "options": [
             {
               "value": "Very Restricted",
@@ -220,81 +249,35 @@
           "label": "Associated Publications",
           "type": "textarea",
           "required": false,
-          "aiReady": false,
-          "placeholder": "List of associated publications (one per line)"
+          "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
+          "placeholder": "DOIs or citations of related publications"
         },
         {
-          "name": "citation",
-          "label": "Preferred Citation",
+          "name": "fundingInformation",
+          "label": "Funding Information",
           "type": "textarea",
-          "required": false,
-          "aiReady": false,
-          "placeholder": "How this dataset should be cited"
-        }
-      ]
-    },
-    {
-      "id": "funding",
-      "title": "Funding & Support",
-      "fields": [
-        {
-          "name": "funder",
-          "label": "Funder",
-          "type": "textarea",
-          "aiReady": false,
-          "placeholder": "Funding agencies and grant numbers"
-        }
-      ]
-    },
-    {
-      "id": "technical",
-      "title": "Technical Details",
-      "fields": [
-        {
-          "name": "contentSize",
-          "label": "Content Size",
-          "type": "text",
           "required": false,
           "aiReady": true,
-          "placeholder": "e.g., 19.1 TB"
-        },
-        {
-          "name": "usageInfo",
-          "label": "Usage Information",
-          "type": "textarea",
-          "aiReady": false,
-          "placeholder": "Instructions or prerequisites for using this data"
+          "llmExtractable": true,
+          "reviewRequired": true,
+          "placeholder": "Grant numbers, funding agencies, and project IDs"
         }
       ]
     },
     {
       "id": "rai",
-      "title": "Responsible AI Metadata",
+      "title": "RAI (Responsible AI)",
       "fields": [
         {
-          "name": "rai:dataLimitations",
-          "label": "Data Limitations",
+          "name": "rai:intendedUse",
+          "label": "Intended Use",
           "type": "textarea",
           "required": false,
           "aiReady": true,
-          "placeholder": "Known limitations and non-recommended uses",
-          "description": "Known limitations - Data generalization limits (e.g related to data distribution, data quality issues, or data sources) and non-recommended uses."
-        },
-        {
-          "name": "rai:dataBiases",
-          "label": "Potential Biases",
-          "type": "textarea",
-          "required": false,
-          "aiReady": true,
-          "placeholder": "Description of known biases in the dataset",
-          "description": "Description of biases in dataset, if applicable"
-        },
-        {
-          "name": "rai:dataUseCases",
-          "label": "Intended Use Cases",
-          "type": "textarea",
-          "required": false,
-          "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Recommended dataset uses",
           "description": "Dataset Use(s) - Training, Testing, Validation, Development or Production Use, Fine Tuning, Others (please specify), Usage Guidelines. Recommended uses."
         },
@@ -304,6 +287,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Versioning and update schedule",
           "description": "Versioning information in terms of the updating timeframe, the maintainers, and the deprecation policies."
         },
@@ -313,6 +298,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Description of the data collection process",
           "description": "Description of the data collection process"
         },
@@ -322,6 +309,8 @@
           "type": "text",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": false,
           "placeholder": "e.g., Web Scraping, Surveys",
           "description": "Define the data collection type. Recommended values: Surveys, Secondary Data analysis, Physical data collection, Direct measurement, Document analysis, Manual Human Curator, Software Collection, Experiments, Web Scraping, Web API, Focus groups, Self-reporting, Customer feedback data, User-generated content data, Passive Data Collection, Others"
         },
@@ -331,6 +320,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Description of missing data in the dataset",
           "description": "Description of missing data in structured/unstructured form"
         },
@@ -340,6 +331,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Description of the raw data source",
           "description": "Description of the raw data i.e. source of the data"
         },
@@ -349,6 +342,8 @@
           "type": "text",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": false,
           "placeholder": "Start and end dates of data collection",
           "description": "Timeframe in terms of start and end date of the collection process"
         },
@@ -358,6 +353,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Description of the data imputation process",
           "description": "Description of data imputation process if applicable"
         },
@@ -367,6 +364,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Description of the data manipulation process",
           "description": "Description of data manipulation process if applicable"
         },
@@ -376,8 +375,10 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Steps taken to preprocess the data for ML use",
-          "description": "Description of the steps that were aiReady to bring collected data to a state that can be processed by an ML model/algorithm, e.g. filtering out incomplete entries etc."
+          "description": "Description of the steps that were taken to bring collected data to a state that can be processed by an ML model/algorithm, e.g. filtering out incomplete entries etc."
         },
         {
           "name": "rai:dataAnnotationProtocol",
@@ -385,6 +386,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Description of the annotation process (e.g., workforce, tasks)",
           "description": "Description of annotations (labels, ratings) produced, including how these were created or authored - Annotation Workforce Type, Annotation Characteristic(s), Annotation Description(s), Annotation Task(s), Annotation Distribution(s)"
         },
@@ -394,6 +397,8 @@
           "type": "text",
           "required": false,
           "aiReady": false,
+          "llmExtractable": false,
+          "reviewRequired": false,
           "placeholder": "Platform or tool used for human annotation",
           "description": "Platform, tool, or library used to collect annotations by human annotators"
         },
@@ -403,6 +408,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Analysis of annotations (e.g., disagreement resolution)",
           "description": "Considerations related to the process of converting the 'raw' annotations into the labels that are ultimately packaged in a dataset - Uncertainty or disagreement between annotations on each instance as a signal in the dataset, analysis of systematic disagreements between annotators of different socio demographic group, how the final dataset annotations will relate to individual annotator responses"
         },
@@ -412,6 +419,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Description of any personal or sensitive information",
           "description": "Sensitive Human Attribute(s)- Gender, Socio-economic status, Geography, Language, Age, Culture, Experience or Seniority, Others (please specify)"
         },
@@ -421,6 +430,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Discussion of the dataset's potential social impact",
           "description": "Discussion of social impact, if applicable"
         },
@@ -430,6 +441,8 @@
           "type": "text",
           "required": false,
           "aiReady": false,
+          "llmExtractable": false,
+          "reviewRequired": false,
           "placeholder": "Number of human labels per dataset item",
           "description": "Number of human labels per dataset item"
         },
@@ -439,6 +452,8 @@
           "type": "text",
           "required": false,
           "aiReady": false,
+          "llmExtractable": false,
+          "reviewRequired": false,
           "placeholder": "Demographic specifications about the annotators",
           "description": "List of demographics specifications about the annotators"
         },
@@ -448,6 +463,8 @@
           "type": "text",
           "required": false,
           "aiReady": false,
+          "llmExtractable": false,
+          "reviewRequired": false,
           "placeholder": "Software used for automated data annotation",
           "description": "List of software used for data annotation (e.g. concept extraction, NER, and additional characteristics of the tools used for annotation to allow for replication or extension)"
         }
@@ -463,6 +480,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Details on ethical approvals and review"
         },
         {
@@ -471,6 +490,8 @@
           "type": "select",
           "required": false,
           "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "options": [
             { "value": "No", "label": "No" },
             { "value": "Yes", "label": "Yes" }
@@ -483,6 +504,8 @@
           "type": "text",
           "required": false,
           "aiReady": false,
+          "llmExtractable": false,
+          "reviewRequired": false,
           "placeholder": "IRB #12345"
         }
       ]
@@ -497,6 +520,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Statement about data completeness"
         },
         {
@@ -505,6 +530,8 @@
           "type": "textarea",
           "required": false,
           "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
           "placeholder": "Explicitly prohibited uses of this data"
         }
       ]

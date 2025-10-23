@@ -8,18 +8,30 @@ import Alert from "../components/common/Alert";
 import EditFormManager from "../components/Forms/Edit/EditFormManager";
 import ExtraFieldsSection from "../components/Forms/Edit/ExtraFieldsSection";
 import EditActionSidebar from "../components/Forms/Edit/EditActionSidebar";
+import LLMUploadModal from "../components/Forms/Edit/LLMUploadModal";
 
 import { useEditMetadataApi } from "../components/Forms/api/editMetadataApi";
+import { useLLMAssistApi } from "../components/Forms/api/llmAssistAPI";
 import {
   parseMetadataToForm,
   extractExtraFields,
   generateUpdatePayload,
 } from "../components/Forms/utils/editUtils";
+import {
+  processLLMResponse,
+  getEmptyFields,
+  hasUnreviewedFields,
+  filterFieldsByVisibility,
+} from "../components/Forms/utils/llmUtils";
+import {
+  ReviewStates,
+  ReviewStatus,
+} from "../components/Forms/types/reviewTypes";
 
 import datasetConfig from "../components/Forms/config/datasetEditConfig.json";
 import softwareConfig from "../components/Forms/config/softwareEditConfig.json";
 import computationConfig from "../components/Forms/config/computationEditConfig.json";
-import roCrateConfig from "../components/Forms/config/releaseFormConfig.json";
+import roCrateConfig from "../components/Forms/config/rocrateEditConfig.json";
 
 interface FormData {
   [key: string]: any;
@@ -50,6 +62,7 @@ const EditIdentifierPage: React.FC = () => {
       : "");
 
   const editApi = useEditMetadataApi();
+  const llmApi = useLLMAssistApi();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +75,18 @@ const EditIdentifierPage: React.FC = () => {
   const [updateStatus, setUpdateStatus] = useState<
     "idle" | "updating" | "success" | "error"
   >("idle");
+
+  const [reviewStates, setReviewStates] = useState<ReviewStates>({});
+  const [llmPopulatedFields, setLlmPopulatedFields] = useState<Set<string>>(
+    new Set()
+  );
+  const [llmModalOpen, setLlmModalOpen] = useState(false);
+  const [fieldVisibility, setFieldVisibility] = useState<
+    "minimal" | "ai-ready" | "all"
+  >("all");
+  const [visibilityLocked, setVisibilityLocked] = useState(false);
+
+  const isRoCrate = config === roCrateConfig;
 
   useEffect(() => {
     if (!arkId) return;
@@ -80,6 +105,7 @@ const EditIdentifierPage: React.FC = () => {
 
       const detectedConfig = determineConfig(metadataContent);
       setConfig(detectedConfig);
+      console.log("Detected config:", detectedConfig);
 
       const parsedForm = parseMetadataToForm(metadataContent, detectedConfig);
       const extra = extractExtraFields(metadataContent, detectedConfig);
@@ -127,11 +153,77 @@ const EditIdentifierPage: React.FC = () => {
   const hasChanges = () => {
     return (
       JSON.stringify(formData) !== JSON.stringify(originalFormData) ||
-      JSON.stringify(extraFields) !== JSON.stringify(originalExtraFields)
+      JSON.stringify(extraFields) !== JSON.stringify(originalExtraFields) ||
+      Object.keys(reviewStates).length > 0
     );
   };
 
+  const handleLLMGenerate = async (file: File) => {
+    const documents = [{ name: file.name, content: file }];
+
+    const mergedFormData = await llmApi.processDocumentsForEdit(
+      documents,
+      formData
+    );
+
+    const {
+      updatedFormData,
+      reviewStates: newReviewStates,
+      populatedFields,
+    } = processLLMResponse(mergedFormData, formData, config);
+
+    setFormData(updatedFormData);
+    setReviewStates((prev) => ({ ...prev, ...newReviewStates }));
+    setLlmPopulatedFields((prev) => new Set([...prev, ...populatedFields]));
+
+    if (isRoCrate) {
+      setFieldVisibility("all");
+      setVisibilityLocked(true);
+    }
+  };
+
+  const handleReviewAction = (
+    fieldName: string,
+    action: "approve" | "reject"
+  ) => {
+    setReviewStates((prev) => {
+      if (!prev[fieldName]) return prev;
+
+      const newStates = { ...prev };
+      newStates[fieldName] = {
+        ...prev[fieldName],
+        status:
+          action === "approve" ? ReviewStatus.Approved : ReviewStatus.Rejected,
+        timestamp: Date.now(),
+      };
+
+      if (action === "reject") {
+        setFormData((prevForm) => ({
+          ...prevForm,
+          [fieldName]: prev[fieldName].originalValue,
+        }));
+      }
+
+      return newStates;
+    });
+  };
+
+  const handleVisibilityChange = (
+    newVisibility: "minimal" | "ai-ready" | "all"
+  ) => {
+    if (!visibilityLocked) {
+      setFieldVisibility(newVisibility);
+    }
+  };
+
   const handleUpdate = async () => {
+    if (hasUnreviewedFields(reviewStates)) {
+      const confirmed = window.confirm(
+        "You have unreviewed LLM-generated fields. Are you sure you want to save?"
+      );
+      if (!confirmed) return;
+    }
+
     setUpdateStatus("updating");
 
     const payload = generateUpdatePayload(
@@ -147,6 +239,8 @@ const EditIdentifierPage: React.FC = () => {
       setUpdateStatus("success");
       setOriginalFormData(JSON.parse(JSON.stringify(formData)));
       setOriginalExtraFields(JSON.parse(JSON.stringify(extraFields)));
+      setReviewStates({});
+      setLlmPopulatedFields(new Set());
 
       setTimeout(() => {
         setUpdateStatus("idle");
@@ -169,9 +263,18 @@ const EditIdentifierPage: React.FC = () => {
       ) {
         setFormData(JSON.parse(JSON.stringify(originalFormData)));
         setExtraFields(JSON.parse(JSON.stringify(originalExtraFields)));
+        setReviewStates({});
+        setLlmPopulatedFields(new Set());
         setUpdateStatus("idle");
       }
     }
+  };
+
+  const getFilteredConfig = () => {
+    if (!isRoCrate || fieldVisibility === "all") {
+      return config;
+    }
+    return filterFieldsByVisibility(config, fieldVisibility);
   };
 
   if (loading) {
@@ -205,15 +308,17 @@ const EditIdentifierPage: React.FC = () => {
   return (
     <PageContainer>
       <PageTitle>Edit Metadata</PageTitle>
-      <MetadataType>{config.type}</MetadataType>
+      {config?.type && <MetadataType>{config.type}</MetadataType>}
       <ArkDisplay>{arkId}</ArkDisplay>
 
       <MainContent>
         <FormColumn>
           <EditFormManager
-            config={config}
+            config={getFilteredConfig()}
             formData={formData}
             onFieldChange={handleFieldChange}
+            reviewStates={reviewStates}
+            onReviewAction={handleReviewAction}
           />
           <ExtraFieldsSection
             extraFields={extraFields}
@@ -222,13 +327,24 @@ const EditIdentifierPage: React.FC = () => {
         </FormColumn>
 
         <EditActionSidebar
+          visibility={fieldVisibility}
+          onVisibilityChange={handleVisibilityChange}
           onUpdate={handleUpdate}
           onCancel={handleCancel}
+          onGenerateWithAI={() => setLlmModalOpen(true)}
           arkId={arkId || ""}
           updateStatus={updateStatus}
           hasChanges={hasChanges()}
         />
       </MainContent>
+
+      <LLMUploadModal
+        isOpen={llmModalOpen}
+        onClose={() => setLlmModalOpen(false)}
+        onGenerate={handleLLMGenerate}
+        currentFormData={formData}
+        config={config}
+      />
     </PageContainer>
   );
 };

@@ -1,261 +1,344 @@
-import React, { useState } from "react";
+import React from "react";
 import styled from "styled-components";
-import { FiChevronRight, FiChevronDown, FiInfo } from "react-icons/fi";
-import { Card, FormField, TextAreaField } from "../ReleaseComponents";
+import { ReviewStates } from "../types/reviewTypes";
+import FieldReviewBadge from "./FieldReviewBadge";
 import KeywordSelector from "../Release/KeywordSelector";
 
-interface EditConfig {
-  type: string;
-  sections: Array<{
-    id: string;
-    title: string;
-    fields: Array<{
-      name: string;
-      label: string;
-      type: string;
-      required?: boolean;
-      readonly?: boolean;
-      placeholder?: string;
-      description?: string;
-    }>;
-  }>;
-}
-
 interface EditFormManagerProps {
-  config: EditConfig;
+  config: any;
   formData: any;
   onFieldChange: (fieldName: string, value: any) => void;
+  reviewStates?: ReviewStates;
+  onReviewAction?: (fieldName: string, action: "approve" | "reject") => void;
 }
 
 const EditFormManager: React.FC<EditFormManagerProps> = ({
   config,
   formData,
   onFieldChange,
+  reviewStates = {},
+  onReviewAction,
 }) => {
-  const [collapsedSections, setCollapsedSections] = useState<{
-    [key: string]: boolean;
-  }>(
-    config.sections.reduce(
-      (acc, section) => ({ ...acc, [section.id]: false }),
-      {}
-    )
-  );
-  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
-
-  const toggleSection = (sectionId: string) => {
-    setCollapsedSections((prev) => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
-  };
-
-  const getSectionProgress = (section: any) => {
-    const totalFields = section.fields.length;
-    const requiredFields = section.fields.filter((f: any) => f.required).length;
-    const filledFields = section.fields.filter(
-      (f: any) => formData[f.name] && formData[f.name].toString().trim() !== ""
-    ).length;
-    const filledRequired = section.fields.filter(
-      (f: any) =>
-        f.required &&
-        formData[f.name] &&
-        formData[f.name].toString().trim() !== ""
-    ).length;
-
-    return { filledFields, totalFields, filledRequired, requiredFields };
-  };
+  if (!config || !config.sections) {
+    return <div>No form configuration available</div>;
+  }
 
   const renderField = (field: any) => {
-    if (field.type === "keywords") {
-      return (
-        <KeywordSelector
-          key={field.name}
-          value={formData[field.name] || ""}
-          onChange={(value) => onFieldChange(field.name, value)}
-          required={field.required}
-        />
-      );
-    }
+    const value = formData[field.name];
+    const reviewState = reviewStates[field.name];
 
-    const commonProps = {
-      label: field.label,
-      name: field.name,
-      value: formData[field.name] || "",
-      onChange: (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-      ) => onFieldChange(field.name, e.target.value),
-      placeholder: field.placeholder,
-      required: field.required,
-    };
+    const fieldStyle = reviewState
+      ? {
+          border: `2px solid ${
+            reviewState.status === "pending"
+              ? "#f59e0b"
+              : reviewState.status === "approved"
+              ? "#10b981"
+              : "#ef4444"
+          }`,
+          backgroundColor:
+            reviewState.status === "pending"
+              ? "#fffbeb"
+              : reviewState.status === "approved"
+              ? "#f0fdf4"
+              : "#fef2f2",
+        }
+      : {};
 
-    if (field.type === "textarea") {
-      return <TextAreaField {...commonProps} />;
-    }
+    return (
+      <FieldContainer key={field.name}>
+        <FieldLabel>
+          {field.label}
+          {field.required && <Required>*</Required>}
+          {reviewState && (
+            <FieldReviewBadge
+              status={reviewState.status}
+              onApprove={() => onReviewAction?.(field.name, "approve")}
+              onReject={() => onReviewAction?.(field.name, "reject")}
+              showActions={reviewState.status === "pending"}
+            />
+          )}
+        </FieldLabel>
 
-    if (field.type === "identifier_list") {
-      return <FormField {...commonProps} type="text" />;
-    }
+        {field.description && (
+          <FieldDescription>{field.description}</FieldDescription>
+        )}
 
-    return <FormField {...commonProps} type={field.type} />;
+        {field.type === "text" && (
+          <TextInput
+            type="text"
+            value={value || ""}
+            onChange={(e) => onFieldChange(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            style={fieldStyle}
+          />
+        )}
+
+        {field.type === "textarea" && (
+          <TextArea
+            value={value || ""}
+            onChange={(e) => onFieldChange(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            rows={field.rows || 4}
+            style={fieldStyle}
+          />
+        )}
+
+        {field.type === "select" && (
+          <Select
+            value={value || ""}
+            onChange={(e) => onFieldChange(field.name, e.target.value)}
+            style={fieldStyle}
+          >
+            <option value="">Select {field.label}</option>
+            {field.options?.map((option: any) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        )}
+
+        {field.type === "number" && (
+          <TextInput
+            type="number"
+            value={value || ""}
+            onChange={(e) =>
+              onFieldChange(field.name, parseFloat(e.target.value))
+            }
+            placeholder={field.placeholder}
+            style={fieldStyle}
+          />
+        )}
+
+        {field.type === "date" && (
+          <TextInput
+            type="date"
+            value={value || ""}
+            onChange={(e) => onFieldChange(field.name, e.target.value)}
+            style={fieldStyle}
+          />
+        )}
+
+        {field.type === "email" && (
+          <TextInput
+            type="email"
+            value={value || ""}
+            onChange={(e) => onFieldChange(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            style={fieldStyle}
+          />
+        )}
+
+        {field.type === "keywords" && (
+          <KeywordSelector
+            value={value || ""}
+            onChange={(newValue) => onFieldChange(field.name, newValue)}
+            required={field.required}
+          />
+        )}
+
+        {field.type === "array" && (
+          <ArrayField
+            value={value || []}
+            onChange={(newValue) => onFieldChange(field.name, newValue)}
+            placeholder={field.placeholder}
+            fieldStyle={fieldStyle}
+          />
+        )}
+      </FieldContainer>
+    );
   };
 
   return (
-    <>
-      {config.sections.map((section) => {
-        const progress = getSectionProgress(section);
-
-        return (
-          <FormSection key={section.id}>
-            <SectionHeader
-              onClick={() => toggleSection(section.id)}
-              collapsed={collapsedSections[section.id]}
-            >
-              <HeaderLeft>
-                {collapsedSections[section.id] ? (
-                  <FiChevronRight />
-                ) : (
-                  <FiChevronDown />
-                )}
-                {section.title} ({progress.filledFields}/{progress.totalFields}{" "}
-                filled, {progress.filledRequired}/{progress.requiredFields}{" "}
-                required)
-              </HeaderLeft>
-            </SectionHeader>
-
-            {!collapsedSections[section.id] && (
-              <SectionContent>
-                {section.fields.map((field: any) => (
-                  <FieldWrapper key={field.name}>
-                    {field.description && (
-                      <InfoIconWrapper>
-                        <InfoIcon
-                          onMouseEnter={() => setActiveTooltip(field.name)}
-                          onMouseLeave={() => setActiveTooltip(null)}
-                        >
-                          <FiInfo />
-                        </InfoIcon>
-                        {activeTooltip === field.name && (
-                          <Tooltip>{field.description}</Tooltip>
-                        )}
-                      </InfoIconWrapper>
-                    )}
-                    {renderField(field)}
-                    {field.readonly && (
-                      <ReadonlyNote>This field cannot be edited</ReadonlyNote>
-                    )}
-                  </FieldWrapper>
-                ))}
-              </SectionContent>
-            )}
-          </FormSection>
-        );
-      })}
-    </>
+    <Container>
+      {config.sections.map((section: any) => (
+        <Section key={section.title}>
+          <SectionTitle>{section.title}</SectionTitle>
+          {section.description && (
+            <SectionDescription>{section.description}</SectionDescription>
+          )}
+          <FieldsGrid>
+            {section.fields?.map((field: any) => renderField(field))}
+          </FieldsGrid>
+        </Section>
+      ))}
+    </Container>
   );
 };
 
-const FormSection = styled(Card)`
-  margin-bottom: 20px;
+const ArrayField: React.FC<{
+  value: string[];
+  onChange: (value: string[]) => void;
+  placeholder?: string;
+  fieldStyle?: any;
+}> = ({ value, onChange, placeholder, fieldStyle }) => {
+  const addItem = () => {
+    onChange([...value, ""]);
+  };
+
+  const removeItem = (index: number) => {
+    onChange(value.filter((_, i) => i !== index));
+  };
+
+  const updateItem = (index: number, newValue: string) => {
+    const updated = [...value];
+    updated[index] = newValue;
+    onChange(updated);
+  };
+
+  return (
+    <div>
+      {value.map((item, index) => (
+        <ArrayItemContainer key={index}>
+          <TextInput
+            type="text"
+            value={item}
+            onChange={(e) => updateItem(index, e.target.value)}
+            placeholder={placeholder}
+            style={fieldStyle}
+          />
+          <RemoveButton onClick={() => removeItem(index)}>×</RemoveButton>
+        </ArrayItemContainer>
+      ))}
+      <AddButton onClick={addItem}>+ Add Item</AddButton>
+    </div>
+  );
+};
+
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 `;
 
-const SectionHeader = styled.div<{ collapsed?: boolean }>`
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 18px;
+const Section = styled.div`
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+`;
+
+const SectionTitle = styled.h2`
+  font-size: 1.25rem;
   font-weight: 600;
-  padding-bottom: ${(props) => (props.collapsed ? "0" : "10px")};
-  margin-bottom: ${(props) => (props.collapsed ? "0" : "20px")};
-  border-bottom: ${(props) =>
-    props.collapsed ? "none" : `2px solid ${props.theme.colors.border}`};
-  cursor: pointer;
+  color: #111827;
+  margin: 0 0 8px 0;
+`;
+
+const SectionDescription = styled.p`
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 20px 0;
+`;
+
+const FieldsGrid = styled.div`
+  display: grid;
+  gap: 20px;
+`;
+
+const FieldContainer = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  user-select: none;
-  transition: all 0.3s ease;
-
-  &:hover {
-    opacity: 0.8;
-  }
+  flex-direction: column;
+  gap: 6px;
 `;
 
-const HeaderLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const SectionContent = styled.div`
-  animation: slideDown 0.3s ease-out;
-
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-
-const FieldWrapper = styled.div`
-  position: relative;
-  margin-bottom: 20px;
-`;
-
-const ReadonlyNote = styled.div`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  margin-top: 4px;
-  font-style: italic;
-`;
-
-const InfoIconWrapper = styled.div`
-  position: absolute;
-  right: 5px;
-  top: 8px;
-  z-index: 10;
-`;
-
-const InfoIcon = styled.div`
-  width: 16px;
-  height: 16px;
-  cursor: help;
-  color: #6c757d;
+const FieldLabel = styled.label`
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
   display: flex;
   align-items: center;
-  justify-content: center;
-
-  &:hover {
-    color: #3e7aa8;
-  }
 `;
 
-const Tooltip = styled.div`
-  position: absolute;
-  right: 25px;
-  top: -5px;
-  background: #333;
-  color: white;
-  padding: 10px 15px;
+const Required = styled.span`
+  color: #ef4444;
+  margin-left: 4px;
+`;
+
+const FieldDescription = styled.div`
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: -4px;
+`;
+
+const TextInput = styled.input`
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 13px;
-  width: 300px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  line-height: 1.4;
+  transition: border-color 0.2s;
 
-  &::after {
-    content: "";
-    position: absolute;
-    right: -8px;
-    top: 12px;
-    width: 0;
-    height: 0;
-    border-left: 8px solid #333;
-    border-top: 6px solid transparent;
-    border-bottom: 6px solid transparent;
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+`;
+
+const TextArea = styled.textarea`
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+`;
+
+const Select = styled.select`
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+`;
+
+const ArrayItemContainer = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+`;
+
+const RemoveButton = styled.button`
+  padding: 8px 12px;
+  font-size: 1.25rem;
+  color: #ef4444;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #fee2e2;
+  }
+`;
+
+const AddButton = styled.button`
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3b82f6;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #dbeafe;
   }
 `;
 
