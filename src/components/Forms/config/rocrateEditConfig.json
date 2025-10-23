@@ -96,7 +96,6 @@
           "name": "identifier",
           "label": "DOI/Identifier",
           "type": "text",
-          "required": false,
           "aiReady": false,
           "llmExtractable": true,
           "reviewRequired": true,
@@ -152,7 +151,7 @@
     },
     {
       "id": "classification",
-      "title": "Keywords",
+      "title": "Classification & Keywords",
       "fields": [
         {
           "name": "keywords",
@@ -249,30 +248,92 @@
           "label": "Associated Publications",
           "type": "textarea",
           "required": false,
-          "aiReady": true,
+          "aiReady": false,
           "llmExtractable": true,
           "reviewRequired": true,
-          "placeholder": "DOIs or citations of related publications"
+          "placeholder": "List of associated publications (one per line)"
         },
         {
-          "name": "fundingInformation",
-          "label": "Funding Information",
+          "name": "citation",
+          "label": "Preferred Citation",
           "type": "textarea",
+          "required": false,
+          "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
+          "placeholder": "How this dataset should be cited"
+        }
+      ]
+    },
+    {
+      "id": "funding",
+      "title": "Funding & Support",
+      "fields": [
+        {
+          "name": "funder",
+          "label": "Funder",
+          "type": "textarea",
+          "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
+          "placeholder": "Funding agencies and grant numbers"
+        }
+      ]
+    },
+    {
+      "id": "technical",
+      "title": "Technical Details",
+      "fields": [
+        {
+          "name": "contentSize",
+          "label": "Content Size",
+          "type": "text",
           "required": false,
           "aiReady": true,
           "llmExtractable": true,
           "reviewRequired": true,
-          "placeholder": "Grant numbers, funding agencies, and project IDs"
+          "placeholder": "e.g., 19.1 TB"
+        },
+        {
+          "name": "usageInfo",
+          "label": "Usage Information",
+          "type": "textarea",
+          "aiReady": false,
+          "llmExtractable": true,
+          "reviewRequired": true,
+          "placeholder": "Instructions or prerequisites for using this data"
         }
       ]
     },
     {
       "id": "rai",
-      "title": "Uses Cases, Data Collection, and Limitations",
+      "title": "Responsible AI Metadata",
       "fields": [
         {
-          "name": "rai:intendedUse",
-          "label": "Intended Use",
+          "name": "rai:dataLimitations",
+          "label": "Data Limitations",
+          "type": "textarea",
+          "required": false,
+          "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
+          "placeholder": "Known limitations and non-recommended uses",
+          "description": "Known limitations - Data generalization limits (e.g related to data distribution, data quality issues, or data sources) and non-recommended uses."
+        },
+        {
+          "name": "rai:dataBiases",
+          "label": "Potential Biases",
+          "type": "textarea",
+          "required": false,
+          "aiReady": true,
+          "llmExtractable": true,
+          "reviewRequired": true,
+          "placeholder": "Description of known biases in the dataset",
+          "description": "Description of biases in dataset, if applicable"
+        },
+        {
+          "name": "rai:dataUseCases",
+          "label": "Intended Use Cases",
           "type": "textarea",
           "required": false,
           "aiReady": true,
@@ -378,7 +439,7 @@
           "llmExtractable": true,
           "reviewRequired": true,
           "placeholder": "Steps taken to preprocess the data for ML use",
-          "description": "Description of the steps that were taken to bring collected data to a state that can be processed by an ML model/algorithm, e.g. filtering out incomplete entries etc."
+          "description": "Description of the steps that were aiReady to bring collected data to a state that can be processed by an ML model/algorithm, e.g. filtering out incomplete entries etc."
         },
         {
           "name": "rai:dataAnnotationProtocol",
