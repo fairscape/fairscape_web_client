@@ -27,7 +27,7 @@ const ActionSidebar: React.FC<ActionSidebarProps> = ({
   return (
     <Sidebar>
       <SidebarSection>
-        <SectionTitle>Field Visibility</SectionTitle>
+        <SectionTitle>Metadata Detail</SectionTitle>
         <VisibilityToggle>
           <VisibilityButton
             active={visibility === "minimal"}

@@ -307,7 +307,7 @@
     },
     {
       "id": "rai",
-      "title": "Responsible AI Metadata",
+      "title": "Usecases, Data Collection, and Limitations",
       "fields": [
         {
           "name": "rai:dataLimitations",
