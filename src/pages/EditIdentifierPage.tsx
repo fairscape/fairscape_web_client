@@ -208,6 +208,11 @@ const EditIdentifierPage: React.FC = () => {
     });
   };
 
+  const handleScrollToField = (fieldName: string) => {
+    const element = document.querySelector(`[data-field-name="${fieldName}"]`);
+    element?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const handleVisibilityChange = (
     newVisibility: "minimal" | "ai-ready" | "all"
   ) => {
@@ -335,6 +340,9 @@ const EditIdentifierPage: React.FC = () => {
           arkId={arkId || ""}
           updateStatus={updateStatus}
           hasChanges={hasChanges()}
+          reviewStates={reviewStates}
+          onReviewAction={handleReviewAction}
+          onScrollToField={handleScrollToField}
         />
       </MainContent>
 

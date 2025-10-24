@@ -2,23 +2,23 @@ import React from "react";
 import styled from "styled-components";
 import { FiSave, FiX, FiExternalLink, FiCpu } from "react-icons/fi";
 import { BsCircle, BsCircleFill } from "react-icons/bs";
+import { ReviewStates, ReviewStatus } from "../types/reviewTypes";
+import { getReviewProgress } from "../utils/llmUtils";
 
 type Visibility = "minimal" | "ai-ready" | "all";
 
 interface EditActionSidebarProps {
-  // View management
   visibility: Visibility;
   onVisibilityChange: (visibility: Visibility) => void;
-
-  // Actions
   onUpdate: () => void;
   onCancel: () => void;
   onGenerateWithAI: () => void;
-
-  // State & Info
   arkId: string;
   updateStatus: "idle" | "updating" | "success" | "error";
   hasChanges: boolean;
+  reviewStates?: ReviewStates;
+  onReviewAction?: (fieldName: string, action: "approve" | "reject") => void;
+  onScrollToField?: (fieldName: string) => void;
 }
 
 const EditActionSidebar: React.FC<EditActionSidebarProps> = ({
@@ -30,7 +30,39 @@ const EditActionSidebar: React.FC<EditActionSidebarProps> = ({
   arkId,
   updateStatus,
   hasChanges,
+  reviewStates = {},
+  onReviewAction,
+  onScrollToField,
 }) => {
+  const { reviewed, total } = getReviewProgress(reviewStates);
+  const allReviewed = total > 0 ? reviewed === total : true;
+  const percentage = total > 0 ? (reviewed / total) * 100 : 0;
+
+  const sortedFields = Object.values(reviewStates).sort((a, b) => {
+    if (a.status === ReviewStatus.Pending && b.status !== ReviewStatus.Pending)
+      return -1;
+    if (a.status !== ReviewStatus.Pending && b.status === ReviewStatus.Pending)
+      return 1;
+    return 0;
+  });
+
+  const formatFieldName = (name: string): string => {
+    return name
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim();
+  };
+
+  const formatValue = (value: any): string => {
+    if (value === null || value === undefined) return "N/A";
+    if (typeof value === "string")
+      return value.substring(0, 50) + (value.length > 50 ? "..." : "");
+    if (Array.isArray(value)) return `${value.length} items`;
+    if (typeof value === "object")
+      return JSON.stringify(value).substring(0, 50) + "...";
+    return String(value);
+  };
+
   const getStatusMessage = () => {
     switch (updateStatus) {
       case "updating":
@@ -71,7 +103,6 @@ const EditActionSidebar: React.FC<EditActionSidebarProps> = ({
             <span>All Fields</span>
           </ViewButton>
         </Section>
-
         <Divider />
 
         <Section>
@@ -84,17 +115,82 @@ const EditActionSidebar: React.FC<EditActionSidebarProps> = ({
 
           <ActionButton
             onClick={onUpdate}
-            disabled={!hasChanges || updateStatus === "updating"}
+            disabled={
+              !hasChanges || updateStatus === "updating" || !allReviewed
+            }
           >
             <FiSave />
             <span>{updateStatus === "updating" ? "Saving..." : "Save"}</span>
           </ActionButton>
+
+          {!allReviewed && hasChanges && (
+            <SaveWarning>Complete all reviews before saving</SaveWarning>
+          )}
 
           <ActionButton onClick={onCancel}>
             <FiX />
             <span>Cancel</span>
           </ActionButton>
         </Section>
+        {total > 0 && (
+          <>
+            <Section>
+              <SectionTitle>Review Progress</SectionTitle>
+              <ProgressBar>
+                <ProgressFill percentage={percentage} />
+              </ProgressBar>
+              <ProgressText>
+                {reviewed} of {total} reviewed
+              </ProgressText>
+
+              <FieldsList>
+                {sortedFields.map((field) => (
+                  <FieldItem key={field.fieldName} status={field.status}>
+                    <FieldHeader
+                      onClick={() => onScrollToField?.(field.fieldName)}
+                      clickable={!!onScrollToField}
+                    >
+                      <FieldName>{formatFieldName(field.fieldName)}</FieldName>
+                      <StatusIndicator status={field.status}>
+                        {field.status === ReviewStatus.Pending && "⏳"}
+                        {field.status === ReviewStatus.Approved && "✓"}
+                        {field.status === ReviewStatus.Rejected && "✗"}
+                      </StatusIndicator>
+                    </FieldHeader>
+
+                    {field.status === ReviewStatus.Pending && (
+                      <>
+                        <ValuePreview>
+                          {formatValue(field.llmValue)}
+                        </ValuePreview>
+                        <Actions>
+                          <ActionButtonSmall
+                            onClick={() =>
+                              onReviewAction?.(field.fieldName, "approve")
+                            }
+                            variant="approve"
+                          >
+                            Approve
+                          </ActionButtonSmall>
+                          <ActionButtonSmall
+                            onClick={() =>
+                              onReviewAction?.(field.fieldName, "reject")
+                            }
+                            variant="reject"
+                          >
+                            Reject
+                          </ActionButtonSmall>
+                        </Actions>
+                      </>
+                    )}
+                  </FieldItem>
+                ))}
+              </FieldsList>
+            </Section>
+
+            <Divider />
+          </>
+        )}
 
         <Divider />
 
@@ -269,6 +365,119 @@ const StatusMessage = styled.div<{ status: string }>`
       : status === "error"
       ? "#721c24"
       : "#383d41"};
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+`;
+
+const ProgressFill = styled.div<{ percentage: number }>`
+  width: ${({ percentage }) => percentage}%;
+  height: 100%;
+  background-color: #10b981;
+  transition: width 0.3s ease;
+`;
+
+const ProgressText = styled.div`
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 16px;
+`;
+
+const FieldsList = styled.div`
+  max-height: 300px;
+  overflow-y: auto;
+`;
+
+const FieldItem = styled.div<{ status: ReviewStatus }>`
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid
+    ${({ status }) =>
+      status === ReviewStatus.Pending
+        ? "#f59e0b"
+        : status === ReviewStatus.Approved
+        ? "#10b981"
+        : "#ef4444"};
+  background-color: ${({ status }) =>
+    status === ReviewStatus.Pending
+      ? "#fffbeb"
+      : status === ReviewStatus.Approved
+      ? "#f0fdf4"
+      : "#fef2f2"};
+`;
+
+const FieldHeader = styled.div<{ clickable: boolean }>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  cursor: ${({ clickable }) => (clickable ? "pointer" : "default")};
+
+  &:hover {
+    opacity: ${({ clickable }) => (clickable ? 0.7 : 1)};
+  }
+`;
+
+const FieldName = styled.span`
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #111827;
+`;
+
+const StatusIndicator = styled.span<{ status: ReviewStatus }>`
+  font-size: 0.875rem;
+  color: ${({ status }) =>
+    status === ReviewStatus.Pending
+      ? "#f59e0b"
+      : status === ReviewStatus.Approved
+      ? "#10b981"
+      : "#ef4444"};
+`;
+
+const ValuePreview = styled.div`
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-bottom: 6px;
+  font-style: italic;
+`;
+
+const Actions = styled.div`
+  display: flex;
+  gap: 6px;
+`;
+
+const ActionButtonSmall = styled.button<{ variant: "approve" | "reject" }>`
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  background-color: ${({ variant }) =>
+    variant === "approve" ? "#10b981" : "#ef4444"};
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+const SaveWarning = styled.div`
+  font-size: 0.7rem;
+  color: #f59e0b;
+  text-align: center;
+  margin-top: -4px;
+  margin-bottom: 8px;
+  font-weight: 600;
 `;
 
 export default EditActionSidebar;
