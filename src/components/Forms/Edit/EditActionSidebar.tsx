@@ -100,7 +100,7 @@ const EditActionSidebar: React.FC<EditActionSidebarProps> = ({
             onClick={() => onVisibilityChange("all")}
           >
             {visibility === "all" ? <BsCircleFill /> : <BsCircle />}
-            <span>All Fields</span>
+            <span>Croissant + AI-Ready</span>
           </ViewButton>
         </Section>
         <Divider />

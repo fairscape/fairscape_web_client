@@ -45,7 +45,7 @@ const ActionSidebar: React.FC<ActionSidebarProps> = ({
             active={visibility === "all"}
             onClick={() => onVisibilityChange("all")}
           >
-            All Fields
+            Croissant + AI-Ready
           </VisibilityButton>
         </VisibilityToggle>
         <VisibilityDescription>

@@ -66,7 +66,7 @@ const CreateRelease: React.FC = () => {
         }
       });
       if (!reviewState["subCrates"]) {
-        initialReviewState["subCrates"] = { reviewed: false };
+        initialReviewState["subCrates"] = { reviewed: true };
       }
       setReviewState((prev) => ({ ...prev, ...initialReviewState }));
     }
@@ -253,7 +253,9 @@ const CreateRelease: React.FC = () => {
 
   const isAllSectionsReviewed = () => {
     if (!isReviewRequired) return true;
-    return Object.values(reviewState).every((state) => state.reviewed);
+    return Object.entries(reviewState).every(
+      ([sectionId, state]) => sectionId === "subCrates" || state.reviewed
+    );
   };
 
   const handleDownload = () => {
