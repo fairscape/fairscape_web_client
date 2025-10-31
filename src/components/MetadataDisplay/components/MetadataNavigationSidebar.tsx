@@ -9,8 +9,9 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 import { RiPercentLine } from "react-icons/ri";
+import { MdOutlineQueryStats } from "react-icons/md";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score";
+type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics";
 
 interface MetadataNavigationSidebarProps {
   activeView: ViewType;
@@ -87,6 +88,16 @@ export default function MetadataNavigationSidebar({
             <FiShare2 />
             <span>Evidence Graph</span>
           </ViewButton>
+
+          {bundleKind === "dataset" && (
+            <ViewButton
+              active={activeView === "statistics"}
+              onClick={() => onViewChange("statistics")}
+            >
+              <MdOutlineQueryStats />
+              <span>Descriptive Statistics</span>
+            </ViewButton>
+          )}
 
           {showScoreView && (
             <ViewButton

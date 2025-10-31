@@ -77,7 +77,7 @@ const StatisticsViewer = ({ dataset }: StatisticsViewerProps) => {
         },
       },
       {
-        header: "Group",
+        header: "Subset",
         accessorKey: "subsetGroup",
         GroupedCell: ({ cell, row }) => (
           <Box sx={{ color: "primary.main", fontWeight: "bold" }}>
@@ -182,7 +182,7 @@ const StatisticsViewer = ({ dataset }: StatisticsViewerProps) => {
     }),
     muiTableContainerProps: {
       sx: {
-        maxHeight: "800px",
+        maxHeight: "calc(100vh - 250px)",
         border: "1px solid #e0e0e0",
         borderRadius: "8px",
       },
@@ -199,39 +199,12 @@ const StatisticsViewer = ({ dataset }: StatisticsViewerProps) => {
     <Box
       sx={{
         width: "100%",
-        padding: 3,
+        padding: 2,
         backgroundColor: "#ffffff",
       }}
     >
-      <Box
-        sx={{
-          marginBottom: 3,
-          paddingBottom: 2,
-          borderBottom: "2px solid #232e3c",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "28px",
-            color: "#232e3c",
-            margin: "0 0 8px 0",
-          }}
-        >
-          {dataset.name}
-        </h1>
-        <p
-          style={{
-            fontSize: "15px",
-            color: "#666",
-            margin: 0,
-          }}
-        >
-          {dataset.description}
-        </p>
-      </Box>
-
       <Box sx={{ marginBottom: 2 }}>
-        <FormControl sx={{ minWidth: 250 }}>
+        <FormControl sx={{ minWidth: 250 }} size="small">
           <InputLabel id="column-select-label">Column</InputLabel>
           <Select
             labelId="column-select-label"
