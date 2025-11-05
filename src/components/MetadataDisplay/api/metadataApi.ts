@@ -23,5 +23,10 @@ export function useMetadataApi() {
         method: "GET",
         headers: { Accept: "text/turtle" },
       }).catch(() => null),
+
+    rescoreAIReady: (ark: string) =>
+      http(`/rocrate/ai-ready-score/${encodeURIComponent(ark)}/rescore`, {
+        method: "POST",
+      }),
   };
 }

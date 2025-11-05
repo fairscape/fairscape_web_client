@@ -7,8 +7,10 @@ import {
   FiEdit2,
   FiDownload,
   FiChevronDown,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { RiPercentLine } from "react-icons/ri";
+import { useMetadataApi } from "../api/metadataApi";
 
 type ViewType = "metadata" | "serialization" | "graph" | "score";
 
@@ -40,8 +42,12 @@ export default function MetadataNavigationSidebar({
   hasContentUrl,
 }: MetadataNavigationSidebarProps) {
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const metadataApi = useMetadataApi();
 
   const showScoreView = bundleKind === "release" || bundleKind === "rocrate";
+  const showReScoreView =
+    (bundleKind === "release" || bundleKind === "rocrate") &&
+    activeView == "score";
   const showAdvancedDownloads =
     bundleKind === "release" || bundleKind === "rocrate";
 
@@ -51,6 +57,16 @@ export default function MetadataNavigationSidebar({
 
   const handleEdit = () => {
     window.location.href = `/edit/${arkId}`;
+  };
+
+  const handleRescore = async () => {
+    try {
+      await metadataApi.rescoreAIReady(arkId);
+      alert("Rescore initiated successfully");
+    } catch (error) {
+      console.error("Rescore failed:", error);
+      alert("Failed to initiate rescore");
+    }
   };
 
   const isRoCrateLike = bundleKind === "release" || bundleKind === "rocrate";
@@ -146,6 +162,13 @@ export default function MetadataNavigationSidebar({
             )}
           </DownloadSection>
 
+          {showReScoreView && (
+            <ActionButton onClick={handleRescore}>
+              <FiRefreshCw />
+              <span>Rescore</span>
+            </ActionButton>
+          )}
+
           {!isOwner && <OwnerNote>Edit requires owner permissions</OwnerNote>}
         </Section>
       </SidebarContent>
@@ -223,6 +246,7 @@ const ActionButton = styled.button`
   align-items: center;
   gap: 12px;
   padding: 12px;
+  margin-top: 8px;
   margin-bottom: 8px;
   border: 1px solid #005f73;
   border-radius: 6px;
