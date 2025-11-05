@@ -329,7 +329,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       (processedSamples.length > 0 && "samples") ||
       (processedExperiments.length > 0 && "experiments") ||
       (processedInstruments.length > 0 && "instruments") ||
-      (otherItems.length > 0 && "other") ||
+      (processedOther.length > 0 && "other") ||
       "";
 
     if (firstAvailableTabId && !activeTab) {

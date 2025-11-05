@@ -12,7 +12,10 @@ import {
   SampleProperties,
   ExperimentProperties,
   BioChemEntityProperties,
+  ModelCardProperties,
   GenericProperties,
+  PropertyGroups,
+  PropertyGroup,
 } from "../../types/metadataPropertyLists";
 import Alert from "../../../common/Alert";
 import SchemaPropertiesTable from "../../components/Tables/SchemaPropertiesTable";
@@ -49,13 +52,30 @@ type EntityType =
   | "instrument"
   | "sample"
   | "experiment"
-  | "biochementity";
+  | "biochementity"
+  | "mlmodel";
 
 interface GenericMetadataComponentProps {
   metadata: Metadata;
   type: EntityType;
   arkId?: string;
 }
+
+const MetricsTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+
+  td {
+    padding: 8px;
+    border: 1px solid ${({ theme }) => theme.colors.border};
+  }
+
+  td:first-child {
+    font-weight: 600;
+    background-color: ${({ theme }) => theme.colors.backgroundAlt};
+    width: 40%;
+  }
+`;
 
 const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   metadata,
@@ -139,6 +159,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   };
 
   const getPropertyList = (): MetadataProperty[] => {
+    console.log("Determining property list for type:", type);
     switch (type) {
       case "dataset":
         return DatasetProperties;
@@ -156,9 +177,15 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         return ExperimentProperties;
       case "biochementity":
         return BioChemEntityProperties;
+      case "mlmodel":
+        return ModelCardProperties;
       default:
         return GenericProperties;
     }
+  };
+
+  const getPropertyGroups = (): PropertyGroup[] => {
+    return PropertyGroups[type] || [];
   };
 
   const getSectionTitle = () => {
@@ -363,7 +390,6 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
 
     if (key === "command" && type === "computation")
       return <CodeBlockStyled>{value}</CodeBlockStyled>;
-    if (key === "properties" && type === "schema") return null;
 
     if (key === "identifier" && type === "biochementity") {
       if (Array.isArray(value)) {
@@ -432,6 +458,74 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     );
   };
 
+  const renderPropertyGroup = (
+    group: PropertyGroup,
+    entity: RawGraphEntity
+  ) => {
+    const hasAnyValue = group.properties.some(
+      (propKey) => entity[propKey] !== undefined
+    );
+
+    if (!hasAnyValue) return null;
+
+    if (
+      group.renderType === "schemaTable" &&
+      group.properties[0] === "properties"
+    ) {
+      const propValue = entity[group.properties[0]];
+      return (
+        <DetailItemRow key={group.key} style={{ gridTemplateColumns: "1fr" }}>
+          <DetailLabel>{group.label}</DetailLabel>
+          <DetailValue
+            style={{
+              maxHeight: "none",
+              overflow: "visible",
+              gridColumn: "1 / -1",
+            }}
+          >
+            <SchemaPropertiesTable
+              properties={propValue}
+              onExpandProperty={handleExpandSchemaProperty}
+            />
+          </DetailValue>
+        </DetailItemRow>
+      );
+    }
+
+    if (group.renderType === "table") {
+      const propertyList = getPropertyList();
+      return (
+        <DetailItemRow key={group.key} style={{ gridTemplateColumns: "1fr" }}>
+          <DetailLabel>{group.label}</DetailLabel>
+          <DetailValue style={{ gridColumn: "1 / -1" }}>
+            <MetricsTable>
+              <tbody>
+                {group.properties.map((propKey) => {
+                  const propValue = entity[propKey];
+                  if (propValue === undefined) return null;
+
+                  const metaProp = propertyList.find((p) => p.key === propKey);
+                  const displayName = metaProp?.name || propKey;
+
+                  return (
+                    <tr key={propKey}>
+                      <td>{displayName}</td>
+                      <td>
+                        {formatMainListValue(propKey, propValue, displayName)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </MetricsTable>
+          </DetailValue>
+        </DetailItemRow>
+      );
+    }
+
+    return null;
+  };
+
   if (!metadata) {
     return (
       <Alert
@@ -444,37 +538,31 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
 
   const entity = metadata as unknown as RawGraphEntity;
   const propertyList = getPropertyList();
+  const propertyGroups = getPropertyGroups();
+
+  const groupedPropertyKeys = new Set(
+    propertyGroups.flatMap((group) => group.properties)
+  );
+
+  const renderedGroups = new Set<string>();
 
   return (
     <SectionContainer>
       <Header>{getSectionTitle()}</Header>
       <DetailsGrid>
         {propertyList.map((prop) => {
-          const propValue = entity[prop.key];
-
-          if (prop.key === "properties" && type === "schema") {
-            return propValue !== undefined ? (
-              <DetailItemRow
-                key={prop.key}
-                style={{ gridTemplateColumns: "1fr" }}
-              >
-                <DetailLabel>{prop.name}</DetailLabel>
-                <DetailValue
-                  style={{
-                    maxHeight: "none",
-                    overflow: "visible",
-                    gridColumn: "1 / -1",
-                  }}
-                >
-                  <SchemaPropertiesTable
-                    properties={propValue}
-                    onExpandProperty={handleExpandSchemaProperty}
-                  />
-                </DetailValue>
-              </DetailItemRow>
-            ) : null;
+          if (groupedPropertyKeys.has(prop.key)) {
+            const group = propertyGroups.find((g) =>
+              g.properties.includes(prop.key)
+            );
+            if (group && !renderedGroups.has(group.key)) {
+              renderedGroups.add(group.key);
+              return renderPropertyGroup(group, entity);
+            }
+            return null;
           }
 
+          const propValue = entity[prop.key];
           return propValue !== undefined ? (
             <DetailItemRow key={prop.key}>
               <DetailLabel>{prop.name}</DetailLabel>
