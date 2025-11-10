@@ -19,6 +19,7 @@ import CreateRocratePage from "./pages/CreateRocratePage";
 import AboutPage from "./pages/AboutPage";
 import AIReadinessPage from "./pages/AIReadinessPage";
 import AIReadinessDefinitionsPage from "./pages/AIReadinessCriteria";
+import D4DAssistantPage from "./pages/D4DAssistantPage";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
                 path="/ai-readiness"
                 element={<AIReadinessDefinitionsPage />}
               />
+              <Route path="/d4d-assistant" element={<D4DAssistantPage />} />
               <Route
                 path="*"
                 element={
