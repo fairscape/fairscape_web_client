@@ -1,3 +1,4 @@
+// D4DAssistantPage.tsx
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import {
@@ -9,9 +10,8 @@ import {
   FiMessageSquare,
   FiCheckCircle,
   FiInfo,
-  FiChevronDown,
-  FiChevronUp,
 } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 const ALLOWED_PROJECTS = ["cm4ai", "chorus", "voice", "ai-readi"];
 const API_URL = "http://localhost:5005";
@@ -40,6 +40,7 @@ const D4DAssistantPage = () => {
 
   const [newComment, setNewComment] = useState("");
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchIssues();
@@ -113,7 +114,7 @@ ${newIssue.instructions || "No additional instructions"}`;
 
       if (!response.ok) throw new Error("Failed to create issue");
 
-      const data = await response.json();
+      await response.json();
       showStatus("Issue created successfully!", "success");
       setNewIssue({ project: "", urls: "", instructions: "", files: [] });
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -183,6 +184,28 @@ ${newIssue.instructions || "No additional instructions"}`;
     }
   };
 
+  const handleReviewCreatedD4D = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/convert/d4d-to-rocrate`);
+      if (!response.ok) throw new Error("Failed to convert D4D to RO-Crate");
+      const rocrate = await response.json();
+      setShowCloseConfirm(false);
+      navigate("/review", {
+        state: {
+          fromD4D: true,
+          rocrate,
+          issueNumber: selectedIssue?.number ?? null,
+        },
+      });
+    } catch (error) {
+      console.error("Error converting D4D:", error);
+      showStatus(`Error converting D4D: ${error.message}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const showStatus = (message, type) => {
     setStatusMessage(message);
     setStatusType(type);
@@ -228,7 +251,10 @@ ${newIssue.instructions || "No additional instructions"}`;
               <DialogCancelButton onClick={() => setShowCloseConfirm(false)}>
                 Cancel
               </DialogCancelButton>
-              <DialogConfirmButton onClick={closeIssue} disabled={loading}>
+              <DialogConfirmButton
+                onClick={handleReviewCreatedD4D}
+                disabled={loading}
+              >
                 {loading ? "Finalizing..." : "Review Created D4D"}
               </DialogConfirmButton>
             </DialogActions>
@@ -246,7 +272,7 @@ ${newIssue.instructions || "No additional instructions"}`;
           <TwoColumnLayout>
             <LeftColumn>
               <Section>
-                <SectionTitle>Existing D4D Issues</SectionTitle>
+                <SectionTitle>Existing D4D Conversations</SectionTitle>
 
                 {loading ? (
                   <LoadingContainer>

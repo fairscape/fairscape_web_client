@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
+import { useLocation } from "react-router-dom";
 import releaseFormConfig from "../components/Forms/config/rocrateEditConfig.json";
 import { PageContainer } from "../components/Forms/ReleaseComponents";
 import {
@@ -9,7 +10,6 @@ import {
 import {
   saveCrate,
   checkCrateExists,
-  loadCrate,
 } from "../components/Forms/utils/storageUtils";
 import { useLLMAssistApi } from "../components/Forms/api/llmAssistApi";
 import { filterFieldsByVisibility } from "../components/Forms/utils/llmUtils";
@@ -38,6 +38,7 @@ interface ReviewState {
 
 const CreateRelease: React.FC = () => {
   const llmApi = useLLMAssistApi();
+  const location = useLocation();
 
   const [mode, setMode] = useState<
     "choice" | "new" | "edit" | "review" | "form"
@@ -58,6 +59,33 @@ const CreateRelease: React.FC = () => {
   const crateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const state = location.state as any;
+    if (state && state.fromD4D && state.rocrate) {
+      try {
+        const content =
+          typeof state.rocrate === "string"
+            ? state.rocrate
+            : JSON.stringify(state.rocrate);
+        const parsedData = parseRoCrateMetadata(content);
+        setFormData(parsedData);
+
+        const initialReviewState: ReviewState = {};
+        releaseFormConfig.sections.forEach((section: any) => {
+          initialReviewState[section.id] = { reviewed: false };
+        });
+        initialReviewState["subCrates"] = { reviewed: true };
+        setReviewState(initialReviewState);
+
+        setIsReviewRequired(true);
+        setIsReviewMode(true);
+        setMode("form");
+      } catch (error) {
+        console.error("Error initializing form from RO-Crate:", error);
+      }
+    }
+  }, [location.state]);
+
+  useEffect(() => {
     if (mode === "form" && isReviewRequired && !isReviewMode) {
       const initialReviewState: ReviewState = {};
       releaseFormConfig.sections.forEach((section) => {
@@ -68,9 +96,11 @@ const CreateRelease: React.FC = () => {
       if (!reviewState["subCrates"]) {
         initialReviewState["subCrates"] = { reviewed: true };
       }
-      setReviewState((prev) => ({ ...prev, ...initialReviewState }));
+      if (Object.keys(initialReviewState).length > 0) {
+        setReviewState((prev) => ({ ...prev, ...initialReviewState }));
+      }
     }
-  }, [mode, isReviewRequired, isReviewMode]);
+  }, [mode, isReviewRequired, isReviewMode, reviewState]);
 
   const handleModeSelection = (selectedMode: "new" | "edit" | "review") => {
     if (selectedMode === "review") {
@@ -87,7 +117,7 @@ const CreateRelease: React.FC = () => {
       setIsReviewRequired(false);
       const defaults: FormData = {};
       releaseFormConfig.sections.forEach((section) => {
-        section.fields.forEach((field) => {
+        section.fields.forEach((field: any) => {
           if (field.defaultValue === "today") {
             defaults[field.name] = new Date().toISOString().split("T")[0];
           } else if (field.defaultValue) {
@@ -173,7 +203,7 @@ const CreateRelease: React.FC = () => {
   const handleSkipToManual = () => {
     const defaults: FormData = {};
     releaseFormConfig.sections.forEach((section) => {
-      section.fields.forEach((field) => {
+      section.fields.forEach((field: any) => {
         if (field.defaultValue === "today") {
           defaults[field.name] = new Date().toISOString().split("T")[0];
         } else if (field.defaultValue) {
@@ -223,7 +253,6 @@ const CreateRelease: React.FC = () => {
     setSaveStatus("saving");
 
     const crateId = formData["@id"] || formData.identifier;
-    const crateName = formData.name || formData.title || "Unnamed Crate";
 
     if (crateId && checkCrateExists(crateId)) {
       if (
