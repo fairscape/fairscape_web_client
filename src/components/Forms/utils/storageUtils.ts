@@ -1,3 +1,11 @@
+export interface SavedCrateMetadata {
+  id: string;
+  name: string;
+  lastModified: string;
+  reviewStatus: boolean;
+  hasUnreviewed: boolean;
+}
+
 interface SavedCrate {
   formData: any;
   reviewState?: any;
@@ -88,6 +96,28 @@ export const getSavedCratesList = (): SavedCrate[] => {
     (a, b) =>
       new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
   );
+};
+
+export const getAllSavedCrates = (): SavedCrateMetadata[] => {
+  const savedCrates = getSavedCrates();
+  return Object.values(savedCrates)
+    .map((crate) => {
+      const hasUnreviewed = crate.reviewState
+        ? Object.values(crate.reviewState).some((state: any) => !state.reviewed)
+        : false;
+
+      return {
+        id: crate.metadata.id,
+        name: crate.metadata.name,
+        lastModified: crate.lastModified,
+        reviewStatus: !hasUnreviewed,
+        hasUnreviewed,
+      };
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+    );
 };
 
 export const loadCrate = (

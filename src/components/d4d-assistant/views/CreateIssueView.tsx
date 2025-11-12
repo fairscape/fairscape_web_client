@@ -20,9 +20,8 @@ import {
   Label,
   Select,
   ButtonGroup,
-  CancelButton,
-  SubmitButton,
 } from "../styles/D4DAssistant.styles";
+import { PrimaryButton, SecondaryButton } from "../../shared/SharedStyles";
 
 interface CreateIssueViewProps {
   onBack: () => void;
@@ -111,10 +110,10 @@ export const CreateIssueView: React.FC<CreateIssueViewProps> = ({
         />
 
         <ButtonGroup>
-          <CancelButton onClick={onBack}>Cancel</CancelButton>
-          <SubmitButton onClick={handleSubmit} disabled={loading}>
+          <SecondaryButton onClick={onBack}>Cancel</SecondaryButton>
+          <PrimaryButton onClick={handleSubmit} disabled={loading}>
             {loading ? "Creating..." : "Create D4D Issue"}
-          </SubmitButton>
+          </PrimaryButton>
         </ButtonGroup>
       </Section>
     </>

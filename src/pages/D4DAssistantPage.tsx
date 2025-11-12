@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useIssues } from "../components/d4d-assistant/hooks/useIssues";
 import { useIssueDetail } from "../components/d4d-assistant/hooks/useIssueDetail";
 import { useD4DConversion } from "../components/d4d-assistant/hooks/useD4DConversion";
@@ -20,6 +20,7 @@ type View = "list" | "create" | "detail";
 const D4DAssistantPage = () => {
   const [view, setView] = useState<View>("list");
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     issues,
@@ -29,6 +30,18 @@ const D4DAssistantPage = () => {
   const { issue, loading: issueLoading, loadIssue } = useIssueDetail();
   const { convertIssue, loading: conversionLoading } = useD4DConversion();
   const { message, type, showStatus } = useStatusMessage();
+
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.fromCreateRelease) {
+      if (state.issueNumber) {
+        loadIssue(state.issueNumber);
+        setView("detail");
+      } else {
+        setView("create");
+      }
+    }
+  }, [location.state]);
 
   const handleIssueClick = async (issueNumber: number) => {
     await loadIssue(issueNumber);
@@ -59,7 +72,7 @@ ${formData.instructions || "No additional instructions"}`;
 
       showStatus("Issue created successfully!", "success");
       await refetchIssues();
-      setView("list");
+      navigate("/review");
     } catch (error) {
       showStatus(
         `Error creating issue: ${
@@ -118,6 +131,10 @@ ${formData.instructions || "No additional instructions"}`;
     }
   };
 
+  const handleBack = () => {
+    navigate("/review");
+  };
+
   return (
     <PageContainer>
       <StatusMessage message={message} type={type} />
@@ -133,7 +150,7 @@ ${formData.instructions || "No additional instructions"}`;
 
       {view === "create" && (
         <CreateIssueView
-          onBack={() => setView("list")}
+          onBack={handleBack}
           onSubmit={handleCreateIssue}
           loading={issuesLoading}
         />
@@ -142,7 +159,7 @@ ${formData.instructions || "No additional instructions"}`;
       {view === "detail" && issue && (
         <IssueDetailView
           issue={issue}
-          onBack={() => setView("list")}
+          onBack={handleBack}
           onAddComment={handleAddComment}
           onReview={handleReview}
           loading={issueLoading || conversionLoading}

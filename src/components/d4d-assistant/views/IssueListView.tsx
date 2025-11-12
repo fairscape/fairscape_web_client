@@ -1,30 +1,47 @@
 import React from "react";
-import { FiPlus, FiMessageSquare } from "react-icons/fi";
-import { Issue } from "../types/issue.types";
-import { IssueRow } from "../components/IssueRow";
 import {
+  PageContainer,
   PageHeader,
   Title,
   Subtitle,
-  TwoColumnLayout,
-  LeftColumn,
-  RightColumn,
-  Section,
+  CreateCard,
+  CreateIcon,
+  CreateTitle,
+  CreateDescription,
+  CreateButton,
   SectionTitle,
+  IssuesTable,
+  TableBody,
+  StyledIssueRow,
+  IssueTitle,
+  IssueMetaRow,
+  IssueDate,
+  IssueComments,
+  Labels,
+  IssueLabel,
   LoadingContainer,
   Spinner,
   LoadingText,
   EmptyState,
   EmptyIcon,
   EmptyText,
-  IssuesTable,
-  TableBody,
-  CreateCard,
-  CreateIcon,
-  CreateTitle,
-  CreateDescription,
-  CreateButton,
 } from "../styles/D4DAssistant.styles";
+import { FileText, Plus } from "lucide-react";
+
+interface Issue {
+  number: number;
+  title: string;
+  state: string;
+  created_at: string;
+  updated_at: string;
+  user: {
+    login: string;
+  };
+  labels: Array<{
+    name: string;
+  }>;
+  comments: number;
+}
 
 interface IssueListViewProps {
   issues: Issue[];
@@ -39,63 +56,88 @@ export const IssueListView: React.FC<IssueListViewProps> = ({
   onIssueClick,
   onCreateClick,
 }) => {
+  if (loading) {
+    return (
+      <LoadingContainer>
+        <Spinner />
+        <LoadingText>Loading D4D issues...</LoadingText>
+      </LoadingContainer>
+    );
+  }
+
+  if (issues.length === 0) {
+    return (
+      <PageContainer>
+        <PageHeader>
+          <Title>D4D Assistant</Title>
+          <Subtitle>
+            Create and manage Data for Datasets (D4D) issues with AI assistance
+          </Subtitle>
+        </PageHeader>
+
+        <CreateCard>
+          <CreateIcon>
+            <FileText size={80} />
+          </CreateIcon>
+          <CreateTitle>No D4D Issues Yet</CreateTitle>
+          <CreateDescription>
+            Get started by creating your first Data for Dataset (D4D) issue. The
+            AI assistant will help you generate comprehensive dataset
+            documentation.
+          </CreateDescription>
+          <CreateButton onClick={onCreateClick}>
+            <Plus size={20} />
+            Create Your First D4D
+          </CreateButton>
+        </CreateCard>
+      </PageContainer>
+    );
+  }
+
   return (
-    <>
+    <PageContainer>
       <PageHeader>
         <Title>D4D Assistant</Title>
-        <Subtitle>Manage and create D4D datasheets</Subtitle>
+        <Subtitle>
+          Create and manage Data for Datasets (D4D) issues with AI assistance
+        </Subtitle>
       </PageHeader>
 
-      <TwoColumnLayout>
-        <LeftColumn>
-          <Section>
-            <SectionTitle>Existing D4D Conversations</SectionTitle>
+      <CreateCard>
+        <CreateButton onClick={onCreateClick}>
+          <Plus size={20} />
+          Create New D4D Issue
+        </CreateButton>
+      </CreateCard>
 
-            {loading ? (
-              <LoadingContainer>
-                <Spinner />
-                <LoadingText>Loading...</LoadingText>
-              </LoadingContainer>
-            ) : issues.length === 0 ? (
-              <EmptyState>
-                <EmptyIcon>
-                  <FiMessageSquare size={48} />
-                </EmptyIcon>
-                <EmptyText>No open issues</EmptyText>
-              </EmptyState>
-            ) : (
-              <IssuesTable>
-                <TableBody>
-                  {issues.map((issue) => (
-                    <IssueRow
-                      key={issue.number}
-                      issue={issue}
-                      onClick={() => onIssueClick(issue.number)}
-                    />
-                  ))}
-                </TableBody>
-              </IssuesTable>
-            )}
-          </Section>
-        </LeftColumn>
-
-        <RightColumn>
-          <CreateCard>
-            <CreateIcon>
-              <FiPlus size={64} />
-            </CreateIcon>
-            <CreateTitle>Create New D4D</CreateTitle>
-            <CreateDescription>
-              Upload documentation, provide URLs, and let the d4dassistant
-              generate a comprehensive datasheet for your project
-            </CreateDescription>
-            <CreateButton onClick={onCreateClick}>
-              <FiPlus size={20} />
-              Start New D4D
-            </CreateButton>
-          </CreateCard>
-        </RightColumn>
-      </TwoColumnLayout>
-    </>
+      <div style={{ marginTop: "30px" }}>
+        <SectionTitle>Open Issues</SectionTitle>
+        <IssuesTable>
+          <TableBody>
+            {issues.map((issue) => (
+              <StyledIssueRow
+                key={issue.number}
+                onClick={() => onIssueClick(issue.number)}
+              >
+                <IssueTitle>{issue.title}</IssueTitle>
+                <IssueMetaRow>
+                  <IssueDate>
+                    Updated {new Date(issue.updated_at).toLocaleDateString()}
+                  </IssueDate>
+                  <IssueComments>{issue.comments} comments</IssueComments>
+                </IssueMetaRow>
+                {issue.labels.length > 0 && (
+                  <Labels>
+                    {issue.labels.map((label) => (
+                      <IssueLabel key={label.name}>{label.name}</IssueLabel>
+                    ))}
+                  </Labels>
+                )}
+              </StyledIssueRow>
+            ))}
+          </TableBody>
+        </IssuesTable>
+      </div>
+    </PageContainer>
   );
 };

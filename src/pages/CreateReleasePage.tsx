@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import releaseFormConfig from "../components/Forms/config/rocrateEditConfig.json";
 import { PageContainer } from "../components/Forms/ReleaseComponents";
 import {
@@ -13,11 +13,11 @@ import {
 } from "../components/Forms/utils/storageUtils";
 import { useLLMAssistApi } from "../components/Forms/api/llmAssistApi";
 import { filterFieldsByVisibility } from "../components/Forms/utils/llmUtils";
-import ModeSelector from "../components/Forms/Release/ModeSelector";
+import UnifiedStartingPage from "../components/Forms/Release/UnifiedStartingPage";
 import FormManager from "../components/Forms/Release/FormManager";
 import DocumentUploader from "../components/Forms/Release/DocumentUploader";
-import EditSelectionPage from "../components/Forms/Release/EditSelectionPage";
 import ActionSidebar from "../components/Forms/Release/ActionSideBar";
+import { PageTitle } from "../components/shared/SharedStyles";
 
 interface FormData {
   [key: string]: any;
@@ -39,10 +39,12 @@ interface ReviewState {
 const CreateRelease: React.FC = () => {
   const llmApi = useLLMAssistApi();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const [mode, setMode] = useState<
-    "choice" | "new" | "edit" | "review" | "form"
-  >("choice");
+  const [mode, setMode] = useState<"landing" | "form">("landing");
+  const [currentMethod, setCurrentMethod] = useState<
+    "manual" | "direct" | "interactive" | null
+  >(null);
   const [formData, setFormData] = useState<FormData>({});
   const [reviewState, setReviewState] = useState<ReviewState>({});
   const [isReviewRequired, setIsReviewRequired] = useState(false);
@@ -56,7 +58,7 @@ const CreateRelease: React.FC = () => {
   const [fieldVisibility, setFieldVisibility] = useState<
     "minimal" | "ai-ready" | "all"
   >("all");
-  const crateInputRef = useRef<HTMLInputElement>(null);
+  const [showDocumentUploader, setShowDocumentUploader] = useState(false);
 
   useEffect(() => {
     const state = location.state as any;
@@ -78,6 +80,7 @@ const CreateRelease: React.FC = () => {
 
         setIsReviewRequired(true);
         setIsReviewMode(true);
+        setShowDocumentUploader(false);
         setMode("form");
       } catch (error) {
         console.error("Error initializing form from RO-Crate:", error);
@@ -102,19 +105,14 @@ const CreateRelease: React.FC = () => {
     }
   }, [mode, isReviewRequired, isReviewMode, reviewState]);
 
-  const handleModeSelection = (selectedMode: "new" | "edit" | "review") => {
-    if (selectedMode === "review") {
-      setMode("review");
-      setIsReviewMode(true);
-      setIsReviewRequired(true);
-    } else if (selectedMode === "edit") {
-      setMode("edit");
-      setIsReviewRequired(false);
-      setIsReviewMode(false);
-    } else {
-      setMode(selectedMode);
-      setIsReviewMode(false);
-      setIsReviewRequired(false);
+  const handleCreateMethod = (method: "manual" | "direct" | "interactive") => {
+    setCurrentMethod(method);
+
+    if (method === "interactive") {
+      navigate("/d4d-assistant", {
+        state: { fromCreateRelease: true },
+      });
+    } else if (method === "manual") {
       const defaults: FormData = {};
       releaseFormConfig.sections.forEach((section) => {
         section.fields.forEach((field: any) => {
@@ -130,6 +128,12 @@ const CreateRelease: React.FC = () => {
       defaults.hasPart = [];
       defaults.subCrates = [];
       setFormData(defaults);
+      setIsReviewRequired(false);
+      setShowDocumentUploader(false);
+      setMode("form");
+    } else if (method === "direct") {
+      setShowDocumentUploader(true);
+      setMode("form");
     }
   };
 
@@ -146,7 +150,14 @@ const CreateRelease: React.FC = () => {
       setIsReviewRequired(hasUnreviewed);
     }
     setIsReviewMode(false);
+    setShowDocumentUploader(false);
     setMode("form");
+  };
+
+  const handleIssueSelect = (issueNumber: number) => {
+    navigate("/d4d-assistant", {
+      state: { fromCreateRelease: true, issueNumber },
+    });
   };
 
   const handleCrateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,14 +172,15 @@ const CreateRelease: React.FC = () => {
         setFormData(parsedData);
         setUploadedCrate(file);
 
-        if (isReviewMode) {
-          const initialReviewState: ReviewState = {};
-          releaseFormConfig.sections.forEach((section) => {
-            initialReviewState[section.id] = { reviewed: false };
-          });
-          initialReviewState["subCrates"] = { reviewed: false };
-          setReviewState(initialReviewState);
-        }
+        const initialReviewState: ReviewState = {};
+        releaseFormConfig.sections.forEach((section) => {
+          initialReviewState[section.id] = { reviewed: false };
+        });
+        initialReviewState["subCrates"] = { reviewed: false };
+        setReviewState(initialReviewState);
+        setIsReviewRequired(true);
+        setIsReviewMode(true);
+        setShowDocumentUploader(false);
 
         setMode("form");
       } catch (error) {
@@ -192,6 +204,7 @@ const CreateRelease: React.FC = () => {
         subCrates: prev.subCrates || [],
       }));
       setIsReviewRequired(true);
+      setShowDocumentUploader(false);
       setMode("form");
     } catch (error) {
       console.error("LLM assist error:", error);
@@ -217,6 +230,7 @@ const CreateRelease: React.FC = () => {
     defaults.subCrates = [];
     setFormData(defaults);
     setIsReviewRequired(false);
+    setShowDocumentUploader(false);
     setMode("form");
   };
 
@@ -309,7 +323,9 @@ const CreateRelease: React.FC = () => {
   };
 
   const handleStartOver = () => {
-    setMode("choice");
+    setMode("landing");
+    setCurrentMethod(null);
+    setShowDocumentUploader(false);
     setFormData({});
     setSupportingDocs([]);
     setReviewState({});
@@ -333,29 +349,18 @@ const CreateRelease: React.FC = () => {
 
   return (
     <PageContainer>
-      <PageTitle>Create Release RO-Crate</PageTitle>
+      <PageTitle>Create a Fairscape Release</PageTitle>
 
-      {mode === "choice" && <ModeSelector onModeSelect={handleModeSelection} />}
-
-      {(mode === "edit" || mode === "review") && (
-        <EditSelectionPage
+      {mode === "landing" && (
+        <UnifiedStartingPage
+          onMethodSelect={handleCreateMethod}
           onCrateUpload={handleCrateUpload}
           onSavedCrateSelect={handleSavedCrateSelect}
-          onBack={() => setMode("choice")}
-          title={
-            mode === "review"
-              ? "Review Release RO-Crate"
-              : "Edit Existing RO-Crate"
-          }
-          description={
-            mode === "review"
-              ? "Upload a ro-crate-metadata.json file that needs review and approval."
-              : "Upload an existing ro-crate-metadata.json file to edit its contents."
-          }
+          onIssueSelect={handleIssueSelect}
         />
       )}
 
-      {mode === "new" && (
+      {mode === "form" && showDocumentUploader && (
         <DocumentUploader
           supportingDocs={supportingDocs}
           onDocsChange={setSupportingDocs}
@@ -368,7 +373,7 @@ const CreateRelease: React.FC = () => {
         />
       )}
 
-      {mode === "form" && (
+      {mode === "form" && !showDocumentUploader && (
         <MainContent>
           <FormColumn>
             <FormManager
@@ -395,24 +400,9 @@ const CreateRelease: React.FC = () => {
           />
         </MainContent>
       )}
-
-      <input
-        ref={crateInputRef}
-        type="file"
-        accept=".json"
-        onChange={handleCrateUpload}
-        style={{ display: "none" }}
-      />
     </PageContainer>
   );
 };
-
-const PageTitle = styled.h1`
-  font-size: 2rem;
-  color: #3e7aa8;
-  text-align: center;
-  margin-bottom: 30px;
-`;
 
 const MainContent = styled.div`
   display: flex;

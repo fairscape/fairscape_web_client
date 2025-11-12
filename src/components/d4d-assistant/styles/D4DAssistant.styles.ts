@@ -1,4 +1,3 @@
-// src/components/d4d-assistant/styles/D4DAssistant.styles.ts
 import styled from "styled-components";
 
 export const PageContainer = styled.div`
@@ -510,60 +509,87 @@ export const ButtonGroup = styled.div`
 
 export const CancelButton = styled.button`
   padding: 12px 24px;
-  background: #6c757d;
-  color: white;
-  border: none;
+  background: white;
+  color: #3e7aa8;
+  border: 2px solid #3e7aa8;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 
   &:hover {
-    background: #5a6268;
+    background: #f0f7fb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    border-color: #ccc;
+    color: #ccc;
+    cursor: not-allowed;
+    transform: none;
   }
 `;
 
 export const SubmitButton = styled.button`
   flex: 1;
   padding: 12px 24px;
-  background: #28a745;
+  background: #3e7aa8;
   color: white;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: #218838;
+    background: #2c5a7a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
   }
 `;
 
 export const ReviewButton = styled.button`
   padding: 12px 24px;
-  background: #28a745;
+  background: #3e7aa8;
   color: white;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
 
   &:hover:not(:disabled) {
-    background: #218838;
+    background: #2c5a7a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
   }
 `;
 
