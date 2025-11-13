@@ -51,6 +51,7 @@ export function useMetadataBundle(ark: string) {
 
         const permissions = mainResp?.permissions;
         const distribution = mainResp?.distribution;
+        const descriptiveStatistics = mainResp?.descriptiveStatistics;
 
         const initialBundle: MetadataBundle = {
           kind,
@@ -61,6 +62,7 @@ export function useMetadataBundle(ark: string) {
           session: { isLoggedIn: !!isLoggedIn },
           permissions,
           distribution,
+          descriptiveStatistics,
         };
 
         if (!cancelled) {

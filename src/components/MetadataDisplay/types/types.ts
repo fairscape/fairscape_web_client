@@ -30,6 +30,24 @@ export interface Distribution {
   };
 }
 
+export interface ColumnStatistics {
+  count: number;
+  mean: number | string;
+  std: number | string;
+  min: number | string;
+  first_quartile: number | string;
+  second_quartile: number | string;
+  third_quartile: number | string;
+  max: number | string;
+}
+
+export interface DescriptiveStatistics {
+  [columnName: string]: {
+    columnName: string;
+    statistics: ColumnStatistics;
+  };
+}
+
 export interface MetadataBundle {
   kind: string;
   main: any;
@@ -39,4 +57,5 @@ export interface MetadataBundle {
   session: SessionInfo;
   permissions?: Permissions;
   distribution?: Distribution;
+  descriptiveStatistics?: DescriptiveStatistics;
 }

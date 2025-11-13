@@ -16,7 +16,6 @@ import StatisticsViewer from "../components/MetadataDisplay/views/Statistics/Sta
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
 import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
 import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
-import { nicuDataset } from "../components/MetadataDisplay/views/Statistics/nicuDataset";
 
 type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics";
 
@@ -128,6 +127,13 @@ export default function MetadataDisplayPage() {
 
   const hasContentUrl = useMemo(() => !!metadata?.contentUrl, [metadata]);
 
+  const hasStatistics = useMemo(
+    () =>
+      !!bundle?.descriptiveStatistics &&
+      Object.keys(bundle.descriptiveStatistics).length > 0,
+    [bundle]
+  );
+
   useEffect(() => {
     document.title = `${title} - FAIRSCAPE`;
   }, [title]);
@@ -209,7 +215,20 @@ export default function MetadataDisplayPage() {
         return <AIReadyScoreView arkId={arkId} />;
 
       case "statistics":
-        return <StatisticsViewer dataset={nicuDataset} />;
+        if (!bundle.descriptiveStatistics) {
+          return (
+            <Alert
+              type="info"
+              title="Statistics"
+              message="No descriptive statistics available for this dataset."
+            />
+          );
+        }
+        return (
+          <StatisticsViewer
+            descriptiveStatistics={bundle.descriptiveStatistics}
+          />
+        );
 
       default:
         return (
@@ -263,6 +282,7 @@ export default function MetadataDisplayPage() {
             downloadHTML={downloadHTML}
             hasDistribution={hasDistribution}
             hasContentUrl={hasContentUrl}
+            hasStatistics={hasStatistics}
           />
         )}
       </PageContainer>
