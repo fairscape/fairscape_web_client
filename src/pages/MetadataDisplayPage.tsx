@@ -11,12 +11,14 @@ import SerializationView from "../components/MetadataDisplay/views/Serialization
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 import MetadataNavigationSidebar from "../components/MetadataDisplay/components/MetadataNavigationSidebar";
 import AIReadyScoreView from "../components/MetadataDisplay/views/AIReadyScore/AIReadyScoreView";
+import StatisticsViewer from "../components/MetadataDisplay/views/Statistics/StatisticsViewer";
 
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
 import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
 import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
+import { nicuDataset } from "../components/MetadataDisplay/views/Statistics/nicuDataset";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score";
+type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics";
 
 const PageContainer = styled.div`
   display: flex;
@@ -205,6 +207,9 @@ export default function MetadataDisplayPage() {
 
       case "score":
         return <AIReadyScoreView arkId={arkId} />;
+
+      case "statistics":
+        return <StatisticsViewer dataset={nicuDataset} />;
 
       default:
         return (
