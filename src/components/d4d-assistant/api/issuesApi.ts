@@ -64,3 +64,18 @@ export const updateIssue = async (
   if (!response.ok) throw new Error("Failed to update issue");
   return await response.json();
 };
+
+export const checkActiveActions = async (): Promise<{
+  active: boolean;
+  count: number;
+  runs: Array<{
+    id: number;
+    name: string;
+    status: string;
+    html_url: string;
+  }>;
+}> => {
+  const response = await fetch(`${API_URL}/actions/active`);
+  if (!response.ok) throw new Error("Failed to check active actions");
+  return await response.json();
+};

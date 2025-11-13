@@ -12,7 +12,7 @@ export const extractD4DYamlUrl = (comments: Comment[]): string | null => {
     console.log("Checking comment from:", comment.user);
     console.log("Comment body:", comment.body);
     const urlMatch = comment.body.match(
-      /📄 D4D YAML Link:\s*(https:\/\/raw\.githubusercontent\.com\/[^\s]+\.yaml)/
+      /📄\s+\*\*D4D YAML Link\*\*:\s*(https:\/\/raw\.githubusercontent\.com\/[^\s]+\.yaml)/
     );
 
     if (urlMatch) {
