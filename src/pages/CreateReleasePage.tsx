@@ -43,7 +43,7 @@ const CreateRelease: React.FC = () => {
 
   const [mode, setMode] = useState<"landing" | "form">("landing");
   const [currentMethod, setCurrentMethod] = useState<
-    "manual" | "direct" | "interactive" | null
+    "manual" | "upload-existing" | "direct" | "interactive" | null
   >(null);
   const [formData, setFormData] = useState<FormData>({});
   const [reviewState, setReviewState] = useState<ReviewState>({});
@@ -105,7 +105,9 @@ const CreateRelease: React.FC = () => {
     }
   }, [mode, isReviewRequired, isReviewMode, reviewState]);
 
-  const handleCreateMethod = (method: "manual" | "direct" | "interactive") => {
+  const handleCreateMethod = (
+    method: "manual" | "upload-existing" | "direct" | "interactive"
+  ) => {
     setCurrentMethod(method);
 
     if (method === "interactive") {
@@ -135,6 +137,34 @@ const CreateRelease: React.FC = () => {
       setShowDocumentUploader(true);
       setMode("form");
     }
+  };
+
+  const handleUploadExisting = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        const parsedData = parseRoCrateMetadata(content);
+        setFormData(parsedData);
+        setUploadedCrate(file);
+        setIsReviewRequired(false);
+        setIsReviewMode(false);
+        setShowDocumentUploader(false);
+        setMode("form");
+      } catch (error) {
+        console.error("Error parsing RO-Crate:", error);
+        alert(
+          "Failed to parse RO-Crate metadata. Please check the file format."
+        );
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   const handleSavedCrateSelect = (data: {
@@ -191,6 +221,7 @@ const CreateRelease: React.FC = () => {
       }
     };
     reader.readAsText(file);
+    e.target.value = "";
   };
 
   const handleLLMAssist = async (documents: UploadedFile[]) => {
@@ -354,6 +385,7 @@ const CreateRelease: React.FC = () => {
       {mode === "landing" && (
         <UnifiedStartingPage
           onMethodSelect={handleCreateMethod}
+          onUploadExisting={handleUploadExisting}
           onCrateUpload={handleCrateUpload}
           onSavedCrateSelect={handleSavedCrateSelect}
           onIssueSelect={handleIssueSelect}

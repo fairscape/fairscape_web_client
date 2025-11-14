@@ -8,7 +8,10 @@ import {
 } from "../utils/storageUtils";
 
 interface UnifiedStartingPageProps {
-  onMethodSelect: (method: "manual" | "direct" | "interactive") => void;
+  onMethodSelect: (
+    method: "manual" | "upload-existing" | "direct" | "interactive"
+  ) => void;
+  onUploadExisting: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onCrateUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSavedCrateSelect: (data: { formData: any; reviewState?: any }) => void;
   onIssueSelect: (issueNumber: number) => void;
@@ -24,13 +27,15 @@ interface SavedCrate {
 
 const UnifiedStartingPage: React.FC<UnifiedStartingPageProps> = ({
   onMethodSelect,
+  onUploadExisting,
   onCrateUpload,
   onSavedCrateSelect,
   onIssueSelect,
 }) => {
   const [savedCrates, setSavedCrates] = useState<SavedCrate[]>([]);
   const { issues, loading: issuesLoading } = useIssues();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadExistingInputRef = useRef<HTMLInputElement>(null);
+  const reviewUploadInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSavedCrates(getAllSavedCrates());
@@ -69,7 +74,9 @@ const UnifiedStartingPage: React.FC<UnifiedStartingPageProps> = ({
     refreshSavedCrates();
   };
 
-  const handleUploadClick = () => fileInputRef.current?.click();
+  const handleUploadExistingClick = () =>
+    uploadExistingInputRef.current?.click();
+  const handleReviewUploadClick = () => reviewUploadInputRef.current?.click();
 
   const combinedItems = useMemo(() => {
     const items = [
@@ -102,11 +109,15 @@ const UnifiedStartingPage: React.FC<UnifiedStartingPageProps> = ({
         <Section role="region" aria-labelledby="create-title">
           <SectionTitle id="create-title">Create New</SectionTitle>
           <SectionDescription>
-            Start a new RO-Crate from scratch or with assistance.
+            Start a new RO-Crate from scratch, existing file, or with AI
+            assistance.
           </SectionDescription>
-          <ButtonGroup>
+          <TwoByTwoGrid>
             <PrimaryButton onClick={() => onMethodSelect("manual")}>
-              Manual Release
+              Manual Entry
+            </PrimaryButton>
+            <PrimaryButton onClick={handleUploadExistingClick}>
+              Start from Prev. Version
             </PrimaryButton>
             <PrimaryButton onClick={() => onMethodSelect("direct")}>
               Direct LLM Assist
@@ -114,7 +125,15 @@ const UnifiedStartingPage: React.FC<UnifiedStartingPageProps> = ({
             <PrimaryButton onClick={() => onMethodSelect("interactive")}>
               Interactive D4D Assistant
             </PrimaryButton>
-          </ButtonGroup>
+          </TwoByTwoGrid>
+          <HiddenFileInput
+            ref={uploadExistingInputRef}
+            type="file"
+            accept=".json,application/json"
+            onChange={onUploadExisting}
+            aria-hidden
+            tabIndex={-1}
+          />
         </Section>
 
         <Section role="region" aria-labelledby="review-title">
@@ -124,11 +143,11 @@ const UnifiedStartingPage: React.FC<UnifiedStartingPageProps> = ({
             approval.
           </SectionDescription>
           <ButtonGroup>
-            <SecondaryButton onClick={handleUploadClick}>
+            <SecondaryButton onClick={handleReviewUploadClick}>
               Upload RO-Crate
             </SecondaryButton>
             <HiddenFileInput
-              ref={fileInputRef}
+              ref={reviewUploadInputRef}
               type="file"
               accept=".json,application/json"
               onChange={onCrateUpload}
@@ -254,8 +273,6 @@ const UnifiedStartingPage: React.FC<UnifiedStartingPageProps> = ({
   );
 };
 
-/* ---------- helpers ---------- */
-
 function normalizeStatus(status: string) {
   const s = (status || "").toLowerCase();
   if (["closed", "complete", "completed", "done"].includes(s))
@@ -265,8 +282,6 @@ function normalizeStatus(status: string) {
     return "Needs Review";
   return status || "—";
 }
-
-/* ---------- styles ---------- */
 
 const Container = styled.div`
   display: flex;
@@ -328,6 +343,12 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+`;
+
+const TwoByTwoGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 `;
 
 const BaseButton = styled.button`
@@ -479,8 +500,6 @@ const CardStatus = styled.span<{ status: string }>`
         ? "#c7d2fe"
         : "#fde7c3"};
 `;
-
-/* ---------- skeletons ---------- */
 
 const SkeletonLine = styled.div`
   height: 12px;
