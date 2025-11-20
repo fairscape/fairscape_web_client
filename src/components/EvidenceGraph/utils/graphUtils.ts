@@ -82,6 +82,7 @@ export function getDisplayableProperties(
     "usedSoftware",
     "usedSample",
     "usedInstrument",
+    "usedMLModel",
     "name",
     "label",
     "description",
@@ -116,6 +117,7 @@ export function createEvidenceNode(
     ...relationships.usedSoftware,
     ...relationships.usedSample,
     ...relationships.usedInstrument,
+    ...relationships.usedMLModel,
   ];
 
   const visibleRelatedCount = allRelated.filter((node) =>
@@ -155,6 +157,7 @@ export function createEdge(
     usedSoftware: "used software",
     usedSample: "used sample",
     usedInstrument: "used instrument",
+    usedMLModel: "used model",
     contains: "contains",
   };
 
@@ -243,6 +246,11 @@ export class GraphBuilder {
         nodeId,
         relationships.usedInstrument,
         "usedInstrument"
+      );
+      this._processRelationship(
+        nodeId,
+        relationships.usedMLModel,
+        "usedMLModel"
       );
 
       if (relationships.usedDataset.length > COLLECTION_THRESHOLD) {
@@ -393,6 +401,12 @@ export class GraphBuilder {
       "usedInstrument",
       depth
     );
+    this._processRelationship(
+      nodeId,
+      relationships.usedMLModel,
+      "usedMLModel",
+      depth
+    );
 
     if (relationships.usedDataset.length > COLLECTION_THRESHOLD) {
       this._addDatasetCollection(nodeId, relationships.usedDataset);
@@ -420,6 +434,8 @@ export class GraphBuilder {
     if (rels.usedSample.some((n) => n["@id"] === targetId)) return "usedSample";
     if (rels.usedInstrument.some((n) => n["@id"] === targetId))
       return "usedInstrument";
+    if (rels.usedMLModel.some((n) => n["@id"] === targetId))
+      return "usedMLModel";
     return null;
   }
 

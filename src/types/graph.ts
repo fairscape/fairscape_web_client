@@ -11,6 +11,7 @@ export interface RawGraphEntity {
   usedSoftware?: { "@id": string } | Array<{ "@id": string }>;
   usedSample?: { "@id": string } | Array<{ "@id": string }>;
   usedInstrument?: { "@id": string } | Array<{ "@id": string }>;
+  usedMLModel?: { "@id": string } | Array<{ "@id": string }>;
   [key: string]: any;
 }
 

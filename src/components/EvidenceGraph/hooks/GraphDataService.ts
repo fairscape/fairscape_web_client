@@ -81,6 +81,7 @@ export class GraphDataService {
     usedSoftware: RawGraphEntity[];
     usedSample: RawGraphEntity[];
     usedInstrument: RawGraphEntity[];
+    usedMLModel: RawGraphEntity[];
   } {
     return {
       generatedBy: this.getRelatedNodes(nodeId, "generatedBy"),
@@ -88,6 +89,7 @@ export class GraphDataService {
       usedSoftware: this.getRelatedNodes(nodeId, "usedSoftware"),
       usedSample: this.getRelatedNodes(nodeId, "usedSample"),
       usedInstrument: this.getRelatedNodes(nodeId, "usedInstrument"),
+      usedMLModel: this.getRelatedNodes(nodeId, "usedMLModel"),
     };
   }
 
@@ -116,6 +118,7 @@ export class GraphDataService {
         "usedSoftware",
         "usedSample",
         "usedInstrument",
+        "usedMLModel",
       ];
 
       for (const rel of relationships) {

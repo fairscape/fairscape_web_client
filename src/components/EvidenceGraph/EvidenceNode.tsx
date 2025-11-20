@@ -21,6 +21,8 @@ const getNodeColor = (type: string): string => {
     case "Software":
     case "Instrument":
       return "#FFC107";
+    case "MLModel":
+      return "#C8A2FF";
     case "DatasetCollection":
       return "#B5DEFF";
     default:
