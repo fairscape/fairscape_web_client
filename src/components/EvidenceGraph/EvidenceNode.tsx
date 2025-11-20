@@ -15,6 +15,8 @@ const getNodeColor = (type: string): string => {
     case "Dataset":
     case "Sample":
       return "#8AE68A";
+    case "ROCrate":
+      return "#64C2A6";
     case "Computation":
     case "Experiment":
       return "#FD9A9A";
@@ -23,6 +25,8 @@ const getNodeColor = (type: string): string => {
       return "#FFC107";
     case "MLModel":
       return "#C8A2FF";
+    case "Annotation":
+      return "#FFA07A";
     case "DatasetCollection":
       return "#B5DEFF";
     default:

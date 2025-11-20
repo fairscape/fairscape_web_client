@@ -13,7 +13,21 @@ const feUrl = window.location.origin + "/view/";
 
 export function getEntityType(typeUri: string | string[] | undefined): string {
   if (!typeUri) return "Unknown";
-  const typeString = Array.isArray(typeUri) ? typeUri[0] : typeUri;
+
+  // Handle array of types - check for ROCrate first
+  if (Array.isArray(typeUri)) {
+    const hasROCrate = typeUri.some(t =>
+      t.includes("ROCrate") || t.includes("RO-Crate") || t.includes("rocrate")
+    );
+    if (hasROCrate) return "ROCrate";
+
+    // Otherwise use the first type
+    const typeString = typeUri[0];
+    return typeString.split(/[#\/]/).pop() || "Unknown";
+  }
+
+  // Handle single type string
+  const typeString = typeUri;
   return typeString.split(/[#\/]/).pop() || "Unknown";
 }
 
