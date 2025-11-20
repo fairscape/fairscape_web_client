@@ -28,6 +28,15 @@ interface UploadedFile {
   content: string;
 }
 
+interface ProvenanceState {
+  inputArk: string;
+  computationArk: string;
+  outputArk: string;
+  sourceFlow: "manual" | "direct" | "chatbot";
+  requiresGithubPush: boolean;
+  yamlUrl?: string;
+}
+
 interface ReviewState {
   [sectionId: string]: {
     reviewed: boolean;
@@ -52,6 +61,7 @@ const CreateRelease: React.FC = () => {
   const [uploadedCrate, setUploadedCrate] = useState<File | null>(null);
   const [supportingDocs, setSupportingDocs] = useState<UploadedFile[]>([]);
   const [isLoadingLLM, setIsLoadingLLM] = useState(false);
+  const [provenance, setProvenance] = useState<ProvenanceState | null>(null);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -70,6 +80,9 @@ const CreateRelease: React.FC = () => {
             : JSON.stringify(state.rocrate);
         const parsedData = parseRoCrateMetadata(content);
         setFormData(parsedData);
+        if (state.provenance) {
+          setProvenance(state.provenance);
+        }
 
         const initialReviewState: ReviewState = {};
         releaseFormConfig.sections.forEach((section: any) => {
@@ -104,6 +117,12 @@ const CreateRelease: React.FC = () => {
       }
     }
   }, [mode, isReviewRequired, isReviewMode, reviewState]);
+
+  useEffect(() => {
+    if (provenance) {
+      setIsReviewRequired(true);
+    }
+  }, [provenance]);
 
   const handleCreateMethod = (
     method: "manual" | "upload-existing" | "direct" | "interactive"
@@ -228,12 +247,25 @@ const CreateRelease: React.FC = () => {
     setIsLoadingLLM(true);
     try {
       const suggestedData = await llmApi.processDocuments(documents);
+      const { result, provenance } = suggestedData;
+      const parsedResult =
+        typeof result === "string" ? JSON.parse(result) : result;
+
       setFormData((prev) => ({
         ...prev,
-        ...suggestedData,
+        ...parsedResult,
         hasPart: prev.hasPart || [],
         subCrates: prev.subCrates || [],
       }));
+
+      setProvenance({
+        inputArk: provenance.inputArk,
+        computationArk: provenance.computationArk,
+        outputArk: provenance.outputArk,
+        sourceFlow: "direct",
+        requiresGithubPush: false,
+      });
+
       setIsReviewRequired(true);
       setShowDocumentUploader(false);
       setMode("form");
@@ -263,6 +295,7 @@ const CreateRelease: React.FC = () => {
     setIsReviewRequired(false);
     setShowDocumentUploader(false);
     setMode("form");
+    setProvenance(null);
   };
 
   const handleFieldChange = (fieldName: string, value: any) => {

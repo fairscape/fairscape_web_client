@@ -7,6 +7,8 @@ export interface Issue {
   user: string;
   labels: string[];
   comments_count: number;
+  html_url?: string;
+  url?: string;
 }
 
 export interface Comment {
