@@ -39,17 +39,33 @@ function generateArkId(
 
 export function parseRoCrateMetadata(jsonContent: string): FormData {
   try {
+    console.log("=== parseRoCrateMetadata ===");
+    console.log("Input type:", typeof jsonContent);
+    console.log("Input preview:", jsonContent.substring(0, 200));
+
     const parsed = JSON.parse(jsonContent);
+    console.log("Parsed object keys:", Object.keys(parsed));
+    console.log("Has @graph:", !!parsed["@graph"]);
 
     if (
       !parsed["@graph"] ||
       !Array.isArray(parsed["@graph"]) ||
       parsed["@graph"].length < 2
     ) {
+      console.error("Invalid RO-Crate structure:", {
+        hasGraph: !!parsed["@graph"],
+        isArray: Array.isArray(parsed["@graph"]),
+        length: parsed["@graph"]?.length,
+      });
       throw new Error(
         "Invalid RO-Crate structure: missing @graph or insufficient entries"
       );
     }
+
+    console.log("@graph length:", parsed["@graph"].length);
+    console.log("@graph[0] (metadata descriptor):", parsed["@graph"][0]);
+    console.log("@graph[1] (root dataset) @id:", parsed["@graph"][1]?.["@id"]);
+    console.log("@graph[1] @type:", parsed["@graph"][1]?.["@type"]);
 
     const rootNode = parsed["@graph"][1];
     const formData: FormData = {};
@@ -206,9 +222,24 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
     formData.humanSubject = formData.humanSubject || "";
     formData.prohibitedUses = formData.prohibitedUses || "";
 
+    console.log("=== Parsed FormData ===");
+    console.log("Total fields:", Object.keys(formData).length);
+    console.log("Key fields:", {
+      "@id": formData["@id"],
+      name: formData.name,
+      description: formData.description?.substring(0, 100) + "...",
+      keywords: formData.keywords,
+      version: formData.version,
+      author: formData.author,
+    });
+    console.log("RAI fields present:",
+      Object.keys(formData).filter(k => k.startsWith("rai:")).length
+    );
+
     return formData;
   } catch (error) {
-    console.error("Error parsing RO-Crate metadata:", error);
+    console.error("!!! Error parsing RO-Crate metadata:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : String(error));
     throw error;
   }
 }

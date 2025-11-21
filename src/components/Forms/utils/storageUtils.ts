@@ -6,9 +6,20 @@ export interface SavedCrateMetadata {
   hasUnreviewed: boolean;
 }
 
+interface ProvenanceState {
+  inputArk: string;
+  computationArk: string;
+  outputArk: string;
+  sourceFlow: "manual" | "direct" | "chatbot";
+  requiresGithubPush: boolean;
+  yamlUrl?: string;
+}
+
 interface SavedCrate {
   formData: any;
   reviewState?: any;
+  provenance?: ProvenanceState | null;
+  finalArk?: string | null;
   savedAt: string;
   lastModified: string;
   metadata: {
@@ -35,7 +46,12 @@ export const generateCrateId = (name: string): string => {
     .replace(/-+/g, "-");
 };
 
-export const saveCrate = (formData: any, reviewState?: any): boolean => {
+export const saveCrate = (
+  formData: any,
+  reviewState?: any,
+  provenance?: ProvenanceState | null,
+  finalArk?: string | null
+): boolean => {
   try {
     const crateId =
       formData["@id"] ||
@@ -58,6 +74,8 @@ export const saveCrate = (formData: any, reviewState?: any): boolean => {
     const savedCrate: SavedCrate = {
       formData: { ...formData, "@id": crateId },
       reviewState,
+      provenance: provenance || existingSaved[crateId]?.provenance,
+      finalArk: finalArk !== undefined ? finalArk : existingSaved[crateId]?.finalArk,
       savedAt: existingSaved[crateId]?.savedAt || now,
       lastModified: now,
       metadata: {
@@ -122,7 +140,7 @@ export const getAllSavedCrates = (): SavedCrateMetadata[] => {
 
 export const loadCrate = (
   id: string
-): { formData: any; reviewState?: any } | null => {
+): { formData: any; reviewState?: any; provenance?: ProvenanceState | null; finalArk?: string | null } | null => {
   try {
     const savedCrates = getSavedCrates();
     const crate = savedCrates[id];
@@ -131,6 +149,8 @@ export const loadCrate = (
     return {
       formData: crate.formData,
       reviewState: crate.reviewState,
+      provenance: crate.provenance,
+      finalArk: crate.finalArk,
     };
   } catch (error) {
     console.error("Failed to load crate:", error);
