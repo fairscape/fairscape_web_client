@@ -191,7 +191,12 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
 
     raiFields.forEach((field) => {
       if (rootNode[field]) {
-        formData[field] = rootNode[field];
+        // RAI fields must be strings - convert arrays to newline-separated strings
+        if (Array.isArray(rootNode[field])) {
+          formData[field] = rootNode[field].join("\n");
+        } else {
+          formData[field] = rootNode[field];
+        }
       } else {
         formData[field] = "";
       }
