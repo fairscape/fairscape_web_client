@@ -211,6 +211,7 @@ export const ModelCardProperties: MetadataProperty[] = [
   { key: "url", name: "External Link" },
   { key: "license", name: "License" },
   { key: "citation", name: "Citation" },
+  { key: "usageInformation", name: "Usage Information" },
 ];
 
 export const GenericProperties: MetadataProperty[] = [
