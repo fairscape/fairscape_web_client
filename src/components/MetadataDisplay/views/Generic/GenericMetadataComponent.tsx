@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { RawGraphEntity, Metadata } from "../../types/types";
 import {
   DatasetProperties,
@@ -77,6 +80,74 @@ const MetricsTable = styled.table`
   }
 `;
 
+const MarkdownContainer = styled.div`
+  padding: 15px;
+  background-color: ${({ theme }) => theme.colors.background};
+  border-radius: 5px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+
+  /* Syntax highlighter handles pre and code blocks */
+  pre {
+    margin: 1em 0;
+    border-radius: 5px;
+    overflow-x: auto;
+  }
+
+  /* Inline code styles */
+  code {
+    background-color: #f5f5f5;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+  }
+
+  /* Don't style code inside pre (syntax highlighter handles it) */
+  pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  a {
+    color: ${({ theme }) => theme.colors.primary};
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    color: ${({ theme }) => theme.colors.text};
+  }
+
+  h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+    padding-bottom: 0.3em;
+  }
+
+  p {
+    margin-bottom: 0.8em;
+    line-height: 1.6;
+  }
+
+  ul, ol {
+    margin-left: 20px;
+    margin-bottom: 0.8em;
+    line-height: 1.6;
+  }
+
+  blockquote {
+    margin: 1em 0;
+    padding-left: 1em;
+    border-left: 3px solid ${({ theme }) => theme.colors.border};
+    color: ${({ theme }) => theme.colors.textSecondary};
+  }
+`;
+
 const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   metadata,
   type,
@@ -88,6 +159,21 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
 
   const feUrl = window.location.origin + "/view/";
   const apiUrl = window.API_URL;
+
+  // Helper function to detect if content likely contains markdown
+  const isMarkdownContent = (value: string): boolean => {
+    const markdownPatterns = [
+      /```[\s\S]*?```/, // Code blocks
+      /`[^`]+`/, // Inline code
+      /^\s*#+\s/m, // Headers
+      /\[.+?\]\(.+?\)/, // Links
+      /^\s*[-*+]\s/m, // Lists
+      /^\s*\d+\.\s/m, // Numbered lists
+      /\*\*.+?\*\*/, // Bold
+      /__.+?__/, // Bold alternative
+    ];
+    return markdownPatterns.some(pattern => pattern.test(value));
+  };
 
   const getToken = () => {
     return localStorage.getItem("token") || "";
@@ -321,6 +407,43 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     propName: string
   ): React.ReactNode => {
     if (value === null || value === undefined) return "Not specified";
+
+    // Check if this is a markdown field (like usageInformation)
+    if (
+      (key === "usageInformation" || propName === "Usage Information") &&
+      typeof value === "string" &&
+      isMarkdownContent(value)
+    ) {
+      return (
+        <MarkdownContainer>
+          <ReactMarkdown
+            components={{
+              code({ node, inline, className, children, ...props }: any) {
+                const match = /language-(\w+)/.exec(className || "");
+                const language = match ? match[1] : "python";
+
+                return !inline ? (
+                  <SyntaxHighlighter
+                    style={vscDarkPlus}
+                    language={language}
+                    PreTag="div"
+                    {...props}
+                  >
+                    {String(children).replace(/\n$/, "")}
+                  </SyntaxHighlighter>
+                ) : (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
+                );
+              },
+            }}
+          >
+            {value}
+          </ReactMarkdown>
+        </MarkdownContainer>
+      );
+    }
 
     if (key === "notebookUrl" && typeof value === "string") {
       return (
