@@ -29,6 +29,8 @@ const getNodeColor = (type: string): string => {
       return "#FFA07A";
     case "DatasetCollection":
       return "#B5DEFF";
+    case "Person":
+      return "#87CEEB"; // Light sky blue for Person/User nodes
     default:
       return "#E0E0E0"; // Changed default from ccc to E0E0E0 for consistency with previous versions
   }

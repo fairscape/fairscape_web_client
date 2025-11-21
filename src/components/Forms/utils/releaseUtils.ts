@@ -1,3 +1,9 @@
+import {
+  ALL_RAI_FIELDS,
+  normalizeRaiFieldsForApi,
+  normalizeRaiFieldsForForm,
+} from "./raiFieldNormalizer";
+
 interface FormData {
   [key: string]: any;
 }
@@ -143,7 +149,10 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
     formData.conditionsOfAccess = rootNode.conditionsOfAccess || "";
     formData.copyrightNotice = rootNode.copyrightNotice || "";
 
-    formData["@id"] = generateArkId(formData.name, formData.version);
+    // Preserve existing @id if provided, otherwise generate one
+    if (!formData["@id"]) {
+      formData["@id"] = generateArkId(formData.name, formData.version);
+    }
 
     if (rootNode.keywords) {
       if (Array.isArray(rootNode.keywords)) {
@@ -166,41 +175,11 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
       formData.associatedPublication = "";
     }
 
-    const raiFields = [
-      "rai:dataLimitations",
-      "rai:dataBiases",
-      "rai:dataUseCases",
-      "rai:dataReleaseMaintenancePlan",
-      "rai:dataCollection",
-      "rai:dataCollectionType",
-      "rai:dataCollectionMissingData",
-      "rai:dataCollectionRawData",
-      "rai:dataCollectionTimeframe",
-      "rai:dataImputationProtocol",
-      "rai:dataManipulationProtocol",
-      "rai:dataPreprocessingProtocol",
-      "rai:dataAnnotationProtocol",
-      "rai:dataAnnotationPlatform",
-      "rai:dataAnnotationAnalysis",
-      "rai:personalSensitiveInformation",
-      "rai:dataSocialImpact",
-      "rai:annotationsPerItem",
-      "rai:annotatorDemographics",
-      "rai:machineAnnotationTools",
-    ];
-
-    raiFields.forEach((field) => {
-      if (rootNode[field]) {
-        // RAI fields must be strings - convert arrays to newline-separated strings
-        if (Array.isArray(rootNode[field])) {
-          formData[field] = rootNode[field].join("\n");
-        } else {
-          formData[field] = rootNode[field];
-        }
-      } else {
-        formData[field] = "";
-      }
+    // Copy RAI fields from rootNode, then normalize for form display
+    ALL_RAI_FIELDS.forEach((field) => {
+      formData[field] = rootNode[field] ?? "";
     });
+    Object.assign(formData, normalizeRaiFieldsForForm(formData));
 
     if (
       rootNode.additionalProperty &&
@@ -250,7 +229,8 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
 }
 
 export function generateReleaseJson(formData: FormData): any {
-  const releaseId = generateArkId(formData.name, formData.version);
+  // Preserve existing @id if provided, otherwise generate one
+  const releaseId = formData["@id"] || generateArkId(formData.name, formData.version);
 
   const releaseNode: any = {
     "@id": releaseId,
@@ -349,32 +329,11 @@ export function generateReleaseJson(formData: FormData): any {
     }
   }
 
-  const raiFields = [
-    "rai:dataLimitations",
-    "rai:dataBiases",
-    "rai:dataUseCases",
-    "rai:dataReleaseMaintenancePlan",
-    "rai:dataCollection",
-    "rai:dataCollectionType",
-    "rai:dataCollectionMissingData",
-    "rai:dataCollectionRawData",
-    "rai:dataCollectionTimeframe",
-    "rai:dataImputationProtocol",
-    "rai:dataManipulationProtocol",
-    "rai:dataPreprocessingProtocol",
-    "rai:dataAnnotationProtocol",
-    "rai:dataAnnotationPlatform",
-    "rai:dataAnnotationAnalysis",
-    "rai:personalSensitiveInformation",
-    "rai:dataSocialImpact",
-    "rai:annotationsPerItem",
-    "rai:annotatorDemographics",
-    "rai:machineAnnotationTools",
-  ];
-
-  raiFields.forEach((field) => {
-    if (formData[field]) {
-      releaseNode[field] = formData[field];
+  // Normalize RAI fields for API (some as strings, some as arrays per schema)
+  const normalizedRai = normalizeRaiFieldsForApi(formData);
+  ALL_RAI_FIELDS.forEach((field) => {
+    if (normalizedRai[field] !== null && normalizedRai[field] !== undefined) {
+      releaseNode[field] = normalizedRai[field];
     }
   });
 

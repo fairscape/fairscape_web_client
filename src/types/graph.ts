@@ -13,6 +13,7 @@ export interface RawGraphEntity {
   usedInstrument?: { "@id": string } | Array<{ "@id": string }>;
   usedMLModel?: { "@id": string } | Array<{ "@id": string }>;
   hasOutputs?: { "@id": string } | Array<{ "@id": string }>;
+  createdBy?: string | { "@id": string } | Array<string | { "@id": string }>;
   [key: string]: any;
 }
 

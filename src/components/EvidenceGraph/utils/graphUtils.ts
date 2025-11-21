@@ -98,6 +98,7 @@ export function getDisplayableProperties(
     "usedInstrument",
     "usedMLModel",
     "hasOutputs",
+    "createdBy",
     "name",
     "label",
     "description",
@@ -134,6 +135,7 @@ export function createEvidenceNode(
     ...relationships.usedInstrument,
     ...relationships.usedMLModel,
     ...relationships.hasOutputs,
+    ...relationships.createdBy,
   ];
 
   const visibleRelatedCount = allRelated.filter((node) =>
@@ -176,6 +178,7 @@ export function createEdge(
     usedMLModel: "used model",
     hasOutputs: "has outputs",
     contains: "contains",
+    createdBy: "created by",
   };
 
   const label = labelMap[relationshipType] || relationshipType;
@@ -285,6 +288,9 @@ export class GraphBuilder {
         );
       }
 
+      // Handle createdBy - these may be synthetic Person nodes
+      this._processCreatedByRelationship(nodeId, relationships.createdBy);
+
       nodeToExpand.data._expanded = true;
       nodeToExpand.data.expandable = false;
     }
@@ -392,6 +398,64 @@ export class GraphBuilder {
     }
   }
 
+  /**
+   * Process createdBy relationships - handles synthetic Person nodes (e.g., emails)
+   * that don't exist in the dataService
+   */
+  private _processCreatedByRelationship(
+    sourceId: string,
+    createdByNodes: RawGraphEntity[]
+  ) {
+    for (const personEntity of createdByNodes) {
+      const personId = personEntity["@id"];
+
+      // Skip if already added
+      if (this.visibleNodes.has(personId)) {
+        const edge = createEdge(sourceId, personId, "createdBy");
+        this.edges.set(edge.id, edge);
+        continue;
+      }
+
+      // Create node directly from the entity data (works for synthetic Person nodes)
+      const node = this._createNodeFromEntity(personEntity);
+      this.nodes.set(personId, node);
+      this.visibleNodes.add(personId);
+
+      const edge = createEdge(sourceId, personId, "createdBy");
+      this.edges.set(edge.id, edge);
+    }
+  }
+
+  /**
+   * Create an EvidenceNode directly from entity data (for synthetic nodes)
+   */
+  private _createNodeFromEntity(entityData: RawGraphEntity): EvidenceNode {
+    const id = entityData["@id"];
+    const type = getEntityType(entityData["@type"]);
+    const label = entityData.name || entityData.email || entityData["@id"];
+    const displayName = abbreviateName(label);
+    const description = entityData.description || "";
+
+    const nodeData: EvidenceNodeData = {
+      id,
+      type,
+      label,
+      displayName,
+      description,
+      expandable: false,
+      _sourceData: entityData,
+      properties: getDisplayableProperties(entityData),
+      _expanded: true,
+    };
+
+    return {
+      id,
+      type: "evidenceNode",
+      position: { x: 0, y: 0 },
+      data: nodeData,
+    };
+  }
+
   private addNodeAndRelationships(nodeId: string, depth: number): void {
     if (depth <= 0 || this.visibleNodes.has(nodeId)) return;
     this.addNode(nodeId);
@@ -446,6 +510,9 @@ export class GraphBuilder {
         depth
       );
     }
+
+    // Handle createdBy relationships (synthetic Person nodes)
+    this._processCreatedByRelationship(nodeId, relationships.createdBy);
   }
 
   private findRelationshipType(
@@ -466,6 +533,8 @@ export class GraphBuilder {
       return "usedMLModel";
     if (rels.hasOutputs.some((n) => n["@id"] === targetId))
       return "hasOutputs";
+    if (rels.createdBy.some((n) => n["@id"] === targetId))
+      return "createdBy";
     return null;
   }
 

@@ -83,6 +83,7 @@ export class GraphDataService {
     usedInstrument: RawGraphEntity[];
     usedMLModel: RawGraphEntity[];
     hasOutputs: RawGraphEntity[];
+    createdBy: RawGraphEntity[];
   } {
     return {
       generatedBy: this.getRelatedNodes(nodeId, "generatedBy"),
@@ -92,7 +93,50 @@ export class GraphDataService {
       usedInstrument: this.getRelatedNodes(nodeId, "usedInstrument"),
       usedMLModel: this.getRelatedNodes(nodeId, "usedMLModel"),
       hasOutputs: this.getRelatedNodes(nodeId, "hasOutputs"),
+      createdBy: this.getCreatedByNodes(nodeId),
     };
+  }
+
+  /**
+   * Get createdBy nodes - handles both @id references and email strings
+   */
+  getCreatedByNodes(nodeId: string): RawGraphEntity[] {
+    const node = this.getNode(nodeId);
+    if (!node || !node.createdBy) return [];
+
+    const createdByRefs = Array.isArray(node.createdBy)
+      ? node.createdBy
+      : [node.createdBy];
+
+    const results: RawGraphEntity[] = [];
+
+    for (const ref of createdByRefs) {
+      if (typeof ref === "string") {
+        // It's an email or plain string - create a synthetic Person node
+        const personId = `person:${ref}`;
+        // Check if we already have this person in the graph
+        const existingNode = this.getNode(personId);
+        if (existingNode) {
+          results.push(existingNode);
+        } else {
+          // Create a synthetic Person entity for the email
+          results.push({
+            "@id": personId,
+            "@type": "Person",
+            name: ref,
+            email: ref,
+          });
+        }
+      } else if (ref && ref["@id"]) {
+        // It's an @id reference - resolve it
+        const resolved = this.resolveReference(ref);
+        if (resolved) {
+          results.push(resolved);
+        }
+      }
+    }
+
+    return results;
   }
 
   findPath(startId: string, targetId: string): string[] | null {
@@ -122,6 +166,7 @@ export class GraphDataService {
         "usedInstrument",
         "usedMLModel",
         "hasOutputs",
+        "createdBy",
       ];
 
       for (const rel of relationships) {
