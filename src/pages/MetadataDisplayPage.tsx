@@ -16,6 +16,7 @@ import StatisticsViewer from "../components/MetadataDisplay/views/Statistics/Sta
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
 import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
 import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
+import { useHttp } from "../components/MetadataDisplay/api/httpClient";
 
 type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics";
 
@@ -62,6 +63,40 @@ const VersionInfo = styled.div`
   color: ${({ theme }) => theme.colors.textSecondary};
 `;
 
+const ImagePreviewSection = styled.div`
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: ${({ theme }) => theme.colors.background};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const PreviewImage = styled.img`
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  display: block;
+  background-color: #f5f5f5;
+`;
+
+const ImageLabel = styled.div`
+  padding: 10px 15px;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  background-color: ${({ theme }) => theme.colors.backgroundAlt};
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const FigureLegend = styled.div`
+  padding: 12px 15px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: ${({ theme }) => theme.colors.text};
+  background-color: ${({ theme }) => theme.colors.background};
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  font-style: italic;
+`;
+
 const Footer = styled.footer`
   margin-top: 30px;
   padding: 20px;
@@ -97,6 +132,22 @@ const CenteredMessage: React.FC<{ message: string }> = ({ message }) => (
   </div>
 );
 
+const getImageUrlFromBundle = (bundle: any, metadata: any): string | null => {
+  const path = bundle?.distribution?.location?.path;
+  if (!path) return null;
+
+  const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"];
+  const hasImageExtension = imageExtensions.some((ext) =>
+    path.toLowerCase().endsWith(ext)
+  );
+
+  if (!hasImageExtension) return null;
+
+  // Return the contentUrl if available
+  const contentUrl = metadata?.contentUrl;
+  return contentUrl || null;
+};
+
 export default function MetadataDisplayPage() {
   const params = useParams<{ arkId?: string }>();
   const arkId =
@@ -108,6 +159,8 @@ export default function MetadataDisplayPage() {
   const [view, setView] = useState<ViewType>("metadata");
   const { bundle, loading, error } = useMetadataBundle(arkId);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
+  const http = useHttp();
 
   const { downloadZip, downloadJSON, downloadCroissant, downloadHTML } =
     useDownloads({
@@ -137,6 +190,51 @@ export default function MetadataDisplayPage() {
   useEffect(() => {
     document.title = `${title} - FAIRSCAPE`;
   }, [title]);
+
+  // Fetch image with authentication if available
+  useEffect(() => {
+    let isMounted = true;
+    let blobUrl: string | null = null;
+
+    const fetchImage = async () => {
+      if (!bundle || bundle.kind !== "dataset") {
+        setImageBlobUrl(null);
+        return;
+      }
+
+      const imageUrl = getImageUrlFromBundle(bundle, metadata);
+      if (!imageUrl) {
+        setImageBlobUrl(null);
+        return;
+      }
+
+      try {
+        const blob = await http(imageUrl, {
+          credentials: "include",
+          responseType: "blob",
+        });
+
+        if (isMounted) {
+          blobUrl = URL.createObjectURL(blob);
+          setImageBlobUrl(blobUrl);
+        }
+      } catch (error) {
+        console.error("Error loading image:", error);
+        if (isMounted) {
+          setImageBlobUrl(null);
+        }
+      }
+    };
+
+    fetchImage();
+
+    return () => {
+      isMounted = false;
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [bundle, metadata, http]);
 
   const isOwner = true;
 
@@ -250,6 +348,22 @@ export default function MetadataDisplayPage() {
               <PageTitle>{title}</PageTitle>
               <VersionInfo>Version: {version}</VersionInfo>
             </Header>
+
+            {imageBlobUrl && view === "metadata" && (
+              <ImagePreviewSection>
+                <PreviewImage
+                  src={imageBlobUrl}
+                  alt={title}
+                  onError={(e) => {
+                    // Hide image if it fails to load
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+                {metadata?.description && (
+                  <FigureLegend>{metadata.description}</FigureLegend>
+                )}
+              </ImagePreviewSection>
+            )}
 
             {renderContent()}
 

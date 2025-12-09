@@ -736,7 +736,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
                     style={{
                       gridColumn: "1 / -1",
                       maxHeight: "none",
-                      overflow: "visible",
+                      overflowX: "auto",
                     }}
                   >
                     {formatMainListValue(prop.key, propValue, prop.name)}
