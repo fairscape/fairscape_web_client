@@ -78,7 +78,8 @@ export function useMetadataBundle(ark: string) {
 
           if (evId) {
             try {
-              const data = await evidenceApi.getEG(evId);
+              const response = await evidenceApi.getEG(evId);
+              const data = response.metadata ?? response;
               const supportData = extractSupportData?.(data);
               evidence = { id: evId, data, supportData, status: "ready" };
             } catch {
@@ -91,9 +92,10 @@ export function useMetadataBundle(ark: string) {
               const { task_id } = await evidenceApi.buildEG(ark);
               const poll = await evidenceApi.pollBuild(task_id);
               if (poll.status === "SUCCESS" && poll.result?.evidence_graph_id) {
-                const data = await evidenceApi.getEG(
+                const response = await evidenceApi.getEG(
                   poll.result.evidence_graph_id
                 );
+                const data = response.metadata ?? response;
                 const supportData = extractSupportData?.(data);
                 evidence = {
                   id: poll.result?.evidence_graph_id,

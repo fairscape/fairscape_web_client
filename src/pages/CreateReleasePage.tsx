@@ -11,7 +11,7 @@ import {
   saveCrate,
   checkCrateExists,
 } from "../components/Forms/utils/storageUtils";
-import { useLLMAssistApi } from "../components/Forms/api/llmAssistApi";
+import { useLLMAssistApi } from "../components/Forms/api/llmAssistAPI";
 import { useFairscapeApi } from "../components/Forms/api/fairscapeApi";
 import { filterFieldsByVisibility } from "../components/Forms/utils/llmUtils";
 import UnifiedStartingPage from "../components/Forms/Release/UnifiedStartingPage";

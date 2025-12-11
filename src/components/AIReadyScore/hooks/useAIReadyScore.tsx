@@ -295,9 +295,10 @@ export function useAIReadyScore(arkId: string) {
       try {
         pollCountRef.current += 1;
         const res = await api.getAIReadyScore(arkId);
-        if (api.isAIReadyScore(res)) {
-          setName(res?.name ?? "");
-          setCriteriaData(transformAIReadyScore(res));
+        const scoreData = res.metadata ?? res;
+        if (api.isAIReadyScore(scoreData)) {
+          setName(scoreData?.name ?? "");
+          setCriteriaData(transformAIReadyScore(scoreData));
           setProgress({ inProgress: false });
           clearTimer();
           setLoading(false);
@@ -328,9 +329,10 @@ export function useAIReadyScore(arkId: string) {
     setError(null);
     try {
       const res = await api.getAIReadyScore(arkId);
-      if (api.isAIReadyScore(res)) {
-        setName(res?.name ?? "");
-        setCriteriaData(transformAIReadyScore(res));
+      const scoreData = res.metadata ?? res;
+      if (api.isAIReadyScore(scoreData)) {
+        setName(scoreData?.name ?? "");
+        setCriteriaData(transformAIReadyScore(scoreData));
         setProgress({ inProgress: false });
         setLoading(false);
         clearTimer();

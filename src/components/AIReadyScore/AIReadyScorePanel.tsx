@@ -40,7 +40,7 @@ import {
   CriteriaStatus,
   CriteriaText,
 } from "./AIReadyScorePanel.styles";
-import { AI_READY_DOCS, getSubDocsFor } from "./docs/aiReadyDocs";
+import { AI_READY_DOCS, getSubDocsFor } from "./docs/AIReadyDocs";
 
 interface Props {
   criteriaData: CriteriaData[];
