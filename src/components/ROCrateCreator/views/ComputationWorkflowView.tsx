@@ -167,7 +167,7 @@ const ComputationWorkflowView: React.FC<Props> = ({
             <span>{item.name || item["@id"]}</span>
             <span>
               {Array.isArray((item as any)["@type"])
-                ? (item as any)["@type"][0]
+                ? (item as any)["@type"][(item as any)["@type"].length - 1]
                 : String((item as any)["@type"] ?? "")}
             </span>
           </ObjectCard>

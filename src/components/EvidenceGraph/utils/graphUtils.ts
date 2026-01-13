@@ -21,8 +21,8 @@ export function getEntityType(typeUri: string | string[] | undefined): string {
     );
     if (hasROCrate) return "ROCrate";
 
-    // Otherwise use the first type
-    const typeString = typeUri[0];
+    // Otherwise use the last type (most specific)
+    const typeString = typeUri[typeUri.length - 1];
     return typeString.split(/[#\/]/).pop() || "Unknown";
   }
 
