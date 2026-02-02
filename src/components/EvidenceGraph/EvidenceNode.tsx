@@ -15,16 +15,24 @@ const getNodeColor = (type: string): string => {
     case "Dataset":
     case "Sample":
       return "#8AE68A";
+    case "ROCrate":
+      return "#64C2A6";
     case "Computation":
     case "Experiment":
       return "#FD9A9A";
     case "Software":
     case "Instrument":
       return "#FFC107";
+    case "MLModel":
+      return "#C8A2FF";
+    case "Annotation":
+      return "#FFA07A";
     case "DatasetCollection":
       return "#B5DEFF";
+    case "Person":
+      return "#87CEEB"; 
     default:
-      return "#E0E0E0"; // Changed default from ccc to E0E0E0 for consistency with previous versions
+      return "#E0E0E0"; 
   }
 };
 

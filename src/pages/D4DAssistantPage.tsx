@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useIssues } from "../components/d4d-assistant/hooks/useIssues";
 import { useIssueDetail } from "../components/d4d-assistant/hooks/useIssueDetail";
-import { useD4DConversion } from "../components/d4d-assistant/hooks/useD4DConversion";
 import { useStatusMessage } from "../components/d4d-assistant/hooks/useStatusMessage";
 import { IssueFormData } from "../components/d4d-assistant/types/issue.types";
 import {
@@ -17,9 +16,23 @@ import { PageContainer } from "../components/d4d-assistant/styles/D4DAssistant.s
 
 type View = "list" | "create" | "detail";
 
+const extractYamlUrlFromComments = (comments: any[]): string => {
+  for (const comment of comments) {
+    if (comment.user === "d4dassistant") {
+      const match = comment.body.match(
+        /Datasheet available at:\s*(https:\/\/\S+\.yaml)/
+      );
+      if (match) return match[1];
+    }
+  }
+  throw new Error("YAML URL not found in issue comments");
+};
+
 const D4DAssistantPage = () => {
   const [view, setView] = useState<View>("list");
+  const [reviewLoading, setReviewLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     issues,
@@ -27,8 +40,19 @@ const D4DAssistantPage = () => {
     refetch: refetchIssues,
   } = useIssues();
   const { issue, loading: issueLoading, loadIssue } = useIssueDetail();
-  const { convertIssue, loading: conversionLoading } = useD4DConversion();
   const { message, type, showStatus } = useStatusMessage();
+
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.fromCreateRelease) {
+      if (state.issueNumber) {
+        loadIssue(state.issueNumber);
+        setView("detail");
+      } else {
+        setView("create");
+      }
+    }
+  }, [location.state]);
 
   const handleIssueClick = async (issueNumber: number) => {
     await loadIssue(issueNumber);
@@ -59,7 +83,7 @@ ${formData.instructions || "No additional instructions"}`;
 
       showStatus("Issue created successfully!", "success");
       await refetchIssues();
-      setView("list");
+      navigate("/review");
     } catch (error) {
       showStatus(
         `Error creating issue: ${
@@ -90,32 +114,52 @@ ${formData.instructions || "No additional instructions"}`;
   const handleReview = async () => {
     if (!issue) return;
 
-    try {
-      const result = await convertIssue(issue);
+    setReviewLoading(true);
 
-      if (result) {
-        showStatus("D4D ready for review!", "success");
-        navigate("/review", {
-          state: {
-            fromD4D: true,
-            rocrate: result.rocrate,
-            issueNumber: result.issueNumber,
-          },
-        });
-      } else {
-        showStatus(
-          "Please request the D4D YAML link from @d4dassistant first",
-          "error"
-        );
+    try {
+      const issueUrl = (issue as any).html_url || (issue as any).url;
+      if (!issueUrl) {
+        throw new Error("Issue URL not available");
       }
+
+      const response = await fetch("/api/llmassist/from-issue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          issue_number: issue.number,
+          issue_title: issue.title,
+          issue_body: issue.body,
+          issue_comments: issue.comments,
+          yaml_url: extractYamlUrlFromComments(issue.comments),
+          issue_url: issueUrl,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to process D4D");
+
+      const { rocrate, provenance } = await response.json();
+
+      showStatus("D4D ready for review!", "success");
+      navigate("/review", {
+        state: {
+          fromD4D: true,
+          rocrate,
+          provenance,
+        },
+      });
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown error occurred";
       showStatus(
-        `Error converting D4D: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+        `Error: ${message}`,
         "error"
       );
     }
+    setReviewLoading(false);
+  };
+
+  const handleBack = () => {
+    navigate("/review");
   };
 
   return (
@@ -133,7 +177,7 @@ ${formData.instructions || "No additional instructions"}`;
 
       {view === "create" && (
         <CreateIssueView
-          onBack={() => setView("list")}
+          onBack={handleBack}
           onSubmit={handleCreateIssue}
           loading={issuesLoading}
         />
@@ -142,10 +186,10 @@ ${formData.instructions || "No additional instructions"}`;
       {view === "detail" && issue && (
         <IssueDetailView
           issue={issue}
-          onBack={() => setView("list")}
+          onBack={handleBack}
           onAddComment={handleAddComment}
           onReview={handleReview}
-          loading={issueLoading || conversionLoading}
+          loading={issueLoading || reviewLoading}
         />
       )}
     </PageContainer>

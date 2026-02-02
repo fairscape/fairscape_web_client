@@ -1,23 +1,62 @@
-import React from "react";
-import { FiCheck, FiAlertCircle } from "react-icons/fi";
-import { StatusMessage as StyledStatusMessage } from "../styles/D4DAssistant.styles";
+import React, { useEffect, useState } from "react";
+import styled from "styled-components";
+import { colors } from "../../shared/SharedStyles";
 
 interface StatusMessageProps {
   message: string;
-  type: "idle" | "success" | "error";
+  type: "success" | "error" | "info";
 }
 
 export const StatusMessage: React.FC<StatusMessageProps> = ({
   message,
   type,
 }) => {
-  if (type === "idle") return null;
+  const [visible, setVisible] = useState(false);
 
-  return (
-    <StyledStatusMessage status={type}>
-      {type === "success" && <FiCheck size={20} />}
-      {type === "error" && <FiAlertCircle size={20} />}
-      <span>{message}</span>
-    </StyledStatusMessage>
-  );
+  useEffect(() => {
+    if (message) {
+      setVisible(true);
+      const timer = setTimeout(() => setVisible(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  if (!visible || !message) return null;
+
+  return <Message type={type}>{message}</Message>;
 };
+
+const Message = styled.div<{ type: "success" | "error" | "info" }>`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+
+  background-color: ${(props) => {
+    if (props.type === "success") return colors.successLight;
+    if (props.type === "error") return colors.errorLight;
+    return colors.primaryLight;
+  }};
+
+  color: ${(props) => {
+    if (props.type === "success") return colors.success;
+    if (props.type === "error") return colors.error;
+    return colors.primary;
+  }};
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+`;

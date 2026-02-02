@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
-import { format, parseISO } from "date-fns";
-import { Link } from "react-router-dom";
 import axios from "axios";
 
 // Import AuthContext
 import { AuthContext } from "../../context/AuthContext";
+// Import TreeView Component
+import ROCrateTreeView from "./ROCrateTreeView";
 
 const API_URL =
   window.API_URL;
@@ -39,106 +39,6 @@ const Spinner = styled.div`
   }
 `;
 
-const TableContainer = styled.div`
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  overflow: hidden;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 700px;
-`;
-
-const TableHead = styled.thead`
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
-`;
-
-const TableHeaderCell = styled.th<{ active?: boolean }>`
-  padding: ${({ theme }) => theme.spacing.md};
-  text-align: center;
-  font-weight: 600;
-  position: relative;
-  cursor: pointer;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.primaryLight};
-  }
-`;
-
-const SortLabel = styled.div<{ direction: string }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &::after {
-    content: "${({ direction }) => (direction === "asc" ? "▲" : "▼")}";
-    display: inline-block;
-    margin-left: ${({ theme }) => theme.spacing.xs};
-    font-size: 0.8rem;
-  }
-`;
-
-const TableRow = styled.tr`
-  &:nth-child(odd) {
-    background-color: ${({ theme }) => theme.colors.background};
-  }
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.background};
-  }
-
-  height: auto;
-  max-height: 6em;
-`;
-
-const TableCell = styled.td`
-  padding: ${({ theme }) => theme.spacing.md};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  vertical-align: top;
-`;
-
-const DescriptionCell = styled(TableCell)`
-  max-width: 400px;
-  line-height: 1.5;
-  position: relative;
-  padding-right: ${({ theme }) => theme.spacing.lg};
-
-  & > div {
-    max-height: 6em; /* Approximately 4 lines */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-  }
-`;
-
-const ActionButtonContainer = styled.div`
-  display: flex;
-  justify-content: center;
-`;
-
-const ViewButton = styled(Link)`
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
-  border-radius: ${({ theme }) => theme.borderRadius};
-  font-weight: 500;
-  text-decoration: none;
-  font-size: 0.9rem;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.primaryLight};
-    color: white;
-    text-decoration: none;
-  }
-`;
-
 // Error message component
 const ErrorMessage = styled.div`
   padding: ${({ theme }) => theme.spacing.md};
@@ -149,23 +49,29 @@ const ErrorMessage = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.lg};
 `;
 
+interface CategoryCounts {
+  datasets: number;
+  software: number;
+  computations: number;
+  schemas: number;
+  samples: number;
+  mlModels: number;
+  rocrates: number;
+  other: number;
+  total: number;
+}
+
 interface RoCrate {
   "@id": string;
   name: string;
   description: string;
-  uploadDate: string;
-  "@graph"?: any[];
-  contentURL: string;
+  counts?: CategoryCounts;
 }
 
 const Dashboard: React.FC = () => {
   const [rocrates, setRocrates] = useState<RoCrate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortConfig, setSortConfig] = useState({
-    key: "uploadDate",
-    direction: "desc",
-  });
 
   // Get authentication context
   const { isLoggedIn } = useContext(AuthContext);
@@ -204,54 +110,6 @@ const Dashboard: React.FC = () => {
     fetchRocrates();
   }, [isLoggedIn]);
 
-  const extractArkIdentifier = (url: string) => {
-    const match = url.match(/(ark:.+)/);
-    return match ? match[1] : "";
-  };
-
-  const sortedRocrates = React.useMemo(() => {
-    let sortableItems = [...rocrates];
-    if (sortConfig.key) {
-      sortableItems.sort((a, b) => {
-        if (sortConfig.key === "uploadDate") {
-          return sortConfig.direction === "asc"
-            ? new Date(a.uploadDate).getTime() -
-                new Date(b.uploadDate).getTime()
-            : new Date(b.uploadDate).getTime() -
-                new Date(a.uploadDate).getTime();
-        }
-
-        const aValue = a[sortConfig.key as keyof RoCrate];
-        const bValue = b[sortConfig.key as keyof RoCrate];
-
-        if (aValue !== undefined && bValue !== undefined) {
-          if (aValue < bValue) {
-            return sortConfig.direction === "asc" ? -1 : 1;
-          }
-          if (aValue > bValue) {
-            return sortConfig.direction === "asc" ? 1 : -1;
-          }
-        }
-        return 0;
-      });
-    }
-    return sortableItems;
-  }, [rocrates, sortConfig]);
-
-  const requestSort = (key: string) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
-    const date = parseISO(dateString);
-    return format(date, "yyyy-MM-dd HH:mm:ss");
-  };
-
   return (
     <DashboardContainer>
       {error && <ErrorMessage>{error}</ErrorMessage>}
@@ -261,74 +119,7 @@ const Dashboard: React.FC = () => {
           <Spinner />
         </LoadingContainer>
       ) : (
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <tr>
-                <TableHeaderCell onClick={() => requestSort("name")}>
-                  {sortConfig.key === "name" ? (
-                    <SortLabel direction={sortConfig.direction}>Name</SortLabel>
-                  ) : (
-                    "Name"
-                  )}
-                </TableHeaderCell>
-                <TableHeaderCell>Description</TableHeaderCell>
-                <TableHeaderCell onClick={() => requestSort("uploadDate")}>
-                  {sortConfig.key === "uploadDate" ? (
-                    <SortLabel direction={sortConfig.direction}>
-                      Upload Date
-                    </SortLabel>
-                  ) : (
-                    "Upload Date"
-                  )}
-                </TableHeaderCell>
-                <TableHeaderCell>Actions</TableHeaderCell>
-              </tr>
-            </TableHead>
-            <tbody>
-              {sortedRocrates.length > 0 ? (
-                sortedRocrates.map((rocrate) => (
-                  <TableRow key={rocrate["@id"]}>
-                    <TableCell
-                      style={{
-                        maxWidth: "200px",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {rocrate.name}
-                    </TableCell>
-                    <DescriptionCell>
-                      <div title={rocrate.description}>
-                        {rocrate.description}
-                      </div>
-                    </DescriptionCell>
-                    <TableCell style={{ textAlign: "center" }}>
-                      {formatDate(rocrate.uploadDate)}
-                    </TableCell>
-                    <TableCell>
-                      <ActionButtonContainer>
-                        <ViewButton
-                          to={`/view/${extractArkIdentifier(rocrate["@id"])}`}
-                        >
-                          View Details
-                        </ViewButton>
-                      </ActionButtonContainer>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} style={{ textAlign: "center" }}>
-                    No ROCrates found.{" "}
-                    {!isLoggedIn && "Please log in to view your ROCrates."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </tbody>
-          </Table>
-        </TableContainer>
+        <ROCrateTreeView rocrates={rocrates} />
       )}
     </DashboardContainer>
   );

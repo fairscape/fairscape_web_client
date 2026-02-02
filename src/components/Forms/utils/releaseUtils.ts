@@ -1,3 +1,9 @@
+import {
+  ALL_RAI_FIELDS,
+  normalizeRaiFieldsForApi,
+  normalizeRaiFieldsForForm,
+} from "./raiFieldNormalizer";
+
 interface FormData {
   [key: string]: any;
 }
@@ -39,17 +45,33 @@ function generateArkId(
 
 export function parseRoCrateMetadata(jsonContent: string): FormData {
   try {
+    console.log("=== parseRoCrateMetadata ===");
+    console.log("Input type:", typeof jsonContent);
+    console.log("Input preview:", jsonContent.substring(0, 200));
+
     const parsed = JSON.parse(jsonContent);
+    console.log("Parsed object keys:", Object.keys(parsed));
+    console.log("Has @graph:", !!parsed["@graph"]);
 
     if (
       !parsed["@graph"] ||
       !Array.isArray(parsed["@graph"]) ||
       parsed["@graph"].length < 2
     ) {
+      console.error("Invalid RO-Crate structure:", {
+        hasGraph: !!parsed["@graph"],
+        isArray: Array.isArray(parsed["@graph"]),
+        length: parsed["@graph"]?.length,
+      });
       throw new Error(
         "Invalid RO-Crate structure: missing @graph or insufficient entries"
       );
     }
+
+    console.log("@graph length:", parsed["@graph"].length);
+    console.log("@graph[0] (metadata descriptor):", parsed["@graph"][0]);
+    console.log("@graph[1] (root dataset) @id:", parsed["@graph"][1]?.["@id"]);
+    console.log("@graph[1] @type:", parsed["@graph"][1]?.["@type"]);
 
     const rootNode = parsed["@graph"][1];
     const formData: FormData = {};
@@ -127,7 +149,10 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
     formData.conditionsOfAccess = rootNode.conditionsOfAccess || "";
     formData.copyrightNotice = rootNode.copyrightNotice || "";
 
-    formData["@id"] = generateArkId(formData.name, formData.version);
+    // Preserve existing @id if provided, otherwise generate one
+    if (!formData["@id"]) {
+      formData["@id"] = generateArkId(formData.name, formData.version);
+    }
 
     if (rootNode.keywords) {
       if (Array.isArray(rootNode.keywords)) {
@@ -150,36 +175,11 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
       formData.associatedPublication = "";
     }
 
-    const raiFields = [
-      "rai:dataLimitations",
-      "rai:dataBiases",
-      "rai:dataUseCases",
-      "rai:dataReleaseMaintenancePlan",
-      "rai:dataCollection",
-      "rai:dataCollectionType",
-      "rai:dataCollectionMissingData",
-      "rai:dataCollectionRawData",
-      "rai:dataCollectionTimeframe",
-      "rai:dataImputationProtocol",
-      "rai:dataManipulationProtocol",
-      "rai:dataPreprocessingProtocol",
-      "rai:dataAnnotationProtocol",
-      "rai:dataAnnotationPlatform",
-      "rai:dataAnnotationAnalysis",
-      "rai:personalSensitiveInformation",
-      "rai:dataSocialImpact",
-      "rai:annotationsPerItem",
-      "rai:annotatorDemographics",
-      "rai:machineAnnotationTools",
-    ];
-
-    raiFields.forEach((field) => {
-      if (rootNode[field]) {
-        formData[field] = rootNode[field];
-      } else {
-        formData[field] = "";
-      }
+    // Copy RAI fields from rootNode, then normalize for form display
+    ALL_RAI_FIELDS.forEach((field) => {
+      formData[field] = rootNode[field] ?? "";
     });
+    Object.assign(formData, normalizeRaiFieldsForForm(formData));
 
     if (
       rootNode.additionalProperty &&
@@ -206,15 +206,31 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
     formData.humanSubject = formData.humanSubject || "";
     formData.prohibitedUses = formData.prohibitedUses || "";
 
+    console.log("=== Parsed FormData ===");
+    console.log("Total fields:", Object.keys(formData).length);
+    console.log("Key fields:", {
+      "@id": formData["@id"],
+      name: formData.name,
+      description: formData.description?.substring(0, 100) + "...",
+      keywords: formData.keywords,
+      version: formData.version,
+      author: formData.author,
+    });
+    console.log("RAI fields present:",
+      Object.keys(formData).filter(k => k.startsWith("rai:")).length
+    );
+
     return formData;
   } catch (error) {
-    console.error("Error parsing RO-Crate metadata:", error);
+    console.error("!!! Error parsing RO-Crate metadata:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : String(error));
     throw error;
   }
 }
 
 export function generateReleaseJson(formData: FormData): any {
-  const releaseId = generateArkId(formData.name, formData.version);
+  // Preserve existing @id if provided, otherwise generate one
+  const releaseId = formData["@id"] || generateArkId(formData.name, formData.version);
 
   const releaseNode: any = {
     "@id": releaseId,
@@ -313,32 +329,11 @@ export function generateReleaseJson(formData: FormData): any {
     }
   }
 
-  const raiFields = [
-    "rai:dataLimitations",
-    "rai:dataBiases",
-    "rai:dataUseCases",
-    "rai:dataReleaseMaintenancePlan",
-    "rai:dataCollection",
-    "rai:dataCollectionType",
-    "rai:dataCollectionMissingData",
-    "rai:dataCollectionRawData",
-    "rai:dataCollectionTimeframe",
-    "rai:dataImputationProtocol",
-    "rai:dataManipulationProtocol",
-    "rai:dataPreprocessingProtocol",
-    "rai:dataAnnotationProtocol",
-    "rai:dataAnnotationPlatform",
-    "rai:dataAnnotationAnalysis",
-    "rai:personalSensitiveInformation",
-    "rai:dataSocialImpact",
-    "rai:annotationsPerItem",
-    "rai:annotatorDemographics",
-    "rai:machineAnnotationTools",
-  ];
-
-  raiFields.forEach((field) => {
-    if (formData[field]) {
-      releaseNode[field] = formData[field];
+  // Normalize RAI fields for API (some as strings, some as arrays per schema)
+  const normalizedRai = normalizeRaiFieldsForApi(formData);
+  ALL_RAI_FIELDS.forEach((field) => {
+    if (normalizedRai[field] !== null && normalizedRai[field] !== undefined) {
+      releaseNode[field] = normalizedRai[field];
     }
   });
 

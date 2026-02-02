@@ -9,11 +9,18 @@ interface FormData {
   [key: string]: any;
 }
 
+interface ProcessDocumentsResponse {
+  result: string;
+  provenance: any;
+}
+
 export function useLLMAssistApi() {
   const http = useHttp();
 
   return {
-    processDocuments: async (documents: UploadedFile[]): Promise<FormData> => {
+    processDocuments: async (
+      documents: UploadedFile[]
+    ): Promise<ProcessDocumentsResponse> => {
       const formData = new FormData();
       documents.forEach((doc) => {
         formData.append("files", doc.content, doc.name);
@@ -34,96 +41,18 @@ export function useLLMAssistApi() {
         });
 
         if (statusData.status === "SUCCESS") {
-          const roCrateJson = JSON.parse(statusData.result);
-          const datasetNode = roCrateJson["@graph"][1];
-
-          const parsedFormData: FormData = {
-            name: datasetNode.name || "",
-            description: datasetNode.description || "",
-            version: datasetNode.version || "1.0",
-            license: datasetNode.license || "",
-            author: datasetNode.author || "",
-            keywords: Array.isArray(datasetNode.keywords)
-              ? datasetNode.keywords.join(", ")
-              : "",
-            associatedPublication: Array.isArray(
-              datasetNode.associatedPublication
-            )
-              ? datasetNode.associatedPublication.join("\n")
-              : datasetNode.associatedPublication || "",
-            conditionsOfAccess: datasetNode.conditionsOfAccess || "",
-            copyrightNotice: datasetNode.copyrightNotice || "",
-            "rai:dataCollection": datasetNode["rai:dataCollection"] || "",
-            "rai:dataCollectionType": Array.isArray(
-              datasetNode["rai:dataCollectionType"]
-            )
-              ? datasetNode["rai:dataCollectionType"].join(", ")
-              : "",
-            "rai:dataCollectionMissingData":
-              datasetNode["rai:dataCollectionMissingData"] || "",
-            "rai:dataCollectionRawData":
-              datasetNode["rai:dataCollectionRawData"] || "",
-            "rai:dataCollectionTimeframe": Array.isArray(
-              datasetNode["rai:dataCollectionTimeframe"]
-            )
-              ? datasetNode["rai:dataCollectionTimeframe"].join(", ")
-              : "",
-            "rai:dataImputationProtocol":
-              datasetNode["rai:dataImputationProtocol"] || "",
-            "rai:dataManipulationProtocol":
-              datasetNode["rai:dataManipulationProtocol"] || "",
-            "rai:dataPreprocessingProtocol": Array.isArray(
-              datasetNode["rai:dataPreprocessingProtocol"]
-            )
-              ? datasetNode["rai:dataPreprocessingProtocol"].join(", ")
-              : "",
-            "rai:dataAnnotationProtocol":
-              datasetNode["rai:dataAnnotationProtocol"] || "",
-            "rai:dataAnnotationPlatform": Array.isArray(
-              datasetNode["rai:dataAnnotationPlatform"]
-            )
-              ? datasetNode["rai:dataAnnotationPlatform"].join(", ")
-              : "",
-            "rai:dataAnnotationAnalysis": Array.isArray(
-              datasetNode["rai:dataAnnotationAnalysis"]
-            )
-              ? datasetNode["rai:dataAnnotationAnalysis"].join(", ")
-              : "",
-            "rai:dataReleaseMaintenancePlan":
-              datasetNode["rai:dataReleaseMaintenancePlan"] || "",
-            "rai:personalSensitiveInformation": Array.isArray(
-              datasetNode["rai:personalSensitiveInformation"]
-            )
-              ? datasetNode["rai:personalSensitiveInformation"].join(", ")
-              : "",
-            "rai:dataSocialImpact": datasetNode["rai:dataSocialImpact"] || "",
-            "rai:dataBiases": Array.isArray(datasetNode["rai:dataBiases"])
-              ? datasetNode["rai:dataBiases"].join(", ")
-              : "",
-            "rai:dataLimitations": Array.isArray(
-              datasetNode["rai:dataLimitations"]
-            )
-              ? datasetNode["rai:dataLimitations"].join(", ")
-              : "",
-            "rai:dataUseCases": Array.isArray(datasetNode["rai:dataUseCases"])
-              ? datasetNode["rai:dataUseCases"].join(", ")
-              : "",
-            "rai:annotationsPerItem":
-              datasetNode["rai:annotationsPerItem"] || "",
-            "rai:annotatorDemographics": Array.isArray(
-              datasetNode["rai:annotatorDemographics"]
-            )
-              ? datasetNode["rai:annotatorDemographics"].join(", ")
-              : "",
-            "rai:machineAnnotationTools": Array.isArray(
-              datasetNode["rai:machineAnnotationTools"]
-            )
-              ? datasetNode["rai:machineAnnotationTools"].join(", ")
-              : "",
+          const result = statusData.rocrate ?? statusData.result;
+          if (!result) {
+            throw new Error("Processing failed: missing result from LLM");
+          }
+          return {
+            result,
+            provenance: statusData.provenance,
           };
-
-          return parsedFormData;
-        } else if (statusData.status === "FAILURE") {
+        } else if (
+          statusData.status === "FAILURE" ||
+          statusData.status === "ERROR"
+        ) {
           const errorMsg =
             statusData.error?.message || statusData.error || "Unknown error";
           throw new Error(`Processing failed: ${errorMsg}`);
@@ -155,7 +84,14 @@ export function useLLMAssistApi() {
         });
 
         if (statusData.status === "SUCCESS") {
-          const roCrateJson = JSON.parse(statusData.result);
+          const rocratePayload = statusData.rocrate ?? statusData.result;
+          if (!rocratePayload) {
+            throw new Error("Processing failed: missing result from LLM");
+          }
+          const roCrateJson =
+            typeof rocratePayload === "string"
+              ? JSON.parse(rocratePayload)
+              : rocratePayload;
 
           const datasetNode = roCrateJson["@graph"][1];
 
@@ -311,7 +247,10 @@ export function useLLMAssistApi() {
           }
 
           return llmSuggestions;
-        } else if (statusData.status === "FAILURE") {
+        } else if (
+          statusData.status === "FAILURE" ||
+          statusData.status === "ERROR"
+        ) {
           const errorMsg =
             statusData.error?.message || statusData.error || "Unknown error";
           throw new Error(`Processing failed: ${errorMsg}`);

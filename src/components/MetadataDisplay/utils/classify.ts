@@ -33,7 +33,7 @@ export function classify(main: any): string {
   }
 
   // fallback: first normalized type
-  return (types[0] as EntityKind) || "entity";
+  return (types[types.length - 1] as EntityKind) || "entity";
 }
 
 export function classifyROCrate(main: any): string {

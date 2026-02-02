@@ -10,9 +10,9 @@ export const extractD4DYamlUrl = (comments: Comment[]): string | null => {
   for (const comment of sortedComments) {
     if (comment.user !== D4D_ASSISTANT_BOT) continue;
     console.log("Checking comment from:", comment.user);
-    console.log("Comment body:", comment.body);
+    // Match both "D4D YAML Link" and "D4D YAML" formats
     const urlMatch = comment.body.match(
-      /📄 D4D YAML Link:\s*(https:\/\/raw\.githubusercontent\.com\/[^\s]+\.yaml)/
+      /📄\s+\*\*D4D YAML(?:\s+Link)?\*\*:\s*(https:\/\/raw\.githubusercontent\.com\/[^\s]+\.yaml)/
     );
 
     if (urlMatch) {

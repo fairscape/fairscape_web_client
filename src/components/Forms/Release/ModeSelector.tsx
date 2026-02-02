@@ -2,85 +2,78 @@ import React from "react";
 import styled from "styled-components";
 
 interface ModeSelectorProps {
-  onModeSelect: (mode: "new" | "edit" | "review") => void;
+  onModeSelect: (mode: "start" | "review") => void;
 }
 
 const ModeSelector: React.FC<ModeSelectorProps> = ({ onModeSelect }) => {
   return (
-    <ChoiceContainer>
-      <ChoiceCard onClick={() => onModeSelect("new")}>
-        <ChoiceIcon>📝</ChoiceIcon>
-        <ChoiceTitle>Start/Edit a Release</ChoiceTitle>
-        <ChoiceDescription>
-          Create a new release from scratch with optional AI assistance or edit
-          an existing release.
-        </ChoiceDescription>
-      </ChoiceCard>
+    <Container>
+      <CardsContainer>
+        <Card onClick={() => onModeSelect("start")}>
+          <CardTitle>Start New RO-Crate</CardTitle>
+          <CardDescription>
+            Create a new RO-Crate from scratch or with AI using documentation or
+            existing data
+          </CardDescription>
+        </Card>
 
-      <ChoiceCard onClick={() => onModeSelect("review")}>
-        <ChoiceIcon>✅</ChoiceIcon>
-        <ChoiceTitle>Review an Existing Release</ChoiceTitle>
-        <ChoiceDescription>
-          Review and approve a release draft
-        </ChoiceDescription>
-        <ReviewBadge>Review Mode</ReviewBadge>
-      </ChoiceCard>
-    </ChoiceContainer>
+        <Card onClick={() => onModeSelect("review")}>
+          <CardTitle>Review Existing RO-Crate</CardTitle>
+          <CardDescription>
+            Upload and review an existing ro-crate-metadata.json file
+          </CardDescription>
+        </Card>
+      </CardsContainer>
+    </Container>
   );
 };
 
-const ChoiceContainer = styled.div`
+const Container = styled.div`
   display: flex;
-  gap: 30px;
-  justify-content: center;
-  margin-top: 50px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
 `;
 
-const ChoiceCard = styled.div`
+const Title = styled.h2`
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 30px;
+`;
+
+const CardsContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 800px;
+  width: 100%;
+`;
+
+const Card = styled.div`
   background: white;
-  border-radius: 8px;
-  padding: 40px;
-  width: 280px;
-  text-align: center;
-  cursor: pointer;
   border: 2px solid #e0e0e0;
-  transition: all 0.3s ease;
-  position: relative;
+  border-radius: 8px;
+  padding: 30px;
+  cursor: pointer;
+  transition: all 0.2s;
 
   &:hover {
     border-color: #3e7aa8;
-    transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(62, 122, 168, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
   }
 `;
 
-const ChoiceIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: 20px;
-`;
-
-const ChoiceTitle = styled.h3`
+const CardTitle = styled.h3`
+  font-size: 1.25rem;
   color: #3e7aa8;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 `;
 
-const ChoiceDescription = styled.p`
+const CardDescription = styled.p`
+  font-size: 0.95rem;
   color: #666;
-  font-size: 14px;
-  margin-bottom: 0;
-`;
-
-const ReviewBadge = styled.div`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #28a745;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+  line-height: 1.5;
 `;
 
 export default ModeSelector;

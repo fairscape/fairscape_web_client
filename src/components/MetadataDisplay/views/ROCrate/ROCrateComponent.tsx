@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { Metadata, RawGraphEntity } from "../../types/types";
-import { processOverview, OverviewData } from "../../utils/metadataProcessing";
+import { processOverview, processRAI, OverviewData, RAIData } from "../../utils/metadataProcessing";
 import ConfigurableMetadataTable from "../../components/Tables/ConfigurableMetadataTable";
 import { MetadataProperty } from "../../types/metadataPropertyLists";
 import AdditionalPropertiesSection from "../../components/Sections/AdditionalPropertiesSection";
+import RAISection from "../../components/Sections/RAISection";
 
 import TabsSection, { TabConfig } from "../../components/Sections/TabsSection";
 import EntityTable, { EntityItem } from "../../components/Tables/EntityTable";
@@ -52,6 +53,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
+  const [raiData, setRaiData] = useState<RAIData | null>(null);
   const [activeTab, setActiveTab] = useState<string>("");
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -191,6 +193,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
         const overview = processOverview(metadata);
         setOverviewData(overview);
+        setRaiData(processRAI(metadata));
         console.log("Overview Data:", overview);
         categorizeEntities(metadata["@graph"] as RawGraphEntity[]);
       } catch (err: any) {
@@ -400,6 +403,8 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
           properties={roCrateMainProperties}
         />
       )}
+
+      {raiData && <RAISection raiData={raiData} />}
 
       {overviewData && overviewData.additionalCustomProperties && (
         <AdditionalPropertiesSection

@@ -172,7 +172,7 @@ const extractArkIdentifier = (url: string) => {
 
 const getEntityType = (typeUri: string | string[] | undefined): string => {
   if (!typeUri) return "Unknown";
-  const typeString = Array.isArray(typeUri) ? typeUri[0] : typeUri;
+  const typeString = Array.isArray(typeUri) ? typeUri[typeUri.length - 1] : typeUri;
   return typeString.split(/[#\/]/).pop() || "Unknown";
 };
 

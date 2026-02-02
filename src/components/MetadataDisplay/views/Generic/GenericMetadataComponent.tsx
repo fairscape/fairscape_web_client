@@ -98,7 +98,7 @@ const MarkdownContainer = styled.div`
     background-color: #f5f5f5;
     padding: 2px 5px;
     border-radius: 3px;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: "Courier New", Courier, monospace;
     font-size: 0.9em;
   }
 
@@ -117,7 +117,12 @@ const MarkdownContainer = styled.div`
     }
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     margin-top: 1em;
     margin-bottom: 0.5em;
     color: ${({ theme }) => theme.colors.text};
@@ -134,7 +139,8 @@ const MarkdownContainer = styled.div`
     line-height: 1.6;
   }
 
-  ul, ol {
+  ul,
+  ol {
     margin-left: 20px;
     margin-bottom: 0.8em;
     line-height: 1.6;
@@ -148,6 +154,25 @@ const MarkdownContainer = styled.div`
   }
 `;
 
+const CollapsibleHeader = styled.button`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  padding: ${({ theme }) => theme.spacing.xs} 0;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  cursor: pointer;
+  text-align: left;
+`;
+
+const CollapseHint = styled.span`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 14px;
+`;
+
 const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   metadata,
   type,
@@ -156,6 +181,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   const [alertMessage, setAlertMessage] = useState("");
   const [expandedSchemaPropertyDetails, setExpandedSchemaPropertyDetails] =
     useState<any | null>(null);
+  const [readmeOpen, setReadmeOpen] = useState(false);
 
   const feUrl = window.location.origin + "/view/";
   const apiUrl = window.API_URL;
@@ -172,7 +198,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
       /\*\*.+?\*\*/, // Bold
       /__.+?__/, // Bold alternative
     ];
-    return markdownPatterns.some(pattern => pattern.test(value));
+    return markdownPatterns.some((pattern) => pattern.test(value));
   };
 
   const getToken = () => {
@@ -409,9 +435,23 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     if (value === null || value === undefined) return "Not specified";
 
     // Check if this is a markdown field (like usageInformation)
+    const markdownKeys = new Set([
+      "usageInformation",
+      "hasBias",
+      "intendedUseCase",
+      "README",
+    ]);
+    const markdownPropNames = new Set([
+      "Usage Information",
+      "Bias",
+      "Use Cases",
+      "Intended Use Case",
+      "README",
+    ]);
+
     if (
-      (key === "usageInformation" || propName === "Usage Information") &&
       typeof value === "string" &&
+      (markdownKeys.has(key) || markdownPropNames.has(propName)) &&
       isMarkdownContent(value)
     ) {
       return (
@@ -674,6 +714,38 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
       <Header>{getSectionTitle()}</Header>
       <DetailsGrid>
         {propertyList.map((prop) => {
+          if (prop.key === "README") {
+            const propValue = entity[prop.key];
+            if (propValue === undefined) return null;
+
+            return (
+              <DetailItemRow
+                key={prop.key}
+                style={{ gridTemplateColumns: "1fr" }}
+              >
+                <CollapsibleHeader
+                  type="button"
+                  onClick={() => setReadmeOpen((open) => !open)}
+                  aria-expanded={readmeOpen}
+                >
+                  <span>{prop.name}</span>
+                  <CollapseHint>{readmeOpen ? "Hide" : "Show"}</CollapseHint>
+                </CollapsibleHeader>
+                {readmeOpen && (
+                  <DetailValue
+                    style={{
+                      gridColumn: "1 / -1",
+                      maxHeight: "none",
+                      overflowX: "auto",
+                    }}
+                  >
+                    {formatMainListValue(prop.key, propValue, prop.name)}
+                  </DetailValue>
+                )}
+              </DetailItemRow>
+            );
+          }
+
           if (groupedPropertyKeys.has(prop.key)) {
             const group = propertyGroups.find((g) =>
               g.properties.includes(prop.key)

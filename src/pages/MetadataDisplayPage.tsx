@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import styled from "styled-components";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import Alert from "../components/common/Alert";
@@ -11,12 +11,14 @@ import SerializationView from "../components/MetadataDisplay/views/Serialization
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
 import MetadataNavigationSidebar from "../components/MetadataDisplay/components/MetadataNavigationSidebar";
 import AIReadyScoreView from "../components/MetadataDisplay/views/AIReadyScore/AIReadyScoreView";
+import StatisticsViewer from "../components/MetadataDisplay/views/Statistics/StatisticsViewer";
 
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
 import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
 import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
+import { useHttp } from "../components/MetadataDisplay/api/httpClient";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score";
+type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics";
 
 const PageContainer = styled.div`
   display: flex;
@@ -61,6 +63,55 @@ const VersionInfo = styled.div`
   color: ${({ theme }) => theme.colors.textSecondary};
 `;
 
+const PartOfInfo = styled.div`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-bottom: 5px;
+  font-weight: 500;
+
+  a {
+    color: ${({ theme }) => theme.colors.primary};
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+`;
+
+const ImagePreviewSection = styled.div`
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: ${({ theme }) => theme.colors.background};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const PreviewImage = styled.img`
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  display: block;
+  background-color: #f5f5f5;
+`;
+
+const ImageLabel = styled.div`
+  padding: 10px 15px;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  background-color: ${({ theme }) => theme.colors.backgroundAlt};
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const FigureLegend = styled.div`
+  padding: 12px 15px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: ${({ theme }) => theme.colors.text};
+  background-color: ${({ theme }) => theme.colors.background};
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  font-style: italic;
+`;
+
 const Footer = styled.footer`
   margin-top: 30px;
   padding: 20px;
@@ -96,6 +147,22 @@ const CenteredMessage: React.FC<{ message: string }> = ({ message }) => (
   </div>
 );
 
+const getImageUrlFromBundle = (bundle: any, metadata: any): string | null => {
+  const path = bundle?.distribution?.location?.path;
+  if (!path) return null;
+
+  const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"];
+  const hasImageExtension = imageExtensions.some((ext) =>
+    path.toLowerCase().endsWith(ext)
+  );
+
+  if (!hasImageExtension) return null;
+
+  // Return the contentUrl if available
+  const contentUrl = metadata?.contentUrl;
+  return contentUrl || null;
+};
+
 export default function MetadataDisplayPage() {
   const params = useParams<{ arkId?: string }>();
   const arkId =
@@ -107,6 +174,8 @@ export default function MetadataDisplayPage() {
   const [view, setView] = useState<ViewType>("metadata");
   const { bundle, loading, error } = useMetadataBundle(arkId);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
+  const http = useHttp();
 
   const { downloadZip, downloadJSON, downloadCroissant, downloadHTML } =
     useDownloads({
@@ -126,9 +195,61 @@ export default function MetadataDisplayPage() {
 
   const hasContentUrl = useMemo(() => !!metadata?.contentUrl, [metadata]);
 
+  const hasStatistics = useMemo(
+    () =>
+      !!bundle?.descriptiveStatistics &&
+      Object.keys(bundle.descriptiveStatistics).length > 0,
+    [bundle]
+  );
+
   useEffect(() => {
     document.title = `${title} - FAIRSCAPE`;
   }, [title]);
+
+  // Fetch image with authentication if available
+  useEffect(() => {
+    let isMounted = true;
+    let blobUrl: string | null = null;
+
+    const fetchImage = async () => {
+      if (!bundle || bundle.kind !== "dataset") {
+        setImageBlobUrl(null);
+        return;
+      }
+
+      const imageUrl = getImageUrlFromBundle(bundle, metadata);
+      if (!imageUrl) {
+        setImageBlobUrl(null);
+        return;
+      }
+
+      try {
+        const blob = await http(imageUrl, {
+          credentials: "include",
+          responseType: "blob",
+        });
+
+        if (isMounted) {
+          blobUrl = URL.createObjectURL(blob);
+          setImageBlobUrl(blobUrl);
+        }
+      } catch (error) {
+        console.error("Error loading image:", error);
+        if (isMounted) {
+          setImageBlobUrl(null);
+        }
+      }
+    };
+
+    fetchImage();
+
+    return () => {
+      isMounted = false;
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [bundle, metadata, http]);
 
   const isOwner = true;
 
@@ -206,6 +327,22 @@ export default function MetadataDisplayPage() {
       case "score":
         return <AIReadyScoreView arkId={arkId} />;
 
+      case "statistics":
+        if (!bundle.descriptiveStatistics) {
+          return (
+            <Alert
+              type="info"
+              title="Statistics"
+              message="No descriptive statistics available for this dataset."
+            />
+          );
+        }
+        return (
+          <StatisticsViewer
+            descriptiveStatistics={bundle.descriptiveStatistics}
+          />
+        );
+
       default:
         return (
           <Alert
@@ -224,8 +361,37 @@ export default function MetadataDisplayPage() {
           <Container ref={contentRef}>
             <Header>
               <PageTitle>{title}</PageTitle>
+              {(() => {
+                const isPartOfList = bundle?.isPartOf || metadata?.isPartOf;
+                console.log("isPartOfList:", isPartOfList);
+                const lastIsPartOf = isPartOfList?.[isPartOfList.length - 1];
+                return lastIsPartOf ? (
+                  <PartOfInfo>
+                    Part of:{" "}
+                    <Link to={`/view/${lastIsPartOf["@id"]}`}>
+                      {lastIsPartOf.name || "RO-Crate"}
+                    </Link>
+                  </PartOfInfo>
+                ) : null;
+              })()}
               <VersionInfo>Version: {version}</VersionInfo>
             </Header>
+
+            {imageBlobUrl && view === "metadata" && (
+              <ImagePreviewSection>
+                <PreviewImage
+                  src={imageBlobUrl}
+                  alt={title}
+                  onError={(e) => {
+                    // Hide image if it fails to load
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+                {metadata?.description && (
+                  <FigureLegend>{metadata.description}</FigureLegend>
+                )}
+              </ImagePreviewSection>
+            )}
 
             {renderContent()}
 
@@ -258,6 +424,7 @@ export default function MetadataDisplayPage() {
             downloadHTML={downloadHTML}
             hasDistribution={hasDistribution}
             hasContentUrl={hasContentUrl}
+            hasStatistics={hasStatistics}
           />
         )}
       </PageContainer>

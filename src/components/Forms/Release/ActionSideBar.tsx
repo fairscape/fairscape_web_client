@@ -1,8 +1,18 @@
 import React from "react";
 import styled from "styled-components";
 
+interface ProvenanceState {
+  inputArk: string;
+  computationArk: string;
+  outputArk: string;
+  sourceFlow: "manual" | "direct" | "chatbot";
+  requiresGithubPush: boolean;
+  yamlUrl?: string;
+}
+
 interface ActionSidebarProps {
   onDownload: () => void;
+  onFinalize: () => Promise<void>;
   onSave: () => void;
   onStartOver: () => void;
   saveStatus: "idle" | "saving" | "saved" | "error";
@@ -11,10 +21,14 @@ interface ActionSidebarProps {
   reviewProgress?: { reviewed: number; total: number };
   visibility: "minimal" | "ai-ready" | "all";
   onVisibilityChange: (visibility: "minimal" | "ai-ready" | "all") => void;
+  provenance?: ProvenanceState | null;
+  finalArk?: string | null;
+  isUploading?: boolean;
 }
 
 const ActionSidebar: React.FC<ActionSidebarProps> = ({
   onDownload,
+  onFinalize,
   onSave,
   onStartOver,
   saveStatus,
@@ -23,6 +37,9 @@ const ActionSidebar: React.FC<ActionSidebarProps> = ({
   reviewProgress,
   visibility,
   onVisibilityChange,
+  provenance,
+  finalArk,
+  isUploading = false,
 }) => {
   return (
     <Sidebar>
@@ -78,13 +95,25 @@ const ActionSidebar: React.FC<ActionSidebarProps> = ({
           {saveStatus === "idle" && "Save Progress"}
         </ActionButton>
 
-        <ActionButton
-          onClick={onDownload}
-          disabled={!isAllSectionsReviewed}
-          primary
-        >
-          Download RO-Crate
-        </ActionButton>
+        <ButtonGroup>
+          <ActionButton
+            onClick={onDownload}
+            disabled={!isAllSectionsReviewed}
+            primary
+          >
+            Download Local Copy
+          </ActionButton>
+
+          <ActionButton
+            onClick={onFinalize}
+            disabled={
+              !isAllSectionsReviewed || isUploading || finalArk !== null
+            }
+            primary
+          >
+            {isUploading ? "Uploading..." : "Upload to Fairscape"}
+          </ActionButton>
+        </ButtonGroup>
 
         <ActionButton onClick={onStartOver} variant="secondary">
           Start Over
@@ -166,6 +195,37 @@ const ProgressFill = styled.div<{ width: number }>`
   height: 100%;
   background: #3e7aa8;
   transition: width 0.3s;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+const ProvenanceItem = styled.div`
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-left: 3px solid #3e7aa8;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #333;
+  word-break: break-all;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const ProvenanceNote = styled.p`
+  padding: 12px;
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+  font-size: 0.85rem;
+  color: #92400e;
+  line-height: 1.5;
+  margin: 0;
 `;
 
 const ActionButton = styled.button<{

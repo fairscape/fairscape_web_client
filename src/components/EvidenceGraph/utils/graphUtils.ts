@@ -13,7 +13,21 @@ const feUrl = window.location.origin + "/view/";
 
 export function getEntityType(typeUri: string | string[] | undefined): string {
   if (!typeUri) return "Unknown";
-  const typeString = Array.isArray(typeUri) ? typeUri[0] : typeUri;
+
+  // Handle array of types - check for ROCrate first
+  if (Array.isArray(typeUri)) {
+    const hasROCrate = typeUri.some(t =>
+      t.includes("ROCrate") || t.includes("RO-Crate") || t.includes("rocrate")
+    );
+    if (hasROCrate) return "ROCrate";
+
+    // Otherwise use the last type (most specific)
+    const typeString = typeUri[typeUri.length - 1];
+    return typeString.split(/[#\/]/).pop() || "Unknown";
+  }
+
+  // Handle single type string
+  const typeString = typeUri;
   return typeString.split(/[#\/]/).pop() || "Unknown";
 }
 
@@ -82,6 +96,9 @@ export function getDisplayableProperties(
     "usedSoftware",
     "usedSample",
     "usedInstrument",
+    "usedMLModel",
+    "hasOutputs",
+    "createdBy",
     "name",
     "label",
     "description",
@@ -116,6 +133,9 @@ export function createEvidenceNode(
     ...relationships.usedSoftware,
     ...relationships.usedSample,
     ...relationships.usedInstrument,
+    ...relationships.usedMLModel,
+    ...relationships.hasOutputs,
+    ...relationships.createdBy,
   ];
 
   const visibleRelatedCount = allRelated.filter((node) =>
@@ -155,7 +175,10 @@ export function createEdge(
     usedSoftware: "used software",
     usedSample: "used sample",
     usedInstrument: "used instrument",
+    usedMLModel: "used model",
+    hasOutputs: "has outputs",
     contains: "contains",
+    createdBy: "created by",
   };
 
   const label = labelMap[relationshipType] || relationshipType;
@@ -244,6 +267,16 @@ export class GraphBuilder {
         relationships.usedInstrument,
         "usedInstrument"
       );
+      this._processRelationship(
+        nodeId,
+        relationships.usedMLModel,
+        "usedMLModel"
+      );
+      this._processRelationship(
+        nodeId,
+        relationships.hasOutputs,
+        "hasOutputs"
+      );
 
       if (relationships.usedDataset.length > COLLECTION_THRESHOLD) {
         this._addDatasetCollection(nodeId, relationships.usedDataset);
@@ -254,6 +287,9 @@ export class GraphBuilder {
           "usedDataset"
         );
       }
+
+      // Handle createdBy - these may be synthetic Person nodes
+      this._processCreatedByRelationship(nodeId, relationships.createdBy);
 
       nodeToExpand.data._expanded = true;
       nodeToExpand.data.expandable = false;
@@ -362,6 +398,64 @@ export class GraphBuilder {
     }
   }
 
+  /**
+   * Process createdBy relationships - handles synthetic Person nodes (e.g., emails)
+   * that don't exist in the dataService
+   */
+  private _processCreatedByRelationship(
+    sourceId: string,
+    createdByNodes: RawGraphEntity[]
+  ) {
+    for (const personEntity of createdByNodes) {
+      const personId = personEntity["@id"];
+
+      // Skip if already added
+      if (this.visibleNodes.has(personId)) {
+        const edge = createEdge(sourceId, personId, "createdBy");
+        this.edges.set(edge.id, edge);
+        continue;
+      }
+
+      // Create node directly from the entity data (works for synthetic Person nodes)
+      const node = this._createNodeFromEntity(personEntity);
+      this.nodes.set(personId, node);
+      this.visibleNodes.add(personId);
+
+      const edge = createEdge(sourceId, personId, "createdBy");
+      this.edges.set(edge.id, edge);
+    }
+  }
+
+  /**
+   * Create an EvidenceNode directly from entity data (for synthetic nodes)
+   */
+  private _createNodeFromEntity(entityData: RawGraphEntity): EvidenceNode {
+    const id = entityData["@id"];
+    const type = getEntityType(entityData["@type"]);
+    const label = entityData.name || entityData.email || entityData["@id"];
+    const displayName = abbreviateName(label);
+    const description = entityData.description || "";
+
+    const nodeData: EvidenceNodeData = {
+      id,
+      type,
+      label,
+      displayName,
+      description,
+      expandable: false,
+      _sourceData: entityData,
+      properties: getDisplayableProperties(entityData),
+      _expanded: true,
+    };
+
+    return {
+      id,
+      type: "evidenceNode",
+      position: { x: 0, y: 0 },
+      data: nodeData,
+    };
+  }
+
   private addNodeAndRelationships(nodeId: string, depth: number): void {
     if (depth <= 0 || this.visibleNodes.has(nodeId)) return;
     this.addNode(nodeId);
@@ -393,6 +487,18 @@ export class GraphBuilder {
       "usedInstrument",
       depth
     );
+    this._processRelationship(
+      nodeId,
+      relationships.usedMLModel,
+      "usedMLModel",
+      depth
+    );
+    this._processRelationship(
+      nodeId,
+      relationships.hasOutputs,
+      "hasOutputs",
+      depth
+    );
 
     if (relationships.usedDataset.length > COLLECTION_THRESHOLD) {
       this._addDatasetCollection(nodeId, relationships.usedDataset);
@@ -404,6 +510,9 @@ export class GraphBuilder {
         depth
       );
     }
+
+    // Handle createdBy relationships (synthetic Person nodes)
+    this._processCreatedByRelationship(nodeId, relationships.createdBy);
   }
 
   private findRelationshipType(
@@ -420,6 +529,12 @@ export class GraphBuilder {
     if (rels.usedSample.some((n) => n["@id"] === targetId)) return "usedSample";
     if (rels.usedInstrument.some((n) => n["@id"] === targetId))
       return "usedInstrument";
+    if (rels.usedMLModel.some((n) => n["@id"] === targetId))
+      return "usedMLModel";
+    if (rels.hasOutputs.some((n) => n["@id"] === targetId))
+      return "hasOutputs";
+    if (rels.createdBy.some((n) => n["@id"] === targetId))
+      return "createdBy";
     return null;
   }
 

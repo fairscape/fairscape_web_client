@@ -365,7 +365,7 @@ const CreateRocratePage = () => {
                     {Array.isArray(entity["@type"])
                       ? entity["@type"]
                           .find((t: string) => t.includes("#"))
-                          ?.split("#")[1] || entity["@type"][0].split("/").pop()
+                          ?.split("#")[1] || entity["@type"][entity["@type"].length - 1].split("/").pop()
                       : typeof entity["@type"] === "string"
                       ? entity["@type"].split("#")[1] ||
                         entity["@type"].split("/").pop()

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import releaseFormConfig from "../components/Forms/config/rocrateEditConfig.json";
 import { PageContainer } from "../components/Forms/ReleaseComponents";
 import {
@@ -11,13 +11,14 @@ import {
   saveCrate,
   checkCrateExists,
 } from "../components/Forms/utils/storageUtils";
-import { useLLMAssistApi } from "../components/Forms/api/llmAssistApi";
+import { useLLMAssistApi } from "../components/Forms/api/llmAssistAPI";
+import { useFairscapeApi } from "../components/Forms/api/fairscapeApi";
 import { filterFieldsByVisibility } from "../components/Forms/utils/llmUtils";
-import ModeSelector from "../components/Forms/Release/ModeSelector";
+import UnifiedStartingPage from "../components/Forms/Release/UnifiedStartingPage";
 import FormManager from "../components/Forms/Release/FormManager";
 import DocumentUploader from "../components/Forms/Release/DocumentUploader";
-import EditSelectionPage from "../components/Forms/Release/EditSelectionPage";
 import ActionSidebar from "../components/Forms/Release/ActionSideBar";
+import { PageTitle } from "../components/shared/SharedStyles";
 
 interface FormData {
   [key: string]: any;
@@ -26,6 +27,15 @@ interface FormData {
 interface UploadedFile {
   name: string;
   content: string;
+}
+
+interface ProvenanceState {
+  inputArk: string;
+  computationArk: string;
+  outputArk: string;
+  sourceFlow: "manual" | "direct" | "chatbot";
+  requiresGithubPush: boolean;
+  yamlUrl?: string;
 }
 
 interface ReviewState {
@@ -38,11 +48,14 @@ interface ReviewState {
 
 const CreateRelease: React.FC = () => {
   const llmApi = useLLMAssistApi();
+  const fairscapeApi = useFairscapeApi();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const [mode, setMode] = useState<
-    "choice" | "new" | "edit" | "review" | "form"
-  >("choice");
+  const [mode, setMode] = useState<"landing" | "form">("landing");
+  const [currentMethod, setCurrentMethod] = useState<
+    "manual" | "upload-existing" | "direct" | "interactive" | null
+  >(null);
   const [formData, setFormData] = useState<FormData>({});
   const [reviewState, setReviewState] = useState<ReviewState>({});
   const [isReviewRequired, setIsReviewRequired] = useState(false);
@@ -50,24 +63,63 @@ const CreateRelease: React.FC = () => {
   const [uploadedCrate, setUploadedCrate] = useState<File | null>(null);
   const [supportingDocs, setSupportingDocs] = useState<UploadedFile[]>([]);
   const [isLoadingLLM, setIsLoadingLLM] = useState(false);
+  const [provenance, setProvenance] = useState<ProvenanceState | null>(null);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
   const [fieldVisibility, setFieldVisibility] = useState<
     "minimal" | "ai-ready" | "all"
   >("all");
-  const crateInputRef = useRef<HTMLInputElement>(null);
+  const [showDocumentUploader, setShowDocumentUploader] = useState(false);
+  const [finalArk, setFinalArk] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const state = location.state as any;
+    console.log("=== CreateReleasePage useEffect ===");
+    console.log("Full location.state:", state);
+
     if (state && state.fromD4D && state.rocrate) {
+      console.log("Detected D4D flow initialization");
+      console.log("state.rocrate type:", typeof state.rocrate);
+      console.log("state.rocrate preview:",
+        typeof state.rocrate === "string"
+          ? state.rocrate.substring(0, 200)
+          : state.rocrate
+      );
+
       try {
-        const content =
-          typeof state.rocrate === "string"
-            ? state.rocrate
-            : JSON.stringify(state.rocrate);
+        // Handle case where rocrate is a string containing JSON
+        let rocrateObj;
+        if (typeof state.rocrate === "string") {
+          console.log("Parsing rocrate from string...");
+          rocrateObj = JSON.parse(state.rocrate);
+          console.log("Parsed rocrate object:", rocrateObj);
+        } else {
+          rocrateObj = state.rocrate;
+        }
+
+        // Convert back to string for parseRoCrateMetadata
+        const content = JSON.stringify(rocrateObj);
+        console.log("Content to parse (length):", content.length);
+
         const parsedData = parseRoCrateMetadata(content);
+        console.log("Parsed form data:", parsedData);
+        console.log("Form data keys:", Object.keys(parsedData));
+        console.log("Sample values:", {
+          name: parsedData.name,
+          description: parsedData.description?.substring(0, 100),
+          keywords: parsedData.keywords,
+        });
+
         setFormData(parsedData);
+
+        if (state.provenance) {
+          console.log("Setting provenance:", state.provenance);
+          setProvenance(state.provenance);
+        } else {
+          console.warn("No provenance data found in state");
+        }
 
         const initialReviewState: ReviewState = {};
         releaseFormConfig.sections.forEach((section: any) => {
@@ -78,10 +130,24 @@ const CreateRelease: React.FC = () => {
 
         setIsReviewRequired(true);
         setIsReviewMode(true);
+        setShowDocumentUploader(false);
         setMode("form");
+
+        console.log("Form initialization complete!");
       } catch (error) {
-        console.error("Error initializing form from RO-Crate:", error);
+        console.error("!!! Error initializing form from RO-Crate:", error);
+        console.error("Error details:", {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        alert(`Failed to load RO-Crate data: ${error instanceof Error ? error.message : String(error)}`);
       }
+    } else {
+      console.log("Not D4D flow or missing data:", {
+        hasState: !!state,
+        fromD4D: state?.fromD4D,
+        hasRocrate: !!state?.rocrate,
+      });
     }
   }, [location.state]);
 
@@ -102,19 +168,22 @@ const CreateRelease: React.FC = () => {
     }
   }, [mode, isReviewRequired, isReviewMode, reviewState]);
 
-  const handleModeSelection = (selectedMode: "new" | "edit" | "review") => {
-    if (selectedMode === "review") {
-      setMode("review");
-      setIsReviewMode(true);
+  useEffect(() => {
+    if (provenance) {
       setIsReviewRequired(true);
-    } else if (selectedMode === "edit") {
-      setMode("edit");
-      setIsReviewRequired(false);
-      setIsReviewMode(false);
-    } else {
-      setMode(selectedMode);
-      setIsReviewMode(false);
-      setIsReviewRequired(false);
+    }
+  }, [provenance]);
+
+  const handleCreateMethod = (
+    method: "manual" | "upload-existing" | "direct" | "interactive"
+  ) => {
+    setCurrentMethod(method);
+
+    if (method === "interactive") {
+      navigate("/d4d-assistant", {
+        state: { fromCreateRelease: true },
+      });
+    } else if (method === "manual") {
       const defaults: FormData = {};
       releaseFormConfig.sections.forEach((section) => {
         section.fields.forEach((field: any) => {
@@ -130,12 +199,48 @@ const CreateRelease: React.FC = () => {
       defaults.hasPart = [];
       defaults.subCrates = [];
       setFormData(defaults);
+      setIsReviewRequired(false);
+      setShowDocumentUploader(false);
+      setMode("form");
+    } else if (method === "direct") {
+      setShowDocumentUploader(true);
+      setMode("form");
     }
+  };
+
+  const handleUploadExisting = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        const parsedData = parseRoCrateMetadata(content);
+        setFormData(parsedData);
+        setUploadedCrate(file);
+        setIsReviewRequired(false);
+        setIsReviewMode(false);
+        setShowDocumentUploader(false);
+        setMode("form");
+      } catch (error) {
+        console.error("Error parsing RO-Crate:", error);
+        alert(
+          "Failed to parse RO-Crate metadata. Please check the file format."
+        );
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   const handleSavedCrateSelect = (data: {
     formData: any;
     reviewState?: any;
+    provenance?: ProvenanceState | null;
+    finalArk?: string | null;
   }) => {
     setFormData(data.formData);
     if (data.reviewState) {
@@ -145,8 +250,21 @@ const CreateRelease: React.FC = () => {
       );
       setIsReviewRequired(hasUnreviewed);
     }
+    if (data.provenance) {
+      setProvenance(data.provenance);
+    }
+    if (data.finalArk) {
+      setFinalArk(data.finalArk);
+    }
     setIsReviewMode(false);
+    setShowDocumentUploader(false);
     setMode("form");
+  };
+
+  const handleIssueSelect = (issueNumber: number) => {
+    navigate("/d4d-assistant", {
+      state: { fromCreateRelease: true, issueNumber },
+    });
   };
 
   const handleCrateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,14 +279,15 @@ const CreateRelease: React.FC = () => {
         setFormData(parsedData);
         setUploadedCrate(file);
 
-        if (isReviewMode) {
-          const initialReviewState: ReviewState = {};
-          releaseFormConfig.sections.forEach((section) => {
-            initialReviewState[section.id] = { reviewed: false };
-          });
-          initialReviewState["subCrates"] = { reviewed: false };
-          setReviewState(initialReviewState);
-        }
+        const initialReviewState: ReviewState = {};
+        releaseFormConfig.sections.forEach((section) => {
+          initialReviewState[section.id] = { reviewed: false };
+        });
+        initialReviewState["subCrates"] = { reviewed: false };
+        setReviewState(initialReviewState);
+        setIsReviewRequired(true);
+        setIsReviewMode(true);
+        setShowDocumentUploader(false);
 
         setMode("form");
       } catch (error) {
@@ -179,22 +298,60 @@ const CreateRelease: React.FC = () => {
       }
     };
     reader.readAsText(file);
+    e.target.value = "";
   };
 
   const handleLLMAssist = async (documents: UploadedFile[]) => {
     setIsLoadingLLM(true);
+    console.log("=== handleLLMAssist (Direct Flow) ===");
+
     try {
       const suggestedData = await llmApi.processDocuments(documents);
-      setFormData((prev) => ({
-        ...prev,
-        ...suggestedData,
-        hasPart: prev.hasPart || [],
-        subCrates: prev.subCrates || [],
-      }));
+      console.log("LLM API response:", suggestedData);
+
+      const { result, provenance } = suggestedData;
+      console.log("Result type:", typeof result);
+      console.log("Result preview:",
+        typeof result === "string" ? result.substring(0, 200) : result
+      );
+
+      // Convert result to string if it's not already
+      const rocrateString = typeof result === "string"
+        ? result
+        : JSON.stringify(result);
+
+      console.log("Parsing RO-Crate with parseRoCrateMetadata...");
+      const parsedFormData = parseRoCrateMetadata(rocrateString);
+      console.log("Parsed form data:", parsedFormData);
+      console.log("Form data keys:", Object.keys(parsedFormData));
+
+      setFormData(parsedFormData);
+
+      if (provenance) {
+        console.log("Setting provenance:", provenance);
+        setProvenance({
+          inputArk: provenance.inputArk,
+          computationArk: provenance.computationArk,
+          outputArk: provenance.outputArk,
+          sourceFlow: "direct",
+          requiresGithubPush: false,
+        });
+      } else {
+        console.warn("No provenance data received from LLM API");
+      }
+
       setIsReviewRequired(true);
+      setShowDocumentUploader(false);
       setMode("form");
+
+      console.log("Direct flow initialization complete!");
     } catch (error) {
-      console.error("LLM assist error:", error);
+      console.error("!!! LLM assist error:", error);
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      alert(`Failed to process documents: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsLoadingLLM(false);
     }
@@ -217,7 +374,9 @@ const CreateRelease: React.FC = () => {
     defaults.subCrates = [];
     setFormData(defaults);
     setIsReviewRequired(false);
+    setShowDocumentUploader(false);
     setMode("form");
+    setProvenance(null);
   };
 
   const handleFieldChange = (fieldName: string, value: any) => {
@@ -238,7 +397,7 @@ const CreateRelease: React.FC = () => {
     };
     setReviewState(newReviewState);
 
-    saveCrate(formData, newReviewState);
+    saveCrate(formData, newReviewState, provenance, finalArk);
     setSaveStatus("saved");
     setTimeout(() => setSaveStatus("idle"), 2000);
   };
@@ -267,7 +426,9 @@ const CreateRelease: React.FC = () => {
 
     const success = saveCrate(
       formData,
-      isReviewRequired ? reviewState : undefined
+      isReviewRequired ? reviewState : undefined,
+      provenance,
+      finalArk
     );
 
     if (success) {
@@ -308,8 +469,70 @@ const CreateRelease: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleFinalize = async () => {
+    if (!isAllSectionsReviewed()) {
+      alert("Please review all sections before uploading");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const finalRoCrate = generateReleaseJson(formData);
+
+      console.log("=== Uploading to Fairscape ===");
+      console.log("Has provenance:", !!provenance);
+      if (provenance) {
+        console.log("Base dataset ARK:", provenance.outputArk);
+      }
+
+      // Step 1: Upload to Fairscape with optional annotation
+      const uploadResult = await fairscapeApi.uploadRoCrate(
+        finalRoCrate,
+        provenance?.outputArk
+      );
+
+      const newFinalArk = uploadResult["@id"];
+      console.log("Upload successful! Final ARK:", newFinalArk);
+      setFinalArk(newFinalArk);
+
+      // Save the finalArk to storage
+      saveCrate(formData, isReviewRequired ? reviewState : undefined, provenance, newFinalArk);
+
+      // Step 2: If D4D flow, update GitHub YAML
+      if (provenance?.requiresGithubPush && provenance.yamlUrl) {
+        // TODO: Need RO-Crate → YAML conversion first
+        // For now, just log that this step is pending
+        console.log("GitHub repush pending - need RO-Crate to YAML conversion");
+
+        /* Will be:
+        const yamlContent = convertRoCrateToYaml(finalRoCrate);
+        await fairscapeApi.updateGitHubFile(
+          provenance.yamlUrl,
+          yamlContent,
+          'Update D4D from Fairscape review'
+        );
+        */
+      }
+
+      alert(`Successfully uploaded to Fairscape!\nARK: ${newFinalArk}`);
+
+      // Offer download as well
+      if (window.confirm("Would you like to download a local copy?")) {
+        handleDownload();
+      }
+    } catch (error: any) {
+      console.error("Finalization error:", error);
+      alert(`Upload failed: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleStartOver = () => {
-    setMode("choice");
+    setMode("landing");
+    setCurrentMethod(null);
+    setShowDocumentUploader(false);
     setFormData({});
     setSupportingDocs([]);
     setReviewState({});
@@ -333,29 +556,19 @@ const CreateRelease: React.FC = () => {
 
   return (
     <PageContainer>
-      <PageTitle>Create Release RO-Crate</PageTitle>
+      <PageTitle>Create a Fairscape Release</PageTitle>
 
-      {mode === "choice" && <ModeSelector onModeSelect={handleModeSelection} />}
-
-      {(mode === "edit" || mode === "review") && (
-        <EditSelectionPage
+      {mode === "landing" && (
+        <UnifiedStartingPage
+          onMethodSelect={handleCreateMethod}
+          onUploadExisting={handleUploadExisting}
           onCrateUpload={handleCrateUpload}
           onSavedCrateSelect={handleSavedCrateSelect}
-          onBack={() => setMode("choice")}
-          title={
-            mode === "review"
-              ? "Review Release RO-Crate"
-              : "Edit Existing RO-Crate"
-          }
-          description={
-            mode === "review"
-              ? "Upload a ro-crate-metadata.json file that needs review and approval."
-              : "Upload an existing ro-crate-metadata.json file to edit its contents."
-          }
+          onIssueSelect={handleIssueSelect}
         />
       )}
 
-      {mode === "new" && (
+      {mode === "form" && showDocumentUploader && (
         <DocumentUploader
           supportingDocs={supportingDocs}
           onDocsChange={setSupportingDocs}
@@ -368,7 +581,7 @@ const CreateRelease: React.FC = () => {
         />
       )}
 
-      {mode === "form" && (
+      {mode === "form" && !showDocumentUploader && (
         <MainContent>
           <FormColumn>
             <FormManager
@@ -384,6 +597,7 @@ const CreateRelease: React.FC = () => {
 
           <ActionSidebar
             onDownload={handleDownload}
+            onFinalize={handleFinalize}
             onSave={handleSave}
             onStartOver={handleStartOver}
             saveStatus={saveStatus}
@@ -392,27 +606,15 @@ const CreateRelease: React.FC = () => {
             reviewProgress={isReviewRequired ? getReviewProgress() : undefined}
             visibility={fieldVisibility}
             onVisibilityChange={handleVisibilityChange}
+            provenance={provenance}
+            finalArk={finalArk}
+            isUploading={isUploading}
           />
         </MainContent>
       )}
-
-      <input
-        ref={crateInputRef}
-        type="file"
-        accept=".json"
-        onChange={handleCrateUpload}
-        style={{ display: "none" }}
-      />
     </PageContainer>
   );
 };
-
-const PageTitle = styled.h1`
-  font-size: 2rem;
-  color: #3e7aa8;
-  text-align: center;
-  margin-bottom: 30px;
-`;
 
 const MainContent = styled.div`
   display: flex;
