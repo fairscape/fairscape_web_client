@@ -6,12 +6,12 @@ npm run build
 DATE=$(date '+%Y-%m-%d')
 
 # Build the Docker image with production environment variables
-docker build \
+sudo docker build \
   --no-cache \
   -f Dockerfile \
   -t ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v1 .
 
 
-docker push ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v1
+sudo docker push ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v1
 
 #docker run -p 5173:80 ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}

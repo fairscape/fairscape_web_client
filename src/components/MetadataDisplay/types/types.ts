@@ -48,6 +48,12 @@ export interface DescriptiveStatistics {
   };
 }
 
+export interface IdentifierValue {
+  "@id": string;
+  "@type"?: string | string[];
+  name?: string;
+}
+
 export interface MetadataBundle {
   kind: string;
   main: any;
@@ -58,4 +64,5 @@ export interface MetadataBundle {
   permissions?: Permissions;
   distribution?: Distribution;
   descriptiveStatistics?: DescriptiveStatistics;
+  isPartOf?: IdentifierValue[];
 }

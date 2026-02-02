@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import styled from "styled-components";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import Alert from "../components/common/Alert";
@@ -61,6 +61,21 @@ const PageTitle = styled.h1`
 
 const VersionInfo = styled.div`
   color: ${({ theme }) => theme.colors.textSecondary};
+`;
+
+const PartOfInfo = styled.div`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-bottom: 5px;
+  font-weight: 500;
+
+  a {
+    color: ${({ theme }) => theme.colors.primary};
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
 `;
 
 const ImagePreviewSection = styled.div`
@@ -346,6 +361,19 @@ export default function MetadataDisplayPage() {
           <Container ref={contentRef}>
             <Header>
               <PageTitle>{title}</PageTitle>
+              {(() => {
+                const isPartOfList = bundle?.isPartOf || metadata?.isPartOf;
+                console.log("isPartOfList:", isPartOfList);
+                const lastIsPartOf = isPartOfList?.[isPartOfList.length - 1];
+                return lastIsPartOf ? (
+                  <PartOfInfo>
+                    Part of:{" "}
+                    <Link to={`/view/${lastIsPartOf["@id"]}`}>
+                      {lastIsPartOf.name || "RO-Crate"}
+                    </Link>
+                  </PartOfInfo>
+                ) : null;
+              })()}
               <VersionInfo>Version: {version}</VersionInfo>
             </Header>
 
