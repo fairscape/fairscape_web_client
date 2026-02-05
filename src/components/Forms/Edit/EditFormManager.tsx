@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { ReviewStates } from "../types/reviewTypes";
 import FieldReviewBadge from "./FieldReviewBadge";
 import KeywordSelector from "../Release/KeywordSelector";
+import EntitySelector from "./EntitySelector";
 
 interface EditFormManagerProps {
   config: any;
@@ -10,6 +11,7 @@ interface EditFormManagerProps {
   onFieldChange: (fieldName: string, value: any) => void;
   reviewStates?: ReviewStates;
   onReviewAction?: (fieldName: string, action: "approve" | "reject") => void;
+  parentRoCrateId?: string; // ARK ID of parent RO-Crate for entity selection
 }
 
 const EditFormManager: React.FC<EditFormManagerProps> = ({
@@ -18,6 +20,7 @@ const EditFormManager: React.FC<EditFormManagerProps> = ({
   onFieldChange,
   reviewStates = {},
   onReviewAction,
+  parentRoCrateId,
 }) => {
   if (!config || !config.sections) {
     return <div>No form configuration available</div>;
@@ -71,6 +74,7 @@ const EditFormManager: React.FC<EditFormManagerProps> = ({
             onChange={(e) => onFieldChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             style={fieldStyle}
+            readOnly={field.readonly}
           />
         )}
 
@@ -146,8 +150,39 @@ const EditFormManager: React.FC<EditFormManagerProps> = ({
             fieldStyle={fieldStyle}
           />
         )}
+
+        {field.type === "identifier_list" && (
+          <EntitySelector
+            value={value || ""}
+            onChange={(newValue) => onFieldChange(field.name, newValue)}
+            filterType={getFilterTypeForField(field.name)}
+            parentRoCrateId={parentRoCrateId}
+            placeholder={field.placeholder}
+          />
+        )}
       </FieldContainer>
     );
+  };
+
+  // Helper function to determine entity filter type based on field name
+  const getFilterTypeForField = (fieldName: string): "Dataset" | "Software" | "Computation" | "Schema" | undefined => {
+    const nameLower = fieldName.toLowerCase();
+
+    if (nameLower.includes("computation") || fieldName === "generatedBy" || fieldName === "runBy") {
+      return "Computation";
+    }
+    if (nameLower.includes("dataset")) {
+      return "Dataset";
+    }
+    if (nameLower.includes("software")) {
+      return "Software";
+    }
+    if (nameLower.includes("schema")) {
+      return "Schema";
+    }
+
+    // No filter if we can't determine type
+    return undefined;
   };
 
   return (
@@ -272,6 +307,12 @@ const TextInput = styled.input`
   &:focus {
     outline: none;
     border-color: #3b82f6;
+  }
+
+  &:read-only {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+    color: #6b7280;
   }
 `;
 

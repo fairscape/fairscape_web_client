@@ -14,12 +14,30 @@ interface ProcessDocumentsResponse {
   provenance: any;
 }
 
+interface ProcessDocumentsOptions {
+  onProgress?: (status: {
+    state: string;
+    message: string;
+    elapsedSeconds: number;
+  }) => void;
+}
+
+function getStatusMessage(status: string): string {
+  switch (status) {
+    case "PENDING": return "Queued...";
+    case "PROCESSING": return "Preparing request...";
+    case "WAITING_FOR_API": return "Waiting for Gemini (1-3 mins)...";
+    default: return "Processing...";
+  }
+}
+
 export function useLLMAssistApi() {
   const http = useHttp();
 
   return {
     processDocuments: async (
-      documents: UploadedFile[]
+      documents: UploadedFile[],
+      options?: ProcessDocumentsOptions
     ): Promise<ProcessDocumentsResponse> => {
       const formData = new FormData();
       documents.forEach((doc) => {
@@ -33,12 +51,32 @@ export function useLLMAssistApi() {
 
       const { task_id } = submitResponse;
 
+      const startTime = Date.now();
+
       while (true) {
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         const statusData = await http(`/llmassist/status/${task_id}`, {
           method: "GET",
         });
+
+        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+
+        // Show progress if callback provided
+        options?.onProgress?.({
+          state: statusData.status,
+          message: getStatusMessage(statusData.status),
+          elapsedSeconds,
+        });
+
+        // Handle JSON_PARSE_FAILED with debug URL
+        if (statusData.status === "JSON_PARSE_FAILED") {
+          throw new Error(
+            `LLM returned invalid JSON.\n` +
+            `Debug: ${window.location.origin}/api/llmassist/status/${task_id}\n` +
+            `${statusData.error?.message}`
+          );
+        }
 
         if (statusData.status === "SUCCESS") {
           const result = statusData.rocrate ?? statusData.result;

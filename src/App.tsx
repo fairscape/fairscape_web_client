@@ -12,6 +12,7 @@ import MetadataDisplayPage from "./pages/MetadataDisplayPage";
 import EvidenceGraphPage from "./pages/EvidenceGraphPage";
 import CreateRelease from "./pages/CreateReleasePage";
 import EditIdentifierPage from "./pages/EditIdentifierPage";
+import CreateEntityPage from "./pages/CreateEntityPage";
 import { theme } from "./styles/theme";
 import { GlobalStyle } from "./styles/GlobalStyles";
 import DataverseTokensPage from "./pages/DataverseTokensPage";
@@ -38,6 +39,7 @@ function App() {
               <Route path="/compare" element={<CompareSearchPage />} />
               <Route path="/view/*" element={<MetadataDisplayPage />} />
               <Route path="/edit/*" element={<EditIdentifierPage />} />
+              <Route path="/create/:entityType" element={<CreateEntityPage />} />
               <Route path="/evidence/*" element={<EvidenceGraphPage />} />
               <Route path="/review" element={<CreateRelease />} />
               <Route path="/tokens" element={<DataverseTokensPage />} />
