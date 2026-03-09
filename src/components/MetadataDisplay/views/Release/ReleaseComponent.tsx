@@ -3,11 +3,13 @@ import styled from "styled-components";
 import { Metadata } from "../../types/types";
 import {
   processOverview,
-  processRAI,
+  processAIReady,
+  processComplianceEthics,
   processDistribution,
   processCompositionRefs,
   OverviewData,
-  RAIData,
+  AIReadyData,
+  ComplianceEthicsData,
   DistributionData,
   CompositionData,
 } from "../../utils/metadataProcessing";
@@ -15,7 +17,8 @@ import ConfigurableMetadataTable from "../../components/Tables/ConfigurableMetad
 import { MetadataProperty } from "../../types/metadataPropertyLists";
 
 import AdditionalPropertiesSection from "../../components/Sections/AdditionalPropertiesSection";
-import RAISection from "../../components/Sections/RAISection";
+import ComplianceEthicsSection from "../../components/Sections/ComplianceEthicsSection";
+import AIReadySection from "../../components/Sections/AIReadySection";
 import DistributionSection from "../../components/Sections/DistributionSection";
 import CompositionSection from "../../components/Sections/CompositionSection";
 import LoadingSpinner from "../../../common/LoadingSpinner";
@@ -40,12 +43,9 @@ const releaseMainProperties: MetadataProperty[] = [
   { key: "license_value", name: "License" },
   { key: "copyright", name: "Copyright" },
   { key: "content_size", name: "Content Size" },
-  { key: "confidentiality_level", name: "Confidentiality Level" },
   { key: "keywords", name: "Keywords" },
   { key: "citation", name: "Citation" },
-  { key: "human_subject", name: "Human Subject Data" },
   { key: "funding", name: "Funding" },
-  { key: "completeness", name: "Completeness" },
   { key: "related_publications", name: "Related Publications" },
 ];
 
@@ -62,7 +62,9 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
-  const [raiData, setRaiData] = useState<RAIData | null>(null);
+  const [aiReadyData, setAiReadyData] = useState<AIReadyData | null>(null);
+  const [complianceData, setComplianceData] =
+    useState<ComplianceEthicsData | null>(null);
   const [distributionData, setDistributionData] =
     useState<DistributionData | null>(null);
   const [compositionData, setCompositionData] =
@@ -73,7 +75,8 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
       setLoading(true);
       const processedOverview = processOverview(metadata);
       setOverviewData(processedOverview);
-      setRaiData(processRAI(metadata));
+      setAiReadyData(processAIReady(metadata));
+      setComplianceData(processComplianceEthics(metadata));
       setDistributionData(processDistribution(metadata));
       setCompositionData(processCompositionRefs(metadata));
       setLoading(false);
@@ -96,7 +99,9 @@ const ReleaseComponent: React.FC<ReleaseComponentProps> = ({
           properties={releaseMainProperties}
         />
       )}
-      {raiData && <RAISection raiData={raiData} />}
+      {complianceData && <ComplianceEthicsSection data={complianceData} />}
+
+      {aiReadyData && <AIReadySection data={aiReadyData} />}
 
       {overviewData && overviewData.additionalCustomProperties && (
         <AdditionalPropertiesSection

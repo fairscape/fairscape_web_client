@@ -45,6 +45,29 @@ export const findRootEntity = (
   );
 };
 
+const resolveField = (
+  root: RawGraphEntity,
+  topLevelKey: string,
+  additionalPropertyNames?: string[]
+): any => {
+  if (root[topLevelKey] !== undefined && root[topLevelKey] !== null) {
+    return root[topLevelKey];
+  }
+  if (
+    additionalPropertyNames &&
+    root.additionalProperty &&
+    Array.isArray(root.additionalProperty)
+  ) {
+    for (const name of additionalPropertyNames) {
+      const prop = root.additionalProperty.find((p: any) => p.name === name);
+      if (prop && prop.value !== undefined && prop.value !== null) {
+        return prop.value;
+      }
+    }
+  }
+  return undefined;
+};
+
 const resolveLink = (value: any, graph: RawGraphEntity[]): string => {
   if (typeof value === "string") return value;
   if (typeof value === "object" && value !== null && value["@id"]) {
@@ -67,12 +90,9 @@ export interface OverviewData {
   principal_investigator?: string;
   contact_email?: string;
   license_value?: string;
-  confidentiality_level?: string;
   keywords?: string | string[];
   citation?: string;
-  human_subject?: string | boolean;
   funding?: string;
-  completeness?: string;
   related_publications?: string[];
   externalUrl?: string;
   contentUrl?: string;
@@ -176,8 +196,32 @@ export const processOverview = (metadata: Metadata): OverviewData => {
       .filter(Boolean);
   }
 
-  let completeness: string | undefined;
-  let human_subject_value: string | boolean | undefined;
+  const KNOWN_SECTION_FIELD_NAMES = new Set([
+    "Completeness",
+    "Human Subject",
+    "Human Subject Data",
+    "Prohibited Uses",
+    "Intended Use",
+    "Intended Uses",
+    "Limitations",
+    "Maintenance Plan",
+    "Ethical Review",
+    "Confidentiality Level",
+    "IRB",
+    "IRB Protocol ID",
+    "Human Subject Exemption",
+    "FDA Regulated",
+    "Deidentified",
+    "Human Subjects",
+    "Human Subject Research",
+    "Data Governance Committee",
+    "Addressing Gaps",
+    "Data Anomalies",
+    "Content Warning",
+    "Informed Consent",
+    "At Risk Populations",
+  ]);
+
   const additionalCustomProperties: Array<{
     name: string;
     value: string | string[];
@@ -186,23 +230,7 @@ export const processOverview = (metadata: Metadata): OverviewData => {
   if (root.additionalProperty && Array.isArray(root.additionalProperty)) {
     root.additionalProperty.forEach((p) => {
       if (p.name && p.value !== undefined && p.value !== null) {
-        if (p.name === "Completeness") {
-          completeness = String(p.value);
-        } else if (
-          p.name === "Human Subject" ||
-          p.name === "Human Subject Data"
-        ) {
-          if (typeof p.value === "string") {
-            if (p.value.toLowerCase() === "true") human_subject_value = true;
-            else if (p.value.toLowerCase() === "false")
-              human_subject_value = false;
-            else human_subject_value = p.value;
-          } else if (typeof p.value === "boolean") {
-            human_subject_value = p.value;
-          } else {
-            human_subject_value = String(p.value);
-          }
-        } else {
+        if (!KNOWN_SECTION_FIELD_NAMES.has(p.name)) {
           additionalCustomProperties.push({ name: p.name, value: p.value });
         }
       }
@@ -236,16 +264,13 @@ export const processOverview = (metadata: Metadata): OverviewData => {
       root.principalInvestigator || (root.PI as any)?.name || undefined,
     contact_email: root.contactPoint?.email || root.contactEmail || undefined,
     license_value: license_value || undefined,
-    confidentiality_level: (root as any).confidentialityLevel || undefined,
     keywords: keywordsValue,
     citation: root.citation || undefined,
-    human_subject: human_subject_value,
     funding: root.funder
       ? Array.isArray(root.funder)
         ? root.funder.map((f) => (f as any).name || String(f)).join("; ")
         : (root.funder as any).name || String(root.funder)
       : undefined,
-    completeness: completeness || undefined,
     related_publications:
       related_publications.length > 0 ? related_publications : undefined,
     copyright:
@@ -266,82 +291,144 @@ export const processOverview = (metadata: Metadata): OverviewData => {
   return overviewData;
 };
 
-export interface RAIData {
-  dataUseCases?: string;
-  dataLimitations?: string;
-  dataBiases?: string;
-  dataMaintenancePlan?: string;
+export interface ComplianceEthicsData {
+  ethicalReview?: string;
+  confidentialityLevel?: string;
+  irb?: string;
+  irbProtocolId?: string;
+  humanSubjectExemption?: string;
+  fdaRegulated?: string | boolean;
+  deidentified?: string | boolean;
+  humanSubjects?: string | boolean;
+  humanSubjectResearch?: string | boolean;
+  dataGovernanceCommittee?: string;
 }
 
-export const processRAI = (metadata: Metadata): RAIData => {
+export const processComplianceEthics = (
+  metadata: Metadata
+): ComplianceEthicsData => {
   const graph = (metadata["@graph"] as RawGraphEntity[]) || [];
   const root = findRootEntity(graph);
   if (!root) return {};
 
   return {
-    dataUseCases: root["rai:dataUseCases"] || undefined,
-    dataLimitations: root["rai:dataLimitations"] || undefined,
-    dataBiases: root["rai:dataBiases"] || undefined,
-    dataMaintenancePlan: root["rai:dataMaintenancePlan"] || undefined,
+    ethicalReview:
+      resolveField(root, "ethicalReview", ["Ethical Review"]) || undefined,
+    confidentialityLevel:
+      resolveField(root, "confidentialityLevel", ["Confidentiality Level"]) ||
+      undefined,
+    irb: resolveField(root, "irb", ["IRB"]) || undefined,
+    irbProtocolId:
+      resolveField(root, "irbProtocolId", ["IRB Protocol ID"]) || undefined,
+    humanSubjectExemption:
+      resolveField(root, "humanSubjectExemption", [
+        "Human Subject Exemption",
+      ]) || undefined,
+    fdaRegulated:
+      resolveField(root, "fdaRegulated", ["FDA Regulated"]) ?? undefined,
+    deidentified:
+      resolveField(root, "deidentified", ["Deidentified"]) ?? undefined,
+    humanSubjects:
+      resolveField(root, "humanSubjects", [
+        "Human Subjects",
+        "Human Subject",
+        "Human Subject Data",
+      ]) ?? undefined,
+    humanSubjectResearch:
+      resolveField(root, "humanSubjectResearch", [
+        "Human Subject Research",
+      ]) ?? undefined,
+    dataGovernanceCommittee:
+      resolveField(root, "dataGovernanceCommittee", [
+        "Data Governance Committee",
+      ]) || undefined,
   };
 };
 
-export interface UseCasesData {
-  intended_uses?: string;
-  limitations?: string;
-  prohibited_uses?: string;
-  maintenance_plan?: string;
+export interface AIReadyData {
+  dataUseCases?: string;
+  dataLimitations?: string;
+  dataBiases?: string;
+  dataReleaseMaintenancePlan?: string;
+  dataCollection?: string;
+  dataCollectionType?: string;
+  dataCollectionMissingData?: string;
+  dataCollectionRawData?: string;
+  dataCollectionTimeframe?: string;
+  dataImputationProtocol?: string;
+  dataManipulationProtocol?: string;
+  dataPreprocessingProtocol?: string;
+  dataAnnotationProtocol?: string;
+  dataAnnotationPlatform?: string;
+  dataAnnotationAnalysis?: string;
+  personalSensitiveInformation?: string;
+  dataSocialImpact?: string;
+  annotationsPerItem?: string;
+  machineAnnotationTools?: string;
+  completeness?: string;
+  prohibitedUses?: string;
+  addressingGaps?: string;
+  dataAnomalies?: string;
+  contentWarning?: string;
+  informedConsent?: string;
+  atRiskPopulations?: string;
 }
 
-export const processUseCases = (metadata: Metadata): UseCasesData => {
+export const processAIReady = (metadata: Metadata): AIReadyData => {
   const graph = (metadata["@graph"] as RawGraphEntity[]) || [];
   const root = findRootEntity(graph);
   if (!root) return {};
 
-  let intended_uses, limitations, prohibited_uses, maintenance_plan;
-  if (root.additionalProperty && Array.isArray(root.additionalProperty)) {
-    const intendedUseProperty = root.additionalProperty.find(
-      (p) => p.name === "Intended Use" || p.name === "Intended Uses"
-    );
-    if (intendedUseProperty) {
-      intended_uses = Array.isArray(intendedUseProperty.value)
-        ? intendedUseProperty.value.join("\n")
-        : String(intendedUseProperty.value);
-    }
-
-    const limitationsProperty = root.additionalProperty.find(
-      (p) => p.name === "Limitations"
-    );
-    if (limitationsProperty) {
-      limitations = Array.isArray(limitationsProperty.value)
-        ? limitationsProperty.value.join("\n")
-        : String(limitationsProperty.value);
-    }
-
-    const prohibitedUsesProperty = root.additionalProperty.find(
-      (p) => p.name === "Prohibited Uses"
-    );
-    if (prohibitedUsesProperty) {
-      prohibited_uses = Array.isArray(prohibitedUsesProperty.value)
-        ? prohibitedUsesProperty.value.join("\n")
-        : String(prohibitedUsesProperty.value);
-    }
-
-    const maintenancePlanProperty = root.additionalProperty.find(
-      (p) => p.name === "Maintenance Plan"
-    );
-    if (maintenancePlanProperty) {
-      maintenance_plan = Array.isArray(maintenancePlanProperty.value)
-        ? maintenancePlanProperty.value.join("\n")
-        : String(maintenancePlanProperty.value);
-    }
-  }
-
   return {
-    intended_uses: intended_uses || root.usageInfo || undefined,
-    limitations: limitations || undefined,
-    prohibited_uses: prohibited_uses || undefined,
-    maintenance_plan: maintenance_plan || undefined,
+    dataUseCases:
+      resolveField(root, "rai:dataUseCases", [
+        "Intended Use",
+        "Intended Uses",
+      ]) || undefined,
+    dataLimitations:
+      resolveField(root, "rai:dataLimitations", ["Limitations"]) || undefined,
+    dataBiases: root["rai:dataBiases"] || undefined,
+    dataReleaseMaintenancePlan:
+      resolveField(root, "rai:dataReleaseMaintenancePlan", [
+        "Maintenance Plan",
+      ]) || undefined,
+    dataCollection: root["rai:dataCollection"] || undefined,
+    dataCollectionType: root["rai:dataCollectionType"] || undefined,
+    dataCollectionMissingData:
+      root["rai:dataCollectionMissingData"] || undefined,
+    dataCollectionRawData: root["rai:dataCollectionRawData"] || undefined,
+    dataCollectionTimeframe: root["rai:dataCollectionTimeframe"] || undefined,
+    dataImputationProtocol: root["rai:dataImputationProtocol"] || undefined,
+    dataManipulationProtocol:
+      root["rai:dataManipulationProtocol"] || undefined,
+    dataPreprocessingProtocol:
+      root["rai:dataPreprocessingProtocol"] || undefined,
+    dataAnnotationProtocol: root["rai:dataAnnotationProtocol"] || undefined,
+    dataAnnotationPlatform: root["rai:dataAnnotationPlatform"] || undefined,
+    dataAnnotationAnalysis: root["rai:dataAnnotationAnalysis"] || undefined,
+    personalSensitiveInformation:
+      root["rai:personalSensitiveInformation"] || undefined,
+    dataSocialImpact: root["rai:dataSocialImpact"] || undefined,
+    annotationsPerItem: root["rai:annotationsPerItem"] || undefined,
+    machineAnnotationTools: root["rai:machineAnnotationTools"] || undefined,
+    completeness:
+      resolveField(root, "completeness", ["Completeness"]) || undefined,
+    prohibitedUses:
+      resolveField(root, "prohibitedUses", ["Prohibited Uses"]) || undefined,
+    addressingGaps:
+      resolveField(root, "d4d:addressingGaps", ["Addressing Gaps"]) ||
+      undefined,
+    dataAnomalies:
+      resolveField(root, "d4d:dataAnomalies", ["Data Anomalies"]) || undefined,
+    contentWarning:
+      resolveField(root, "d4d:contentWarning", ["Content Warning"]) ||
+      undefined,
+    informedConsent:
+      resolveField(root, "d4d:informedConsent", ["Informed Consent"]) ||
+      undefined,
+    atRiskPopulations:
+      resolveField(root, "d4d:atRiskPopulations", ["At Risk Populations"]) ||
+      undefined,
   };
 };
 
