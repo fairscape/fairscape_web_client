@@ -21,6 +21,35 @@ export class GraphDataService {
         }
       }
     }
+
+    // Fallback: scan hasPart from the end, find first Dataset
+    if (this.outputs.length === 0) {
+      for (const entity of Object.values(this.graphDict)) {
+        const types = Array.isArray(entity["@type"])
+          ? entity["@type"]
+          : [entity["@type"]];
+        if (types.some((t) => t && t.includes("ROCrate"))) {
+          const hasPart = entity["hasPart"];
+          if (Array.isArray(hasPart)) {
+            for (let i = hasPart.length - 1; i >= 0; i--) {
+              const partRef = hasPart[i];
+              const partId = typeof partRef === "string" ? partRef : partRef?.["@id"];
+              if (!partId) continue;
+              const partEntity = this.graphDict[partId];
+              if (!partEntity) continue;
+              const partTypes = Array.isArray(partEntity["@type"])
+                ? partEntity["@type"]
+                : [partEntity["@type"]];
+              if (partTypes.some((t) => t && t.includes("Dataset"))) {
+                this.outputs = [{ "@id": partId }];
+                break;
+              }
+            }
+          }
+          break;
+        }
+      }
+    }
   }
 
   getNode(id: string): RawGraphEntity | null {
