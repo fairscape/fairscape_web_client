@@ -9,6 +9,8 @@ import ROCrateComponent from "../components/MetadataDisplay/views/ROCrate/ROCrat
 import GenericMetadataComponent from "../components/MetadataDisplay/views/Generic/GenericMetadataComponent";
 import SerializationView from "../components/MetadataDisplay/views/Serialization/SerializationView";
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
+import AnnotatedGraphViewer from "../components/AnnotatedGraph/AnnotatedGraphViewer";
+import AnnotatedSummaryCards from "../components/AnnotatedGraph/AnnotatedSummaryCards";
 import MetadataNavigationSidebar from "../components/MetadataDisplay/components/MetadataNavigationSidebar";
 import AIReadyScoreView from "../components/MetadataDisplay/views/AIReadyScore/AIReadyScoreView";
 import StatisticsViewer from "../components/MetadataDisplay/views/Statistics/StatisticsViewer";
@@ -316,6 +318,20 @@ export default function MetadataDisplayPage() {
             />
           );
         }
+
+        // Annotated evidence graph path
+        if (bundle.evidence.isAnnotated && bundle.evidence.annotatedData) {
+          const rawGraphData = { "@graph": bundle.evidence.annotatedData["@graph"] };
+          return (
+            <>
+              <AnnotatedSummaryCards data={bundle.evidence.annotatedData} placement="above" />
+              <AnnotatedGraphViewer graphData={rawGraphData} />
+              <AnnotatedSummaryCards data={bundle.evidence.annotatedData} placement="below" />
+            </>
+          );
+        }
+
+        // Regular evidence graph path (unchanged)
         return (
           <EvidenceGraphViewer
             evidenceGraphData={bundle.evidence.data ?? null}

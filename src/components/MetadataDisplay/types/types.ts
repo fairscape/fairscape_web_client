@@ -6,6 +6,8 @@ export interface EvidenceInfo {
   supportData?: any;
   status: EvidenceStatus;
   error?: string;
+  isAnnotated?: boolean;
+  annotatedData?: any;
 }
 
 export interface Serializations {
