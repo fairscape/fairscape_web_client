@@ -5,7 +5,7 @@ import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/light.css";
 import styled from "styled-components";
-import { EvidenceNodeData, AnnotationData } from "../../types/graph";
+import { EvidenceNodeData, AnnotationData, Concern } from "../../types/graph";
 import { formatPropertyValue, getDisplayableProperties } from "./graphUtils";
 
 const getNodeColor = (type: string): string => {
@@ -148,8 +148,8 @@ const TooltipWrapper = styled.div`
   .annotation-summary p { margin: 0 0 6px; font-size: 12.5px; line-height: 1.5; }
   .concerns-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; }
   .concerns-critical { background: #fde8e8; color: #c0392b; }
-  .concerns-warning { background: #fef9e7; color: #d68910; }
-  .concerns-info { background: #eaf4fb; color: #1a5276; }
+  .concerns-moderate { background: #fef9e7; color: #d68910; }
+  .concerns-minor { background: #eaf4fb; color: #1a5276; }
 
   .view-detail-btn {
     display: inline-block;
@@ -212,9 +212,8 @@ const ModalContent = styled.div`
     line-height: 1.5;
   }
   .concern-critical { background: #fde8e8; border-left: 4px solid #c0392b; }
-  .concern-warning { background: #fef9e7; border-left: 4px solid #d68910; }
-  .concern-info { background: #eaf4fb; border-left: 4px solid #1a5276; }
-  .concern-good { background: #eafaf1; border-left: 4px solid #1e8449; }
+  .concern-moderate { background: #fef9e7; border-left: 4px solid #d68910; }
+  .concern-minor { background: #eaf4fb; border-left: 4px solid #1a5276; }
 
   .code-analysis-card {
     background: #f8f9fa;
@@ -257,13 +256,12 @@ const ModalContent = styled.div`
   .provenance-info span { color: #333; font-weight: 500; }
 `;
 
-function getConcernLevel(concern: string): string {
-  const lower = concern.toLowerCase();
-  if (lower.startsWith("critical")) return "critical";
-  if (lower.startsWith("warning")) return "warning";
-  if (lower.startsWith("info")) return "info";
-  if (lower.startsWith("good")) return "good";
-  return "info";
+function getConcernCssClass(concern: Concern): string {
+  switch (concern.level) {
+    case "CRITICAL": return "critical";
+    case "MODERATE": return "moderate";
+    default: return "minor";
+  }
 }
 
 function AnnotationDetailModal({
@@ -303,7 +301,7 @@ function AnnotationDetailModal({
                   <>
                     <h4>Code Concerns</h4>
                     {ca.concerns.map((c, j) => (
-                      <div key={j} className="concern-item concern-warning">{c}</div>
+                      <div key={j} className={`concern-item concern-${getConcernCssClass(c)}`}>{c.description}</div>
                     ))}
                   </>
                 )}
@@ -346,8 +344,8 @@ function AnnotationDetailModal({
           <>
             <h3>Concerns</h3>
             {annotation["evi:concerns"].map((c, i) => (
-              <div key={i} className={`concern-item concern-${getConcernLevel(c)}`}>
-                {c}
+              <div key={i} className={`concern-item concern-${getConcernCssClass(c)}`}>
+                {c.description}
               </div>
             ))}
           </>
@@ -420,16 +418,16 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
               <div>
                 {(() => {
                   const concerns = data._annotation!["evi:concerns"]!;
-                  const critical = concerns.filter((c) => c.toLowerCase().startsWith("critical")).length;
-                  const warning = concerns.filter((c) => c.toLowerCase().startsWith("warning")).length;
-                  const info = concerns.length - critical - warning;
+                  const critical = concerns.filter((c) => c.level === "CRITICAL").length;
+                  const moderate = concerns.filter((c) => c.level === "MODERATE").length;
+                  const minor = concerns.filter((c) => c.level === "MINOR").length;
                   return (
                     <>
                       {critical > 0 && <span className="concerns-badge concerns-critical">{critical} Critical</span>}
                       {" "}
-                      {warning > 0 && <span className="concerns-badge concerns-warning">{warning} Warning</span>}
+                      {moderate > 0 && <span className="concerns-badge concerns-moderate">{moderate} Moderate</span>}
                       {" "}
-                      {info > 0 && <span className="concerns-badge concerns-info">{info} Info</span>}
+                      {minor > 0 && <span className="concerns-badge concerns-minor">{minor} Minor</span>}
                     </>
                   );
                 })()}

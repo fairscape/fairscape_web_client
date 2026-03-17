@@ -24,6 +24,19 @@ export interface RawGraphData {
   [key: string]: any;
 }
 
+export type ConcernLevel = "CRITICAL" | "MODERATE" | "MINOR";
+
+export interface Concern {
+  level: ConcernLevel;
+  description: string;
+}
+
+export interface GraphConcern {
+  level: ConcernLevel;
+  description: string;
+  sourceAnnotation: { "@id": string };
+}
+
 export interface AnnotationData {
   "@id": string;
   "evi:stepSummary": string;
@@ -32,7 +45,7 @@ export interface AnnotationData {
     name?: string;
     summary: string;
     keyFunctions?: string[];
-    concerns?: string[];
+    concerns?: Concern[];
   }>;
   "evi:inputSummaries"?: Array<{
     dataset: { "@id": string };
@@ -46,7 +59,7 @@ export interface AnnotationData {
     role?: string;
     description?: string;
   }>;
-  "evi:concerns"?: string[];
+  "evi:concerns"?: Concern[];
   "evi:llmModel": string;
   "evi:llmTemperature"?: number;
   dateCreated: string;
@@ -84,7 +97,7 @@ export interface AnnotatedEvidenceGraphData {
   "evi:executiveSummary": string;
   "evi:narrativeSummary": string;
   "evi:keyFindings"?: string[];
-  "evi:concerns"?: string[];
+  "evi:concerns"?: GraphConcern[];
   "evi:stepAnnotations"?: Array<{ "@id": string }>;
   "evi:llmModel": string;
   dateCreated: string;

@@ -34,6 +34,16 @@ const ViewerWrapper = styled.div`
   .react-flow__edge path {
     transition: stroke 0.2s ease, stroke-width 0.2s ease;
   }
+
+  @keyframes node-highlight-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(44, 62, 80, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(44, 62, 80, 0.15); }
+  }
+
+  .react-flow__node.highlighted-node > div {
+    border: 3px solid #2c3e50;
+    animation: node-highlight-pulse 0.8s ease-in-out 3;
+  }
 `;
 
 const LoadingOverlay = styled.div`
@@ -54,9 +64,10 @@ type RFEdge = Edge<EvidenceEdge>;
 
 interface GraphRendererProps {
   dataService: GraphDataService | null;
+  highlightNodeId?: string | null;
 }
 
-const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService }) => {
+const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService, highlightNodeId }) => {
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState<RFNode["data"]>([]);
   const [edges, setEdges, onEdgesChangeInternal] = useEdgesState<RFEdge>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -98,6 +109,35 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService }) => {
     const elements = graphBuilderRef.current.buildInitialGraph(3);
     applyLayout(elements, true);
   }, [dataService, applyLayout]);
+
+  // Highlight a node when highlightNodeId changes
+  useEffect(() => {
+    if (!highlightNodeId || !nodes.length) return;
+    const targetNode = nodes.find((n) => n.id === highlightNodeId);
+    if (!targetNode) return;
+
+    // Pan to the node
+    if (targetNode.position) {
+      fitView({ nodes: [{ id: highlightNodeId }], padding: 0.5, duration: 500 });
+    }
+
+    // Apply highlight class
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        className: n.id === highlightNodeId ? "highlighted-node" : "",
+      }))
+    );
+
+    // Remove highlight after animation
+    const timer = setTimeout(() => {
+      setNodes((nds) =>
+        nds.map((n) => ({ ...n, className: "" }))
+      );
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [highlightNodeId, nodes.length, fitView, setNodes]);
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: RFNode) => {
@@ -155,9 +195,10 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService }) => {
 
 interface AnnotatedGraphViewerProps {
   graphData: RawGraphData | null;
+  highlightNodeId?: string | null;
 }
 
-const AnnotatedGraphViewer: React.FC<AnnotatedGraphViewerProps> = ({ graphData }) => {
+const AnnotatedGraphViewer: React.FC<AnnotatedGraphViewerProps> = ({ graphData, highlightNodeId }) => {
   const [dataService, setDataService] = useState<GraphDataService | null>(null);
 
   useEffect(() => {
@@ -178,7 +219,7 @@ const AnnotatedGraphViewer: React.FC<AnnotatedGraphViewerProps> = ({ graphData }
 
   return (
     <ReactFlowProvider>
-      <GraphRenderer dataService={dataService} />
+      <GraphRenderer dataService={dataService} highlightNodeId={highlightNodeId} />
     </ReactFlowProvider>
   );
 };

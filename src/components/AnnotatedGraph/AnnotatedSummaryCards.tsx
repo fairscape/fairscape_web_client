@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import styled from "styled-components";
-import { AnnotatedEvidenceGraphData } from "../../types/graph";
+import { AnnotatedEvidenceGraphData, GraphConcern, ConcernLevel } from "../../types/graph";
 
 const SummarySection = styled.div`
   margin-bottom: 24px;
@@ -52,22 +52,93 @@ const ConcernsList = styled.div`
     border-radius: 4px;
     font-size: 13px;
     line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .concern-clickable {
+    cursor: pointer;
+    &:hover {
+      filter: brightness(0.95);
+    }
   }
   .concern-critical {
     background: #fde8e8;
     border-left: 4px solid #c0392b;
   }
-  .concern-warning {
+  .concern-moderate {
     background: #fef9e7;
     border-left: 4px solid #d68910;
   }
-  .concern-info {
+  .concern-minor {
     background: #eaf4fb;
     border-left: 4px solid #1a5276;
   }
-  .concern-good {
-    background: #eafaf1;
-    border-left: 4px solid #1e8449;
+  .concern-level-badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .badge-critical { background: #c0392b; color: #fff; }
+  .badge-moderate { background: #d68910; color: #fff; }
+  .badge-minor { background: #1a5276; color: #fff; }
+  .concern-source {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 11px;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .concern-clickable .concern-source {
+    color: #555;
+  }
+  .concern-clickable:hover .concern-source {
+    color: #2c3e50;
+  }
+  .concern-source-icon {
+    font-size: 13px;
+  }
+`;
+
+const LevelFilterBar = styled.div`
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  align-items: center;
+`;
+
+const LevelFilterButton = styled.button<{ $active: boolean; $color: string }>`
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid ${(props) => props.$color};
+  background: ${(props) => (props.$active ? props.$color : "#fff")};
+  color: ${(props) => (props.$active ? "#fff" : props.$color)};
+  transition: all 0.15s ease;
+
+  &:hover {
+    opacity: 0.85;
+  }
+`;
+
+const ConcernGroupHeader = styled.h4`
+  margin: 16px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:first-child {
+    margin-top: 0;
   }
 `;
 
@@ -96,13 +167,12 @@ const MetaInfo = styled.div`
   }
 `;
 
-function getConcernLevel(concern: string): string {
-  const lower = concern.toLowerCase();
-  if (lower.startsWith("critical")) return "critical";
-  if (lower.startsWith("warning")) return "warning";
-  if (lower.startsWith("info")) return "info";
-  if (lower.startsWith("good")) return "good";
-  return "info";
+function getConcernCssClass(concern: GraphConcern): string {
+  switch (concern.level) {
+    case "CRITICAL": return "critical";
+    case "MODERATE": return "moderate";
+    default: return "minor";
+  }
 }
 
 function CollapsibleCard({
@@ -132,12 +202,80 @@ function CollapsibleCard({
 interface AnnotatedSummaryCardsProps {
   data: AnnotatedEvidenceGraphData;
   placement: "above" | "below";
+  onHighlightNode?: (nodeId: string) => void;
+}
+
+const LEVEL_ORDER: ConcernLevel[] = ["CRITICAL", "MODERATE", "MINOR"];
+const LEVEL_COLORS: Record<ConcernLevel, string> = {
+  CRITICAL: "#c0392b",
+  MODERATE: "#d68910",
+  MINOR: "#1a5276",
+};
+
+function getSourceLabel(
+  concern: GraphConcern,
+  data: AnnotatedEvidenceGraphData,
+): string {
+  const sourceId = concern.sourceAnnotation?.["@id"];
+  if (!sourceId) return "";
+  // If it points to the RO-Crate root, it's a pipeline-wide concern
+  const rocrateId = data["evi:annotates"]?.["@id"];
+  if (sourceId === rocrateId) return "Full Pipeline";
+  // Look up the annotation in the graph to find what it annotates
+  const graph = data["@graph"] || {};
+  const annotationEntity = graph[sourceId];
+  if (annotationEntity) {
+    // Try to get the name of the computation it annotates
+    const annotatesId = annotationEntity["evi:annotates"]?.["@id"];
+    if (annotatesId && graph[annotatesId]) {
+      return graph[annotatesId].name || annotatesId;
+    }
+    return annotationEntity.name || sourceId;
+  }
+  return sourceId;
 }
 
 const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
   data,
   placement,
+  onHighlightNode,
 }) => {
+  const [visibleLevels, setVisibleLevels] = useState<Set<ConcernLevel>>(
+    () => new Set(["CRITICAL"])
+  );
+
+  const toggleLevel = (level: ConcernLevel) => {
+    setVisibleLevels((prev) => {
+      const next = new Set(prev);
+      if (next.has(level)) {
+        next.delete(level);
+      } else {
+        next.add(level);
+      }
+      return next;
+    });
+  };
+
+  const concerns = data["evi:concerns"] || [];
+
+  const levelCounts = useMemo(() => {
+    const counts: Record<ConcernLevel, number> = { CRITICAL: 0, MODERATE: 0, MINOR: 0 };
+    for (const c of concerns) {
+      if (c.level in counts) counts[c.level]++;
+    }
+    return counts;
+  }, [concerns]);
+
+  const groupedConcerns = useMemo(() => {
+    const groups: Record<ConcernLevel, GraphConcern[]> = { CRITICAL: [], MODERATE: [], MINOR: [] };
+    for (const c of concerns) {
+      if (visibleLevels.has(c.level) && c.level in groups) {
+        groups[c.level].push(c);
+      }
+    }
+    return groups;
+  }, [concerns, visibleLevels]);
+
   if (placement === "above") {
     return (
       <SummarySection>
@@ -189,20 +327,55 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
         </CollapsibleCard>
       )}
 
-      {data["evi:concerns"] && data["evi:concerns"].length > 0 && (
+      {concerns.length > 0 && (
         <CollapsibleCard
-          title={`Concerns (${data["evi:concerns"].length})`}
+          title={`Concerns (${concerns.length})`}
           defaultOpen={true}
         >
-          <ConcernsList>
-            {data["evi:concerns"].map((c, i) => (
-              <div
-                key={i}
-                className={`concern-item concern-${getConcernLevel(c)}`}
+          <LevelFilterBar>
+            {LEVEL_ORDER.map((level) => (
+              <LevelFilterButton
+                key={level}
+                $active={visibleLevels.has(level)}
+                $color={LEVEL_COLORS[level]}
+                onClick={() => toggleLevel(level)}
               >
-                {c}
-              </div>
+                {level} ({levelCounts[level]})
+              </LevelFilterButton>
             ))}
+          </LevelFilterBar>
+          <ConcernsList>
+            {LEVEL_ORDER.map((level) => {
+              const group = groupedConcerns[level];
+              if (!group.length) return null;
+              return (
+                <React.Fragment key={level}>
+                  <ConcernGroupHeader>{level} ({group.length})</ConcernGroupHeader>
+                  {group.map((c, i) => {
+                    const cssClass = getConcernCssClass(c);
+                    const sourceLabel = getSourceLabel(c, data);
+                    const rocrateId = data["evi:annotates"]?.["@id"];
+                    const sourceId = c.sourceAnnotation?.["@id"];
+                    const isPipelineWide = sourceId === rocrateId;
+                    const isClickable = !!onHighlightNode && !!sourceId && !isPipelineWide;
+                    return (
+                      <div
+                        key={i}
+                        className={`concern-item concern-${cssClass}${isClickable ? " concern-clickable" : ""}`}
+                        onClick={isClickable ? () => onHighlightNode!(sourceId) : undefined}
+                        title={isClickable ? `Click to highlight: ${sourceLabel}` : undefined}
+                      >
+                        <span>{c.description}</span>
+                        <span className="concern-source">
+                          {sourceLabel}
+                          {isClickable && <span className="concern-source-icon">&rarr;</span>}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })}
           </ConcernsList>
         </CollapsibleCard>
       )}

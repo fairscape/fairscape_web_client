@@ -281,6 +281,14 @@ export default function MetadataDisplayPage() {
     window.location.reload();
   }, [arkId]);
 
+  const [highlightNodeId, setHighlightNodeId] = useState<string | null>(null);
+
+  const handleHighlightNode = useCallback((nodeId: string) => {
+    setHighlightNodeId(nodeId);
+    // Auto-clear after animation
+    setTimeout(() => setHighlightNodeId(null), 3000);
+  }, []);
+
   function renderContent() {
     if (loading) return <CenteredMessage message="Loading metadata..." />;
     if (error)
@@ -351,8 +359,8 @@ export default function MetadataDisplayPage() {
           return (
             <>
               <AnnotatedSummaryCards data={bundle.evidence.annotatedData} placement="above" />
-              <AnnotatedGraphViewer graphData={rawGraphData} />
-              <AnnotatedSummaryCards data={bundle.evidence.annotatedData} placement="below" />
+              <AnnotatedGraphViewer graphData={rawGraphData} highlightNodeId={highlightNodeId} />
+              <AnnotatedSummaryCards data={bundle.evidence.annotatedData} placement="below" onHighlightNode={handleHighlightNode} />
             </>
           );
         }
