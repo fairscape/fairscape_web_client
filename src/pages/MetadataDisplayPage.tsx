@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useContext, useMemo, useState, useEffect, useRef, useCallback } from "react";
 import styled from "styled-components";
 import { useParams, Link } from "react-router-dom";
 
@@ -14,13 +14,15 @@ import AnnotatedSummaryCards from "../components/AnnotatedGraph/AnnotatedSummary
 import MetadataNavigationSidebar from "../components/MetadataDisplay/components/MetadataNavigationSidebar";
 import AIReadyScoreView from "../components/MetadataDisplay/views/AIReadyScore/AIReadyScoreView";
 import StatisticsViewer from "../components/MetadataDisplay/views/Statistics/StatisticsViewer";
+import InterpretationStatusView from "../components/MetadataDisplay/views/Interpretation/InterpretationStatusView";
+import { AuthContext } from "../context/AuthContext";
 
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
 import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
 import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
 import { useHttp } from "../components/MetadataDisplay/api/httpClient";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics";
+type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation";
 
 const PageContainer = styled.div`
   display: flex;
@@ -173,7 +175,16 @@ export default function MetadataDisplayPage() {
       ? window.location.pathname.split("/view/")[1]
       : "");
 
-  const [view, setView] = useState<ViewType>("metadata");
+  const { isLoggedIn } = useContext(AuthContext);
+
+  const [view, setView] = useState<ViewType>(() => {
+    const saved = sessionStorage.getItem(`fairscape-view-${arkId}`);
+    if (saved) {
+      sessionStorage.removeItem(`fairscape-view-${arkId}`);
+      return saved as ViewType;
+    }
+    return "metadata";
+  });
   const { bundle, loading, error } = useMetadataBundle(arkId);
   const contentRef = useRef<HTMLDivElement>(null);
   const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
@@ -254,6 +265,21 @@ export default function MetadataDisplayPage() {
   }, [bundle, metadata, http]);
 
   const isOwner = true;
+
+  const hasAnnotatedEvidenceGraph = !!bundle?.evidence?.isAnnotated;
+
+  const handleInterpret = useCallback(() => {
+    setView("interpretation");
+  }, []);
+
+  const handleViewExistingGraph = useCallback(() => {
+    setView("graph");
+  }, []);
+
+  const handleInterpretSuccess = useCallback(() => {
+    sessionStorage.setItem(`fairscape-view-${arkId}`, "graph");
+    window.location.reload();
+  }, [arkId]);
 
   function renderContent() {
     if (loading) return <CenteredMessage message="Loading metadata..." />;
@@ -343,6 +369,16 @@ export default function MetadataDisplayPage() {
       case "score":
         return <AIReadyScoreView arkId={arkId} />;
 
+      case "interpretation":
+        return (
+          <InterpretationStatusView
+            arkId={arkId}
+            hasExisting={hasAnnotatedEvidenceGraph}
+            onSuccess={handleInterpretSuccess}
+            onViewExisting={handleViewExistingGraph}
+          />
+        );
+
       case "statistics":
         if (!bundle.descriptiveStatistics) {
           return (
@@ -356,6 +392,7 @@ export default function MetadataDisplayPage() {
         return (
           <StatisticsViewer
             descriptiveStatistics={bundle.descriptiveStatistics}
+            splitStatistics={bundle.splitStatistics}
           />
         );
 
@@ -441,6 +478,8 @@ export default function MetadataDisplayPage() {
             hasDistribution={hasDistribution}
             hasContentUrl={hasContentUrl}
             hasStatistics={hasStatistics}
+            isLoggedIn={!!isLoggedIn}
+            onInterpret={handleInterpret}
           />
         )}
       </PageContainer>

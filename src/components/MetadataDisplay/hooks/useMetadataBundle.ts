@@ -52,6 +52,7 @@ export function useMetadataBundle(ark: string) {
         const permissions = mainResp?.permissions;
         const distribution = mainResp?.distribution;
         const descriptiveStatistics = mainResp?.descriptiveStatistics;
+        const splitStatistics = mainResp?.splitStatistics;
         const isPartOf = mainResp?.isPartOf;
 
         const initialBundle: MetadataBundle = {
@@ -64,6 +65,7 @@ export function useMetadataBundle(ark: string) {
           permissions,
           distribution,
           descriptiveStatistics,
+          splitStatistics,
           isPartOf,
         };
 

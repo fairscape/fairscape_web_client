@@ -66,5 +66,13 @@ export interface MetadataBundle {
   permissions?: Permissions;
   distribution?: Distribution;
   descriptiveStatistics?: DescriptiveStatistics;
+  splitStatistics?: {
+    [splitName: string]: {
+      query?: string;
+      queryType?: string;
+      description?: string;
+      statistics: DescriptiveStatistics;
+    };
+  };
   isPartOf?: IdentifierValue[];
 }
