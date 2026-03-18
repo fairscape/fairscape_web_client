@@ -336,12 +336,16 @@ function HistogramChart({
 
     const numBins = totalCounts.length;
 
-    // All series: total + splits
-    const allSeries: HistogramSeries[] = [
-      { name: "All Data", counts: totalCounts },
-      ...splits,
+    // Convert counts to percentages per series
+    const toPercent = (counts: number[]) => {
+      const total = counts.reduce((a, b) => a + b, 0);
+      return total > 0 ? counts.map((c) => (c / total) * 100) : counts.map(() => 0);
+    };
+
+    const allSeries = [
+      { name: "All Data", pct: toPercent(totalCounts) },
+      ...splits.map((s) => ({ name: s.name, pct: toPercent(s.counts) })),
     ];
-    const numSeries = allSeries.length;
 
     // x scale: one band per bin
     const binLabels = Array.from({ length: numBins }, (_, i) => {
@@ -358,11 +362,11 @@ function HistogramChart({
       .range([0, x.bandwidth()])
       .padding(0.05);
 
-    // y scale
-    const maxCount = d3.max(allSeries.flatMap((s) => s.counts)) ?? 0;
+    // y scale (percentage)
+    const maxPct = d3.max(allSeries.flatMap((s) => s.pct)) ?? 0;
     const y = d3
       .scaleLinear()
-      .domain([0, maxCount * 1.1])
+      .domain([0, maxPct * 1.1])
       .nice()
       .range([innerH, 0]);
 
@@ -376,7 +380,7 @@ function HistogramChart({
       .style("font-size", "10px");
 
     g.append("g")
-      .call(d3.axisLeft(y).ticks(6))
+      .call(d3.axisLeft(y).ticks(6).tickFormat((d) => `${d}%`))
       .selectAll("text")
       .style("font-size", "11px");
 
@@ -388,7 +392,7 @@ function HistogramChart({
       .attr("text-anchor", "middle")
       .style("font-size", "12px")
       .style("fill", "#495057")
-      .text("Count");
+      .text("% of Rows");
 
     // color scale
     const color = (i: number) =>
@@ -397,12 +401,13 @@ function HistogramChart({
     // bars
     binLabels.forEach((label, binIdx) => {
       allSeries.forEach((series, seriesIdx) => {
+        const val = series.pct[binIdx] ?? 0;
         const barX = (x(label) ?? 0) + (subX(series.name) ?? 0);
-        const barH = innerH - y(series.counts[binIdx] ?? 0);
+        const barH = innerH - y(val);
 
         g.append("rect")
           .attr("x", barX)
-          .attr("y", y(series.counts[binIdx] ?? 0))
+          .attr("y", y(val))
           .attr("width", subX.bandwidth())
           .attr("height", barH)
           .attr("fill", color(seriesIdx))
