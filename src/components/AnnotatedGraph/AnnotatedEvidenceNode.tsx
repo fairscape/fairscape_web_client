@@ -319,6 +319,11 @@ function AnnotationDetailModal({
                 <div>
                   <strong>{ds.name || ds.dataset["@id"]}</strong>
                   {ds.description && <span> &mdash; {ds.description}</span>}
+                  {ds.dataQuality && (
+                    <div className="data-quality-note" style={{ marginTop: 4, fontSize: '0.9em', color: '#6b7280' }}>
+                      <strong>Data Quality:</strong> {ds.dataQuality}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -334,6 +339,11 @@ function AnnotationDetailModal({
                 <div>
                   <strong>{ds.name || ds.dataset["@id"]}</strong>
                   {ds.description && <span> &mdash; {ds.description}</span>}
+                  {ds.dataQuality && (
+                    <div className="data-quality-note" style={{ marginTop: 4, fontSize: '0.9em', color: '#6b7280' }}>
+                      <strong>Data Quality:</strong> {ds.dataQuality}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

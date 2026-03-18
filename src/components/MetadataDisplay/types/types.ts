@@ -41,6 +41,13 @@ export interface ColumnStatistics {
   second_quartile: number | string;
   third_quartile: number | string;
   max: number | string;
+  missing_count?: number;
+  missing_percentage?: number;
+  histogram_bins?: number[];
+  histogram_counts?: number[];
+  unique?: number | string;
+  top?: string | boolean;
+  freq?: number | string;
 }
 
 export interface DescriptiveStatistics {

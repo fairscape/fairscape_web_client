@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { Box } from "@mui/material";
 import styled from "styled-components";
 import {
@@ -6,6 +6,7 @@ import {
   useMaterialReactTable,
   type MRT_ColumnDef,
 } from "material-react-table";
+import * as d3 from "d3";
 import { StatRow } from "./types";
 import { DescriptiveStatistics } from "../../types/types";
 
@@ -119,6 +120,50 @@ const SplitSection = styled.div`
   margin-bottom: 24px;
 `;
 
+const HistogramSection = styled.div`
+  margin-top: 20px;
+  margin-bottom: 8px;
+`;
+
+const ColumnSelect = styled.select`
+  padding: 6px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #495057;
+  background-color: #fff;
+  margin-left: 10px;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: #005f73;
+  }
+`;
+
+const Legend = styled.div`
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+`;
+
+const LegendItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #495057;
+`;
+
+const LegendSwatch = styled.div<{ $color: string }>`
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background-color: ${({ $color }) => $color};
+  border: 1px solid rgba(0, 0, 0, 0.15);
+`;
+
 /* ── Table helper ── */
 
 const formatValue = (value: number | string): string => {
@@ -133,6 +178,24 @@ const columns: MRT_ColumnDef<StatRow>[] = [
     header: "Count",
     accessorKey: "count",
     Cell: ({ cell }) => formatValue(cell.getValue<number | string>()),
+    size: 100,
+  },
+  {
+    header: "Missing",
+    accessorKey: "missing_count",
+    Cell: ({ cell }) => {
+      const v = cell.getValue<number | undefined>();
+      return v != null ? String(v) : "-";
+    },
+    size: 90,
+  },
+  {
+    header: "Missing %",
+    accessorKey: "missing_percentage",
+    Cell: ({ cell }) => {
+      const v = cell.getValue<number | undefined>();
+      return v != null ? `${v.toFixed(1)}%` : "-";
+    },
     size: 100,
   },
   {
@@ -190,6 +253,10 @@ function toStatRows(stats: DescriptiveStatistics): StatRow[] {
     second_quartile: value.statistics.second_quartile,
     third_quartile: value.statistics.third_quartile,
     max: value.statistics.max,
+    missing_count: value.statistics.missing_count,
+    missing_percentage: value.statistics.missing_percentage,
+    histogram_bins: value.statistics.histogram_bins,
+    histogram_counts: value.statistics.histogram_counts,
   }));
 }
 
@@ -221,6 +288,140 @@ function StatsTable({ data }: { data: StatRow[] }) {
   return <MaterialReactTable table={table} />;
 }
 
+/* ── Histogram chart (D3) ── */
+
+const SPLIT_COLORS = [
+  "#0a9396",
+  "#ee9b00",
+  "#ae2012",
+  "#94d2bd",
+  "#ca6702",
+  "#9b2226",
+  "#005f73",
+  "#bb3e03",
+];
+
+interface HistogramSeries {
+  name: string;
+  counts: number[];
+}
+
+function HistogramChart({
+  totalBins,
+  totalCounts,
+  splits,
+}: {
+  totalBins: number[];
+  totalCounts: number[];
+  splits: HistogramSeries[];
+}) {
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const width = 600;
+  const height = 300;
+  const margin = { top: 20, right: 20, bottom: 50, left: 55 };
+
+  useEffect(() => {
+    if (!svgRef.current) return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
+
+    const innerW = width - margin.left - margin.right;
+    const innerH = height - margin.top - margin.bottom;
+
+    const g = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const numBins = totalCounts.length;
+
+    // All series: total + splits
+    const allSeries: HistogramSeries[] = [
+      { name: "All Data", counts: totalCounts },
+      ...splits,
+    ];
+    const numSeries = allSeries.length;
+
+    // x scale: one band per bin
+    const binLabels = Array.from({ length: numBins }, (_, i) => {
+      const lo = totalBins[i];
+      const hi = totalBins[i + 1];
+      return `${lo.toFixed(1)}–${hi.toFixed(1)}`;
+    });
+
+    const x = d3.scaleBand().domain(binLabels).range([0, innerW]).padding(0.1);
+
+    const subX = d3
+      .scaleBand()
+      .domain(allSeries.map((s) => s.name))
+      .range([0, x.bandwidth()])
+      .padding(0.05);
+
+    // y scale
+    const maxCount = d3.max(allSeries.flatMap((s) => s.counts)) ?? 0;
+    const y = d3
+      .scaleLinear()
+      .domain([0, maxCount * 1.1])
+      .nice()
+      .range([innerH, 0]);
+
+    // axes
+    g.append("g")
+      .attr("transform", `translate(0,${innerH})`)
+      .call(d3.axisBottom(x))
+      .selectAll("text")
+      .attr("transform", "rotate(-35)")
+      .style("text-anchor", "end")
+      .style("font-size", "10px");
+
+    g.append("g")
+      .call(d3.axisLeft(y).ticks(6))
+      .selectAll("text")
+      .style("font-size", "11px");
+
+    // y-axis label
+    g.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", -42)
+      .attr("x", -innerH / 2)
+      .attr("text-anchor", "middle")
+      .style("font-size", "12px")
+      .style("fill", "#495057")
+      .text("Count");
+
+    // color scale
+    const color = (i: number) =>
+      i === 0 ? "#adb5bd" : SPLIT_COLORS[(i - 1) % SPLIT_COLORS.length];
+
+    // bars
+    binLabels.forEach((label, binIdx) => {
+      allSeries.forEach((series, seriesIdx) => {
+        const barX = (x(label) ?? 0) + (subX(series.name) ?? 0);
+        const barH = innerH - y(series.counts[binIdx] ?? 0);
+
+        g.append("rect")
+          .attr("x", barX)
+          .attr("y", y(series.counts[binIdx] ?? 0))
+          .attr("width", subX.bandwidth())
+          .attr("height", barH)
+          .attr("fill", color(seriesIdx))
+          .attr("opacity", 0.8)
+          .attr("rx", 1);
+      });
+    });
+  }, [totalBins, totalCounts, splits]);
+
+  return (
+    <svg
+      ref={svgRef}
+      width={width}
+      height={height}
+      style={{ display: "block" }}
+    />
+  );
+}
+
 /* ── Main component ── */
 
 const StatisticsViewer = ({
@@ -237,11 +438,25 @@ const StatisticsViewer = ({
     splitNames.length > 0 ? [splitNames[0]] : []
   );
   const [compareMode, setCompareMode] = useState(false);
+  const [selectedHistColumn, setSelectedHistColumn] = useState<string>("");
 
   const allDataRows = useMemo(
     () => toStatRows(descriptiveStatistics),
     [descriptiveStatistics]
   );
+
+  // Numeric columns that have histogram data
+  const numericColumns = useMemo(
+    () => allDataRows.filter((r) => r.histogram_bins && r.histogram_counts),
+    [allDataRows]
+  );
+
+  // Auto-select first numeric column
+  useEffect(() => {
+    if (!selectedHistColumn && numericColumns.length > 0) {
+      setSelectedHistColumn(numericColumns[0].columnName);
+    }
+  }, [numericColumns, selectedHistColumn]);
 
   const toggleSplit = (name: string) => {
     if (compareMode) {
@@ -263,11 +478,85 @@ const StatisticsViewer = ({
     });
   };
 
+  // Build histogram data for selected column
+  const histogramData = useMemo(() => {
+    if (!selectedHistColumn) return null;
+
+    const totalRow = allDataRows.find(
+      (r) => r.columnName === selectedHistColumn
+    );
+    if (!totalRow?.histogram_bins || !totalRow?.histogram_counts) return null;
+
+    const splitSeries: HistogramSeries[] = [];
+    if (splitStatistics) {
+      for (const name of selectedSplits) {
+        const split = splitStatistics[name];
+        if (!split) continue;
+        const colData = split.statistics[selectedHistColumn];
+        if (colData?.statistics?.histogram_counts) {
+          splitSeries.push({
+            name,
+            counts: colData.statistics.histogram_counts,
+          });
+        }
+      }
+    }
+
+    return {
+      bins: totalRow.histogram_bins,
+      counts: totalRow.histogram_counts,
+      splits: splitSeries,
+    };
+  }, [selectedHistColumn, allDataRows, splitStatistics, selectedSplits]);
+
   return (
     <Box sx={{ width: "100%", padding: 2, backgroundColor: "#ffffff" }}>
       {/* All Data — always shown */}
       <SectionHeading>All Data</SectionHeading>
       <StatsTable data={allDataRows} />
+
+      {/* Histogram section */}
+      {numericColumns.length > 0 && (
+        <HistogramSection>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <SectionHeading style={{ margin: 0 }}>Histogram</SectionHeading>
+            <ColumnSelect
+              value={selectedHistColumn}
+              onChange={(e) => setSelectedHistColumn(e.target.value)}
+            >
+              {numericColumns.map((r) => (
+                <option key={r.columnName} value={r.columnName}>
+                  {r.columnName}
+                </option>
+              ))}
+            </ColumnSelect>
+          </div>
+
+          {histogramData && (
+            <>
+              <HistogramChart
+                totalBins={histogramData.bins}
+                totalCounts={histogramData.counts}
+                splits={histogramData.splits}
+              />
+              <Legend>
+                <LegendItem>
+                  <LegendSwatch $color="#adb5bd" />
+                  All Data
+                </LegendItem>
+                {histogramData.splits.map((s, i) => (
+                  <LegendItem key={s.name}>
+                    <LegendSwatch
+                      $color={SPLIT_COLORS[i % SPLIT_COLORS.length]}
+                    />
+                    {s.name}
+                  </LegendItem>
+                ))}
+              </Legend>
+            </>
+          )}
+        </HistogramSection>
+      )}
 
       {/* Splits section */}
       {hasSplits && (

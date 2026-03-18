@@ -52,12 +52,14 @@ export interface AnnotationData {
     name?: string;
     role?: string;
     description?: string;
+    dataQuality?: string;
   }>;
   "evi:outputSummaries"?: Array<{
     dataset: { "@id": string };
     name?: string;
     role?: string;
     description?: string;
+    dataQuality?: string;
   }>;
   "evi:concerns"?: Concern[];
   "evi:llmModel": string;
