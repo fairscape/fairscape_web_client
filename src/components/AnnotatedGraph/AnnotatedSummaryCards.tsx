@@ -1,6 +1,45 @@
 import React, { useState, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
 import styled from "styled-components";
-import { AnnotatedEvidenceGraphData, GraphConcern, ConcernLevel } from "../../types/graph";
+import {
+  AnnotatedEvidenceGraphData,
+  GraphAssumption,
+  AssumptionImpact,
+  AudiencePerspective,
+  GraphConcern,
+  ConcernLevel,
+  normalizeImpact,
+} from "../../types/graph";
+
+// ---------------------------------------------------------------------------
+// Backward-compat: map old concern data to assumption shape
+// ---------------------------------------------------------------------------
+
+function mapConcernToAssumption(c: GraphConcern): GraphAssumption {
+  return {
+    impact: normalizeImpact(c.level),
+    description: c.description,
+    sourceAnnotation: c.sourceAnnotation,
+  };
+}
+
+function normalizeAssumption(a: GraphAssumption): GraphAssumption {
+  return { ...a, impact: normalizeImpact(a.impact) };
+}
+
+function getAssumptions(data: AnnotatedEvidenceGraphData): GraphAssumption[] {
+  if (data["evi:assumptions"] && data["evi:assumptions"].length > 0) {
+    return data["evi:assumptions"].map(normalizeAssumption);
+  }
+  if (data["evi:concerns"] && data["evi:concerns"].length > 0) {
+    return data["evi:concerns"].map(mapConcernToAssumption);
+  }
+  return [];
+}
+
+// ---------------------------------------------------------------------------
+// Styled components
+// ---------------------------------------------------------------------------
 
 const SummarySection = styled.div`
   margin-bottom: 24px;
@@ -45,36 +84,50 @@ const SummaryBody = styled.div`
   color: #333;
 `;
 
-const ConcernsList = styled.div`
-  .concern-item {
-    padding: 8px 12px;
+const MarkdownWrapper = styled.div`
+  font-size: 14px;
+  line-height: 1.6;
+
+  p { margin: 0 0 8px; }
+  p:last-child { margin-bottom: 0; }
+  h1, h2, h3, h4, h5, h6 {
+    margin: 12px 0 6px;
+    color: #2c3e50;
+  }
+  h1 { font-size: 18px; }
+  h2 { font-size: 16px; }
+  h3 { font-size: 15px; }
+  ul, ol { margin: 4px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  strong { color: #2c3e50; }
+  code {
+    background: #f1f3f5;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+`;
+
+const AssumptionsList = styled.div`
+  .assumption-item {
     margin: 4px 0;
     border-radius: 4px;
     font-size: 13px;
     line-height: 1.5;
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
   }
-  .concern-clickable {
-    cursor: pointer;
-    &:hover {
-      filter: brightness(0.95);
-    }
+  .assumption-critical {
+    background: #f3e8f9;
+    border-left: 4px solid #7b2d8e;
   }
-  .concern-critical {
-    background: #fde8e8;
-    border-left: 4px solid #c0392b;
-  }
-  .concern-moderate {
+  .assumption-major {
     background: #fef9e7;
     border-left: 4px solid #d68910;
   }
-  .concern-minor {
+  .assumption-minor {
     background: #eaf4fb;
     border-left: 4px solid #1a5276;
   }
-  .concern-level-badge {
+  .assumption-level-badge {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -83,11 +136,10 @@ const ConcernsList = styled.div`
     flex-shrink: 0;
     margin-top: 1px;
   }
-  .badge-critical { background: #c0392b; color: #fff; }
-  .badge-moderate { background: #d68910; color: #fff; }
+  .badge-critical { background: #7b2d8e; color: #fff; }
+  .badge-major { background: #d68910; color: #fff; }
   .badge-minor { background: #1a5276; color: #fff; }
-  .concern-source {
-    margin-left: auto;
+  .assumption-source {
     flex-shrink: 0;
     font-size: 11px;
     color: #888;
@@ -95,51 +147,94 @@ const ConcernsList = styled.div`
     align-items: center;
     gap: 4px;
   }
-  .concern-clickable .concern-source {
-    color: #555;
-  }
-  .concern-clickable:hover .concern-source {
-    color: #2c3e50;
-  }
-  .concern-source-icon {
+  .assumption-source-icon {
     font-size: 13px;
   }
 `;
 
-const LevelFilterBar = styled.div`
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-  align-items: center;
-`;
-
-const LevelFilterButton = styled.button<{ $active: boolean; $color: string }>`
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+const AssumptionRow = styled.div`
+  padding: 8px 12px;
   cursor: pointer;
-  border: 1px solid ${(props) => props.$color};
-  background: ${(props) => (props.$active ? props.$color : "#fff")};
-  color: ${(props) => (props.$active ? "#fff" : props.$color)};
-  transition: all 0.15s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 
   &:hover {
-    opacity: 0.85;
+    filter: brightness(0.95);
   }
 `;
 
-const ConcernGroupHeader = styled.h4`
-  margin: 16px 0 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #555;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+const AssumptionChevron = styled.span`
+  font-size: 10px;
+  color: #999;
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: 12px;
+`;
 
-  &:first-child {
-    margin-top: 0;
+const AssumptionName = styled.span`
+  font-weight: 600;
+  color: #2c3e50;
+  flex: 1;
+`;
+
+const AssumptionDetails = styled.div`
+  padding: 4px 12px 10px 32px;
+  font-size: 12.5px;
+  color: #555;
+  line-height: 1.5;
+
+  .detail-section {
+    margin-bottom: 6px;
   }
+  .detail-label {
+    font-weight: 600;
+    color: #666;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .downstream-impacts {
+    background: #fff8e1;
+    border-left: 3px solid #ffb300;
+    padding: 4px 8px;
+    border-radius: 2px;
+    margin-top: 2px;
+  }
+  .evidence-link {
+    color: #007bff;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+`;
+
+const ImpactGroupHeader = styled.div<{ $color: string }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+  cursor: pointer;
+  user-select: none;
+
+  &:first-child { padding-top: 0; }
+
+  .group-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: ${(props) => props.$color};
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .group-count {
+    font-size: 12px;
+    color: #888;
+  }
+  .group-toggle {
+    font-size: 10px;
+    color: #95a5a6;
+  }
+
+  &:hover .group-label { opacity: 0.8; }
 `;
 
 const FindingsList = styled.ul`
@@ -152,8 +247,9 @@ const FindingsList = styled.ul`
 
 const MetaInfo = styled.div`
   display: flex;
-  gap: 24px;
+  gap: 16px;
   flex-wrap: wrap;
+  align-items: center;
   font-size: 13px;
   color: #666;
   margin-bottom: 16px;
@@ -167,10 +263,31 @@ const MetaInfo = styled.div`
   }
 `;
 
-function getConcernCssClass(concern: GraphConcern): string {
-  switch (concern.level) {
+const AudienceButton = styled.button<{ $active: boolean }>`
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid ${(props) => (props.$active ? "#2c3e50" : "#dee2e6")};
+  background: ${(props) => (props.$active ? "#2c3e50" : "#fff")};
+  color: ${(props) => (props.$active ? "#fff" : "#555")};
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #2c3e50;
+    opacity: 0.85;
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getAssumptionCssClass(a: GraphAssumption): string {
+  switch (a.impact) {
     case "CRITICAL": return "critical";
-    case "MODERATE": return "moderate";
+    case "MAJOR": return "major";
     default: return "minor";
   }
 }
@@ -199,33 +316,158 @@ function CollapsibleCard({
   );
 }
 
+function GraphCard({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [expanded, setExpanded] = useState(defaultOpen);
+  return (
+    <SummaryCard>
+      <SummaryHeader
+        $expanded={expanded}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <h3>{title}</h3>
+        <span className="toggle">{expanded ? "\u25BC" : "\u25B6"}</span>
+      </SummaryHeader>
+      {expanded && <div style={{ padding: 4 }}>{children}</div>}
+    </SummaryCard>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Expandable assumption item
+// ---------------------------------------------------------------------------
+
+function AssumptionItem({
+  assumption,
+  sourceLabel,
+  onHighlightNode,
+  data,
+}: {
+  assumption: GraphAssumption;
+  sourceLabel: string;
+  onHighlightNode?: (nodeId: string) => void;
+  data: AnnotatedEvidenceGraphData;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const cssClass = getAssumptionCssClass(assumption);
+  const displayName = assumption.name || (assumption.description.length > 80
+    ? assumption.description.slice(0, 80) + "..."
+    : assumption.description);
+
+  const rocrateId = data["evi:annotates"]?.["@id"];
+  const sourceId = assumption.sourceAnnotation?.["@id"];
+  const isPipelineWide = sourceId === rocrateId;
+
+  const handleSourceClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onHighlightNode && sourceId && !isPipelineWide) {
+      onHighlightNode(sourceId);
+    }
+  };
+
+  return (
+    <div className={`assumption-item assumption-${cssClass}`}>
+      <AssumptionRow onClick={() => setExpanded(!expanded)}>
+        <AssumptionChevron>{expanded ? "\u25BC" : "\u25B6"}</AssumptionChevron>
+        <span className={`assumption-level-badge badge-${cssClass}`}>
+          {assumption.impact.slice(0, 5)}
+        </span>
+        <AssumptionName>{displayName}</AssumptionName>
+        <span
+          className="assumption-source"
+          onClick={handleSourceClick}
+          title={onHighlightNode && sourceId && !isPipelineWide ? `Click to highlight: ${sourceLabel}` : undefined}
+          style={onHighlightNode && sourceId && !isPipelineWide ? { cursor: "pointer", color: "#555" } : undefined}
+        >
+          {sourceLabel}
+          {onHighlightNode && sourceId && !isPipelineWide && (
+            <span className="assumption-source-icon">&rarr;</span>
+          )}
+        </span>
+      </AssumptionRow>
+
+      {expanded && (
+        <AssumptionDetails>
+          {assumption.name && (
+            <div className="detail-section">
+              <div className="detail-label">Description</div>
+              <div>{assumption.description}</div>
+            </div>
+          )}
+
+          {assumption.downstreamImpacts && (
+            <div className="detail-section">
+              <div className="detail-label">If Wrong</div>
+              <div className="downstream-impacts">{assumption.downstreamImpacts}</div>
+            </div>
+          )}
+
+          {assumption.evidence && (
+            <div className="detail-section">
+              <div className="detail-label">Evidence</div>
+              <div>
+                {assumption.evidence.artifact?.["@id"] ? (
+                  <a
+                    className="evidence-link"
+                    href={`/view/${assumption.evidence.artifact["@id"]}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {assumption.evidence.artifact["@id"]}
+                  </a>
+                ) : (
+                  <span>Unknown artifact</span>
+                )}
+                {assumption.evidence.location && (
+                  <span style={{ color: "#888", marginLeft: 6 }}>
+                    ({assumption.evidence.location})
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </AssumptionDetails>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main types & helpers
+// ---------------------------------------------------------------------------
+
 interface AnnotatedSummaryCardsProps {
   data: AnnotatedEvidenceGraphData;
-  placement: "above" | "below";
+  graphElement: React.ReactNode;
   onHighlightNode?: (nodeId: string) => void;
 }
 
-const LEVEL_ORDER: ConcernLevel[] = ["CRITICAL", "MODERATE", "MINOR"];
-const LEVEL_COLORS: Record<ConcernLevel, string> = {
-  CRITICAL: "#c0392b",
-  MODERATE: "#d68910",
+const IMPACT_ORDER: AssumptionImpact[] = ["CRITICAL", "MAJOR", "MINOR"];
+const IMPACT_COLORS: Record<AssumptionImpact, string> = {
+  CRITICAL: "#7b2d8e",
+  MAJOR: "#d68910",
   MINOR: "#1a5276",
 };
 
 function getSourceLabel(
-  concern: GraphConcern,
+  assumption: GraphAssumption,
   data: AnnotatedEvidenceGraphData,
 ): string {
-  const sourceId = concern.sourceAnnotation?.["@id"];
+  const sourceId = assumption.sourceAnnotation?.["@id"];
   if (!sourceId) return "";
-  // If it points to the RO-Crate root, it's a pipeline-wide concern
   const rocrateId = data["evi:annotates"]?.["@id"];
   if (sourceId === rocrateId) return "Full Pipeline";
-  // Look up the annotation in the graph to find what it annotates
   const graph = data["@graph"] || {};
   const annotationEntity = graph[sourceId];
   if (annotationEntity) {
-    // Try to get the name of the computation it annotates
     const annotatesId = annotationEntity["evi:annotates"]?.["@id"];
     if (annotatesId && graph[annotatesId]) {
       return graph[annotatesId].name || annotatesId;
@@ -235,148 +477,207 @@ function getSourceLabel(
   return sourceId;
 }
 
+// ---------------------------------------------------------------------------
+// Audience data resolution
+// ---------------------------------------------------------------------------
+
+interface ResolvedPerspective {
+  executiveSummary: string;
+  narrativeSummary: string;
+  keyFindings: string[];
+  assumptions: GraphAssumption[];
+}
+
+function resolveAudience(
+  data: AnnotatedEvidenceGraphData,
+  audienceKey: string,
+): ResolvedPerspective | null {
+  if (audienceKey === "datasci") {
+    return {
+      executiveSummary: data["evi:executiveSummary"],
+      narrativeSummary: data["evi:narrativeSummary"],
+      keyFindings: data["evi:keyFindings"] || [],
+      assumptions: getAssumptions(data),
+    };
+  }
+  const audiences = data["evi:audiences"] || [];
+  const match = audiences.find((a) => a.targetAudience === audienceKey);
+  if (!match) return null;
+  return {
+    executiveSummary: match.executiveSummary,
+    narrativeSummary: match.narrativeSummary,
+    keyFindings: match.keyFindings || [],
+    assumptions: (match.assumptions || []).map(normalizeAssumption),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+const AUDIENCE_OPTIONS = [
+  { key: "datasci", label: "Data Scientist" },
+  { key: "biostat", label: "Biostatistician" },
+  { key: "clinician", label: "Clinician" },
+];
+
 const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
   data,
-  placement,
+  graphElement,
   onHighlightNode,
 }) => {
-  const [visibleLevels, setVisibleLevels] = useState<Set<ConcernLevel>>(
+  const [selectedAudience, setSelectedAudience] = useState("datasci");
+  const [expandedGroups, setExpandedGroups] = useState<Set<AssumptionImpact>>(
     () => new Set(["CRITICAL"])
   );
 
-  const toggleLevel = (level: ConcernLevel) => {
-    setVisibleLevels((prev) => {
+  const toggleGroup = (impact: AssumptionImpact) => {
+    setExpandedGroups((prev) => {
       const next = new Set(prev);
-      if (next.has(level)) {
-        next.delete(level);
+      if (next.has(impact)) {
+        next.delete(impact);
       } else {
-        next.add(level);
+        next.add(impact);
       }
       return next;
     });
   };
 
-  const concerns = data["evi:concerns"] || [];
+  const perspective = useMemo(
+    () => resolveAudience(data, selectedAudience),
+    [data, selectedAudience],
+  );
 
-  const levelCounts = useMemo(() => {
-    const counts: Record<ConcernLevel, number> = { CRITICAL: 0, MODERATE: 0, MINOR: 0 };
-    for (const c of concerns) {
-      if (c.level in counts) counts[c.level]++;
-    }
-    return counts;
-  }, [concerns]);
+  const assumptions = perspective?.assumptions || [];
 
-  const groupedConcerns = useMemo(() => {
-    const groups: Record<ConcernLevel, GraphConcern[]> = { CRITICAL: [], MODERATE: [], MINOR: [] };
-    for (const c of concerns) {
-      if (visibleLevels.has(c.level) && c.level in groups) {
-        groups[c.level].push(c);
+  const groupedAssumptions = useMemo(() => {
+    const groups: Record<AssumptionImpact, GraphAssumption[]> = { CRITICAL: [], MAJOR: [], MINOR: [] };
+    for (const a of assumptions) {
+      if (a.impact in groups) {
+        groups[a.impact].push(a);
       }
     }
     return groups;
-  }, [concerns, visibleLevels]);
+  }, [assumptions]);
 
-  if (placement === "above") {
-    return (
-      <SummarySection>
-        {/* Meta info bar */}
-        <MetaInfo>
-          <div>
-            <span>Name:</span> {data.name}
-          </div>
-          <div>
-            <span>LLM:</span> {data["evi:llmModel"]}
-          </div>
-          <div>
-            <span>Date:</span> {data.dateCreated}
-          </div>
-          <div>
-            <span>Entities:</span> {Object.keys(data["@graph"]).length}
-          </div>
-          {data["evi:stepAnnotations"] && (
-            <div>
-              <span>Annotations:</span> {data["evi:stepAnnotations"].length}
-            </div>
-          )}
-        </MetaInfo>
+  const availableAudiences = useMemo(() => {
+    return AUDIENCE_OPTIONS.filter((opt) => resolveAudience(data, opt.key) !== null);
+  }, [data]);
 
-        {/* Executive Summary - always open */}
-        <CollapsibleCard title="Executive Summary" defaultOpen={true}>
-          <p>{data["evi:executiveSummary"]}</p>
-        </CollapsibleCard>
-      </SummarySection>
-    );
-  }
-
-  // placement === "below"
   return (
     <SummarySection>
-      <CollapsibleCard title="Narrative Summary">
-        <p>{data["evi:narrativeSummary"]}</p>
+      {/* Grey meta bar with audience buttons inline */}
+      <MetaInfo>
+        <div>
+          <span>Name:</span> {data.name}
+        </div>
+        <div>
+          <span>LLM:</span> {data["evi:llmModel"]}
+        </div>
+        <div>
+          <span>Date:</span> {data.dateCreated}
+        </div>
+        <div>
+          <span>Entities:</span> {Object.keys(data["@graph"]).length}
+        </div>
+        {data["evi:stepAnnotations"] && (
+          <div>
+            <span>Annotations:</span> {data["evi:stepAnnotations"].length}
+          </div>
+        )}
+        {availableAudiences.length > 1 && (
+          <div style={{ marginLeft: "auto", display: "flex", gap: 4, alignItems: "center" }}>
+            <span style={{ fontSize: 11, color: "#999", marginRight: 2 }}>Audience:</span>
+            {availableAudiences.map((opt) => (
+              <AudienceButton
+                key={opt.key}
+                $active={selectedAudience === opt.key}
+                onClick={() => setSelectedAudience(opt.key)}
+              >
+                {opt.label}
+              </AudienceButton>
+            ))}
+          </div>
+        )}
+      </MetaInfo>
+
+      {/* 1. Evidence Graph — open by default, no padding so ReactFlow gets full space */}
+      <GraphCard title="Evidence Graph" defaultOpen={true}>
+        {graphElement}
+      </GraphCard>
+
+      {/* 2. Executive Summary */}
+      <CollapsibleCard title="Executive Summary">
+        {perspective ? (
+          <MarkdownWrapper>
+            <ReactMarkdown>{perspective.executiveSummary}</ReactMarkdown>
+          </MarkdownWrapper>
+        ) : (
+          <p style={{ color: "#999", fontStyle: "italic" }}>
+            Not available for this perspective.
+          </p>
+        )}
       </CollapsibleCard>
 
-      {data["evi:keyFindings"] && data["evi:keyFindings"].length > 0 && (
+      {/* 3. Assumptions — open to CRITICAL by default */}
+      {assumptions.length > 0 && (
         <CollapsibleCard
-          title={`Key Findings (${data["evi:keyFindings"].length})`}
+          title={`Assumptions (${assumptions.length})`}
         >
-          <FindingsList>
-            {data["evi:keyFindings"].map((f, i) => (
-              <li key={i}>{f}</li>
-            ))}
-          </FindingsList>
-        </CollapsibleCard>
-      )}
-
-      {concerns.length > 0 && (
-        <CollapsibleCard
-          title={`Concerns (${concerns.length})`}
-          defaultOpen={true}
-        >
-          <LevelFilterBar>
-            {LEVEL_ORDER.map((level) => (
-              <LevelFilterButton
-                key={level}
-                $active={visibleLevels.has(level)}
-                $color={LEVEL_COLORS[level]}
-                onClick={() => toggleLevel(level)}
-              >
-                {level} ({levelCounts[level]})
-              </LevelFilterButton>
-            ))}
-          </LevelFilterBar>
-          <ConcernsList>
-            {LEVEL_ORDER.map((level) => {
-              const group = groupedConcerns[level];
+          <AssumptionsList>
+            {IMPACT_ORDER.map((impact) => {
+              const group = groupedAssumptions[impact];
               if (!group.length) return null;
+              const isGroupExpanded = expandedGroups.has(impact);
               return (
-                <React.Fragment key={level}>
-                  <ConcernGroupHeader>{level} ({group.length})</ConcernGroupHeader>
-                  {group.map((c, i) => {
-                    const cssClass = getConcernCssClass(c);
-                    const sourceLabel = getSourceLabel(c, data);
-                    const rocrateId = data["evi:annotates"]?.["@id"];
-                    const sourceId = c.sourceAnnotation?.["@id"];
-                    const isPipelineWide = sourceId === rocrateId;
-                    const isClickable = !!onHighlightNode && !!sourceId && !isPipelineWide;
-                    return (
-                      <div
-                        key={i}
-                        className={`concern-item concern-${cssClass}${isClickable ? " concern-clickable" : ""}`}
-                        onClick={isClickable ? () => onHighlightNode!(sourceId) : undefined}
-                        title={isClickable ? `Click to highlight: ${sourceLabel}` : undefined}
-                      >
-                        <span>{c.description}</span>
-                        <span className="concern-source">
-                          {sourceLabel}
-                          {isClickable && <span className="concern-source-icon">&rarr;</span>}
-                        </span>
-                      </div>
-                    );
-                  })}
+                <React.Fragment key={impact}>
+                  <ImpactGroupHeader
+                    $color={IMPACT_COLORS[impact]}
+                    onClick={() => toggleGroup(impact)}
+                  >
+                    <span className="group-toggle">{isGroupExpanded ? "\u25BC" : "\u25B6"}</span>
+                    <span className="group-label">{impact}</span>
+                    <span className="group-count">({group.length})</span>
+                  </ImpactGroupHeader>
+                  {isGroupExpanded && group.map((a, i) => (
+                    <AssumptionItem
+                      key={i}
+                      assumption={a}
+                      sourceLabel={getSourceLabel(a, data)}
+                      onHighlightNode={onHighlightNode}
+                      data={data}
+                    />
+                  ))}
                 </React.Fragment>
               );
             })}
-          </ConcernsList>
+          </AssumptionsList>
+        </CollapsibleCard>
+      )}
+
+      {/* 4. Narrative Summary */}
+      {perspective && (
+        <CollapsibleCard title="Narrative Summary">
+          <MarkdownWrapper>
+            <ReactMarkdown>{perspective.narrativeSummary}</ReactMarkdown>
+          </MarkdownWrapper>
+        </CollapsibleCard>
+      )}
+
+      {/* 5. Key Findings */}
+      {perspective && perspective.keyFindings.length > 0 && (
+        <CollapsibleCard
+          title={`Key Findings (${perspective.keyFindings.length})`}
+        >
+          <FindingsList>
+            {perspective.keyFindings.map((f, i) => (
+              <li key={i}>
+                <MarkdownWrapper>
+                  <ReactMarkdown>{f}</ReactMarkdown>
+                </MarkdownWrapper>
+              </li>
+            ))}
+          </FindingsList>
         </CollapsibleCard>
       )}
     </SummarySection>

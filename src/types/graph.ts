@@ -24,6 +24,47 @@ export interface RawGraphData {
   [key: string]: any;
 }
 
+export type AssumptionImpact = "CRITICAL" | "MAJOR" | "MINOR";
+
+/** Normalize legacy impact values (FOUNDATIONAL, SIGNIFICANT, INCIDENTAL, CONSEQUENTIAL) to current names. */
+export function normalizeImpact(raw: string): AssumptionImpact {
+  switch (raw) {
+    case "CRITICAL": return "CRITICAL";
+    case "MAJOR": return "MAJOR";
+    case "MINOR": return "MINOR";
+    // Legacy names
+    case "FOUNDATIONAL": return "CRITICAL";
+    case "SIGNIFICANT": return "MAJOR";
+    case "INCIDENTAL": return "MINOR";
+    case "CONSEQUENTIAL": return "MAJOR";
+    case "MODERATE": return "MAJOR";
+    default: return "MINOR";
+  }
+}
+
+export interface EvidencePointer {
+  artifact: { "@id": string };
+  location?: string;
+}
+
+export interface Assumption {
+  impact: AssumptionImpact;
+  name?: string;
+  description: string;
+  downstreamImpacts?: string;
+  evidence?: EvidencePointer;
+}
+
+export interface GraphAssumption {
+  impact: AssumptionImpact;
+  name?: string;
+  description: string;
+  downstreamImpacts?: string;
+  evidence?: EvidencePointer;
+  sourceAnnotation: { "@id": string };
+}
+
+// Backward compat aliases for old data with evi:concerns
 export type ConcernLevel = "CRITICAL" | "MODERATE" | "MINOR";
 
 export interface Concern {
@@ -37,6 +78,15 @@ export interface GraphConcern {
   sourceAnnotation: { "@id": string };
 }
 
+export interface AudiencePerspective {
+  targetAudience: string;
+  audienceLabel: string;
+  executiveSummary: string;
+  narrativeSummary: string;
+  keyFindings?: string[];
+  assumptions?: GraphAssumption[];
+}
+
 export interface AnnotationData {
   "@id": string;
   "evi:stepSummary": string;
@@ -45,6 +95,8 @@ export interface AnnotationData {
     name?: string;
     summary: string;
     keyFunctions?: string[];
+    assumptions?: Assumption[];
+    // Backward compat
     concerns?: Concern[];
   }>;
   "evi:inputSummaries"?: Array<{
@@ -61,6 +113,8 @@ export interface AnnotationData {
     description?: string;
     dataQuality?: string;
   }>;
+  "evi:assumptions"?: Assumption[];
+  // Backward compat
   "evi:concerns"?: Concern[];
   "evi:llmModel": string;
   "evi:llmTemperature"?: number;
@@ -99,6 +153,9 @@ export interface AnnotatedEvidenceGraphData {
   "evi:executiveSummary": string;
   "evi:narrativeSummary": string;
   "evi:keyFindings"?: string[];
+  "evi:assumptions"?: GraphAssumption[];
+  "evi:audiences"?: AudiencePerspective[];
+  // Backward compat
   "evi:concerns"?: GraphConcern[];
   "evi:stepAnnotations"?: Array<{ "@id": string }>;
   "evi:llmModel": string;

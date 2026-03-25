@@ -357,11 +357,11 @@ export default function MetadataDisplayPage() {
         if (bundle.evidence.isAnnotated && bundle.evidence.annotatedData) {
           const rawGraphData = { "@graph": bundle.evidence.annotatedData["@graph"] };
           return (
-            <>
-              <AnnotatedSummaryCards data={bundle.evidence.annotatedData} placement="above" />
-              <AnnotatedGraphViewer graphData={rawGraphData} highlightNodeId={highlightNodeId} />
-              <AnnotatedSummaryCards data={bundle.evidence.annotatedData} placement="below" onHighlightNode={handleHighlightNode} />
-            </>
+            <AnnotatedSummaryCards
+              data={bundle.evidence.annotatedData}
+              graphElement={<AnnotatedGraphViewer graphData={rawGraphData} highlightNodeId={highlightNodeId} />}
+              onHighlightNode={handleHighlightNode}
+            />
           );
         }
 
