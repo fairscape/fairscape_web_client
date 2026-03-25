@@ -8,6 +8,7 @@ import {
   FiDownload,
   FiChevronDown,
   FiRefreshCw,
+  FiPlusCircle,
 } from "react-icons/fi";
 import { RiPercentLine } from "react-icons/ri";
 import { useMetadataApi } from "../api/metadataApi";
@@ -43,6 +44,7 @@ export default function MetadataNavigationSidebar({
   hasContentUrl,
 }: MetadataNavigationSidebarProps) {
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const metadataApi = useMetadataApi();
 
   const showScoreView = bundleKind === "release" || bundleKind === "rocrate";
@@ -51,6 +53,8 @@ export default function MetadataNavigationSidebar({
     activeView == "score";
   const showAdvancedDownloads =
     bundleKind === "release" || bundleKind === "rocrate";
+  const showCreateButton =
+    (bundleKind === "release" || bundleKind === "rocrate") && isOwner;
 
   const showDataDownload =
     (bundleKind === "rocrate" && hasDistribution) ||
@@ -135,6 +139,53 @@ export default function MetadataNavigationSidebar({
             <FiEdit2 />
             <span>Edit</span>
           </ActionButton>
+
+          {showCreateButton && (
+            <DownloadSection>
+              <DownloadButton onClick={() => setCreateOpen(!createOpen)}>
+                <ButtonContent>
+                  <FiPlusCircle />
+                  <span>Create Entity</span>
+                </ButtonContent>
+                <ChevronIcon open={createOpen}>
+                  <FiChevronDown />
+                </ChevronIcon>
+              </DownloadButton>
+
+              {createOpen && (
+                <DropdownMenu>
+                  <DropdownItem
+                    onClick={() =>
+                      (window.location.href = `/create/dataset?parent=${arkId}`)
+                    }
+                  >
+                    Dataset
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={() =>
+                      (window.location.href = `/create/software?parent=${arkId}`)
+                    }
+                  >
+                    Software
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={() =>
+                      (window.location.href = `/create/computation?parent=${arkId}`)
+                    }
+                  >
+                    Computation
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={() =>
+                      (window.location.href = `/create/schema?parent=${arkId}`)
+                    }
+                  >
+                    Schema
+                  </DropdownItem>
+                </DropdownMenu>
+              )}
+            </DownloadSection>
+          )}
 
           <DownloadSection>
             <DownloadButton onClick={() => setDownloadOpen(!downloadOpen)}>
@@ -295,6 +346,8 @@ const ActionButton = styled.button`
 
 const DownloadSection = styled.div`
   position: relative;
+  margin-top: 8px;
+  margin-bottom: 8px;
 `;
 
 const DownloadButton = styled.button`

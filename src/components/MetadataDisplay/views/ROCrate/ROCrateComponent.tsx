@@ -2,11 +2,19 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { Metadata, RawGraphEntity } from "../../types/types";
-import { processOverview, processRAI, OverviewData, RAIData } from "../../utils/metadataProcessing";
+import {
+  processOverview,
+  processAIReady,
+  processComplianceEthics,
+  OverviewData,
+  AIReadyData,
+  ComplianceEthicsData,
+} from "../../utils/metadataProcessing";
 import ConfigurableMetadataTable from "../../components/Tables/ConfigurableMetadataTable";
 import { MetadataProperty } from "../../types/metadataPropertyLists";
 import AdditionalPropertiesSection from "../../components/Sections/AdditionalPropertiesSection";
-import RAISection from "../../components/Sections/RAISection";
+import ComplianceEthicsSection from "../../components/Sections/ComplianceEthicsSection";
+import AIReadySection from "../../components/Sections/AIReadySection";
 
 import TabsSection, { TabConfig } from "../../components/Sections/TabsSection";
 import EntityTable, { EntityItem } from "../../components/Tables/EntityTable";
@@ -35,9 +43,7 @@ const roCrateMainProperties: MetadataProperty[] = [
   { key: "content_size", name: "Content Size" },
   { key: "keywords", name: "Keywords" },
   { key: "citation", name: "Citation" },
-  { key: "human_subject", name: "Human Subject Data" },
   { key: "funding", name: "Funding" },
-  { key: "completeness", name: "Completeness" },
   { key: "related_publications", name: "Related Publications" },
 ];
 
@@ -53,7 +59,9 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
-  const [raiData, setRaiData] = useState<RAIData | null>(null);
+  const [aiReadyData, setAiReadyData] = useState<AIReadyData | null>(null);
+  const [complianceData, setComplianceData] =
+    useState<ComplianceEthicsData | null>(null);
   const [activeTab, setActiveTab] = useState<string>("");
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -193,7 +201,8 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
         const overview = processOverview(metadata);
         setOverviewData(overview);
-        setRaiData(processRAI(metadata));
+        setAiReadyData(processAIReady(metadata));
+        setComplianceData(processComplianceEthics(metadata));
         console.log("Overview Data:", overview);
         categorizeEntities(metadata["@graph"] as RawGraphEntity[]);
       } catch (err: any) {
@@ -404,7 +413,9 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
         />
       )}
 
-      {raiData && <RAISection raiData={raiData} />}
+      {complianceData && <ComplianceEthicsSection data={complianceData} />}
+
+      {aiReadyData && <AIReadySection data={aiReadyData} />}
 
       {overviewData && overviewData.additionalCustomProperties && (
         <AdditionalPropertiesSection

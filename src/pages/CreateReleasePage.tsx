@@ -62,7 +62,7 @@ const CreateRelease: React.FC = () => {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [uploadedCrate, setUploadedCrate] = useState<File | null>(null);
   const [supportingDocs, setSupportingDocs] = useState<UploadedFile[]>([]);
-  const [isLoadingLLM, setIsLoadingLLM] = useState(false);
+  const [llmStatus, setLlmStatus] = useState<{state: string, message: string, elapsedSeconds: number} | null>(null);
   const [provenance, setProvenance] = useState<ProvenanceState | null>(null);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -302,11 +302,13 @@ const CreateRelease: React.FC = () => {
   };
 
   const handleLLMAssist = async (documents: UploadedFile[]) => {
-    setIsLoadingLLM(true);
+    setLlmStatus({state: "PENDING", message: "Starting...", elapsedSeconds: 0});
     console.log("=== handleLLMAssist (Direct Flow) ===");
 
     try {
-      const suggestedData = await llmApi.processDocuments(documents);
+      const suggestedData = await llmApi.processDocuments(documents, {
+        onProgress: (status) => setLlmStatus(status)
+      });
       console.log("LLM API response:", suggestedData);
 
       const { result, provenance } = suggestedData;
@@ -345,6 +347,7 @@ const CreateRelease: React.FC = () => {
       setMode("form");
 
       console.log("Direct flow initialization complete!");
+      setLlmStatus(null);
     } catch (error) {
       console.error("!!! LLM assist error:", error);
       console.error("Error details:", {
@@ -352,8 +355,7 @@ const CreateRelease: React.FC = () => {
         stack: error instanceof Error ? error.stack : undefined,
       });
       alert(`Failed to process documents: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setIsLoadingLLM(false);
+      setLlmStatus(null);
     }
   };
 
@@ -487,12 +489,13 @@ const CreateRelease: React.FC = () => {
       }
 
       // Step 1: Upload to Fairscape with optional annotation
-      const uploadResult = await fairscapeApi.uploadRoCrate(
+      await fairscapeApi.uploadRoCrate(
         finalRoCrate,
         provenance?.outputArk
       );
 
-      const newFinalArk = uploadResult["@id"];
+      // Extract the @id from the generated RO-Crate (it's in @graph[1] - the root dataset node)
+      const newFinalArk = finalRoCrate["@graph"][1]["@id"];
       console.log("Upload successful! Final ARK:", newFinalArk);
       setFinalArk(newFinalArk);
 
@@ -515,12 +518,17 @@ const CreateRelease: React.FC = () => {
         */
       }
 
-      alert(`Successfully uploaded to Fairscape!\nARK: ${newFinalArk}`);
+      // Offer download before navigating
+      const shouldDownload = window.confirm(
+        `Successfully uploaded to Fairscape!\nARK: ${newFinalArk}\n\nWould you like to download a local copy before viewing the metadata page?`
+      );
 
-      // Offer download as well
-      if (window.confirm("Would you like to download a local copy?")) {
+      if (shouldDownload) {
         handleDownload();
       }
+
+      // Navigate to the metadata landing page
+      navigate(`/view/${newFinalArk}`);
     } catch (error: any) {
       console.error("Finalization error:", error);
       alert(`Upload failed: ${error.message}`);
@@ -576,7 +584,8 @@ const CreateRelease: React.FC = () => {
           onSkipToManual={handleSkipToManual}
           onSave={handleSave}
           saveStatus={saveStatus}
-          isLoading={isLoadingLLM}
+          isLoading={!!llmStatus}
+          loadingStatus={llmStatus}
           onSavedCrateSelect={handleSavedCrateSelect}
         />
       )}

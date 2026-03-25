@@ -1,0 +1,125 @@
+{
+  "type": "Schema",
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Basic Information",
+      "fields": [
+        {
+          "name": "@id",
+          "label": "Identifier",
+          "type": "text",
+          "required": true,
+          "readonly": true
+        },
+        {
+          "name": "name",
+          "label": "Schema Name",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., Patient Data Schema"
+        },
+        {
+          "name": "description",
+          "label": "Description",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "Description of the schema structure and purpose"
+        }
+      ]
+    },
+    {
+      "id": "keywords",
+      "title": "Keywords",
+      "fields": [
+        {
+          "name": "keywords",
+          "label": "Keywords",
+          "type": "keywords",
+          "required": true,
+          "placeholder": "Type to search ontology terms or add custom keywords"
+        }
+      ]
+    },
+    {
+      "id": "author",
+      "title": "Author & License",
+      "fields": [
+        {
+          "name": "author",
+          "label": "Author(s)",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., Jane Doe (ORCID or Name)"
+        },
+        {
+          "name": "version",
+          "label": "Version",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., 1.0"
+        },
+        {
+          "name": "license",
+          "label": "License",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., MIT, CC-BY-4.0"
+        }
+      ]
+    },
+    {
+      "id": "schema-details",
+      "title": "Schema Details",
+      "fields": [
+        {
+          "name": "encodingFormat",
+          "label": "Encoding Format",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., application/ld+json, application/schema+json"
+        },
+        {
+          "name": "schemaVersion",
+          "label": "Schema Version Standard",
+          "type": "text",
+          "required": false,
+          "placeholder": "e.g., JSON Schema Draft 7"
+        }
+      ]
+    },
+    {
+      "id": "optional",
+      "title": "Optional Information",
+      "fields": [
+        {
+          "name": "url",
+          "label": "URL",
+          "type": "text",
+          "required": false,
+          "placeholder": "URL reference for the schema"
+        },
+        {
+          "name": "datePublished",
+          "label": "Date Published",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "associatedPublication",
+          "label": "Associated Publication",
+          "type": "text",
+          "required": false,
+          "placeholder": "Identifier or URL"
+        },
+        {
+          "name": "additionalDocumentation",
+          "label": "Additional Documentation",
+          "type": "text",
+          "required": false,
+          "placeholder": "URL or path to documentation"
+        }
+      ]
+    }
+  ]
+}

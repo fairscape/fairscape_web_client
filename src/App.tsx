@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 import { AuthProvider } from "./context/AuthContext";
 import Layout from "./components/Layout/Layout";
@@ -12,6 +12,7 @@ import MetadataDisplayPage from "./pages/MetadataDisplayPage";
 import EvidenceGraphPage from "./pages/EvidenceGraphPage";
 import CreateRelease from "./pages/CreateReleasePage";
 import EditIdentifierPage from "./pages/EditIdentifierPage";
+import CreateEntityPage from "./pages/CreateEntityPage";
 import { theme } from "./styles/theme";
 import { GlobalStyle } from "./styles/GlobalStyles";
 import DataverseTokensPage from "./pages/DataverseTokensPage";
@@ -20,6 +21,21 @@ import AboutPage from "./pages/AboutPage";
 import AIReadinessPage from "./pages/AIReadinessPage";
 import AIReadinessDefinitionsPage from "./pages/AIReadinessCriteria";
 import D4DAssistantPage from "./pages/D4DAssistantPage";
+
+function CatchAllOrRedirect() {
+  const pathname = window.location.pathname;
+  const arkMatch = pathname.match(/^\/ark:\/?([\d]{5})\/(.*)/);
+  if (arkMatch) {
+    const normalizedArk = `ark:${arkMatch[1]}/${arkMatch[2]}`;
+    return <Navigate to={`/view/${normalizedArk}`} replace />;
+  }
+  return (
+    <div>
+      <h2>404 Not Found</h2>
+      <p>Sorry, the page you are looking for does not exist.</p>
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -38,6 +54,7 @@ function App() {
               <Route path="/compare" element={<CompareSearchPage />} />
               <Route path="/view/*" element={<MetadataDisplayPage />} />
               <Route path="/edit/*" element={<EditIdentifierPage />} />
+              <Route path="/create/:entityType" element={<CreateEntityPage />} />
               <Route path="/evidence/*" element={<EvidenceGraphPage />} />
               <Route path="/review" element={<CreateRelease />} />
               <Route path="/tokens" element={<DataverseTokensPage />} />
@@ -49,15 +66,7 @@ function App() {
                 element={<AIReadinessDefinitionsPage />}
               />
               <Route path="/d4d-assistant" element={<D4DAssistantPage />} />
-              <Route
-                path="*"
-                element={
-                  <div>
-                    <h2>404 Not Found</h2>
-                    <p>Sorry, the page you are looking for does not exist.</p>
-                  </div>
-                }
-              />
+              <Route path="*" element={<CatchAllOrRedirect />} />
             </Routes>
           </Layout>
         </Router>

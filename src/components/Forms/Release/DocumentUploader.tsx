@@ -17,6 +17,7 @@ interface DocumentUploaderProps {
   onSave?: () => void;
   saveStatus?: "idle" | "saving" | "saved" | "error";
   isLoading: boolean;
+  loadingStatus?: {state: string, message: string, elapsedSeconds: number} | null;
   onSavedCrateSelect: (data: { formData: any; reviewState?: any }) => void;
 }
 
@@ -26,6 +27,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   onLLMAssist,
   onSkipToManual,
   isLoading,
+  loadingStatus,
   onSavedCrateSelect,
 }) => {
   const docsInputRef = useRef<HTMLInputElement>(null);
@@ -103,6 +105,20 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 </StyledButton>
               </ButtonGroup>
             </>
+          )}
+
+          {isLoading && loadingStatus && (
+            <div style={{textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '8px', margin: '20px 0'}}>
+              <div>{loadingStatus.message}</div>
+              <div style={{color: '#7f8c8d', fontSize: '14px'}}>
+                Elapsed: {Math.floor(loadingStatus.elapsedSeconds / 60)}m {loadingStatus.elapsedSeconds % 60}s
+              </div>
+              {loadingStatus.state === "WAITING_FOR_API" && (
+                <div style={{color: '#95a5a6', fontSize: '13px', marginTop: '8px'}}>
+                  ⏱️ Typically takes 1-3 minutes
+                </div>
+              )}
+            </div>
           )}
 
           {supportingDocs.length === 0 && (

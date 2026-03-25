@@ -40,7 +40,7 @@ function generateArkId(
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  return `ark:/${NAAN}/rocrate-${safeName}-v${safeVersion}`;
+  return `ark:${NAAN}/rocrate-${safeName}-v${safeVersion}`;
 }
 
 export function parseRoCrateMetadata(jsonContent: string): FormData {
@@ -445,5 +445,5 @@ export function generateSubCrateId(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .substring(0, 30);
-  return `ark:/${NAAN}/rocrate-${safeName}-${timestamp}`;
+  return `ark:${NAAN}/rocrate-${safeName}-${timestamp}`;
 }
