@@ -206,6 +206,21 @@ export default function MetadataDisplayPage() {
     document.title = `${title} - FAIRSCAPE`;
   }, [title]);
 
+  useEffect(() => {
+    if (!metadata) return;
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.id = "fairscape-jsonld";
+    script.textContent = JSON.stringify(metadata);
+    document.head.appendChild(script);
+
+    return () => {
+      const existing = document.getElementById("fairscape-jsonld");
+      if (existing) existing.remove();
+    };
+  }, [metadata]);
+
   // Fetch image with authentication if available
   useEffect(() => {
     let isMounted = true;
