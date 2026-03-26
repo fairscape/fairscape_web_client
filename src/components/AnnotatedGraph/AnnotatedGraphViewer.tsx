@@ -23,6 +23,8 @@ import { GraphBuilder } from "./graphUtils";
 import { getLayoutedElements } from "../EvidenceGraph/utils/layoutUtils";
 import AnnotatedEvidenceNodeComponent from "./AnnotatedEvidenceNode";
 
+export const GraphDataServiceContext = React.createContext<GraphDataService | null>(null);
+
 const ViewerWrapper = styled.div`
   width: 100%;
   height: 600px;
@@ -171,25 +173,27 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService, highlightNod
   );
 
   return (
-    <ViewerWrapper>
-      {isLoading && <LoadingOverlay>Building graph...</LoadingOverlay>}
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={handleEdgesChange}
-        nodeTypes={nodeTypes}
-        onNodeClick={onNodeClick}
-        nodesDraggable={!isLoading}
-        nodesConnectable={false}
-        minZoom={0.1}
-        maxZoom={4}
-        fitView={false}
-      >
-        <Background variant={BackgroundVariant.Dots} gap={15} size={0.5} color="#ccc" />
-        <Controls />
-      </ReactFlow>
-    </ViewerWrapper>
+    <GraphDataServiceContext.Provider value={dataService}>
+      <ViewerWrapper>
+        {isLoading && <LoadingOverlay>Building graph...</LoadingOverlay>}
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
+          nodeTypes={nodeTypes}
+          onNodeClick={onNodeClick}
+          nodesDraggable={!isLoading}
+          nodesConnectable={false}
+          minZoom={0.1}
+          maxZoom={4}
+          fitView={false}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={15} size={0.5} color="#ccc" />
+          <Controls />
+        </ReactFlow>
+      </ViewerWrapper>
+    </GraphDataServiceContext.Provider>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useContext, useState } from "react";
 import { createPortal } from "react-dom";
 import { Handle, Position, NodeProps } from "reactflow";
 import Tippy from "@tippyjs/react";
@@ -8,6 +8,8 @@ import ReactMarkdown from "react-markdown";
 import styled from "styled-components";
 import { EvidenceNodeData, AnnotationData, Assumption, Concern, EvidencePointer, normalizeImpact } from "../../types/graph";
 import { formatPropertyValue, getDisplayableProperties } from "./graphUtils";
+import { GraphDataServiceContext } from "./AnnotatedGraphViewer";
+import AssumptionChainModal from "./AssumptionChainModal";
 
 const getNodeColor = (type: string): string => {
   switch (type) {
@@ -709,6 +711,8 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
   const nodeColor = getNodeColor(data.type);
   const hasAnnotation = !!data._annotation;
   const [showModal, setShowModal] = useState(false);
+  const [showChainModal, setShowChainModal] = useState(false);
+  const dataService = useContext(GraphDataServiceContext);
 
   const renderTooltipContent = useCallback(() => {
     const sourceProps = getDisplayableProperties(data._sourceData as any);
@@ -796,6 +800,18 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
           </div>
         )}
 
+        {data.type === "Dataset" && dataService && (
+          <button
+            className="view-detail-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowChainModal(true);
+            }}
+          >
+            View Assumption Chain
+          </button>
+        )}
+
         {data.expandable && (
           <em style={{ display: "block", marginTop: 10, color: "#007bff", fontStyle: "italic", fontSize: "0.9em" }}>
             (Click node to expand)
@@ -803,7 +819,7 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
         )}
       </TooltipWrapper>
     );
-  }, [data, hasAnnotation]);
+  }, [data, hasAnnotation, dataService]);
 
   const handleIconClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -851,6 +867,16 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
           nodeName={data.label || data.displayName || id}
           nodeDescription={data.description}
           onClose={() => setShowModal(false)}
+        />,
+        document.body
+      )}
+
+      {showChainModal && dataService && createPortal(
+        <AssumptionChainModal
+          datasetId={data.id}
+          datasetName={data.label || data.displayName || id}
+          dataService={dataService}
+          onClose={() => setShowChainModal(false)}
         />,
         document.body
       )}
