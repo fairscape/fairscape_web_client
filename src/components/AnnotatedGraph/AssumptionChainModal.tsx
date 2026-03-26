@@ -1,27 +1,12 @@
-import React, { useMemo } from "react";
-import ReactFlow, {
-  Controls,
-  Background,
-  BackgroundVariant,
-  ReactFlowProvider,
-  useReactFlow,
-  Node,
-  Edge,
-  Handle,
-  Position,
-  NodeProps,
-} from "reactflow";
-import "reactflow/dist/style.css";
+import React, { useState, useMemo } from "react";
 import styled from "styled-components";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/light.css";
 
 import { GraphDataService } from "./GraphDataService";
-import { getEntityType, abbreviateName } from "./graphUtils";
-import { getLayoutedElements } from "../EvidenceGraph/utils/layoutUtils";
+import { getEntityType } from "./graphUtils";
 import {
-  RawGraphEntity,
   AnnotationData,
   Assumption,
   Concern,
@@ -33,27 +18,32 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
-interface ChainNodeData {
-  chainType: "dataset" | "computation" | "software" | "assumption" | "assumptionGroupBg";
-  label: string;
-  description?: string;
-  impact?: AssumptionImpact;
-  assumptionName?: string;
-  assumptionDescription?: string;
+interface LevelAssumption {
+  impact: AssumptionImpact;
+  name?: string;
+  description: string;
   downstreamImpacts?: string;
   evidenceArtifactId?: string;
   evidenceLocation?: string;
-  assumptionCount?: number;
-  noAnnotation?: boolean;
-  // For group background nodes:
-  groupWidth?: number;
-  groupHeight?: number;
-  // Track which parent an assumption belongs to (for grouping)
-  assumptionParentId?: string;
+}
+
+interface LevelNode {
+  levelLabel: string;
+  computationName: string;
+  assumptions: LevelAssumption[];
+  counts: Record<AssumptionImpact, number>;
+  totalCount: number;
+  children: LevelNode[];
+  depth: number;
+}
+
+function computeMaxDepth(nodes: LevelNode[]): number {
+  if (nodes.length === 0) return 0;
+  return Math.max(...nodes.map((n) => Math.max(n.depth, computeMaxDepth(n.children))));
 }
 
 // ---------------------------------------------------------------------------
-// Traversal Algorithm
+// Traversal Helpers (unchanged)
 // ---------------------------------------------------------------------------
 
 function normalizeRefs(
@@ -96,218 +86,106 @@ function getCodeAssumptionsFromCA(
   return [];
 }
 
-export function buildAssumptionChain(
+// ---------------------------------------------------------------------------
+// Build Level Hierarchy
+// ---------------------------------------------------------------------------
+
+export function buildLevelHierarchy(
   datasetId: string,
   dataService: GraphDataService
-): { nodes: Node<ChainNodeData>[]; edges: Edge[] } {
+): LevelNode[] {
   const visited = new Set<string>();
-  const chainNodes: Node<ChainNodeData>[] = [];
-  const chainEdges: Edge[] = [];
-  let edgeCounter = 0;
 
-  function addNode(id: string, data: ChainNodeData) {
-    chainNodes.push({
-      id,
-      type: "assumptionChainNode",
-      position: { x: 0, y: 0 },
-      data,
-    });
-  }
-
-  function addEdge(source: string, target: string, label: string) {
-    chainEdges.push({
-      id: `chain-edge-${edgeCounter++}`,
-      source,
-      target,
-      type: "smoothstep",
-      label,
-      style: { strokeWidth: 1.5, stroke: "#999" },
-      labelStyle: { fontSize: 10, fill: "#888" },
-    });
-  }
-
-  function addAssumptionNodes(
-    parentId: string,
-    assumptions: Array<{ impact: AssumptionImpact; name?: string; description: string; downstreamImpacts?: string; evidence?: { artifact: { "@id": string }; location?: string } }>,
-    prefix: string
-  ) {
-    assumptions.forEach((a, i) => {
-      const aId = `${prefix}-assumption-${i}`;
-      addNode(aId, {
-        chainType: "assumption",
-        label: a.name || (a.description.length > 60 ? a.description.slice(0, 60) + "..." : a.description),
-        impact: a.impact,
-        assumptionName: a.name,
-        assumptionDescription: a.description,
-        downstreamImpacts: a.downstreamImpacts,
-        evidenceArtifactId: a.evidence?.artifact?.["@id"],
-        evidenceLocation: a.evidence?.location,
-        assumptionParentId: parentId,
-      });
-      addEdge(parentId, aId, "assumes");
-    });
-  }
-
-  function traverse(entityId: string) {
-    if (visited.has(entityId)) return;
-    visited.add(entityId);
-
-    const entity = dataService.getNode(entityId);
-    if (!entity) return;
+  function processDataset(dsId: string, depth: number): LevelNode[] {
+    const entity = dataService.getNode(dsId);
+    if (!entity) return [];
 
     const entityType = getEntityType(entity["@type"]);
+    if (
+      entityType !== "Dataset" &&
+      entityType !== "Sample" &&
+      entityType !== "DatasetCollection" &&
+      entityType !== "DatasetGroup"
+    ) {
+      return [];
+    }
 
-    if (entityType === "Dataset" || entityType === "Sample" || entityType === "DatasetCollection" || entityType === "DatasetGroup") {
-      addNode(entityId, {
-        chainType: "dataset",
-        label: abbreviateName(entity.name || entity.label || entityId, 40),
-        description: entity.description,
-      });
+    const generatedByRefs = normalizeRefs(entity.generatedBy);
+    const levelNodes: LevelNode[] = [];
 
-      const generatedByRefs = normalizeRefs(entity.generatedBy);
-      for (const compRef of generatedByRefs) {
-        const compId = compRef["@id"];
-        if (visited.has(compId)) {
-          addEdge(entityId, compId, "generated by");
-          continue;
+    for (const compRef of generatedByRefs) {
+      const compId = compRef["@id"];
+      if (visited.has(compId)) continue;
+      visited.add(compId);
+
+      const comp = dataService.getNode(compId);
+      if (!comp) continue;
+
+      // Gather all assumptions (step-level + code-analysis)
+      const assumptions: LevelAssumption[] = [];
+      const annotation = dataService.getAnnotationFor(compId);
+
+      if (annotation) {
+        for (const a of getAssumptions(annotation)) {
+          assumptions.push({
+            impact: a.impact,
+            name: a.name,
+            description: a.description,
+            downstreamImpacts: a.downstreamImpacts,
+            evidenceArtifactId: a.evidence?.artifact?.["@id"],
+            evidenceLocation: a.evidence?.location,
+          });
         }
-        visited.add(compId);
 
-        const comp = dataService.getNode(compId);
-        if (!comp) continue;
-
-        const annotation = dataService.getAnnotationFor(compId);
-        const stepAssumptions = annotation ? getAssumptions(annotation) : [];
-        const codeAnalysisList = annotation?.["evi:codeAnalysis"] || [];
-
-        let totalAssumptions = stepAssumptions.length;
+        const codeAnalysisList = annotation["evi:codeAnalysis"] || [];
         for (const ca of codeAnalysisList) {
-          totalAssumptions += getCodeAssumptionsFromCA(ca).length;
-        }
-
-        addNode(compId, {
-          chainType: "computation",
-          label: abbreviateName(comp.name || comp.label || compId, 40),
-          description: comp.description,
-          assumptionCount: totalAssumptions,
-          noAnnotation: !annotation,
-        });
-        addEdge(entityId, compId, "generated by");
-
-        if (annotation) {
-          addAssumptionNodes(compId, stepAssumptions, compId + "-step");
-
-          const coveredSoftwareIds = new Set<string>();
-          for (const ca of codeAnalysisList) {
-            const swId = ca.software["@id"];
-            coveredSoftwareIds.add(swId);
-
-            if (!visited.has(swId)) {
-              visited.add(swId);
-              const swEntity = dataService.getNode(swId);
-              addNode(swId, {
-                chainType: "software",
-                label: abbreviateName(ca.name || swEntity?.name || swId, 40),
-                description: ca.summary,
-              });
-            }
-            addEdge(compId, swId, "used software");
-
-            const swAssumptions = getCodeAssumptionsFromCA(ca);
-            addAssumptionNodes(swId, swAssumptions, swId + "-code");
+          for (const a of getCodeAssumptionsFromCA(ca)) {
+            assumptions.push({
+              impact: a.impact,
+              name: a.name,
+              description: a.description,
+              downstreamImpacts: a.downstreamImpacts,
+              evidenceArtifactId: a.evidence?.artifact?.["@id"],
+              evidenceLocation: a.evidence?.location,
+            });
           }
-
-          const usedSoftwareRefs = normalizeRefs(comp.usedSoftware);
-          for (const swRef of usedSoftwareRefs) {
-            if (coveredSoftwareIds.has(swRef["@id"])) continue;
-            if (!visited.has(swRef["@id"])) {
-              visited.add(swRef["@id"]);
-              const swEntity = dataService.getNode(swRef["@id"]);
-              if (swEntity) {
-                addNode(swRef["@id"], {
-                  chainType: "software",
-                  label: abbreviateName(swEntity.name || swEntity.label || swRef["@id"], 40),
-                  description: swEntity.description,
-                });
-              }
-            }
-            addEdge(compId, swRef["@id"], "used software");
-          }
-        }
-
-        const usedDatasetRefs = normalizeRefs(comp.usedDataset);
-        for (const dsRef of usedDatasetRefs) {
-          if (!visited.has(dsRef["@id"])) {
-            traverse(dsRef["@id"]);
-          }
-          addEdge(compId, dsRef["@id"], "used");
         }
       }
-    }
-  }
 
-  traverse(datasetId);
-  return { nodes: chainNodes, edges: chainEdges };
-}
+      // Compute counts
+      const counts: Record<AssumptionImpact, number> = { CRITICAL: 0, MAJOR: 0, MINOR: 0 };
+      for (const a of assumptions) {
+        counts[a.impact]++;
+      }
 
-// ---------------------------------------------------------------------------
-// Post-layout: add colored background rectangles behind assumption clusters
-// ---------------------------------------------------------------------------
+      // Recurse into usedDataset
+      const children: LevelNode[] = [];
+      const usedDatasetRefs = normalizeRefs(comp.usedDataset);
+      for (const dsRef of usedDatasetRefs) {
+        children.push(...processDataset(dsRef["@id"], depth + 1));
+      }
 
-const GROUP_PADDING = 16;
-
-function addAssumptionGroupBackgrounds(
-  nodes: Node<ChainNodeData>[],
-  edges: Edge[]
-): { nodes: Node<ChainNodeData>[]; edges: Edge[] } {
-  // Group assumption nodes by their parent
-  const groups = new Map<string, Node<ChainNodeData>[]>();
-  for (const node of nodes) {
-    const parentId = node.data.assumptionParentId;
-    if (node.data.chainType === "assumption" && parentId) {
-      if (!groups.has(parentId)) groups.set(parentId, []);
-      groups.get(parentId)!.push(node);
-    }
-  }
-
-  const bgNodes: Node<ChainNodeData>[] = [];
-  for (const [parentId, assumptionNodes] of groups) {
-    if (assumptionNodes.length === 0) continue;
-
-    // Compute bounding box
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const n of assumptionNodes) {
-      const x = n.position.x;
-      const y = n.position.y;
-      const w = (n.width || 200);
-      const h = (n.height || 90);
-      if (x < minX) minX = x;
-      if (y < minY) minY = y;
-      if (x + w > maxX) maxX = x + w;
-      if (y + h > maxY) maxY = y + h;
+      levelNodes.push({
+        levelLabel: "", // assigned below
+        computationName: comp.name || comp.label || compId,
+        assumptions,
+        counts,
+        totalCount: assumptions.length,
+        children,
+        depth,
+      });
     }
 
-    const groupWidth = maxX - minX + GROUP_PADDING * 2;
-    const groupHeight = maxY - minY + GROUP_PADDING * 2;
+    // Assign level labels
+    for (let i = 0; i < levelNodes.length; i++) {
+      const letter = levelNodes.length > 1 ? String.fromCharCode(65 + i) : "";
+      levelNodes[i].levelLabel = `Level ${depth}${letter}`;
+    }
 
-    bgNodes.push({
-      id: `group-bg-${parentId}`,
-      type: "assumptionGroupBg",
-      position: { x: minX - GROUP_PADDING, y: minY - GROUP_PADDING },
-      data: {
-        chainType: "assumptionGroupBg",
-        label: `${assumptionNodes.length} assumptions`,
-        groupWidth,
-        groupHeight,
-      },
-      style: { zIndex: -1 },
-      selectable: false,
-      draggable: false,
-    });
+    return levelNodes;
   }
 
-  // Background nodes go first so they render behind
-  return { nodes: [...bgNodes, ...nodes], edges };
+  return processDataset(datasetId, 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -318,12 +196,6 @@ const IMPACT_COLORS: Record<string, { bg: string; border: string; text: string }
   CRITICAL: { bg: "#f3e8f9", border: "#7b2d8e", text: "#7b2d8e" },
   MAJOR: { bg: "#fef9e7", border: "#d68910", text: "#d68910" },
   MINOR: { bg: "#eaf4fb", border: "#1a5276", text: "#1a5276" },
-};
-
-const CHAIN_TYPE_COLORS: Record<string, string> = {
-  dataset: "#8AE68A",
-  computation: "#FD9A9A",
-  software: "#FFC107",
 };
 
 const ChainModalOverlay = styled.div`
@@ -373,46 +245,6 @@ const ChainModalHeader = styled.div`
   }
 `;
 
-const ChainGraphContainer = styled.div`
-  flex: 1;
-  min-height: 400px;
-  position: relative;
-
-  .react-flow__edge-text {
-    font-size: 10px;
-  }
-`;
-
-const Legend = styled.div`
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 11px;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const LegendItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const LegendSwatch = styled.div<{ $color: string; $border?: string }>`
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  background: ${(p) => p.$color};
-  border: ${(p) => (p.$border ? `2px solid ${p.$border}` : "1px solid #ddd")};
-  flex-shrink: 0;
-`;
-
 const EmptyMessage = styled.div`
   flex: 1;
   display: flex;
@@ -423,48 +255,100 @@ const EmptyMessage = styled.div`
   padding: 60px;
 `;
 
-// ---------------------------------------------------------------------------
-// Chain Node Components
-// ---------------------------------------------------------------------------
+const TreeContainer = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+`;
 
-const ChainNodeWrapper = styled.div<{ $bg: string; $borderColor?: string }>`
-  background: ${(p) => p.$bg};
-  border: 1.5px solid ${(p) => p.$borderColor || "#ccc"};
+const DepthRowWrapper = styled.div<{ $depth: number; $maxDepth: number }>`
+  width: ${(p) => Math.min(100, 40 + (p.$depth / Math.max(p.$maxDepth, 1)) * 60)}%;
+  margin: 6px auto;
+  display: flex;
+  gap: 8px;
+`;
+
+const LevelRowWrapper = styled.div<{ $siblingCount: number }>`
+  flex: 1;
+  min-width: 0;
+`;
+
+const SummaryBar = styled.div<{ $depth: number; $hasAssumptions: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: ${(p) => 10 + p.$depth}px ${(p) => 12 + p.$depth * 2}px;
+  background: hsl(220, ${(p) => 30 + p.$depth * 12}%, ${(p) => 92 - p.$depth * 12}%);
+  border-left: ${(p) => 2 + p.$depth * 2}px solid hsl(220, 70%, ${(p) => 60 - p.$depth * 10}%);
   border-radius: 6px;
-  padding: 0;
-  width: 180px;
+  box-shadow: 0 ${(p) => p.$depth * 2}px ${(p) => p.$depth * 5}px rgba(0, 0, 0, ${(p) => 0.04 + p.$depth * 0.04});
+  cursor: ${(p) => (p.$hasAssumptions ? "pointer" : "default")};
+  user-select: none;
+  transition: all 0.15s;
+  &:hover {
+    filter: ${(p) => (p.$hasAssumptions ? "brightness(0.96)" : "none")};
+  }
+`;
+
+const Chevron = styled.span<{ $expanded: boolean; $depth: number }>`
+  display: inline-block;
+  transition: transform 0.2s;
+  transform: rotate(${(p) => (p.$expanded ? "90deg" : "0deg")});
   font-size: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  color: ${(p) => (p.$depth >= 3 ? "rgba(255,255,255,0.7)" : "#666")};
+  width: 16px;
+  flex-shrink: 0;
 `;
 
-const ChainNodeHeader = styled.div<{ $bgColor: string }>`
-  background: ${(p) => p.$bgColor};
-  padding: 5px 8px;
+const LevelLabel = styled.span<{ $depth: number }>`
+  font-weight: ${(p) => Math.min(700, 500 + p.$depth * 50)};
+  font-size: ${(p) => 13 + p.$depth * 0.5}px;
+  color: ${(p) => (p.$depth >= 3 ? "rgba(255,255,255,0.95)" : `hsl(220, 30%, ${Math.max(15, 35 - p.$depth * 8)}%)`)};
+`;
+
+const SupportsBadge = styled.span<{ $depth: number }>`
   font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #333;
-  text-align: center;
+  color: ${(p) => (p.$depth >= 3 ? "rgba(255,255,255,0.6)" : "rgba(0, 0, 0, 0.4)")};
+  font-style: italic;
+  white-space: nowrap;
 `;
 
-const ChainNodeBody = styled.div`
-  padding: 6px 8px;
-  text-align: center;
-  line-height: 1.3;
-  word-break: break-word;
+const ComputationContext = styled.span<{ $depth: number }>`
+  font-size: 12px;
+  color: ${(p) => (p.$depth >= 3 ? "rgba(255,255,255,0.7)" : "#888")};
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+`;
+
+const CountBadge = styled.span<{ $color: string; $bg: string }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 10px;
   font-size: 11px;
+  font-weight: 600;
+  background: ${(p) => p.$bg};
+  color: ${(p) => p.$color};
 `;
 
-const AssumptionNodeWrapper = styled.div<{ $bg: string; $borderColor: string }>`
+const AssumptionList = styled.div`
+  margin-top: 6px;
+  margin-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+`;
+
+const AssumptionItem = styled.div<{ $borderColor: string; $bg: string }>`
   background: ${(p) => p.$bg};
   border-left: 4px solid ${(p) => p.$borderColor};
   border-radius: 4px;
-  padding: 6px 10px;
-  width: 200px;
-  font-size: 11px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 8px 12px;
+  font-size: 12px;
   line-height: 1.4;
   position: relative;
 `;
@@ -482,15 +366,15 @@ const ImpactBadge = styled.span<{ $color: string; $bg: string }>`
 
 const AssumptionInfoBtn = styled.button`
   position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 16px;
-  height: 16px;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: 1px solid #aaa;
   background: #fff;
   color: #666;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: bold;
   cursor: pointer;
   display: flex;
@@ -527,148 +411,112 @@ const AssumptionTooltipContent = styled.div`
   .tooltip-evidence a { color: #007bff; text-decoration: none; &:hover { text-decoration: underline; } }
 `;
 
-// Background rectangle for assumption clusters
-const GroupBgNode: React.FC<NodeProps<ChainNodeData>> = ({ data }) => {
-  return (
-    <div
-      style={{
-        width: data.groupWidth || 100,
-        height: data.groupHeight || 100,
-        background: "rgba(200, 180, 220, 0.12)",
-        border: "1.5px dashed rgba(123, 45, 142, 0.3)",
-        borderRadius: 10,
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          bottom: 4,
-          right: 8,
-          fontSize: 9,
-          color: "rgba(123, 45, 142, 0.5)",
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
-        }}
-      >
-        {data.label}
-      </div>
-    </div>
-  );
-};
+// ---------------------------------------------------------------------------
+// Flatten tree into depth-grouped rows so siblings (A, B, C) sit side-by-side
+// and all rows render at the same DOM level for correct percentage widths
+// ---------------------------------------------------------------------------
 
-const AssumptionChainNode: React.FC<NodeProps<ChainNodeData>> = ({ data }) => {
-  if (data.chainType === "assumption") {
-    const colors = IMPACT_COLORS[data.impact || "MINOR"];
+interface FlatRow {
+  siblings: LevelNode[];
+  depth: number;
+}
 
-    const tooltipContent = (
-      <AssumptionTooltipContent>
-        <div className="tooltip-impact" style={{ color: colors.text }}>{data.impact}</div>
-        {data.assumptionName && <div className="tooltip-name">{data.assumptionName}</div>}
-        <div className="tooltip-desc">{data.assumptionDescription || data.label}</div>
-        {data.downstreamImpacts && (
-          <div className="tooltip-downstream">
-            <div className="tooltip-downstream-label">If Wrong</div>
-            {data.downstreamImpacts}
-          </div>
-        )}
-        {data.evidenceArtifactId && (
-          <div className="tooltip-evidence">
-            Evidence:{" "}
-            <a href={`/view/${data.evidenceArtifactId}`} target="_blank" rel="noopener noreferrer">
-              {data.evidenceArtifactId}
-            </a>
-            {data.evidenceLocation && <span> ({data.evidenceLocation})</span>}
-          </div>
-        )}
-      </AssumptionTooltipContent>
-    );
-
-    return (
-      <AssumptionNodeWrapper $bg={colors.bg} $borderColor={colors.border}>
-        <Handle type="target" position={Position.Top} style={{ background: "#999", width: 6, height: 6 }} />
-        <ImpactBadge $color={colors.text} $bg="transparent">{data.impact}</ImpactBadge>
-        <div style={{ paddingRight: 18 }}>{data.label}</div>
-        <Tippy content={tooltipContent} theme="light" interactive trigger="click" placement="right" appendTo={() => document.body} maxWidth={400}>
-          <AssumptionInfoBtn onClick={(e) => e.stopPropagation()}>i</AssumptionInfoBtn>
-        </Tippy>
-        <Handle type="source" position={Position.Bottom} style={{ background: "#999", width: 6, height: 6 }} />
-      </AssumptionNodeWrapper>
-    );
+function flattenToRows(nodes: LevelNode[], depth: number = 1): FlatRow[] {
+  if (nodes.length === 0) return [];
+  const result: FlatRow[] = [{ siblings: nodes, depth }];
+  // Collect all children from all siblings at this depth into the next depth
+  const allChildren: LevelNode[] = [];
+  for (const node of nodes) {
+    allChildren.push(...node.children);
   }
-
-  // Provenance node (dataset, computation, software)
-  const bgColor = CHAIN_TYPE_COLORS[data.chainType] || "#E0E0E0";
-  const typeLabel = data.chainType.charAt(0).toUpperCase() + data.chainType.slice(1);
-
-  return (
-    <ChainNodeWrapper $bg="#fff" $borderColor={bgColor}>
-      <Handle type="target" position={Position.Top} style={{ background: "#555", width: 6, height: 6 }} />
-      <ChainNodeHeader $bgColor={bgColor}>
-        {typeLabel}
-        {data.assumptionCount !== undefined && data.assumptionCount > 0 && (
-          <span style={{ marginLeft: 6, background: "rgba(0,0,0,0.15)", padding: "1px 5px", borderRadius: 3, fontSize: 9 }}>
-            {data.assumptionCount}
-          </span>
-        )}
-        {data.noAnnotation && (
-          <span style={{ marginLeft: 4, fontSize: 9, opacity: 0.6 }}>(no annotations)</span>
-        )}
-      </ChainNodeHeader>
-      <ChainNodeBody>
-        {data.label}
-        {data.description && (
-          <div style={{ marginTop: 2, fontSize: 10, color: "#888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {data.description.length > 50 ? data.description.slice(0, 50) + "..." : data.description}
-          </div>
-        )}
-      </ChainNodeBody>
-      <Handle type="source" position={Position.Bottom} style={{ background: "#555", width: 6, height: 6 }} />
-    </ChainNodeWrapper>
-  );
-};
-
-const chainNodeTypes = {
-  assumptionChainNode: AssumptionChainNode,
-  assumptionGroupBg: GroupBgNode,
-};
+  result.push(...flattenToRows(allChildren, depth + 1));
+  return result;
+}
 
 // ---------------------------------------------------------------------------
-// Inner Graph (needs useReactFlow)
+// Single Level Row Component (no nesting — all rendered flat in TreeContainer)
 // ---------------------------------------------------------------------------
 
-const ChainFlowInner: React.FC<{ nodes: Node<ChainNodeData>[]; edges: Edge[] }> = ({ nodes: rawNodes, edges: rawEdges }) => {
-  const { fitView } = useReactFlow();
-
-  const { nodes, edges } = useMemo(() => {
-    if (rawNodes.length === 0) return { nodes: rawNodes, edges: rawEdges };
-    // Layout the real nodes first
-    const layouted = getLayoutedElements(rawNodes as Node[], rawEdges as Edge[], "TB");
-    // Then add background rectangles behind assumption clusters
-    return addAssumptionGroupBackgrounds(layouted.nodes as Node<ChainNodeData>[], layouted.edges);
-  }, [rawNodes, rawEdges]);
-
-  React.useEffect(() => {
-    if (nodes.length > 0) {
-      setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 100);
-    }
-  }, [nodes.length, fitView]);
+const LevelNodeRow: React.FC<{ node: LevelNode; depth: number; siblingCount: number }> = ({ node, depth, siblingCount }) => {
+  const [expanded, setExpanded] = useState(false);
+  const hasAssumptions = node.totalCount > 0;
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={chainNodeTypes}
-      nodesDraggable
-      nodesConnectable={false}
-      minZoom={0.05}
-      maxZoom={2}
-      fitView={false}
-    >
-      <Background variant={BackgroundVariant.Dots} gap={15} size={0.5} color="#ccc" />
-      <Controls />
-    </ReactFlow>
+    <LevelRowWrapper $siblingCount={siblingCount}>
+      <SummaryBar
+        $depth={depth}
+        $hasAssumptions={hasAssumptions}
+        onClick={() => hasAssumptions && setExpanded(!expanded)}
+      >
+        {hasAssumptions ? (
+          <Chevron $expanded={expanded} $depth={depth}>&#9654;</Chevron>
+        ) : (
+          <span style={{ width: 16, textAlign: "center", color: depth >= 3 ? "rgba(255,255,255,0.5)" : "#bbb", fontSize: 10, flexShrink: 0 }}>&#9675;</span>
+        )}
+        <LevelLabel $depth={depth}>{node.levelLabel}</LevelLabel>
+        <ComputationContext $depth={depth}>{node.computationName}</ComputationContext>
+        <SupportsBadge $depth={depth}>
+          {depth === 1 ? "Top level" : `Supports ${depth - 1} level${depth > 2 ? "s" : ""} above`}
+        </SupportsBadge>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+          {(["CRITICAL", "MAJOR", "MINOR"] as AssumptionImpact[]).map((impact) => {
+            const count = node.counts[impact];
+            if (count === 0) return null;
+            const colors = IMPACT_COLORS[impact];
+            return (
+              <CountBadge key={impact} $color={colors.text} $bg={colors.bg}>
+                {count} {impact.charAt(0) + impact.slice(1).toLowerCase()}
+              </CountBadge>
+            );
+          })}
+        </div>
+      </SummaryBar>
+
+      {expanded && (
+        <AssumptionList>
+          {node.assumptions.map((a, i) => {
+            const colors = IMPACT_COLORS[a.impact];
+            const tooltipContent = (
+              <AssumptionTooltipContent>
+                <div className="tooltip-impact" style={{ color: colors.text }}>{a.impact}</div>
+                {a.name && <div className="tooltip-name">{a.name}</div>}
+                <div className="tooltip-desc">{a.description}</div>
+                {a.downstreamImpacts && (
+                  <div className="tooltip-downstream">
+                    <div className="tooltip-downstream-label">If Wrong</div>
+                    {a.downstreamImpacts}
+                  </div>
+                )}
+                {a.evidenceArtifactId && (
+                  <div className="tooltip-evidence">
+                    Evidence:{" "}
+                    <a href={`/view/${a.evidenceArtifactId}`} target="_blank" rel="noopener noreferrer">
+                      {a.evidenceArtifactId}
+                    </a>
+                    {a.evidenceLocation && <span> ({a.evidenceLocation})</span>}
+                  </div>
+                )}
+              </AssumptionTooltipContent>
+            );
+
+            return (
+              <AssumptionItem key={i} $borderColor={colors.border} $bg={colors.bg}>
+                <ImpactBadge $color={colors.text} $bg="transparent">{a.impact}</ImpactBadge>
+                <div style={{ paddingRight: 24 }}>
+                  {a.name && <div style={{ fontWeight: 600, marginBottom: 2 }}>{a.name}</div>}
+                  <div style={{ color: "#555" }}>
+                    {a.description.length > 120 ? a.description.slice(0, 120) + "..." : a.description}
+                  </div>
+                </div>
+                <Tippy content={tooltipContent} theme="light" interactive trigger="click" placement="right" appendTo={() => document.body} maxWidth={400}>
+                  <AssumptionInfoBtn onClick={(e) => e.stopPropagation()}>i</AssumptionInfoBtn>
+                </Tippy>
+              </AssumptionItem>
+            );
+          })}
+        </AssumptionList>
+      )}
+    </LevelRowWrapper>
   );
 };
 
@@ -689,12 +537,14 @@ const AssumptionChainModal: React.FC<AssumptionChainModalProps> = ({
   dataService,
   onClose,
 }) => {
-  const { nodes, edges } = useMemo(
-    () => buildAssumptionChain(datasetId, dataService),
+  const levels = useMemo(
+    () => buildLevelHierarchy(datasetId, dataService),
     [datasetId, dataService]
   );
 
-  const hasChain = nodes.length > 1;
+  const maxDepth = useMemo(() => computeMaxDepth(levels), [levels]);
+  const rows = useMemo(() => flattenToRows(levels), [levels]);
+  const hasChain = rows.length > 0;
 
   return (
     <ChainModalOverlay onClick={onClose}>
@@ -705,41 +555,15 @@ const AssumptionChainModal: React.FC<AssumptionChainModalProps> = ({
         </ChainModalHeader>
 
         {hasChain ? (
-          <ChainGraphContainer>
-            <ReactFlowProvider>
-              <ChainFlowInner nodes={nodes} edges={edges} />
-            </ReactFlowProvider>
-            <Legend>
-              <LegendItem>
-                <LegendSwatch $color="#8AE68A" />
-                <span>Dataset</span>
-              </LegendItem>
-              <LegendItem>
-                <LegendSwatch $color="#FD9A9A" />
-                <span>Computation</span>
-              </LegendItem>
-              <LegendItem>
-                <LegendSwatch $color="#FFC107" />
-                <span>Software</span>
-              </LegendItem>
-              <LegendItem>
-                <LegendSwatch $color={IMPACT_COLORS.CRITICAL.bg} $border={IMPACT_COLORS.CRITICAL.border} />
-                <span>Critical</span>
-              </LegendItem>
-              <LegendItem>
-                <LegendSwatch $color={IMPACT_COLORS.MAJOR.bg} $border={IMPACT_COLORS.MAJOR.border} />
-                <span>Major</span>
-              </LegendItem>
-              <LegendItem>
-                <LegendSwatch $color={IMPACT_COLORS.MINOR.bg} $border={IMPACT_COLORS.MINOR.border} />
-                <span>Minor</span>
-              </LegendItem>
-              <LegendItem>
-                <div style={{ width: 14, height: 14, borderRadius: 3, background: "rgba(200,180,220,0.12)", border: "1.5px dashed rgba(123,45,142,0.3)", flexShrink: 0 }} />
-                <span>Assumption cluster</span>
-              </LegendItem>
-            </Legend>
-          </ChainGraphContainer>
+          <TreeContainer>
+            {rows.map((row, i) => (
+              <DepthRowWrapper key={`row-${row.depth}-${i}`} $depth={row.depth} $maxDepth={maxDepth}>
+                {row.siblings.map((node, j) => (
+                  <LevelNodeRow key={`${node.levelLabel}-${j}`} node={node} depth={row.depth} siblingCount={row.siblings.length} />
+                ))}
+              </DepthRowWrapper>
+            ))}
+          </TreeContainer>
         ) : (
           <EmptyMessage>
             No provenance chain available for this dataset.
