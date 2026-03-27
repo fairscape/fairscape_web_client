@@ -263,6 +263,58 @@ const MetaInfo = styled.div`
   }
 `;
 
+const OverviewContent = styled.div`
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+
+  .overview-description {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+  }
+  .overview-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .overview-label {
+    font-weight: 600;
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    min-width: 70px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .overview-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .overview-tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    background: #e8f0fe;
+    color: #1a5276;
+  }
+  .overview-license-link {
+    color: #007bff;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+  .overview-assumption {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 12px;
+  }
+`;
+
 const AudienceButton = styled.button<{ $active: boolean }>`
   padding: 4px 10px;
   border-radius: 4px;
@@ -600,6 +652,91 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
           </div>
         )}
       </MetaInfo>
+
+      {/* 0. Overview — brief orientation card */}
+      {data["evi:overview"] && (
+        <CollapsibleCard title="Overview" defaultOpen={true}>
+          <OverviewContent>
+            <div className="overview-description">{data["evi:overview"].dataDescription}</div>
+
+            {data["evi:overview"].dataFormats.length > 0 && (
+              <div className="overview-row">
+                <span className="overview-label">Formats</span>
+                <div className="overview-tags">
+                  {data["evi:overview"].dataFormats.map((fmt) => (
+                    <span key={fmt} className="overview-tag">{fmt}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {data["evi:overview"].keywords.length > 0 && (
+              <div className="overview-row">
+                <span className="overview-label">Keywords</span>
+                <div className="overview-tags">
+                  {data["evi:overview"].keywords.map((kw) => (
+                    <span key={kw} className="overview-tag">{kw}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {data["evi:overview"].license && (
+              <div className="overview-row">
+                <span className="overview-label">License</span>
+                <span>
+                  {data["evi:overview"].license.startsWith("http") ? (
+                    <a
+                      className="overview-license-link"
+                      href={data["evi:overview"].license}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {data["evi:overview"].license}
+                    </a>
+                  ) : (
+                    data["evi:overview"].license
+                  )}
+                </span>
+              </div>
+            )}
+
+            {data["evi:overview"].conditionsOfAccess && (
+              <div className="overview-row">
+                <span className="overview-label">Access</span>
+                <span>{data["evi:overview"].conditionsOfAccess}</span>
+              </div>
+            )}
+
+            {data["evi:overview"].topAssumptions.length > 0 && (
+              <div className="overview-row">
+                <span className="overview-label">Key Assumptions</span>
+                <div>
+                  {data["evi:overview"].topAssumptions.map((a, i) => (
+                    <div key={i} className="overview-assumption">
+                      <span
+                        className={`assumption-level-badge badge-${a.impact === "CRITICAL" ? "critical" : a.impact === "MAJOR" ? "major" : "minor"}`}
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          padding: "1px 5px",
+                          borderRadius: 3,
+                          color: "#fff",
+                          background: a.impact === "CRITICAL" ? "#7b2d8e" : a.impact === "MAJOR" ? "#d68910" : "#1a5276",
+                        }}
+                      >
+                        {a.impact.slice(0, 5)}
+                      </span>
+                      <span>{a.name || a.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </OverviewContent>
+        </CollapsibleCard>
+      )}
 
       {/* 1. Evidence Graph — open by default, no padding so ReactFlow gets full space */}
       <GraphCard title="Evidence Graph" defaultOpen={true}>

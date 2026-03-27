@@ -78,6 +78,15 @@ export interface GraphConcern {
   sourceAnnotation: { "@id": string };
 }
 
+export interface DataOverview {
+  dataDescription: string;
+  dataFormats: string[];
+  keywords: string[];
+  license?: string;
+  conditionsOfAccess?: string;
+  topAssumptions: GraphAssumption[];
+}
+
 export interface AudiencePerspective {
   targetAudience: string;
   audienceLabel: string;
@@ -154,6 +163,7 @@ export interface AnnotatedEvidenceGraphData {
   "evi:narrativeSummary": string;
   "evi:keyFindings"?: string[];
   "evi:assumptions"?: GraphAssumption[];
+  "evi:overview"?: DataOverview;
   "evi:audiences"?: AudiencePerspective[];
   // Backward compat
   "evi:concerns"?: GraphConcern[];
