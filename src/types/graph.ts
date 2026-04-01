@@ -25,6 +25,14 @@ export interface RawGraphData {
 }
 
 export type AssumptionImpact = "CRITICAL" | "MAJOR" | "MINOR";
+export type ComputationReviewStatus = "clear" | "review_recommended" | "error_detected";
+
+export interface ComputationError {
+  description: string;
+  severity: "CRITICAL" | "MAJOR";
+  evidence?: EvidencePointer;
+  affectedOutputs?: string;
+}
 
 /** Normalize legacy impact values (FOUNDATIONAL, SIGNIFICANT, INCIDENTAL, CONSEQUENTIAL) to current names. */
 export function normalizeImpact(raw: string): AssumptionImpact {
@@ -53,6 +61,8 @@ export interface Assumption {
   description: string;
   downstreamImpacts?: string;
   evidence?: EvidencePointer;
+  reviewRecommended?: boolean;
+  recommendedValidation?: string;
 }
 
 export interface GraphAssumption {
@@ -61,6 +71,8 @@ export interface GraphAssumption {
   description: string;
   downstreamImpacts?: string;
   evidence?: EvidencePointer;
+  reviewRecommended?: boolean;
+  recommendedValidation?: string;
   sourceAnnotation: { "@id": string };
 }
 
@@ -80,6 +92,8 @@ export interface GraphConcern {
 
 export interface DataOverview {
   dataDescription: string;
+  pipelineDescription?: string;
+  pipelineSteps?: string[];
   dataFormats: string[];
   keywords: string[];
   license?: string;
@@ -123,6 +137,8 @@ export interface AnnotationData {
     dataQuality?: string;
   }>;
   "evi:assumptions"?: Assumption[];
+  "evi:errors"?: ComputationError[];
+  "evi:computationStatus"?: ComputationReviewStatus;
   // Backward compat
   "evi:concerns"?: Concern[];
   "evi:llmModel": string;

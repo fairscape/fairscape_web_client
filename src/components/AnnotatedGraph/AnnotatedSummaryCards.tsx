@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from "react";
-import ReactMarkdown from "react-markdown";
 import styled from "styled-components";
 import {
   AnnotatedEvidenceGraphData,
   GraphAssumption,
   AssumptionImpact,
-  AudiencePerspective,
   GraphConcern,
   ConcernLevel,
   normalizeImpact,
@@ -82,30 +80,6 @@ const SummaryBody = styled.div`
   font-size: 14px;
   line-height: 1.6;
   color: #333;
-`;
-
-const MarkdownWrapper = styled.div`
-  font-size: 14px;
-  line-height: 1.6;
-
-  p { margin: 0 0 8px; }
-  p:last-child { margin-bottom: 0; }
-  h1, h2, h3, h4, h5, h6 {
-    margin: 12px 0 6px;
-    color: #2c3e50;
-  }
-  h1 { font-size: 18px; }
-  h2 { font-size: 16px; }
-  h3 { font-size: 15px; }
-  ul, ol { margin: 4px 0; padding-left: 20px; }
-  li { margin: 2px 0; }
-  strong { color: #2c3e50; }
-  code {
-    background: #f1f3f5;
-    padding: 1px 4px;
-    border-radius: 3px;
-    font-size: 0.9em;
-  }
 `;
 
 const AssumptionsList = styled.div`
@@ -237,14 +211,6 @@ const ImpactGroupHeader = styled.div<{ $color: string }>`
   &:hover .group-label { opacity: 0.8; }
 `;
 
-const FindingsList = styled.ul`
-  margin: 0;
-  padding: 0 0 0 20px;
-  li {
-    margin: 6px 0;
-  }
-`;
-
 const MetaInfo = styled.div`
   display: flex;
   gap: 16px;
@@ -312,6 +278,22 @@ const OverviewContent = styled.div`
     align-items: center;
     gap: 6px;
     margin-right: 12px;
+  }
+`;
+
+const PipelineStepsContainer = styled.div`
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  li {
+    margin: 2px 0;
   }
 `;
 
@@ -424,14 +406,21 @@ function AssumptionItem({
     }
   };
 
+  const isReviewRecommended = assumption.reviewRecommended === true;
+
   return (
-    <div className={`assumption-item assumption-${cssClass}`}>
+    <div className={`assumption-item assumption-${cssClass}`} style={!isReviewRecommended ? { opacity: 0.7 } : undefined}>
       <AssumptionRow onClick={() => setExpanded(!expanded)}>
         <AssumptionChevron>{expanded ? "\u25BC" : "\u25B6"}</AssumptionChevron>
         <span className={`assumption-level-badge badge-${cssClass}`}>
           {assumption.impact.slice(0, 5)}
         </span>
         <AssumptionName>{displayName}</AssumptionName>
+        {isReviewRecommended && (
+          <span style={{ fontSize: 10, fontWeight: 600, color: "#8e44ad", background: "#f3e8f9", padding: "1px 6px", borderRadius: 3, flexShrink: 0 }}>
+            Review suggested
+          </span>
+        )}
         <span
           className="assumption-source"
           onClick={handleSourceClick}
@@ -486,6 +475,15 @@ function AssumptionItem({
               </div>
             </div>
           )}
+
+          {assumption.recommendedValidation && (
+            <div className="detail-section">
+              <div className="detail-label">How to Validate</div>
+              <div style={{ background: "#e8f5e9", borderLeft: "3px solid #43a047", padding: "4px 8px", borderRadius: 2, marginTop: 2 }}>
+                {assumption.recommendedValidation}
+              </div>
+            </div>
+          )}
         </AssumptionDetails>
       )}
     </div>
@@ -534,9 +532,6 @@ function getSourceLabel(
 // ---------------------------------------------------------------------------
 
 interface ResolvedPerspective {
-  executiveSummary: string;
-  narrativeSummary: string;
-  keyFindings: string[];
   assumptions: GraphAssumption[];
 }
 
@@ -546,9 +541,6 @@ function resolveAudience(
 ): ResolvedPerspective | null {
   if (audienceKey === "datasci") {
     return {
-      executiveSummary: data["evi:executiveSummary"],
-      narrativeSummary: data["evi:narrativeSummary"],
-      keyFindings: data["evi:keyFindings"] || [],
       assumptions: getAssumptions(data),
     };
   }
@@ -556,9 +548,6 @@ function resolveAudience(
   const match = audiences.find((a) => a.targetAudience === audienceKey);
   if (!match) return null;
   return {
-    executiveSummary: match.executiveSummary,
-    narrativeSummary: match.narrativeSummary,
-    keyFindings: match.keyFindings || [],
     assumptions: (match.assumptions || []).map(normalizeAssumption),
   };
 }
@@ -657,7 +646,22 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
       {data["evi:overview"] && (
         <CollapsibleCard title="Overview" defaultOpen={true}>
           <OverviewContent>
-            <div className="overview-description">{data["evi:overview"].dataDescription}</div>
+            <div className="overview-description">
+              {data["evi:overview"].pipelineDescription || data["evi:overview"].dataDescription}
+            </div>
+
+            {data["evi:overview"].pipelineSteps && data["evi:overview"].pipelineSteps.length > 0 && (
+              <div className="overview-row">
+                <span className="overview-label">Pipeline</span>
+                <PipelineStepsContainer>
+                  <ul>
+                    {data["evi:overview"].pipelineSteps.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ul>
+                </PipelineStepsContainer>
+              </div>
+            )}
 
             {data["evi:overview"].dataFormats.length > 0 && (
               <div className="overview-row">
@@ -743,20 +747,7 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
         {graphElement}
       </GraphCard>
 
-      {/* 2. Executive Summary */}
-      <CollapsibleCard title="Executive Summary">
-        {perspective ? (
-          <MarkdownWrapper>
-            <ReactMarkdown>{perspective.executiveSummary}</ReactMarkdown>
-          </MarkdownWrapper>
-        ) : (
-          <p style={{ color: "#999", fontStyle: "italic" }}>
-            Not available for this perspective.
-          </p>
-        )}
-      </CollapsibleCard>
-
-      {/* 3. Assumptions — open to CRITICAL by default */}
+      {/* 2. Assumptions — open to CRITICAL by default */}
       {assumptions.length > 0 && (
         <CollapsibleCard
           title={`Assumptions (${assumptions.length})`}
@@ -792,31 +783,6 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
         </CollapsibleCard>
       )}
 
-      {/* 4. Narrative Summary */}
-      {perspective && (
-        <CollapsibleCard title="Narrative Summary">
-          <MarkdownWrapper>
-            <ReactMarkdown>{perspective.narrativeSummary}</ReactMarkdown>
-          </MarkdownWrapper>
-        </CollapsibleCard>
-      )}
-
-      {/* 5. Key Findings */}
-      {perspective && perspective.keyFindings.length > 0 && (
-        <CollapsibleCard
-          title={`Key Findings (${perspective.keyFindings.length})`}
-        >
-          <FindingsList>
-            {perspective.keyFindings.map((f, i) => (
-              <li key={i}>
-                <MarkdownWrapper>
-                  <ReactMarkdown>{f}</ReactMarkdown>
-                </MarkdownWrapper>
-              </li>
-            ))}
-          </FindingsList>
-        </CollapsibleCard>
-      )}
     </SummarySection>
   );
 };

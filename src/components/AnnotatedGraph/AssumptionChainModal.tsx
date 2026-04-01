@@ -1,8 +1,5 @@
 import React, { useState, useMemo } from "react";
 import styled from "styled-components";
-import Tippy from "@tippyjs/react";
-import "tippy.js/dist/tippy.css";
-import "tippy.js/themes/light.css";
 
 import { GraphDataService } from "./GraphDataService";
 import { getEntityType } from "./graphUtils";
@@ -10,6 +7,8 @@ import {
   AnnotationData,
   Assumption,
   Concern,
+  ComputationError,
+  ComputationReviewStatus,
   normalizeImpact,
   AssumptionImpact,
 } from "../../types/graph";
@@ -25,12 +24,15 @@ interface LevelAssumption {
   downstreamImpacts?: string;
   evidenceArtifactId?: string;
   evidenceLocation?: string;
+  recommendedValidation?: string;
 }
 
 interface LevelNode {
   levelLabel: string;
   computationName: string;
   assumptions: LevelAssumption[];
+  errors: ComputationError[];
+  computationStatus: ComputationReviewStatus;
   counts: Record<AssumptionImpact, number>;
   totalCount: number;
   children: LevelNode[];
@@ -43,7 +45,25 @@ function computeMaxDepth(nodes: LevelNode[]): number {
 }
 
 // ---------------------------------------------------------------------------
-// Traversal Helpers (unchanged)
+// Dot helpers
+// ---------------------------------------------------------------------------
+
+type StatusKey = ComputationReviewStatus | "unknown";
+
+function getNodeStatus(node: LevelNode): StatusKey {
+  // Use LLM-decided status if available
+  if (node.computationStatus && node.computationStatus !== "clear") {
+    return node.computationStatus;
+  }
+  if (node.computationStatus === "clear") return "clear";
+  // Fallback for old data: derive from errors/assumptions
+  if (node.errors.length > 0) return "error_detected";
+  if (node.counts.CRITICAL > 0) return "review_recommended";
+  return "clear";
+}
+
+// ---------------------------------------------------------------------------
+// Traversal Helpers
 // ---------------------------------------------------------------------------
 
 function normalizeRefs(
@@ -121,8 +141,9 @@ export function buildLevelHierarchy(
       const comp = dataService.getNode(compId);
       if (!comp) continue;
 
-      // Gather all assumptions (step-level + code-analysis)
       const assumptions: LevelAssumption[] = [];
+      let errors: ComputationError[] = [];
+      let computationStatus: ComputationReviewStatus = "clear";
       const annotation = dataService.getAnnotationFor(compId);
 
       if (annotation) {
@@ -134,6 +155,7 @@ export function buildLevelHierarchy(
             downstreamImpacts: a.downstreamImpacts,
             evidenceArtifactId: a.evidence?.artifact?.["@id"],
             evidenceLocation: a.evidence?.location,
+            recommendedValidation: (a as any).recommendedValidation,
           });
         }
 
@@ -147,18 +169,20 @@ export function buildLevelHierarchy(
               downstreamImpacts: a.downstreamImpacts,
               evidenceArtifactId: a.evidence?.artifact?.["@id"],
               evidenceLocation: a.evidence?.location,
+              recommendedValidation: (a as any).recommendedValidation,
             });
           }
         }
+
+        errors = annotation["evi:errors"] || [];
+        computationStatus = (annotation["evi:computationStatus"] as ComputationReviewStatus) || "clear";
       }
 
-      // Compute counts
       const counts: Record<AssumptionImpact, number> = { CRITICAL: 0, MAJOR: 0, MINOR: 0 };
       for (const a of assumptions) {
         counts[a.impact]++;
       }
 
-      // Recurse into usedDataset
       const children: LevelNode[] = [];
       const usedDatasetRefs = normalizeRefs(comp.usedDataset);
       for (const dsRef of usedDatasetRefs) {
@@ -166,9 +190,11 @@ export function buildLevelHierarchy(
       }
 
       levelNodes.push({
-        levelLabel: "", // assigned below
+        levelLabel: "",
         computationName: comp.name || comp.label || compId,
         assumptions,
+        errors,
+        computationStatus,
         counts,
         totalCount: assumptions.length,
         children,
@@ -176,7 +202,6 @@ export function buildLevelHierarchy(
       });
     }
 
-    // Assign level labels
     for (let i = 0; i < levelNodes.length; i++) {
       const letter = levelNodes.length > 1 ? String.fromCharCode(65 + i) : "";
       levelNodes[i].levelLabel = `Level ${depth}${letter}`;
@@ -189,14 +214,25 @@ export function buildLevelHierarchy(
 }
 
 // ---------------------------------------------------------------------------
-// Styled Components
+// Colors
 // ---------------------------------------------------------------------------
+
+const DOT_COLORS: Record<StatusKey, { fill: string; border: string }> = {
+  clear: { fill: "#27ae60", border: "#1e8449" },
+  review_recommended: { fill: "#8e44ad", border: "#6c3483" },
+  error_detected: { fill: "#e74c3c", border: "#c0392b" },
+  unknown: { fill: "#ffffff", border: "#bdc3c7" },
+};
 
 const IMPACT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   CRITICAL: { bg: "#f3e8f9", border: "#7b2d8e", text: "#7b2d8e" },
   MAJOR: { bg: "#fef9e7", border: "#d68910", text: "#d68910" },
   MINOR: { bg: "#eaf4fb", border: "#1a5276", text: "#1a5276" },
 };
+
+// ---------------------------------------------------------------------------
+// Styled Components — Modal shell
+// ---------------------------------------------------------------------------
 
 const ChainModalOverlay = styled.div`
   position: fixed;
@@ -255,165 +291,235 @@ const EmptyMessage = styled.div`
   padding: 60px;
 `;
 
+// ---------------------------------------------------------------------------
+// Styled Components — Dot pyramid
+// ---------------------------------------------------------------------------
+
 const TreeContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 16px 24px;
+  padding: 24px 24px 32px;
 `;
 
 const DepthRowWrapper = styled.div<{ $depth: number; $maxDepth: number }>`
   width: ${(p) => Math.min(100, 40 + (p.$depth / Math.max(p.$maxDepth, 1)) * 60)}%;
-  margin: 6px auto;
+  margin: 0 auto 12px;
   display: flex;
-  gap: 8px;
+  gap: 10px;
 `;
 
-const LevelRowWrapper = styled.div<{ $siblingCount: number }>`
+const NodeCard = styled.div<{ $selected: boolean }>`
   flex: 1;
   min-width: 0;
-`;
+  border: 1px solid ${(p) => (p.$selected ? "#2c3e50" : "#e9ecef")};
+  border-radius: 8px;
+  background: ${(p) => (p.$selected ? "#fafbfc" : "#fff")};
+  box-shadow: ${(p) => (p.$selected ? "0 0 0 2px #2c3e50" : "0 1px 3px rgba(0,0,0,0.06)")};
+  transition: box-shadow 0.15s, border-color 0.15s;
+  overflow: hidden;
+  cursor: pointer;
 
-const SummaryBar = styled.div<{ $depth: number; $hasAssumptions: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: ${(p) => 10 + p.$depth}px ${(p) => 12 + p.$depth * 2}px;
-  background: hsl(220, ${(p) => 30 + p.$depth * 12}%, ${(p) => 92 - p.$depth * 12}%);
-  border-left: ${(p) => 2 + p.$depth * 2}px solid hsl(220, 70%, ${(p) => 60 - p.$depth * 10}%);
-  border-radius: 6px;
-  box-shadow: 0 ${(p) => p.$depth * 2}px ${(p) => p.$depth * 5}px rgba(0, 0, 0, ${(p) => 0.04 + p.$depth * 0.04});
-  cursor: ${(p) => (p.$hasAssumptions ? "pointer" : "default")};
-  user-select: none;
-  transition: all 0.15s;
   &:hover {
-    filter: ${(p) => (p.$hasAssumptions ? "brightness(0.96)" : "none")};
+    border-color: #adb5bd;
   }
 `;
 
-const Chevron = styled.span<{ $expanded: boolean; $depth: number }>`
-  display: inline-block;
-  transition: transform 0.2s;
-  transform: rotate(${(p) => (p.$expanded ? "90deg" : "0deg")});
-  font-size: 12px;
-  color: ${(p) => (p.$depth >= 3 ? "rgba(255,255,255,0.7)" : "#666")};
-  width: 16px;
+const NodeCardHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+`;
+
+const SeverityDot = styled.span<{ $fill: string; $border: string }>`
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: ${(p) => p.$fill};
+  border: 2px solid ${(p) => p.$border};
   flex-shrink: 0;
 `;
 
-const LevelLabel = styled.span<{ $depth: number }>`
-  font-weight: ${(p) => Math.min(700, 500 + p.$depth * 50)};
-  font-size: ${(p) => 13 + p.$depth * 0.5}px;
-  color: ${(p) => (p.$depth >= 3 ? "rgba(255,255,255,0.95)" : `hsl(220, 30%, ${Math.max(15, 35 - p.$depth * 8)}%)`)};
-`;
-
-const SupportsBadge = styled.span<{ $depth: number }>`
-  font-size: 10px;
-  color: ${(p) => (p.$depth >= 3 ? "rgba(255,255,255,0.6)" : "rgba(0, 0, 0, 0.4)")};
-  font-style: italic;
-  white-space: nowrap;
-`;
-
-const ComputationContext = styled.span<{ $depth: number }>`
-  font-size: 12px;
-  color: ${(p) => (p.$depth >= 3 ? "rgba(255,255,255,0.7)" : "#888")};
+const NodeName = styled.span`
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 300px;
+  flex: 1;
+`;
+
+const NodeMeta = styled.span`
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+`;
+
+const CountBadges = styled.div`
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
 `;
 
 const CountBadge = styled.span<{ $color: string; $bg: string }>`
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 11px;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
   font-weight: 600;
   background: ${(p) => p.$bg};
   color: ${(p) => p.$color};
 `;
 
-const AssumptionList = styled.div`
-  margin-top: 6px;
-  margin-left: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-bottom: 8px;
+// ---------------------------------------------------------------------------
+// Styled Components — Expanded detail panel
+// ---------------------------------------------------------------------------
+
+const DetailPanel = styled.div`
+  border-top: 1px solid #e9ecef;
+  padding: 12px 14px;
+  background: #f8f9fa;
+  max-height: 300px;
+  overflow-y: auto;
 `;
 
-const AssumptionItem = styled.div<{ $borderColor: string; $bg: string }>`
-  background: ${(p) => p.$bg};
-  border-left: 4px solid ${(p) => p.$borderColor};
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 12px;
-  line-height: 1.4;
-  position: relative;
-`;
-
-const ImpactBadge = styled.span<{ $color: string; $bg: string }>`
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 9px;
+const AssumptionGroupLabel = styled.div<{ $color: string }>`
+  font-size: 11px;
   font-weight: 700;
-  background: ${(p) => p.$bg};
   color: ${(p) => p.$color};
-  margin-bottom: 3px;
-`;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 10px 0 4px;
 
-const AssumptionInfoBtn = styled.button`
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid #aaa;
-  background: #fff;
-  color: #666;
-  font-size: 10px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-
-  &:hover {
-    background: #2c3e50;
-    color: #fff;
-    border-color: #2c3e50;
+  &:first-child {
+    margin-top: 0;
   }
 `;
 
-const AssumptionTooltipContent = styled.div`
-  max-width: 350px;
+const AssumptionRow = styled.div<{ $borderColor: string; $bg: string }>`
+  background: ${(p) => p.$bg};
+  border-left: 3px solid ${(p) => p.$borderColor};
+  border-radius: 4px;
+  margin: 3px 0;
   font-size: 12px;
   line-height: 1.5;
-  padding: 6px;
-
-  .tooltip-impact { font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .tooltip-name { font-weight: 600; margin-bottom: 4px; color: #2c3e50; }
-  .tooltip-desc { color: #555; margin-bottom: 6px; }
-  .tooltip-downstream {
-    background: #fff8e1;
-    border-left: 3px solid #ffb300;
-    padding: 4px 8px;
-    border-radius: 2px;
-    font-size: 11px;
-    margin-bottom: 4px;
-  }
-  .tooltip-downstream-label { font-weight: 600; font-size: 10px; text-transform: uppercase; color: #666; }
-  .tooltip-evidence { font-size: 11px; color: #888; }
-  .tooltip-evidence a { color: #007bff; text-decoration: none; &:hover { text-decoration: underline; } }
+  color: #444;
+  overflow: hidden;
 `;
 
+const AssumptionSummaryRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    filter: brightness(0.96);
+  }
+`;
+
+const AssumptionChevron = styled.span`
+  font-size: 9px;
+  color: #999;
+  flex-shrink: 0;
+  width: 10px;
+`;
+
+const AssumptionTitle = styled.span`
+  font-weight: 600;
+  color: #2c3e50;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const AssumptionExpandedBody = styled.div`
+  padding: 4px 10px 8px 26px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #555;
+`;
+
+const DownstreamImpact = styled.div`
+  background: #fff8e1;
+  border-left: 3px solid #ffb300;
+  padding: 3px 8px;
+  border-radius: 2px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6d5800;
+`;
+
+const EvidenceLink = styled.a`
+  font-size: 11px;
+  color: #007bff;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+`;
+
+const ExpandableAssumption: React.FC<{
+  assumption: LevelAssumption;
+  colors: { bg: string; border: string; text: string };
+}> = ({ assumption, colors }) => {
+  const [open, setOpen] = useState(false);
+  const displayName = assumption.name
+    || (assumption.description.length > 80 ? assumption.description.slice(0, 80) + "..." : assumption.description);
+
+  return (
+    <AssumptionRow $borderColor={colors.border} $bg={colors.bg}>
+      <AssumptionSummaryRow onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
+        <AssumptionChevron>{open ? "\u25BC" : "\u25B6"}</AssumptionChevron>
+        <AssumptionTitle title={assumption.name || assumption.description}>
+          {displayName}
+        </AssumptionTitle>
+      </AssumptionSummaryRow>
+      {open && (
+        <AssumptionExpandedBody>
+          {assumption.name && <div style={{ marginBottom: 4 }}>{assumption.description}</div>}
+          {assumption.downstreamImpacts && (
+            <DownstreamImpact>
+              <strong style={{ fontSize: 10, textTransform: "uppercase", color: "#888" }}>If wrong: </strong>
+              {assumption.downstreamImpacts}
+            </DownstreamImpact>
+          )}
+          {assumption.evidenceArtifactId && (
+            <div style={{ marginTop: 3 }}>
+              <EvidenceLink
+                href={`/view/${assumption.evidenceArtifactId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {assumption.evidenceArtifactId}
+              </EvidenceLink>
+              {assumption.evidenceLocation && (
+                <span style={{ color: "#888", marginLeft: 4, fontSize: 11 }}>
+                  ({assumption.evidenceLocation})
+                </span>
+              )}
+            </div>
+          )}
+          {assumption.recommendedValidation && (
+            <div style={{ marginTop: 3, background: "#e8f5e9", borderLeft: "3px solid #43a047", padding: "3px 8px", borderRadius: 2, fontSize: 11 }}>
+              <strong style={{ fontSize: 10, textTransform: "uppercase", color: "#2e7d32" }}>Validate: </strong>
+              {assumption.recommendedValidation}
+            </div>
+          )}
+        </AssumptionExpandedBody>
+      )}
+    </AssumptionRow>
+  );
+};
+
 // ---------------------------------------------------------------------------
-// Flatten tree into depth-grouped rows so siblings (A, B, C) sit side-by-side
-// and all rows render at the same DOM level for correct percentage widths
+// Flatten tree into depth-grouped rows
 // ---------------------------------------------------------------------------
 
 interface FlatRow {
@@ -424,7 +530,6 @@ interface FlatRow {
 function flattenToRows(nodes: LevelNode[], depth: number = 1): FlatRow[] {
   if (nodes.length === 0) return [];
   const result: FlatRow[] = [{ siblings: nodes, depth }];
-  // Collect all children from all siblings at this depth into the next depth
   const allChildren: LevelNode[] = [];
   for (const node of nodes) {
     allChildren.push(...node.children);
@@ -434,89 +539,111 @@ function flattenToRows(nodes: LevelNode[], depth: number = 1): FlatRow[] {
 }
 
 // ---------------------------------------------------------------------------
-// Single Level Row Component (no nesting — all rendered flat in TreeContainer)
+// Node Card Component
 // ---------------------------------------------------------------------------
 
-const LevelNodeRow: React.FC<{ node: LevelNode; depth: number; siblingCount: number }> = ({ node, depth, siblingCount }) => {
-  const [expanded, setExpanded] = useState(false);
-  const hasAssumptions = node.totalCount > 0;
+const IMPACT_ORDER: AssumptionImpact[] = ["CRITICAL", "MAJOR", "MINOR"];
+
+const LevelNodeCard: React.FC<{
+  node: LevelNode;
+  selected: boolean;
+  onToggle: () => void;
+  activeSeverities: Set<AssumptionImpact>;
+}> = ({ node, selected, onToggle, activeSeverities }) => {
+  const status = getNodeStatus(node);
+  const dotColors = DOT_COLORS[status];
+
+  const grouped = useMemo(() => {
+    const g: Record<AssumptionImpact, LevelAssumption[]> = { CRITICAL: [], MAJOR: [], MINOR: [] };
+    for (const a of node.assumptions) g[a.impact].push(a);
+    return g;
+  }, [node.assumptions]);
 
   return (
-    <LevelRowWrapper $siblingCount={siblingCount}>
-      <SummaryBar
-        $depth={depth}
-        $hasAssumptions={hasAssumptions}
-        onClick={() => hasAssumptions && setExpanded(!expanded)}
-      >
-        {hasAssumptions ? (
-          <Chevron $expanded={expanded} $depth={depth}>&#9654;</Chevron>
-        ) : (
-          <span style={{ width: 16, textAlign: "center", color: depth >= 3 ? "rgba(255,255,255,0.5)" : "#bbb", fontSize: 10, flexShrink: 0 }}>&#9675;</span>
-        )}
-        <LevelLabel $depth={depth}>{node.levelLabel}</LevelLabel>
-        <ComputationContext $depth={depth}>{node.computationName}</ComputationContext>
-        <SupportsBadge $depth={depth}>
-          {depth === 1 ? "Top level" : `Supports ${depth - 1} level${depth > 2 ? "s" : ""} above`}
-        </SupportsBadge>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-          {(["CRITICAL", "MAJOR", "MINOR"] as AssumptionImpact[]).map((impact) => {
-            const count = node.counts[impact];
-            if (count === 0) return null;
-            const colors = IMPACT_COLORS[impact];
-            return (
-              <CountBadge key={impact} $color={colors.text} $bg={colors.bg}>
-                {count} {impact.charAt(0) + impact.slice(1).toLowerCase()}
+    <NodeCard $selected={selected} onClick={onToggle}>
+      <NodeCardHeader>
+        <SeverityDot $fill={dotColors.fill} $border={dotColors.border} />
+        <NodeName title={node.computationName}>{node.computationName}</NodeName>
+        <NodeMeta>{node.levelLabel}</NodeMeta>
+        {(node.totalCount > 0 || node.errors.length > 0) && (
+          <CountBadges>
+            {node.errors.length > 0 && (
+              <CountBadge $color="#c0392b" $bg="#fdecea">
+                {node.errors.length}E
               </CountBadge>
-            );
-          })}
-        </div>
-      </SummaryBar>
+            )}
+            {IMPACT_ORDER.map((impact) => {
+              const count = node.counts[impact];
+              if (count === 0) return null;
+              const colors = IMPACT_COLORS[impact];
+              return (
+                <CountBadge key={impact} $color={colors.text} $bg={colors.bg}>
+                  {count}
+                </CountBadge>
+              );
+            })}
+          </CountBadges>
+        )}
+      </NodeCardHeader>
 
-      {expanded && (
-        <AssumptionList>
-          {node.assumptions.map((a, i) => {
-            const colors = IMPACT_COLORS[a.impact];
-            const tooltipContent = (
-              <AssumptionTooltipContent>
-                <div className="tooltip-impact" style={{ color: colors.text }}>{a.impact}</div>
-                {a.name && <div className="tooltip-name">{a.name}</div>}
-                <div className="tooltip-desc">{a.description}</div>
-                {a.downstreamImpacts && (
-                  <div className="tooltip-downstream">
-                    <div className="tooltip-downstream-label">If Wrong</div>
-                    {a.downstreamImpacts}
-                  </div>
-                )}
-                {a.evidenceArtifactId && (
-                  <div className="tooltip-evidence">
-                    Evidence:{" "}
-                    <a href={`/view/${a.evidenceArtifactId}`} target="_blank" rel="noopener noreferrer">
-                      {a.evidenceArtifactId}
-                    </a>
-                    {a.evidenceLocation && <span> ({a.evidenceLocation})</span>}
-                  </div>
-                )}
-              </AssumptionTooltipContent>
-            );
-
-            return (
-              <AssumptionItem key={i} $borderColor={colors.border} $bg={colors.bg}>
-                <ImpactBadge $color={colors.text} $bg="transparent">{a.impact}</ImpactBadge>
-                <div style={{ paddingRight: 24 }}>
-                  {a.name && <div style={{ fontWeight: 600, marginBottom: 2 }}>{a.name}</div>}
-                  <div style={{ color: "#555" }}>
-                    {a.description.length > 120 ? a.description.slice(0, 120) + "..." : a.description}
-                  </div>
-                </div>
-                <Tippy content={tooltipContent} theme="light" interactive trigger="click" placement="right" appendTo={() => document.body} maxWidth={400}>
-                  <AssumptionInfoBtn onClick={(e) => e.stopPropagation()}>i</AssumptionInfoBtn>
-                </Tippy>
-              </AssumptionItem>
-            );
-          })}
-        </AssumptionList>
-      )}
-    </LevelRowWrapper>
+      {selected && (() => {
+        const visibleGroups = IMPACT_ORDER.filter(
+          (impact) => activeSeverities.has(impact) && grouped[impact].length > 0
+        );
+        const hasErrors = node.errors.length > 0;
+        if (visibleGroups.length === 0 && !hasErrors) {
+          return (
+            <DetailPanel>
+              <div style={{ color: "#999", fontSize: 12, fontStyle: "italic" }}>
+                {node.totalCount === 0
+                  ? "No assumptions identified for this computation."
+                  : "No assumptions match the selected severity levels."}
+              </div>
+            </DetailPanel>
+          );
+        }
+        return (
+          <DetailPanel>
+            {hasErrors && (
+              <>
+                <AssumptionGroupLabel $color="#c0392b">
+                  ERRORS ({node.errors.length})
+                </AssumptionGroupLabel>
+                {node.errors.map((err, i) => (
+                  <AssumptionRow key={`err-${i}`} $borderColor="#e74c3c" $bg="#fdecea">
+                    <AssumptionSummaryRow onClick={(e) => e.stopPropagation()}>
+                      <span style={{ fontWeight: 600, color: "#c0392b", fontSize: 11, textTransform: "uppercase", flexShrink: 0 }}>{err.severity}</span>
+                      <AssumptionTitle style={{ color: "#7f1d1d" }} title={err.description}>
+                        {err.description.length > 80 ? err.description.slice(0, 80) + "..." : err.description}
+                      </AssumptionTitle>
+                    </AssumptionSummaryRow>
+                    {err.affectedOutputs && (
+                      <div style={{ padding: "2px 10px 6px 26px", fontSize: 11, color: "#7f1d1d" }}>
+                        <strong>Affected: </strong>{err.affectedOutputs}
+                      </div>
+                    )}
+                  </AssumptionRow>
+                ))}
+              </>
+            )}
+            {visibleGroups.map((impact) => {
+              const items = grouped[impact];
+              const colors = IMPACT_COLORS[impact];
+              return (
+                <React.Fragment key={impact}>
+                  <AssumptionGroupLabel $color={colors.text}>
+                    {impact} ({items.length})
+                  </AssumptionGroupLabel>
+                  {items.map((a, i) => (
+                    <ExpandableAssumption key={i} assumption={a} colors={colors} />
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </DetailPanel>
+        );
+      })()}
+    </NodeCard>
   );
 };
 
@@ -530,6 +657,50 @@ interface AssumptionChainModalProps {
   dataService: GraphDataService;
   onClose: () => void;
 }
+
+const SeverityFilterBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 24px;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+  flex-shrink: 0;
+`;
+
+const SeverityFilterLabel = styled.span`
+  font-size: 11px;
+  color: #888;
+  margin-right: 4px;
+`;
+
+const SeverityToggle = styled.button<{ $color: string; $bg: string; $active: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid ${(p) => (p.$active ? p.$color : "#ddd")};
+  background: ${(p) => (p.$active ? p.$bg : "#fff")};
+  color: ${(p) => (p.$active ? p.$color : "#bbb")};
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: ${(p) => p.$color};
+    color: ${(p) => p.$color};
+  }
+`;
+
+const SeverityDotSmall = styled.span<{ $fill: string; $active: boolean }>`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: ${(p) => (p.$active ? p.$fill : "#ccc")};
+  flex-shrink: 0;
+`;
 
 const AssumptionChainModal: React.FC<AssumptionChainModalProps> = ({
   datasetId,
@@ -546,6 +717,24 @@ const AssumptionChainModal: React.FC<AssumptionChainModalProps> = ({
   const rows = useMemo(() => flattenToRows(levels), [levels]);
   const hasChain = rows.length > 0;
 
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeSeverities, setActiveSeverities] = useState<Set<AssumptionImpact>>(
+    () => new Set(["CRITICAL"])
+  );
+
+  const handleToggle = (id: string) => {
+    setSelectedId((prev) => (prev === id ? null : id));
+  };
+
+  const toggleSeverity = (impact: AssumptionImpact) => {
+    setActiveSeverities((prev) => {
+      const next = new Set(prev);
+      if (next.has(impact)) next.delete(impact);
+      else next.add(impact);
+      return next;
+    });
+  };
+
   return (
     <ChainModalOverlay onClick={onClose}>
       <ChainModalContent onClick={(e) => e.stopPropagation()}>
@@ -554,13 +743,44 @@ const AssumptionChainModal: React.FC<AssumptionChainModalProps> = ({
           <button className="close-btn" onClick={onClose}>&times;</button>
         </ChainModalHeader>
 
+        {hasChain && (
+          <SeverityFilterBar>
+            <SeverityFilterLabel>Show:</SeverityFilterLabel>
+            {IMPACT_ORDER.map((impact) => {
+              const colors = IMPACT_COLORS[impact];
+              const active = activeSeverities.has(impact);
+              return (
+                <SeverityToggle
+                  key={impact}
+                  $color={colors.text}
+                  $bg={colors.bg}
+                  $active={active}
+                  onClick={() => toggleSeverity(impact)}
+                >
+                  <SeverityDotSmall $fill={colors.border} $active={active} />
+                  {impact.charAt(0) + impact.slice(1).toLowerCase()}
+                </SeverityToggle>
+              );
+            })}
+          </SeverityFilterBar>
+        )}
+
         {hasChain ? (
           <TreeContainer>
-            {rows.map((row, i) => (
-              <DepthRowWrapper key={`row-${row.depth}-${i}`} $depth={row.depth} $maxDepth={maxDepth}>
-                {row.siblings.map((node, j) => (
-                  <LevelNodeRow key={`${node.levelLabel}-${j}`} node={node} depth={row.depth} siblingCount={row.siblings.length} />
-                ))}
+            {rows.map((row, ri) => (
+              <DepthRowWrapper key={`row-${row.depth}-${ri}`} $depth={row.depth} $maxDepth={maxDepth}>
+                {row.siblings.map((node, ni) => {
+                  const cardId = `${row.depth}-${ni}`;
+                  return (
+                    <LevelNodeCard
+                      key={cardId}
+                      node={node}
+                      selected={selectedId === cardId}
+                      onToggle={() => handleToggle(cardId)}
+                      activeSeverities={activeSeverities}
+                    />
+                  );
+                })}
               </DepthRowWrapper>
             ))}
           </TreeContainer>

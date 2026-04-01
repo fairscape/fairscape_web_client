@@ -6,7 +6,7 @@ import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/light.css";
 import ReactMarkdown from "react-markdown";
 import styled from "styled-components";
-import { EvidenceNodeData, AnnotationData, Assumption, Concern, EvidencePointer, normalizeImpact } from "../../types/graph";
+import { EvidenceNodeData, AnnotationData, Assumption, Concern, EvidencePointer, ComputationError, ComputationReviewStatus, normalizeImpact } from "../../types/graph";
 import { formatPropertyValue, getDisplayableProperties } from "./graphUtils";
 import { GraphDataServiceContext } from "./AnnotatedGraphViewer";
 import AssumptionChainModal from "./AssumptionChainModal";
@@ -39,6 +39,33 @@ const getNodeColor = (type: string): string => {
 };
 
 // ---------------------------------------------------------------------------
+// Computation status colors (green/purple/red circle on computation nodes)
+// ---------------------------------------------------------------------------
+
+const STATUS_COLORS: Record<string, string> = {
+  clear: "#27ae60",
+  review_recommended: "#8e44ad",
+  error_detected: "#e74c3c",
+};
+
+function getStatusColor(status?: ComputationReviewStatus | string): string {
+  return STATUS_COLORS[status || "clear"] || STATUS_COLORS.clear;
+}
+
+const StatusCircle = styled.span<{ $color: string }>`
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: ${(p) => p.$color};
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  z-index: 5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+`;
+
+// ---------------------------------------------------------------------------
 // Backward compat: normalize old concerns to assumption shape for display
 // ---------------------------------------------------------------------------
 
@@ -48,6 +75,7 @@ interface DisplayAssumption {
   description: string;
   downstreamImpacts?: string;
   evidence?: EvidencePointer;
+  recommendedValidation?: string;
 }
 
 function getStepAssumptions(annotation: AnnotationData): DisplayAssumption[] {
@@ -202,6 +230,7 @@ const TooltipWrapper = styled.div`
   .assumptions-critical { background: #f3e8f9; color: #7b2d8e; }
   .assumptions-major { background: #fef9e7; color: #d68910; }
   .assumptions-minor { background: #eaf4fb; color: #1a5276; }
+  .assumptions-error { background: #fdecea; color: #c0392b; }
 
   .view-detail-btn {
     display: inline-block;
@@ -266,6 +295,19 @@ const ModalContent = styled.div`
   .assumption-critical { background: #f3e8f9; border-left: 4px solid #7b2d8e; }
   .assumption-major { background: #fef9e7; border-left: 4px solid #d68910; }
   .assumption-minor { background: #eaf4fb; border-left: 4px solid #1a5276; }
+
+  .error-item {
+    padding: 8px 10px;
+    margin: 4px 0;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.5;
+    background: #fdecea;
+    border-left: 4px solid #e74c3c;
+  }
+  .error-item .error-severity { font-weight: 700; color: #c0392b; font-size: 11px; text-transform: uppercase; }
+  .error-item .error-desc { margin: 2px 0 4px; color: #555; }
+  .error-item .error-affected { background: #fff0ee; border-left: 3px solid #e74c3c; padding: 3px 8px; border-radius: 2px; margin-top: 4px; font-size: 12.5px; color: #7f1d1d; }
 
   .code-analysis-card {
     background: #f8f9fa;
@@ -466,6 +508,14 @@ function ModalAssumptionItem({ assumption }: { assumption: DisplayAssumption }) 
               </div>
             </AssumptionDetailBlock>
           )}
+          {assumption.recommendedValidation && (
+            <AssumptionDetailBlock>
+              <div className="assumption-downstream" style={{ background: "#e8f5e9", borderLeftColor: "#43a047" }}>
+                <div className="assumption-downstream-label" style={{ color: "#2e7d32" }}>How to Validate</div>
+                {assumption.recommendedValidation}
+              </div>
+            </AssumptionDetailBlock>
+          )}
         </ModalAssumptionExpanded>
       )}
     </div>
@@ -620,6 +670,30 @@ function AnnotationDetailModal({
         {/* --- Detail sections (collapsible) --- */}
         <div style={{ borderTop: "2px solid #e9ecef", paddingTop: 8 }}>
 
+          {/* Errors (if any) */}
+          {(annotation["evi:errors"]?.length ?? 0) > 0 && (
+            <CollapsibleSection title={`Errors (${annotation["evi:errors"]!.length})`} defaultOpen={true}>
+              {annotation["evi:errors"]!.map((err: ComputationError, i: number) => (
+                <div key={i} className="error-item">
+                  <span className="error-severity">{err.severity}</span>
+                  <div className="error-desc">{err.description}</div>
+                  {err.affectedOutputs && (
+                    <div className="error-affected">
+                      <strong style={{ fontSize: 10, textTransform: "uppercase", color: "#999" }}>Affected outputs: </strong>
+                      {err.affectedOutputs}
+                    </div>
+                  )}
+                  {err.evidence && (
+                    <div style={{ fontSize: 12.5, color: "#666", marginTop: 4 }}>
+                      <span style={{ fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>Evidence: </span>
+                      <EvidenceLink evidence={err.evidence} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </CollapsibleSection>
+          )}
+
           {/* Code Analysis: summary, key functions, software assumptions */}
           {allCodeAnalysis.length > 0 && (
             <CollapsibleSection title="Code Analysis">
@@ -755,24 +829,24 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
             <p><strong>LLM Analysis:</strong> {data._annotation["evi:stepSummary"]?.substring(0, 200)}
               {(data._annotation["evi:stepSummary"]?.length || 0) > 200 ? "..." : ""}
             </p>
-            {stepAssumptions.length > 0 && (
-              <div>
-                {(() => {
-                  const critical = stepAssumptions.filter((a) => a.impact === "CRITICAL").length;
-                  const major = stepAssumptions.filter((a) => a.impact === "MAJOR").length;
-                  const minor = stepAssumptions.filter((a) => a.impact === "MINOR").length;
-                  return (
-                    <>
-                      {critical > 0 && <span className="assumptions-badge assumptions-critical">{critical} Critical</span>}
-                      {" "}
-                      {major > 0 && <span className="assumptions-badge assumptions-major">{major} Major</span>}
-                      {" "}
-                      {minor > 0 && <span className="assumptions-badge assumptions-minor">{minor} Minor</span>}
-                    </>
-                  );
-                })()}
-              </div>
-            )}
+            {(() => {
+              const errors = data._annotation!["evi:errors"] || [];
+              const errorCount = errors.length;
+              const critical = stepAssumptions.filter((a) => a.impact === "CRITICAL").length;
+              const major = stepAssumptions.filter((a) => a.impact === "MAJOR").length;
+              const minor = stepAssumptions.filter((a) => a.impact === "MINOR").length;
+              return (errorCount > 0 || stepAssumptions.length > 0) ? (
+                <div>
+                  {errorCount > 0 && <span className="assumptions-badge assumptions-error">{errorCount} {errorCount === 1 ? "Error" : "Errors"}</span>}
+                  {errorCount > 0 && " "}
+                  {critical > 0 && <span className="assumptions-badge assumptions-critical">{critical} Critical</span>}
+                  {" "}
+                  {major > 0 && <span className="assumptions-badge assumptions-major">{major} Major</span>}
+                  {" "}
+                  {minor > 0 && <span className="assumptions-badge assumptions-minor">{minor} Minor</span>}
+                </div>
+              ) : null;
+            })()}
             <button
               className="view-detail-btn"
               onClick={(e) => {
@@ -829,6 +903,10 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
     <>
       <NodeWrapper $expandable={!!data.expandable} className={className}>
         <Handle type="target" position={Position.Left} isConnectable={isConnectable} style={{ background: "#555", zIndex: 1 }} />
+
+        {data.type === "Computation" && hasAnnotation && data._annotation && (
+          <StatusCircle $color={getStatusColor(data._annotation["evi:computationStatus"])} />
+        )}
 
         <NodeHeader $bgColor={nodeColor}>{data.type}</NodeHeader>
 
