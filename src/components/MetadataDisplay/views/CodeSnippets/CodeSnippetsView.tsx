@@ -42,17 +42,23 @@ const Description = styled.p`
   line-height: 1.5;
 `;
 
-interface DatasetInfo {
+export interface DatasetInfo {
   name: string;
   contentUrl: string;
   fileFormat?: string;
-  schemaName?: string;
-  columns?: string[];
+  schemaId?: string;
 }
 
-interface JoinKeyInfo {
+export interface DatasetGroup {
+  schemaId: string;
+  schemaName: string;
+  datasets: DatasetInfo[];
+  fileFormat?: string;
+}
+
+export interface JoinKeyInfo {
   column: string;
-  datasets: string[];
+  schemaNames: string[];
 }
 
 interface CodeSnippetsViewProps {
@@ -60,28 +66,58 @@ interface CodeSnippetsViewProps {
   bundleKind: string;
 }
 
-function extractDatasetsFromGraph(metadata: any): DatasetInfo[] {
+/** Group datasets by their schema. Datasets sharing a schema become one group (rendered as a loop). */
+function extractDatasetGroups(metadata: any): { groups: DatasetGroup[]; ungrouped: DatasetInfo[] } {
   const graph = metadata?.["@graph"];
-  if (!Array.isArray(graph)) return [];
+  if (!Array.isArray(graph)) return { groups: [], ungrouped: [] };
 
-  return graph
-    .filter((entry: any) => {
-      const type = entry["@type"];
-      if (typeof type === "string") return false;
-      if (Array.isArray(type))
-        return type.some((t: string) => t.includes("Dataset"));
-      return false;
-    })
-    .filter((entry: any) => entry.contentUrl && entry.contentUrl !== "Embargoed")
-    .map((entry: any) => ({
+  // Build schema id -> name map
+  const schemaNames: Record<string, string> = {};
+  for (const entry of graph) {
+    const type = entry["@type"];
+    const isSchema = typeof type === "string" ? type === "EVI:Schema" :
+      Array.isArray(type) && type.some((t: string) => t.includes("Schema"));
+    if (isSchema) {
+      schemaNames[entry["@id"]] = entry.name || entry["@id"];
+    }
+  }
+
+  // Collect datasets and group by schema
+  const bySchema: Record<string, DatasetInfo[]> = {};
+  const ungrouped: DatasetInfo[] = [];
+
+  for (const entry of graph) {
+    const type = entry["@type"];
+    const isDataset = Array.isArray(type) && type.some((t: string) => t.includes("Dataset"));
+    if (!isDataset) continue;
+    if (!entry.contentUrl || entry.contentUrl === "Embargoed") continue;
+
+    const ds: DatasetInfo = {
       name: entry.name || entry["@id"] || "Dataset",
       contentUrl: entry.contentUrl,
-      fileFormat: entry.fileFormat || entry["encodingFormat"] || "",
-      columns: [],
-    }));
+      fileFormat: entry.fileFormat || entry.encodingFormat || "",
+      schemaId: entry["evi:Schema"]?.["@id"] || entry["evi:Schema"] || undefined,
+    };
+
+    if (ds.schemaId && schemaNames[ds.schemaId]) {
+      if (!bySchema[ds.schemaId]) bySchema[ds.schemaId] = [];
+      bySchema[ds.schemaId].push(ds);
+    } else {
+      ungrouped.push(ds);
+    }
+  }
+
+  const groups: DatasetGroup[] = Object.entries(bySchema).map(([schemaId, datasets]) => ({
+    schemaId,
+    schemaName: schemaNames[schemaId] || schemaId,
+    datasets,
+    fileFormat: datasets[0]?.fileFormat,
+  }));
+
+  return { groups, ungrouped };
 }
 
-function extractSchemasForJoinKeys(metadata: any): JoinKeyInfo[] {
+function extractJoinKeys(metadata: any): JoinKeyInfo[] {
   const graph = metadata?.["@graph"];
   if (!Array.isArray(graph)) return [];
 
@@ -92,43 +128,22 @@ function extractSchemasForJoinKeys(metadata: any): JoinKeyInfo[] {
 
   if (schemas.length < 2) return [];
 
-  // Find datasets linked to each schema
-  const datasets = graph.filter((entry: any) => {
-    const type = entry["@type"];
-    return Array.isArray(type) && type.some((t: string) => t.includes("Dataset"));
-  });
-
-  const schemaToDatasets: Record<string, string[]> = {};
-  for (const ds of datasets) {
-    const schemaRef = ds["evi:Schema"]?.["@id"] || ds["evi:Schema"];
-    if (schemaRef) {
-      if (!schemaToDatasets[schemaRef]) schemaToDatasets[schemaRef] = [];
-      schemaToDatasets[schemaRef].push(ds.name || ds["@id"]);
-    }
-  }
-
-  // Find shared columns across schemas
-  const columnToDatasets: Record<string, string[]> = {};
+  const columnToSchemas: Record<string, string[]> = {};
   for (const schema of schemas) {
     const props = schema.properties || {};
-    const linkedDatasets = schemaToDatasets[schema["@id"]] || [schema.name || "unknown"];
     for (const colName of Object.keys(props)) {
-      if (!columnToDatasets[colName]) columnToDatasets[colName] = [];
-      columnToDatasets[colName].push(...linkedDatasets);
+      if (!columnToSchemas[colName]) columnToSchemas[colName] = [];
+      columnToSchemas[colName].push(schema.name || schema["@id"]);
     }
   }
 
-  return Object.entries(columnToDatasets)
-    .filter(([, dsList]) => {
-      // Deduplicate and check if column appears in datasets linked to 2+ schemas
-      const unique = [...new Set(dsList)];
-      return unique.length >= 2;
-    })
-    .map(([column, dsList]) => ({
+  return Object.entries(columnToSchemas)
+    .filter(([, names]) => new Set(names).size >= 2)
+    .map(([column, names]) => ({
       column,
-      datasets: [...new Set(dsList)],
+      schemaNames: [...new Set(names)],
     }))
-    .sort((a, b) => b.datasets.length - a.datasets.length);
+    .sort((a, b) => b.schemaNames.length - a.schemaNames.length);
 }
 
 type Lang = "python" | "r" | "cli";
@@ -149,29 +164,28 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
       name: metadata?.name || "dataset",
       contentUrl,
       fileFormat: metadata?.fileFormat || metadata?.encodingFormat || "",
-      columns: [],
     };
   }, [metadata, isMulti]);
 
-  const multiDatasets = useMemo<DatasetInfo[]>(() => {
-    if (!isMulti) return [];
-    return extractDatasetsFromGraph(metadata);
+  const { groups, ungrouped } = useMemo(() => {
+    if (!isMulti) return { groups: [], ungrouped: [] };
+    return extractDatasetGroups(metadata);
   }, [metadata, isMulti]);
 
   const joinKeys = useMemo<JoinKeyInfo[]>(() => {
     if (!isMulti) return [];
-    return extractSchemasForJoinKeys(metadata);
+    return extractJoinKeys(metadata);
   }, [metadata, isMulti]);
 
   const code = useMemo(() => {
-    if (isMulti && multiDatasets.length > 0) {
+    if (isMulti && (groups.length > 0 || ungrouped.length > 0)) {
       switch (lang) {
         case "python":
-          return generatePythonMulti(multiDatasets, joinKeys);
+          return generatePythonMulti(groups, ungrouped, joinKeys);
         case "r":
-          return generateRMulti(multiDatasets, joinKeys);
+          return generateRMulti(groups, ungrouped, joinKeys);
         case "cli":
-          return generateCLIMulti(multiDatasets);
+          return generateCLIMulti(groups, ungrouped);
       }
     }
 
@@ -187,13 +201,17 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
     }
 
     return null;
-  }, [lang, isMulti, multiDatasets, singleDataset, joinKeys]);
+  }, [lang, isMulti, groups, ungrouped, singleDataset, joinKeys]);
 
   const langMap: Record<Lang, string> = {
     python: "python",
     r: "r",
     cli: "bash",
   };
+
+  const totalDatasets = isMulti
+    ? groups.reduce((sum, g) => sum + g.datasets.length, 0) + ungrouped.length
+    : 1;
 
   if (!code) {
     return (
@@ -207,16 +225,17 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
     );
   }
 
-  const datasetCount = isMulti ? multiDatasets.length : 1;
-
   return (
     <Container>
       <SectionHeader>Code Snippets</SectionHeader>
       <Description>
-        Ready-to-use code for loading {datasetCount} dataset
-        {datasetCount !== 1 ? "s" : ""}
+        Ready-to-use code for loading {totalDatasets} dataset
+        {totalDatasets !== 1 ? "s" : ""}
+        {groups.some((g) => g.datasets.length > 1)
+          ? ` (${groups.filter((g) => g.datasets.length > 1).map((g) => `${g.datasets.length} ${g.schemaName} files`).join(", ")} loaded via loop)`
+          : ""}
         {joinKeys.length > 0
-          ? ` with ${joinKeys.length} detected join column${joinKeys.length !== 1 ? "s" : ""}`
+          ? `, ${joinKeys.length} detected join column${joinKeys.length !== 1 ? "s" : ""}`
           : ""}
         .
       </Description>
