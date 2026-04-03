@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b || true && vite build",
+    "build:jupyterlite": "pip install jupyterlite-core jupyterlite-pyodide-kernel && jupyter lite build --output-dir public/jupyterlite",
     "lint": "eslint .",
     "preview": "vite preview"
   },

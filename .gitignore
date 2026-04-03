@@ -27,3 +27,6 @@ meta.txt
 meta2.txt
 rocrate.txt
 write.py
+
+# JupyterLite static build (regenerate with: npm run build:jupyterlite)
+public/jupyterlite/

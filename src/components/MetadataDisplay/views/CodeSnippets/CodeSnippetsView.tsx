@@ -4,6 +4,7 @@ import SnippetBlock from "./SnippetBlock";
 import { generatePythonSingle, generatePythonMulti } from "./generators/pythonGenerator";
 import { generateRSingle, generateRMulti } from "./generators/rGenerator";
 import { generateCLISingle, generateCLIMulti } from "./generators/cliGenerator";
+import { generateCodeNotebook, openInJupyterLite } from "./notebookGenerator";
 import { SectionHeader } from "../../shared.styles";
 
 const Container = styled.div`
@@ -40,6 +41,36 @@ const Description = styled.p`
   font-size: 0.9rem;
   margin: 0 0 20px 0;
   line-height: 1.5;
+`;
+
+const NotebookButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #005f73;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  margin-left: 12px;
+
+  &:hover {
+    background: #003d4d;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+`;
+
+const TopBar = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
 `;
 
 export interface DatasetInfo {
@@ -177,11 +208,22 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
     return extractJoinKeys(metadata);
   }, [metadata, isMulti]);
 
+  // Always compute Python code for notebook generation
+  const pythonCode = useMemo(() => {
+    if (isMulti && (groups.length > 0 || ungrouped.length > 0)) {
+      return generatePythonMulti(groups, ungrouped, joinKeys);
+    }
+    if (singleDataset) {
+      return generatePythonSingle(singleDataset);
+    }
+    return null;
+  }, [isMulti, groups, ungrouped, singleDataset, joinKeys]);
+
   const code = useMemo(() => {
+    if (lang === "python") return pythonCode;
+
     if (isMulti && (groups.length > 0 || ungrouped.length > 0)) {
       switch (lang) {
-        case "python":
-          return generatePythonMulti(groups, ungrouped, joinKeys);
         case "r":
           return generateRMulti(groups, ungrouped, joinKeys);
         case "cli":
@@ -191,8 +233,6 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
 
     if (singleDataset) {
       switch (lang) {
-        case "python":
-          return generatePythonSingle(singleDataset);
         case "r":
           return generateRSingle(singleDataset);
         case "cli":
@@ -201,7 +241,14 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
     }
 
     return null;
-  }, [lang, isMulti, groups, ungrouped, singleDataset, joinKeys]);
+  }, [lang, pythonCode, isMulti, groups, ungrouped, singleDataset, joinKeys]);
+
+  const handleOpenNotebook = () => {
+    if (!pythonCode) return;
+    const title = metadata?.name || "FAIRSCAPE Dataset";
+    const notebook = generateCodeNotebook(title, pythonCode);
+    openInJupyterLite(notebook);
+  };
 
   const langMap: Record<Lang, string> = {
     python: "python",
@@ -240,17 +287,25 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
         .
       </Description>
 
-      <LangBar>
-        <LangButton $active={lang === "python"} onClick={() => setLang("python")}>
-          Python
-        </LangButton>
-        <LangButton $active={lang === "r"} onClick={() => setLang("r")}>
-          R
-        </LangButton>
-        <LangButton $active={lang === "cli"} onClick={() => setLang("cli")}>
-          CLI
-        </LangButton>
-      </LangBar>
+      <TopBar>
+        <LangBar>
+          <LangButton $active={lang === "python"} onClick={() => setLang("python")}>
+            Python
+          </LangButton>
+          <LangButton $active={lang === "r"} onClick={() => setLang("r")}>
+            R
+          </LangButton>
+          <LangButton $active={lang === "cli"} onClick={() => setLang("cli")}>
+            CLI
+          </LangButton>
+        </LangBar>
+
+        {pythonCode && (
+          <NotebookButton onClick={handleOpenNotebook}>
+            Open in Notebook
+          </NotebookButton>
+        )}
+      </TopBar>
 
       <SnippetBlock code={code} language={langMap[lang]} />
     </Container>

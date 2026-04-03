@@ -126,7 +126,7 @@ const SchemaExplorerView: React.FC<SchemaExplorerViewProps> = ({
         </ExplorerContainer>
       );
     }
-    return <MultiTableSchemaView schemas={graphSchemas} />;
+    return <MultiTableSchemaView schemas={graphSchemas} metadata={metadata} />;
   }
 
   // Single schema entity
