@@ -15,6 +15,8 @@ import MetadataNavigationSidebar from "../components/MetadataDisplay/components/
 import AIReadyScoreView from "../components/MetadataDisplay/views/AIReadyScore/AIReadyScoreView";
 import StatisticsViewer from "../components/MetadataDisplay/views/Statistics/StatisticsViewer";
 import InterpretationStatusView from "../components/MetadataDisplay/views/Interpretation/InterpretationStatusView";
+import SchemaExplorerView from "../components/MetadataDisplay/views/SchemaExplorer/SchemaExplorerView";
+import CodeSnippetsView from "../components/MetadataDisplay/views/CodeSnippets/CodeSnippetsView";
 import { AuthContext } from "../context/AuthContext";
 
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
@@ -22,7 +24,7 @@ import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
 import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
 import { useHttp } from "../components/MetadataDisplay/api/httpClient";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation";
+type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema" | "code";
 
 const PageContainer = styled.div`
   display: flex;
@@ -401,6 +403,22 @@ export default function MetadataDisplayPage() {
           <StatisticsViewer
             descriptiveStatistics={bundle.descriptiveStatistics}
             splitStatistics={bundle.splitStatistics}
+          />
+        );
+
+      case "schema":
+        return (
+          <SchemaExplorerView
+            metadata={bundle.rocrate ?? bundle.main}
+            bundleKind={bundle.kind}
+          />
+        );
+
+      case "code":
+        return (
+          <CodeSnippetsView
+            metadata={bundle.rocrate ?? bundle.main}
+            bundleKind={bundle.kind}
           />
         );
 
