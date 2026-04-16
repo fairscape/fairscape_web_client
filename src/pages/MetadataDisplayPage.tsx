@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useContext, useMemo, useState, useEffect, useRef, useCallback } from "react";
 import styled from "styled-components";
 import { useParams, Link } from "react-router-dom";
 
@@ -9,16 +9,22 @@ import ROCrateComponent from "../components/MetadataDisplay/views/ROCrate/ROCrat
 import GenericMetadataComponent from "../components/MetadataDisplay/views/Generic/GenericMetadataComponent";
 import SerializationView from "../components/MetadataDisplay/views/Serialization/SerializationView";
 import EvidenceGraphViewer from "../components/EvidenceGraph/EvidenceGraphViewer";
+import AnnotatedGraphViewer from "../components/AnnotatedGraph/AnnotatedGraphViewer";
+import AnnotatedSummaryCards from "../components/AnnotatedGraph/AnnotatedSummaryCards";
 import MetadataNavigationSidebar from "../components/MetadataDisplay/components/MetadataNavigationSidebar";
 import AIReadyScoreView from "../components/MetadataDisplay/views/AIReadyScore/AIReadyScoreView";
 import StatisticsViewer from "../components/MetadataDisplay/views/Statistics/StatisticsViewer";
+import InterpretationStatusView from "../components/MetadataDisplay/views/Interpretation/InterpretationStatusView";
+import SchemaExplorerView from "../components/MetadataDisplay/views/SchemaExplorer/SchemaExplorerView";
+
+import { AuthContext } from "../context/AuthContext";
 
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
 import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
 import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
 import { useHttp } from "../components/MetadataDisplay/api/httpClient";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics";
+type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema";
 
 const PageContainer = styled.div`
   display: flex;
@@ -171,7 +177,16 @@ export default function MetadataDisplayPage() {
       ? window.location.pathname.split("/view/")[1]
       : "");
 
-  const [view, setView] = useState<ViewType>("metadata");
+  const { isLoggedIn } = useContext(AuthContext);
+
+  const [view, setView] = useState<ViewType>(() => {
+    const saved = sessionStorage.getItem(`fairscape-view-${arkId}`);
+    if (saved) {
+      sessionStorage.removeItem(`fairscape-view-${arkId}`);
+      return saved as ViewType;
+    }
+    return "metadata";
+  });
   const { bundle, loading, error } = useMetadataBundle(arkId);
   const contentRef = useRef<HTMLDivElement>(null);
   const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
@@ -268,6 +283,29 @@ export default function MetadataDisplayPage() {
 
   const isOwner = true;
 
+  const hasAnnotatedEvidenceGraph = !!bundle?.evidence?.isAnnotated;
+
+  const handleInterpret = useCallback(() => {
+    setView("interpretation");
+  }, []);
+
+  const handleViewExistingGraph = useCallback(() => {
+    setView("graph");
+  }, []);
+
+  const handleInterpretSuccess = useCallback(() => {
+    sessionStorage.setItem(`fairscape-view-${arkId}`, "graph");
+    window.location.reload();
+  }, [arkId]);
+
+  const [highlightNodeId, setHighlightNodeId] = useState<string | null>(null);
+
+  const handleHighlightNode = useCallback((nodeId: string) => {
+    setHighlightNodeId(nodeId);
+    // Auto-clear after animation
+    setTimeout(() => setHighlightNodeId(null), 3000);
+  }, []);
+
   function renderContent() {
     if (loading) return <CenteredMessage message="Loading metadata..." />;
     if (error)
@@ -331,6 +369,20 @@ export default function MetadataDisplayPage() {
             />
           );
         }
+
+        // Annotated evidence graph path
+        if (bundle.evidence.isAnnotated && bundle.evidence.annotatedData) {
+          const rawGraphData = { "@graph": bundle.evidence.annotatedData["@graph"] };
+          return (
+            <AnnotatedSummaryCards
+              data={bundle.evidence.annotatedData}
+              graphElement={<AnnotatedGraphViewer graphData={rawGraphData} highlightNodeId={highlightNodeId} />}
+              onHighlightNode={handleHighlightNode}
+            />
+          );
+        }
+
+        // Regular evidence graph path (unchanged)
         return (
           <EvidenceGraphViewer
             evidenceGraphData={bundle.evidence.data ?? null}
@@ -341,6 +393,16 @@ export default function MetadataDisplayPage() {
 
       case "score":
         return <AIReadyScoreView arkId={arkId} />;
+
+      case "interpretation":
+        return (
+          <InterpretationStatusView
+            arkId={arkId}
+            hasExisting={hasAnnotatedEvidenceGraph}
+            onSuccess={handleInterpretSuccess}
+            onViewExisting={handleViewExistingGraph}
+          />
+        );
 
       case "statistics":
         if (!bundle.descriptiveStatistics) {
@@ -355,6 +417,15 @@ export default function MetadataDisplayPage() {
         return (
           <StatisticsViewer
             descriptiveStatistics={bundle.descriptiveStatistics}
+            splitStatistics={bundle.splitStatistics}
+          />
+        );
+
+      case "schema":
+        return (
+          <SchemaExplorerView
+            metadata={bundle.rocrate ?? bundle.main}
+            bundleKind={bundle.kind}
           />
         );
 
@@ -440,6 +511,8 @@ export default function MetadataDisplayPage() {
             hasDistribution={hasDistribution}
             hasContentUrl={hasContentUrl}
             hasStatistics={hasStatistics}
+            isLoggedIn={!!isLoggedIn}
+            onInterpret={handleInterpret}
           />
         )}
       </PageContainer>

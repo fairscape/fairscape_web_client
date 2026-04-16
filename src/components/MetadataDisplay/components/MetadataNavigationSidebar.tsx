@@ -9,12 +9,14 @@ import {
   FiChevronDown,
   FiRefreshCw,
   FiPlusCircle,
+  FiCpu,
+  FiDatabase,
 } from "react-icons/fi";
 import { RiPercentLine } from "react-icons/ri";
 import { useMetadataApi } from "../api/metadataApi";
 import { MdOutlineQueryStats } from "react-icons/md";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics";
+type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema";
 
 interface MetadataNavigationSidebarProps {
   activeView: ViewType;
@@ -28,6 +30,8 @@ interface MetadataNavigationSidebarProps {
   downloadHTML: () => void;
   hasDistribution: boolean;
   hasContentUrl: boolean;
+  isLoggedIn: boolean;
+  onInterpret: () => void;
 }
 
 export default function MetadataNavigationSidebar({
@@ -42,6 +46,8 @@ export default function MetadataNavigationSidebar({
   downloadHTML,
   hasDistribution,
   hasContentUrl,
+  isLoggedIn,
+  onInterpret,
 }: MetadataNavigationSidebarProps) {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -128,6 +134,17 @@ export default function MetadataNavigationSidebar({
               <span>AI-Ready Score</span>
             </ViewButton>
           )}
+
+          {(bundleKind === "rocrate" || bundleKind === "release" || bundleKind === "dataset" || bundleKind === "schema") && (
+            <ViewButton
+              active={activeView === "schema"}
+              onClick={() => onViewChange("schema")}
+            >
+              <FiDatabase />
+              <span>Schema Explorer</span>
+            </ViewButton>
+          )}
+
         </Section>
 
         <Divider />
@@ -228,6 +245,13 @@ export default function MetadataNavigationSidebar({
             <ActionButton onClick={handleRescore}>
               <FiRefreshCw />
               <span>Rescore</span>
+            </ActionButton>
+          )}
+
+          {bundleKind === "rocrate" && isLoggedIn && (
+            <ActionButton onClick={onInterpret}>
+              <FiCpu />
+              <span>Interpret</span>
             </ActionButton>
           )}
 

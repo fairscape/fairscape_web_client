@@ -1,3 +1,27 @@
+export function extractAnnotatedEvidenceGraphId(from: any): string | undefined {
+  if (!from || typeof from !== "object") return undefined;
+
+  const val = from["hasAnnotatedEvidenceGraph"];
+  if (val && typeof val === "object" && typeof val["@id"] === "string") {
+    return val["@id"];
+  }
+
+  const root =
+    (Array.isArray(from?.["@graph"]) &&
+      from["@graph"].find((n: any) => n?.["@id"] === "./")) ||
+    from?.root ||
+    undefined;
+
+  if (root) {
+    const rVal = root["hasAnnotatedEvidenceGraph"];
+    if (rVal && typeof rVal === "object" && typeof rVal["@id"] === "string") {
+      return rVal["@id"];
+    }
+  }
+
+  return undefined;
+}
+
 export function extractEvidenceGraphId(from: any): string | undefined {
   if (!from || typeof from !== "object") return undefined;
 

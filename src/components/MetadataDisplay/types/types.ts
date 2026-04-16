@@ -6,6 +6,8 @@ export interface EvidenceInfo {
   supportData?: any;
   status: EvidenceStatus;
   error?: string;
+  isAnnotated?: boolean;
+  annotatedData?: any;
 }
 
 export interface Serializations {
@@ -39,6 +41,13 @@ export interface ColumnStatistics {
   second_quartile: number | string;
   third_quartile: number | string;
   max: number | string;
+  missing_count?: number;
+  missing_percentage?: number;
+  histogram_bins?: number[];
+  histogram_counts?: number[];
+  unique?: number | string;
+  top?: string | boolean;
+  freq?: number | string;
 }
 
 export interface DescriptiveStatistics {
@@ -64,5 +73,13 @@ export interface MetadataBundle {
   permissions?: Permissions;
   distribution?: Distribution;
   descriptiveStatistics?: DescriptiveStatistics;
+  splitStatistics?: {
+    [splitName: string]: {
+      query?: string;
+      queryType?: string;
+      description?: string;
+      statistics: DescriptiveStatistics;
+    };
+  };
   isPartOf?: IdentifierValue[];
 }

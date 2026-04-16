@@ -3,31 +3,29 @@ import {
   EvidenceNodeData,
   EvidenceNode,
   EvidenceEdge,
-} from "../../../types/graph";
-import { GraphDataService } from "../hooks/GraphDataService";
-import { RawGraphEntity } from "../../../types/graph";
+} from "../../types/graph";
+import { GraphDataService } from "./GraphDataService";
 
 const MAX_LABEL_LENGTH = 50;
 const COLLECTION_THRESHOLD = 5;
-const feUrl = window.location.origin + "/view/";
 
 export function getEntityType(typeUri: string | string[] | undefined): string {
   if (!typeUri) return "Unknown";
 
-  // Handle array of types - check for special types first
   if (Array.isArray(typeUri)) {
-    const hasROCrate = typeUri.some(t =>
-      t.includes("ROCrate") || t.includes("RO-Crate") || t.includes("rocrate")
-    );
-    if (hasROCrate) return "ROCrate";
-    if (typeUri.some((t) => t.includes("DatasetGroup"))) return "DatasetGroup";
+    // Check special types first
+    if (typeUri.some((t) => t.includes("ROCrate"))) return "ROCrate";
+    if (typeUri.some((t) => t.includes("AnnotatedComputation")))
+      return "AnnotatedComputation";
+    if (typeUri.some((t) => t.includes("AnnotatedEvidenceGraph")))
+      return "AnnotatedEvidenceGraph";
+    if (typeUri.some((t) => t.includes("DatasetGroup")))
+      return "DatasetGroup";
 
-    // Otherwise use the last type (most specific)
     const typeString = typeUri[typeUri.length - 1];
     return typeString.split(/[#\/]/).pop() || "Unknown";
   }
 
-  // Handle single type string
   const typeString = typeUri;
   return typeString.split(/[#\/]/).pop() || "Unknown";
 }
@@ -48,19 +46,15 @@ export function formatPropertyValue(value: any, propKey?: string): string {
 
   if (typeof value === "string") {
     if (value.startsWith("ark:")) {
-      const fullUrl = `${feUrl}${value}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${value}</a>`;
+      return `<span style="font-family:monospace;font-size:12px">${value}</span>`;
     }
-
     const urlRegex = /^(https?:\/\/\S+)$/;
     if (urlRegex.test(value)) {
       return `<a href="${value}" target="_blank" rel="noopener noreferrer">${value}</a>`;
     }
-
     if (propKey === "command") {
       return `<pre>${value}</pre>`;
     }
-
     return String(value);
   }
 
@@ -74,7 +68,7 @@ export function formatPropertyValue(value: any, propKey?: string): string {
     }
     try {
       return `<pre>${JSON.stringify(value, null, 2)}</pre>`;
-    } catch (e) {
+    } catch {
       return "[Object]";
     }
   }
@@ -90,19 +84,9 @@ export function getDisplayableProperties(
   entityData: RawGraphEntity | undefined
 ): Record<string, any> {
   const excludeKeys = [
-    "@id",
-    "@type",
-    "generatedBy",
-    "usedDataset",
-    "usedSoftware",
-    "usedSample",
-    "usedInstrument",
-    "usedMLModel",
-    "hasOutputs",
-    "createdBy",
-    "name",
-    "label",
-    "description",
+    "@id", "@type", "generatedBy", "usedDataset", "usedSoftware",
+    "usedSample", "usedInstrument", "usedMLModel", "hasOutputs",
+    "createdBy", "name", "label", "description", "evi:annotatedBy",
   ];
 
   const properties: Record<string, any> = {};
@@ -145,16 +129,11 @@ export function createEvidenceNode(
 
   const isExpandable = allRelated.length > visibleRelatedCount;
 
-  const properties = getDisplayableProperties(entityData);
-
-  // DatasetGroup nodes support progressive expansion of their member datasets
-  if (type === "DatasetGroup") {
-    const memberIds = entityData["evi:memberIds"];
-    if (Array.isArray(memberIds)) {
-      // Filter out summary strings like "... and N more (total: M)"
-      properties._childNodeIds = memberIds.filter((id: any) => typeof id === "string" && id.startsWith("ark:"));
-      properties._visibleChildren = 0;
-    }
+  // Look up annotation if this is a Computation
+  let annotation = undefined;
+  if (type === "Computation") {
+    const ann = dataService.getAnnotationFor(id);
+    if (ann) annotation = ann;
   }
 
   const nodeData: EvidenceNodeData = {
@@ -163,10 +142,11 @@ export function createEvidenceNode(
     label,
     displayName,
     description,
-    expandable: type === "DatasetGroup" ? (properties._childNodeIds?.length > 0) : isExpandable,
+    expandable: isExpandable,
     _sourceData: entityData,
-    properties,
-    _expanded: type === "DatasetGroup" ? false : !isExpandable,
+    properties: getDisplayableProperties(entityData),
+    _expanded: !isExpandable,
+    _annotation: annotation,
   };
 
   return {
@@ -238,70 +218,28 @@ export class GraphBuilder {
     return this.getElements();
   }
 
-  buildPathGraph(path: string[]): GraphElements {
-    for (let i = 0; i < path.length; i++) {
-      const nodeId = path[i];
-      this.addNode(nodeId);
-
-      if (i > 0) {
-        const prevNodeId = path[i - 1];
-        const relationshipType = this.findRelationshipType(prevNodeId, nodeId);
-        if (relationshipType) {
-          const edge = createEdge(prevNodeId, nodeId, relationshipType);
-          this.edges.set(edge.id, edge);
-        }
-      }
-    }
-    return this.getElements();
-  }
-
   expandNode(nodeId: string): GraphElements {
     const nodeToExpand = this.nodes.get(nodeId);
     if (!nodeToExpand) return this.getElements();
 
-    if (nodeToExpand.data.type === "DatasetCollection" || nodeToExpand.data.type === "DatasetGroup") {
+    if (nodeToExpand.data.type === "DatasetCollection") {
       this._expandCollectionByOne(nodeToExpand);
     } else {
       const relationships = this.dataService.getAllRelationships(nodeId);
 
-      this._processRelationship(
-        nodeId,
-        relationships.generatedBy,
-        "generatedBy"
-      );
-      this._processRelationship(
-        nodeId,
-        relationships.usedSoftware,
-        "usedSoftware"
-      );
+      this._processRelationship(nodeId, relationships.generatedBy, "generatedBy");
+      this._processRelationship(nodeId, relationships.usedSoftware, "usedSoftware");
       this._processRelationship(nodeId, relationships.usedSample, "usedSample");
-      this._processRelationship(
-        nodeId,
-        relationships.usedInstrument,
-        "usedInstrument"
-      );
-      this._processRelationship(
-        nodeId,
-        relationships.usedMLModel,
-        "usedMLModel"
-      );
-      this._processRelationship(
-        nodeId,
-        relationships.hasOutputs,
-        "hasOutputs"
-      );
+      this._processRelationship(nodeId, relationships.usedInstrument, "usedInstrument");
+      this._processRelationship(nodeId, relationships.usedMLModel, "usedMLModel");
+      this._processRelationship(nodeId, relationships.hasOutputs, "hasOutputs");
 
       if (relationships.usedDataset.length > COLLECTION_THRESHOLD) {
         this._addDatasetCollection(nodeId, relationships.usedDataset);
       } else {
-        this._processRelationship(
-          nodeId,
-          relationships.usedDataset,
-          "usedDataset"
-        );
+        this._processRelationship(nodeId, relationships.usedDataset, "usedDataset");
       }
 
-      // Handle createdBy - these may be synthetic Person nodes
       this._processCreatedByRelationship(nodeId, relationships.createdBy);
 
       nodeToExpand.data._expanded = true;
@@ -311,8 +249,7 @@ export class GraphBuilder {
   }
 
   private _expandCollectionByOne(collectionNode: EvidenceNode): void {
-    const { _childNodeIds, _visibleChildren = 0 } =
-      collectionNode.data.properties;
+    const { _childNodeIds, _visibleChildren = 0 } = collectionNode.data.properties;
     if (!_childNodeIds || _visibleChildren >= _childNodeIds.length) {
       collectionNode.data.expandable = false;
       return;
@@ -325,37 +262,17 @@ export class GraphBuilder {
 
     const newVisibleCount = _visibleChildren + 1;
     collectionNode.data.properties._visibleChildren = newVisibleCount;
-    const groupLabel = collectionNode.data.type === "DatasetGroup" ? "Grouped Datasets" : "Used Datasets";
-    collectionNode.data.displayName = `${_childNodeIds.length} ${groupLabel} (${newVisibleCount} shown)`;
+    collectionNode.data.displayName = `${_childNodeIds.length} Used Datasets (${newVisibleCount} shown)`;
 
     if (newVisibleCount >= _childNodeIds.length) {
       collectionNode.data.expandable = false;
     }
   }
 
-  private _addDatasetCollection(
-    parentNodeId: string,
-    datasets: RawGraphEntity[]
-  ) {
+  private _addDatasetCollection(parentNodeId: string, datasets: RawGraphEntity[]) {
     const collectionId = `${parentNodeId}-dataset-collection`;
     if (this.nodes.has(collectionId)) return;
 
-    const collectionNode = this._createDatasetCollectionNode(
-      parentNodeId,
-      datasets
-    );
-    this.nodes.set(collectionId, collectionNode);
-    this.visibleNodes.add(collectionId);
-
-    const edge = createEdge(parentNodeId, collectionId, "usedDataset");
-    this.edges.set(edge.id, edge);
-  }
-
-  private _createDatasetCollectionNode(
-    parentNodeId: string,
-    datasets: RawGraphEntity[]
-  ): EvidenceNode {
-    const collectionId = `${parentNodeId}-dataset-collection`;
     const count = datasets.length;
     const childIds = datasets.map((d) => d["@id"]);
 
@@ -367,18 +284,25 @@ export class GraphBuilder {
       expandable: true,
       _sourceData: {},
       properties: {
-        count: count,
+        count,
         _childNodeIds: childIds,
         _parentNodeId: parentNodeId,
         _visibleChildren: 0,
       },
     };
-    return {
+
+    const collectionNode: EvidenceNode = {
       id: collectionId,
       type: "evidenceNode",
       position: { x: 0, y: 0 },
       data: nodeData,
     };
+
+    this.nodes.set(collectionId, collectionNode);
+    this.visibleNodes.add(collectionId);
+
+    const edge = createEdge(parentNodeId, collectionId, "usedDataset");
+    this.edges.set(edge.id, edge);
   }
 
   private addNode(nodeId: string): void {
@@ -386,11 +310,10 @@ export class GraphBuilder {
     const nodeEntity = this.dataService.getNode(nodeId);
     if (!nodeEntity) return;
 
-    const node = createEvidenceNode(
-      nodeEntity,
-      this.visibleNodes,
-      this.dataService
-    );
+    // Skip annotation entities from the graph
+    if (this.dataService.isAnnotation(nodeEntity)) return;
+
+    const node = createEvidenceNode(nodeEntity, this.visibleNodes, this.dataService);
     this.nodes.set(nodeId, node);
     this.visibleNodes.add(nodeId);
   }
@@ -402,6 +325,9 @@ export class GraphBuilder {
     depth?: number
   ) {
     for (const relNode of relatedNodes) {
+      // Skip annotation entities
+      if (this.dataService.isAnnotation(relNode)) continue;
+
       if (depth) {
         this.addNodeAndRelationships(relNode["@id"], depth - 1);
       } else {
@@ -412,27 +338,40 @@ export class GraphBuilder {
     }
   }
 
-  /**
-   * Process createdBy relationships - handles synthetic Person nodes (e.g., emails)
-   * that don't exist in the dataService
-   */
   private _processCreatedByRelationship(
     sourceId: string,
     createdByNodes: RawGraphEntity[]
   ) {
     for (const personEntity of createdByNodes) {
       const personId = personEntity["@id"];
-
-      // Skip if already added
       if (this.visibleNodes.has(personId)) {
         const edge = createEdge(sourceId, personId, "createdBy");
         this.edges.set(edge.id, edge);
         continue;
       }
 
-      // Create node directly from the entity data (works for synthetic Person nodes)
-      const node = this._createNodeFromEntity(personEntity);
-      this.nodes.set(personId, node);
+      const type = getEntityType(personEntity["@type"]);
+      const label = personEntity.name || personEntity["@id"];
+      const displayName = abbreviateName(label);
+
+      const nodeData: EvidenceNodeData = {
+        id: personId,
+        type,
+        label,
+        displayName,
+        description: personEntity.description || "",
+        expandable: false,
+        _sourceData: personEntity,
+        properties: getDisplayableProperties(personEntity),
+        _expanded: true,
+      };
+
+      this.nodes.set(personId, {
+        id: personId,
+        type: "evidenceNode",
+        position: { x: 0, y: 0 },
+        data: nodeData,
+      });
       this.visibleNodes.add(personId);
 
       const edge = createEdge(sourceId, personId, "createdBy");
@@ -440,116 +379,31 @@ export class GraphBuilder {
     }
   }
 
-  /**
-   * Create an EvidenceNode directly from entity data (for synthetic nodes)
-   */
-  private _createNodeFromEntity(entityData: RawGraphEntity): EvidenceNode {
-    const id = entityData["@id"];
-    const type = getEntityType(entityData["@type"]);
-    const label = entityData.name || entityData.email || entityData["@id"];
-    const displayName = abbreviateName(label);
-    const description = entityData.description || "";
-
-    const nodeData: EvidenceNodeData = {
-      id,
-      type,
-      label,
-      displayName,
-      description,
-      expandable: false,
-      _sourceData: entityData,
-      properties: getDisplayableProperties(entityData),
-      _expanded: true,
-    };
-
-    return {
-      id,
-      type: "evidenceNode",
-      position: { x: 0, y: 0 },
-      data: nodeData,
-    };
-  }
-
   private addNodeAndRelationships(nodeId: string, depth: number): void {
     if (depth <= 0 || this.visibleNodes.has(nodeId)) return;
+
+    const nodeEntity = this.dataService.getNode(nodeId);
+    if (nodeEntity && this.dataService.isAnnotation(nodeEntity)) return;
+
     this.addNode(nodeId);
     if (depth <= 1) return;
 
     const relationships = this.dataService.getAllRelationships(nodeId);
 
-    this._processRelationship(
-      nodeId,
-      relationships.generatedBy,
-      "generatedBy",
-      depth
-    );
-    this._processRelationship(
-      nodeId,
-      relationships.usedSoftware,
-      "usedSoftware",
-      depth
-    );
-    this._processRelationship(
-      nodeId,
-      relationships.usedSample,
-      "usedSample",
-      depth
-    );
-    this._processRelationship(
-      nodeId,
-      relationships.usedInstrument,
-      "usedInstrument",
-      depth
-    );
-    this._processRelationship(
-      nodeId,
-      relationships.usedMLModel,
-      "usedMLModel",
-      depth
-    );
-    this._processRelationship(
-      nodeId,
-      relationships.hasOutputs,
-      "hasOutputs",
-      depth
-    );
+    this._processRelationship(nodeId, relationships.generatedBy, "generatedBy", depth);
+    this._processRelationship(nodeId, relationships.usedSoftware, "usedSoftware", depth);
+    this._processRelationship(nodeId, relationships.usedSample, "usedSample", depth);
+    this._processRelationship(nodeId, relationships.usedInstrument, "usedInstrument", depth);
+    this._processRelationship(nodeId, relationships.usedMLModel, "usedMLModel", depth);
+    this._processRelationship(nodeId, relationships.hasOutputs, "hasOutputs", depth);
 
     if (relationships.usedDataset.length > COLLECTION_THRESHOLD) {
       this._addDatasetCollection(nodeId, relationships.usedDataset);
     } else {
-      this._processRelationship(
-        nodeId,
-        relationships.usedDataset,
-        "usedDataset",
-        depth
-      );
+      this._processRelationship(nodeId, relationships.usedDataset, "usedDataset", depth);
     }
 
-    // Handle createdBy relationships (synthetic Person nodes)
     this._processCreatedByRelationship(nodeId, relationships.createdBy);
-  }
-
-  private findRelationshipType(
-    sourceId: string,
-    targetId: string
-  ): string | null {
-    const rels = this.dataService.getAllRelationships(sourceId);
-    if (rels.generatedBy.some((n) => n["@id"] === targetId))
-      return "generatedBy";
-    if (rels.usedDataset.some((n) => n["@id"] === targetId))
-      return "usedDataset";
-    if (rels.usedSoftware.some((n) => n["@id"] === targetId))
-      return "usedSoftware";
-    if (rels.usedSample.some((n) => n["@id"] === targetId)) return "usedSample";
-    if (rels.usedInstrument.some((n) => n["@id"] === targetId))
-      return "usedInstrument";
-    if (rels.usedMLModel.some((n) => n["@id"] === targetId))
-      return "usedMLModel";
-    if (rels.hasOutputs.some((n) => n["@id"] === targetId))
-      return "hasOutputs";
-    if (rels.createdBy.some((n) => n["@id"] === targetId))
-      return "createdBy";
-    return null;
   }
 
   getElements(): GraphElements {

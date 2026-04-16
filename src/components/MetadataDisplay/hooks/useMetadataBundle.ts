@@ -3,7 +3,7 @@ import { AuthContext } from "../../../context/AuthContext";
 import { useMetadataApi } from "../api/metadataApi";
 import { useEvidenceApi } from "../api/evidenceApi";
 import { classify, classifyROCrate } from "../utils/classify";
-import { extractEvidenceGraphId } from "../utils/evidence";
+import { extractEvidenceGraphId, extractAnnotatedEvidenceGraphId } from "../utils/evidence";
 import type { MetadataBundle, EvidenceInfo } from "../types/types";
 import { extractSupportData } from "../../../components/EvidenceGraph/SupportingElementsComponent";
 
@@ -52,6 +52,7 @@ export function useMetadataBundle(ark: string) {
         const permissions = mainResp?.permissions;
         const distribution = mainResp?.distribution;
         const descriptiveStatistics = mainResp?.descriptiveStatistics;
+        const splitStatistics = mainResp?.splitStatistics;
         const isPartOf = mainResp?.isPartOf;
 
         const initialBundle: MetadataBundle = {
@@ -64,6 +65,7 @@ export function useMetadataBundle(ark: string) {
           permissions,
           distribution,
           descriptiveStatistics,
+          splitStatistics,
           isPartOf,
         };
 
@@ -73,12 +75,35 @@ export function useMetadataBundle(ark: string) {
         }
 
         if (kind !== "release") {
+          const annotatedEvId =
+            extractAnnotatedEvidenceGraphId(main) ?? extractAnnotatedEvidenceGraphId(rocrate);
           const evId =
             extractEvidenceGraphId(main) ?? extractEvidenceGraphId(rocrate);
 
           let evidence: EvidenceInfo | undefined;
 
-          if (evId) {
+          // Try annotated evidence graph first (takes priority)
+          if (annotatedEvId) {
+            try {
+              const response = await evidenceApi.getEG(annotatedEvId);
+              const annotatedData = response.metadata ?? response;
+              const graphData = annotatedData["@graph"] ? { "@graph": annotatedData["@graph"] } : annotatedData;
+              const supportData = extractSupportData?.(graphData);
+              evidence = {
+                id: annotatedEvId,
+                data: graphData,
+                supportData,
+                status: "ready",
+                isAnnotated: true,
+                annotatedData,
+              };
+            } catch {
+              // Fall through to regular evidence graph
+            }
+          }
+
+          // Fall back to regular evidence graph
+          if (!evidence && evId) {
             try {
               const response = await evidenceApi.getEG(evId);
               const data = response.metadata ?? response;
