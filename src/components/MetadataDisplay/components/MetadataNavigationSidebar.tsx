@@ -9,7 +9,6 @@ import {
   FiChevronDown,
   FiRefreshCw,
   FiPlusCircle,
-  FiCpu,
   FiDatabase,
 } from "react-icons/fi";
 import { RiPercentLine } from "react-icons/ri";
@@ -30,6 +29,8 @@ interface MetadataNavigationSidebarProps {
   downloadHTML: () => void;
   hasDistribution: boolean;
   hasContentUrl: boolean;
+  hasStatistics?: boolean;
+  hasSchemas: boolean;
   isLoggedIn: boolean;
   onInterpret: () => void;
 }
@@ -46,6 +47,7 @@ export default function MetadataNavigationSidebar({
   downloadHTML,
   hasDistribution,
   hasContentUrl,
+  hasSchemas,
   isLoggedIn,
   onInterpret,
 }: MetadataNavigationSidebarProps) {
@@ -60,7 +62,10 @@ export default function MetadataNavigationSidebar({
   const showAdvancedDownloads =
     bundleKind === "release" || bundleKind === "rocrate";
   const showCreateButton =
-    (bundleKind === "release" || bundleKind === "rocrate") && isOwner;
+    (bundleKind === "release" || bundleKind === "rocrate") && isOwner && isLoggedIn;
+
+  const showSchemaExplorer =
+    (bundleKind === "rocrate" || bundleKind === "release") && hasSchemas;
 
   const showDataDownload =
     (bundleKind === "rocrate" && hasDistribution) ||
@@ -135,7 +140,7 @@ export default function MetadataNavigationSidebar({
             </ViewButton>
           )}
 
-          {(bundleKind === "rocrate" || bundleKind === "release" || bundleKind === "dataset" || bundleKind === "schema") && (
+          {showSchemaExplorer && (
             <ViewButton
               active={activeView === "schema"}
               onClick={() => onViewChange("schema")}
@@ -152,10 +157,12 @@ export default function MetadataNavigationSidebar({
         <Section>
           <SectionTitle>Actions</SectionTitle>
 
-          <ActionButton disabled={!isOwner} onClick={handleEdit}>
-            <FiEdit2 />
-            <span>Edit</span>
-          </ActionButton>
+          {isLoggedIn && (
+            <ActionButton disabled={!isOwner} onClick={handleEdit}>
+              <FiEdit2 />
+              <span>Edit</span>
+            </ActionButton>
+          )}
 
           {showCreateButton && (
             <DownloadSection>
@@ -248,14 +255,9 @@ export default function MetadataNavigationSidebar({
             </ActionButton>
           )}
 
-          {bundleKind === "rocrate" && isLoggedIn && (
-            <ActionButton onClick={onInterpret}>
-              <FiCpu />
-              <span>Interpret</span>
-            </ActionButton>
+          {isLoggedIn && !isOwner && (
+            <OwnerNote>Edit requires owner permissions</OwnerNote>
           )}
-
-          {!isOwner && <OwnerNote>Edit requires owner permissions</OwnerNote>}
         </Section>
       </SidebarContent>
     </SidebarContainer>

@@ -217,6 +217,20 @@ export default function MetadataDisplayPage() {
     [bundle]
   );
 
+  const hasSchemas = useMemo(() => {
+    if (!bundle) return false;
+    if (bundle.kind !== "rocrate" && bundle.kind !== "release") return false;
+    const graph = (bundle.rocrate ?? bundle.main)?.["@graph"];
+    if (!Array.isArray(graph)) return false;
+    return graph.some((entry: any) => {
+      const type = entry?.["@type"];
+      if (typeof type === "string") return type === "EVI:Schema";
+      if (Array.isArray(type))
+        return type.some((t: string) => typeof t === "string" && t.includes("Schema"));
+      return false;
+    });
+  }, [bundle]);
+
   useEffect(() => {
     document.title = `${title} - FAIRSCAPE`;
   }, [title]);
@@ -511,6 +525,7 @@ export default function MetadataDisplayPage() {
             hasDistribution={hasDistribution}
             hasContentUrl={hasContentUrl}
             hasStatistics={hasStatistics}
+            hasSchemas={hasSchemas}
             isLoggedIn={!!isLoggedIn}
             onInterpret={handleInterpret}
           />
