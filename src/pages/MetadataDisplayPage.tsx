@@ -16,7 +16,7 @@ import AIReadyScoreView from "../components/MetadataDisplay/views/AIReadyScore/A
 import StatisticsViewer from "../components/MetadataDisplay/views/Statistics/StatisticsViewer";
 import InterpretationStatusView from "../components/MetadataDisplay/views/Interpretation/InterpretationStatusView";
 import SchemaExplorerView from "../components/MetadataDisplay/views/SchemaExplorer/SchemaExplorerView";
-import CodeSnippetsView from "../components/MetadataDisplay/views/CodeSnippets/CodeSnippetsView";
+
 import { AuthContext } from "../context/AuthContext";
 
 import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetadataBundle";
@@ -24,7 +24,7 @@ import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
 import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
 import { useHttp } from "../components/MetadataDisplay/api/httpClient";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema" | "code";
+type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema";
 
 const PageContainer = styled.div`
   display: flex;
@@ -409,14 +409,6 @@ export default function MetadataDisplayPage() {
       case "schema":
         return (
           <SchemaExplorerView
-            metadata={bundle.rocrate ?? bundle.main}
-            bundleKind={bundle.kind}
-          />
-        );
-
-      case "code":
-        return (
-          <CodeSnippetsView
             metadata={bundle.rocrate ?? bundle.main}
             bundleKind={bundle.kind}
           />

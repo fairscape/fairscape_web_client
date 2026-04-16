@@ -19,7 +19,7 @@ const getNodeColor = (type: string): string => {
     case "ROCrate":
       return "#64C2A6";
     case "Computation":
-      return "#FD9A9A";
+      return "#7EB6E6";
     case "Software":
     case "Instrument":
       return "#FFC107";
@@ -53,16 +53,16 @@ function getStatusColor(status?: ComputationReviewStatus | string): string {
 }
 
 const StatusCircle = styled.span<{ $color: string }>`
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: ${(p) => p.$color};
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  border: 2.5px solid rgba(255, 255, 255, 0.95);
   position: absolute;
-  top: 3px;
-  left: 3px;
+  top: 2px;
+  left: 2px;
   z-index: 5;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 2px ${(p) => p.$color}44, 0 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
 // ---------------------------------------------------------------------------

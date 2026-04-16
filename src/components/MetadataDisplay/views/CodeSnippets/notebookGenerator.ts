@@ -72,7 +72,7 @@ export function generateSchemaNotebook(
       "This notebook loads the datasets and inspects their schemas, column types, and join keys.",
       "Run all cells to get started.",
     ]),
-    makeCodeCell("%pip install pyarrow pandas"),
+    makeCodeCell("%pip install fairscape-models"),
     makeCodeCell(pythonCode),
     makeMarkdownCell(["## Inspect Column Types"]),
     makeCodeCell(
@@ -97,42 +97,157 @@ export function generateSchemaNotebook(
 
 /**
  * Generate a code-focused notebook from whatever Python snippet is displayed.
+ * When metadata is included, adds a cell to load ro-crate-metadata.json.
  */
 export function generateCodeNotebook(
   title: string,
-  pythonCode: string
+  pythonCode: string,
+  includeMetadata?: boolean
 ): NotebookJSON {
-  return buildNotebook([
+  const cells: NotebookCell[] = [
     makeMarkdownCell([
       `# ${title}`,
       "",
       "Auto-generated notebook from FAIRSCAPE. Run all cells to load and explore the data.",
     ]),
-    makeCodeCell("%pip install pyarrow pandas"),
+    makeCodeCell("%pip install fairscape-models"),
     makeCodeCell(pythonCode),
+  ];
+
+  if (includeMetadata) {
+    cells.push(
+      makeMarkdownCell([
+        "## RO-Crate Metadata",
+        "",
+        "The `ro-crate-metadata.json` file is available in the file browser. "
+        + "Run the cell below to load it.",
+      ]),
+      makeCodeCell(
+        "import json\n\n"
+        + 'with open("ro-crate-metadata.json") as f:\n'
+        + "    rocrate_metadata = json.load(f)\n\n"
+        + 'print(f"RO-Crate: {rocrate_metadata.get(\'name\', \'Unknown\')}")\n'
+        + 'print(f"Entities in @graph: {len(rocrate_metadata.get(\'@graph\', []))}")\n'
+        + "for entry in rocrate_metadata.get('@graph', []):\n"
+        + "    print(f\"  - {entry.get('@type', '?'):30s} {entry.get('name', entry.get('@id', ''))}\")"
+      ),
+    );
+  }
+
+  cells.push(
     makeMarkdownCell(["## Explore"]),
     makeCodeCell(""),
-  ]);
+  );
+
+  return buildNotebook(cells);
+}
+
+/**
+ * Write a file directly into JupyterLite's IndexedDB virtual filesystem.
+ * This bypasses localStorage (which has a ~5 MB quota) and writes straight
+ * to the same localforage-backed store that JupyterLite uses.
+ */
+function writeToJupyterLiteFS(
+  dbName: string,
+  fname: string,
+  content: string,
+  mimetype: string
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(dbName);
+
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains("files")) {
+        db.createObjectStore("files");
+      }
+    };
+
+    req.onerror = () => reject(req.error);
+
+    req.onsuccess = () => {
+      const db = req.result;
+
+      // If the "files" store doesn't exist yet, we need to create it
+      // by reopening with a version bump.
+      if (!db.objectStoreNames.contains("files")) {
+        const newVersion = db.version + 1;
+        db.close();
+        const upgrade = indexedDB.open(dbName, newVersion);
+        upgrade.onupgradeneeded = () => {
+          upgrade.result.createObjectStore("files");
+        };
+        upgrade.onerror = () => reject(upgrade.error);
+        upgrade.onsuccess = () => {
+          putFile(upgrade.result);
+        };
+        return;
+      }
+
+      putFile(db);
+    };
+
+    function putFile(db: IDBDatabase) {
+      const now = new Date().toISOString();
+      const model = {
+        name: fname,
+        path: fname,
+        format: "text",
+        created: now,
+        last_modified: now,
+        content,
+        mimetype,
+        size: content.length,
+        writable: true,
+        type: "file",
+      };
+
+      const tx = db.transaction("files", "readwrite");
+      const store = tx.objectStore("files");
+      const put = store.put(model, fname);
+      put.onsuccess = () => { db.close(); resolve(); };
+      put.onerror = () => { db.close(); reject(put.error); };
+    }
+  });
 }
 
 /**
  * Write notebook to localStorage and open JupyterLite in a new tab.
- * The bridge script in JupyterLite's index.html reads from localStorage
- * and injects the notebook into the virtual filesystem.
+ * Large extra files (ro-crate-metadata.json) are written directly to
+ * JupyterLite's IndexedDB to avoid the localStorage quota limit.
  */
-export function openInJupyterLite(notebook: NotebookJSON, filename?: string): void {
+export async function openInJupyterLite(
+  notebook: NotebookJSON,
+  filename?: string,
+  metadata?: any
+): Promise<void> {
   const fname = filename || "explore.ipynb";
 
+  // The notebook itself is small — localStorage is fine for it.
   localStorage.setItem(
     "fairscape:notebook",
-    JSON.stringify({
-      filename: fname,
-      content: notebook,
-    })
+    JSON.stringify({ filename: fname, content: notebook })
   );
 
-  // Open JupyterLite lab in a new tab
-  // The base URL depends on where the app is hosted. In dev it's at /jupyterlite/lab/
-  const baseUrl = `${window.location.origin}/jupyterlite/lab/index.html`;
+  // Write large files directly to JupyterLite's IndexedDB.
+  // DB name matches the convention in bridge.html.
+  if (metadata) {
+    const basePath = "/jupyterlite/";
+    const dbName = `JupyterLite Storage - ${basePath}`;
+    try {
+      await writeToJupyterLiteFS(
+        dbName,
+        "ro-crate-metadata.json",
+        JSON.stringify(metadata, null, 2),
+        "application/json"
+      );
+    } catch (err) {
+      console.warn("[openInJupyterLite] Failed to write metadata to IndexedDB:", err);
+    }
+  }
+
+  // Open via the bridge page, which injects the notebook into JupyterLite's
+  // IndexedDB filesystem before redirecting to the lab UI.
+  const baseUrl = `${window.location.origin}/jupyterlite/bridge.html`;
   window.open(baseUrl, "_blank");
 }

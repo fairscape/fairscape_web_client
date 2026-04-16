@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b || true && vite build",
-    "build:jupyterlite": "pip install jupyterlite-core jupyterlite-pyodide-kernel && jupyter lite build --output-dir public/jupyterlite",
+    "build:jupyterlite": "pip install jupyterlite-core jupyterlite-pyodide-kernel && pip install ../fairscape-labextension && rm -rf public/jupyterlite .jupyterlite.doit.db && jupyter lite build --force --output-dir public/jupyterlite && cp src/jupyterlite/bridge.html public/jupyterlite/bridge.html",
     "lint": "eslint .",
     "preview": "vite preview"
   },

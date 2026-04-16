@@ -299,7 +299,69 @@ const TreeContainer = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 24px 24px 32px;
+  position: relative;
+  display: flex;
 `;
+
+const FlowArrow = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 36px;
+  flex-shrink: 0;
+  padding: 4px 0 8px;
+  user-select: none;
+`;
+
+const FlowArrowLabel = styled.span`
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #aaa;
+  text-align: center;
+  line-height: 1.2;
+`;
+
+const PyramidColumn = styled.div`
+  flex: 1;
+  min-width: 0;
+  position: relative;
+`;
+
+const FloatingLegend = styled.div`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: #555;
+  user-select: none;
+`;
+
+const LegendItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const LegendDot = styled.span<{ $fill: string; $border: string }>`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: ${(p) => p.$fill};
+  border: 1.5px solid ${(p) => p.$border};
+  flex-shrink: 0;
+`;
+
 
 const DepthRowWrapper = styled.div<{ $depth: number; $maxDepth: number }>`
   width: ${(p) => Math.min(100, 40 + (p.$depth / Math.max(p.$maxDepth, 1)) * 60)}%;
@@ -767,22 +829,50 @@ const AssumptionChainModal: React.FC<AssumptionChainModalProps> = ({
 
         {hasChain ? (
           <TreeContainer>
-            {rows.map((row, ri) => (
-              <DepthRowWrapper key={`row-${row.depth}-${ri}`} $depth={row.depth} $maxDepth={maxDepth}>
-                {row.siblings.map((node, ni) => {
-                  const cardId = `${row.depth}-${ni}`;
-                  return (
-                    <LevelNodeCard
-                      key={cardId}
-                      node={node}
-                      selected={selectedId === cardId}
-                      onToggle={() => handleToggle(cardId)}
-                      activeSeverities={activeSeverities}
-                    />
-                  );
-                })}
-              </DepthRowWrapper>
-            ))}
+            <FloatingLegend>
+              <LegendItem>
+                <LegendDot $fill={DOT_COLORS.clear.fill} $border={DOT_COLORS.clear.border} />
+                <span>Low priority</span>
+              </LegendItem>
+              <LegendItem>
+                <LegendDot $fill={DOT_COLORS.error_detected.fill} $border={DOT_COLORS.error_detected.border} />
+                <span>Error</span>
+              </LegendItem>
+              <LegendItem>
+                <LegendDot $fill={DOT_COLORS.review_recommended.fill} $border={DOT_COLORS.review_recommended.border} />
+                <span>Verify</span>
+              </LegendItem>
+            </FloatingLegend>
+            <FlowArrow>
+              <FlowArrowLabel>Outputs</FlowArrowLabel>
+              <svg width="12" style={{ flex: 1, minHeight: 40 }} preserveAspectRatio="none">
+                <defs>
+                  <marker id="arrowUp" viewBox="0 0 10 10" refX="5" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M0,10 L5,0 L10,10" fill="#bbb" />
+                  </marker>
+                </defs>
+                <line x1="6" y1="100%" x2="6" y2="0" stroke="#bbb" strokeWidth="1.5" markerEnd="url(#arrowUp)" />
+              </svg>
+              <FlowArrowLabel>Inputs</FlowArrowLabel>
+            </FlowArrow>
+            <PyramidColumn>
+              {rows.map((row, ri) => (
+                <DepthRowWrapper key={`row-${row.depth}-${ri}`} $depth={row.depth} $maxDepth={maxDepth}>
+                  {row.siblings.map((node, ni) => {
+                    const cardId = `${row.depth}-${ni}`;
+                    return (
+                      <LevelNodeCard
+                        key={cardId}
+                        node={node}
+                        selected={selectedId === cardId}
+                        onToggle={() => handleToggle(cardId)}
+                        activeSeverities={activeSeverities}
+                      />
+                    );
+                  })}
+                </DepthRowWrapper>
+              ))}
+            </PyramidColumn>
           </TreeContainer>
         ) : (
           <EmptyMessage>

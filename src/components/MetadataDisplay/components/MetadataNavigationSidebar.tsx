@@ -11,13 +11,12 @@ import {
   FiPlusCircle,
   FiCpu,
   FiDatabase,
-  FiTerminal,
 } from "react-icons/fi";
 import { RiPercentLine } from "react-icons/ri";
 import { useMetadataApi } from "../api/metadataApi";
 import { MdOutlineQueryStats } from "react-icons/md";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema" | "code";
+type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema";
 
 interface MetadataNavigationSidebarProps {
   activeView: ViewType;
@@ -146,15 +145,6 @@ export default function MetadataNavigationSidebar({
             </ViewButton>
           )}
 
-          {(bundleKind === "rocrate" || bundleKind === "release" || bundleKind === "dataset") && (
-            <ViewButton
-              active={activeView === "code"}
-              onClick={() => onViewChange("code")}
-            >
-              <FiTerminal />
-              <span>Code Snippets</span>
-            </ViewButton>
-          )}
         </Section>
 
         <Divider />

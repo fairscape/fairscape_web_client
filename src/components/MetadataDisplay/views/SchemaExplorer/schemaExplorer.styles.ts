@@ -175,11 +175,16 @@ export const TypeBadge = styled.span<{ $type?: string }>`
   }};
 `;
 
-export const ExpandableRow = styled.tr<{ $expanded?: boolean }>`
+export const ExpandableRow = styled.tr<{ $expanded?: boolean; $isJoinKey?: boolean }>`
   cursor: pointer;
 
+  ${({ $isJoinKey }) => $isJoinKey && `
+    border-left: 3px solid #94d2bd;
+    background-color: rgba(148, 210, 189, 0.06);
+  `}
+
   &:hover {
-    background-color: #f8f9fa;
+    background-color: ${({ $isJoinKey }) => $isJoinKey ? 'rgba(148, 210, 189, 0.12)' : '#f8f9fa'};
   }
 
   ${({ $expanded }) => $expanded && `
@@ -231,9 +236,23 @@ export const ColumnCount = styled.span`
   margin-left: 8px;
 `;
 
+export const JoinBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e8f4f8;
+  color: #005f73;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  margin-left: 8px;
+  white-space: nowrap;
+`;
+
 export const DiagramContainer = styled.div`
   width: 100%;
-  height: 500px;
+  height: 600px;
   border: 1px solid #dee2e6;
   border-radius: 8px;
   overflow: hidden;
@@ -244,4 +263,50 @@ export const EmptyState = styled.div`
   padding: 40px 20px;
   color: #6c757d;
   font-size: 0.95rem;
+`;
+
+/* ---- ReactFlow table node styles ---- */
+
+export const TableNodeContainer = styled.div`
+  background: white;
+  border: 2px solid #343a40;
+  border-radius: 6px;
+  overflow: hidden;
+  min-width: 240px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-size: 0.8rem;
+`;
+
+export const TableNodeHeader = styled.div`
+  background: #005f73;
+  color: white;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: center;
+`;
+
+export const TableNodeBody = styled.div`
+  padding: 4px 0;
+`;
+
+export const TableNodeColumnRow = styled.div<{ $isJoinKey?: boolean }>`
+  padding: 3px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: ${({ $isJoinKey }) => $isJoinKey ? '#005f73' : '#495057'};
+  font-weight: ${({ $isJoinKey }) => $isJoinKey ? '600' : '400'};
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child { border-bottom: none; }
+`;
+
+export const TableNodeMoreRow = styled.div`
+  padding: 3px 12px;
+  font-size: 0.72rem;
+  color: #adb5bd;
+  font-style: italic;
+  border-top: 1px solid #f0f0f0;
 `;

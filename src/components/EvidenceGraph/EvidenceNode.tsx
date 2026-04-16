@@ -28,6 +28,7 @@ const getNodeColor = (type: string): string => {
     case "Annotation":
       return "#FFA07A";
     case "DatasetCollection":
+    case "DatasetGroup":
       return "#B5DEFF";
     case "Person":
       return "#87CEEB"; 
@@ -274,6 +275,14 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
                 <span className="prop-value">{data.properties.count}</span>
               </div>
             )}
+          {/* Special display for DatasetGroup member count */}
+          {data.type === "DatasetGroup" &&
+            data.properties?.["evi:memberCount"] !== undefined && (
+              <div className="prop-item">
+                <span className="prop-key">Members:</span>
+                <span className="prop-value">{data.properties["evi:memberCount"]}</span>
+              </div>
+            )}
         </div>
         {/* Display other properties if any exist */}
         {Object.entries(allProps).length > 0 && (
@@ -295,7 +304,7 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
         {data.expandable && (
           <em className="expand-hint">
             (Click node center to expand{" "}
-            {data.type === "DatasetCollection" ? "next item" : "details"})
+            {data.type === "DatasetCollection" || data.type === "DatasetGroup" ? "next item" : "details"})
             <br />
             (Shift+Click to select for path)
           </em>

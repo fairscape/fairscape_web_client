@@ -13,6 +13,7 @@ import {
   SearchInput,
   SchemaDescription,
   ColumnCount,
+  JoinBadge,
 } from "./schemaExplorer.styles";
 import { SectionHeader } from "../../shared.styles";
 
@@ -33,6 +34,7 @@ interface ColumnDetailPanelProps {
   description?: string;
   properties: Record<string, Property>;
   required?: string[];
+  joinColumns?: Map<string, string[]>; // column name -> other schema names sharing it
 }
 
 type SortField = "name" | "type";
@@ -43,6 +45,7 @@ const ColumnDetailPanel: React.FC<ColumnDetailPanelProps> = ({
   description,
   properties,
   required = [],
+  joinColumns,
 }) => {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
@@ -115,16 +118,25 @@ const ColumnDetailPanel: React.FC<ColumnDetailPanelProps> = ({
           </tr>
         </thead>
         <tbody>
-          {entries.map(([name, prop]) => (
+          {entries.map(([name, prop]) => {
+            const joinSchemas = joinColumns?.get(name);
+            const isJoinKey = !!joinSchemas && joinSchemas.length > 0;
+            return (
             <React.Fragment key={name}>
               <ExpandableRow
                 $expanded={expandedCol === name}
+                $isJoinKey={isJoinKey}
                 onClick={() =>
                   setExpandedCol(expandedCol === name ? null : name)
                 }
               >
                 <td>
                   <strong>{name}</strong>
+                  {isJoinKey && (
+                    <JoinBadge title={`Shared with: ${joinSchemas.join(', ')}`}>
+                      &#x1F517; {joinSchemas.length} {joinSchemas.length === 1 ? 'link' : 'links'}
+                    </JoinBadge>
+                  )}
                 </td>
                 <td>
                   <TypeBadge $type={prop.type}>{prop.type || "N/A"}</TypeBadge>
@@ -141,6 +153,12 @@ const ColumnDetailPanel: React.FC<ColumnDetailPanelProps> = ({
                 <DetailRow>
                   <td colSpan={4}>
                     <DetailPanel>
+                      {isJoinKey && (
+                        <DetailItem>
+                          <DetailItemLabel>Shared With</DetailItemLabel>
+                          <DetailItemValue>{joinSchemas.join(', ')}</DetailItemValue>
+                        </DetailItem>
+                      )}
                       {prop.index !== undefined && (
                         <DetailItem>
                           <DetailItemLabel>Column Index</DetailItemLabel>
@@ -194,7 +212,8 @@ const ColumnDetailPanel: React.FC<ColumnDetailPanelProps> = ({
                 </DetailRow>
               )}
             </React.Fragment>
-          ))}
+          );
+          })}
         </tbody>
       </ColumnTable>
 

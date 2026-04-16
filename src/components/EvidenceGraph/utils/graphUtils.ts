@@ -14,12 +14,13 @@ const feUrl = window.location.origin + "/view/";
 export function getEntityType(typeUri: string | string[] | undefined): string {
   if (!typeUri) return "Unknown";
 
-  // Handle array of types - check for ROCrate first
+  // Handle array of types - check for special types first
   if (Array.isArray(typeUri)) {
     const hasROCrate = typeUri.some(t =>
       t.includes("ROCrate") || t.includes("RO-Crate") || t.includes("rocrate")
     );
     if (hasROCrate) return "ROCrate";
+    if (typeUri.some((t) => t.includes("DatasetGroup"))) return "DatasetGroup";
 
     // Otherwise use the last type (most specific)
     const typeString = typeUri[typeUri.length - 1];
@@ -144,16 +145,28 @@ export function createEvidenceNode(
 
   const isExpandable = allRelated.length > visibleRelatedCount;
 
+  const properties = getDisplayableProperties(entityData);
+
+  // DatasetGroup nodes support progressive expansion of their member datasets
+  if (type === "DatasetGroup") {
+    const memberIds = entityData["evi:memberIds"];
+    if (Array.isArray(memberIds)) {
+      // Filter out summary strings like "... and N more (total: M)"
+      properties._childNodeIds = memberIds.filter((id: any) => typeof id === "string" && id.startsWith("ark:"));
+      properties._visibleChildren = 0;
+    }
+  }
+
   const nodeData: EvidenceNodeData = {
     id,
     type,
     label,
     displayName,
     description,
-    expandable: isExpandable,
+    expandable: type === "DatasetGroup" ? (properties._childNodeIds?.length > 0) : isExpandable,
     _sourceData: entityData,
-    properties: getDisplayableProperties(entityData),
-    _expanded: !isExpandable,
+    properties,
+    _expanded: type === "DatasetGroup" ? false : !isExpandable,
   };
 
   return {
@@ -246,7 +259,7 @@ export class GraphBuilder {
     const nodeToExpand = this.nodes.get(nodeId);
     if (!nodeToExpand) return this.getElements();
 
-    if (nodeToExpand.data.type === "DatasetCollection") {
+    if (nodeToExpand.data.type === "DatasetCollection" || nodeToExpand.data.type === "DatasetGroup") {
       this._expandCollectionByOne(nodeToExpand);
     } else {
       const relationships = this.dataService.getAllRelationships(nodeId);
@@ -312,7 +325,8 @@ export class GraphBuilder {
 
     const newVisibleCount = _visibleChildren + 1;
     collectionNode.data.properties._visibleChildren = newVisibleCount;
-    collectionNode.data.displayName = `${_childNodeIds.length} Used Datasets (${newVisibleCount} shown)`;
+    const groupLabel = collectionNode.data.type === "DatasetGroup" ? "Grouped Datasets" : "Used Datasets";
+    collectionNode.data.displayName = `${_childNodeIds.length} ${groupLabel} (${newVisibleCount} shown)`;
 
     if (newVisibleCount >= _childNodeIds.length) {
       collectionNode.data.expandable = false;

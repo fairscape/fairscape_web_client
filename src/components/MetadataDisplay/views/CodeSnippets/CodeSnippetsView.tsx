@@ -246,8 +246,9 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
   const handleOpenNotebook = () => {
     if (!pythonCode) return;
     const title = metadata?.name || "FAIRSCAPE Dataset";
-    const notebook = generateCodeNotebook(title, pythonCode);
-    openInJupyterLite(notebook);
+    const hasMetadata = isMulti && metadata?.["@graph"];
+    const notebook = generateCodeNotebook(title, pythonCode, !!hasMetadata);
+    openInJupyterLite(notebook, undefined, hasMetadata ? metadata : undefined);
   };
 
   const langMap: Record<Lang, string> = {
