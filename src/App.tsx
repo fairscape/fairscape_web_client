@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 import { AuthProvider } from "./context/AuthContext";
 import Layout from "./components/Layout/Layout";
@@ -37,6 +37,15 @@ function CatchAllOrRedirect() {
   );
 }
 
+function ViewRouteHandler() {
+  const { pathname, search, hash } = useLocation();
+  if (pathname.startsWith("/view/ark:") && pathname.endsWith("/")) {
+    const stripped = pathname.replace(/\/+$/, "");
+    return <Navigate to={`${stripped}${search}${hash}`} replace />;
+  }
+  return <MetadataDisplayPage />;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -52,7 +61,7 @@ function App() {
               <Route path="/search" element={<BasicSearchPage />} />
               <Route path="/search/basic" element={<BasicSearchPage />} />
               <Route path="/compare" element={<CompareSearchPage />} />
-              <Route path="/view/*" element={<MetadataDisplayPage />} />
+              <Route path="/view/*" element={<ViewRouteHandler />} />
               <Route path="/edit/*" element={<EditIdentifierPage />} />
               <Route path="/create/:entityType" element={<CreateEntityPage />} />
               <Route path="/evidence/*" element={<EvidenceGraphPage />} />

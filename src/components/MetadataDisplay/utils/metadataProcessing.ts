@@ -77,6 +77,17 @@ const resolveLink = (value: any, graph: RawGraphEntity[]): string => {
   return String(value);
 };
 
+export interface AuthorEntry {
+  name: string;
+  id?: string;
+}
+
+export interface DefinedTermEntry {
+  name: string;
+  id: string;
+  termCode?: string;
+}
+
 export interface OverviewData {
   title: string;
   version?: string;
@@ -85,7 +96,8 @@ export interface OverviewData {
   release_date?: string;
   content_size?: string;
   description?: string;
-  authors?: string;
+  authors?: AuthorEntry[];
+  about?: DefinedTermEntry[];
   publisher?: string;
   principal_investigator?: string;
   contact_email?: string;
@@ -111,28 +123,53 @@ export const processOverview = (metadata: Metadata): OverviewData => {
 
   if (!root) return {} as OverviewData;
 
-  let authors = "";
+  const authorList: AuthorEntry[] = [];
   if (root.author) {
-    if (Array.isArray(root.author)) {
-      authors = root.author
-        .map((a) =>
-          typeof a === "object" && a !== null && a.name ? a.name : String(a)
-        )
-        .join("; ");
-    } else if (
-      typeof root.author === "object" &&
-      root.author !== null &&
-      (root.author as any).name
-    ) {
-      authors = (root.author as any).name;
-    } else {
-      authors = String(root.author);
+    const rawAuthors = Array.isArray(root.author) ? root.author : [root.author];
+    for (const a of rawAuthors) {
+      if (typeof a === "object" && a !== null) {
+        if (a.name) {
+          authorList.push({ name: a.name, id: a["@id"] || undefined });
+        } else if (a["@id"]) {
+          const personEntity = graph.find((e) => e["@id"] === a["@id"]);
+          if (personEntity?.name) {
+            authorList.push({ name: personEntity.name, id: a["@id"] });
+          } else {
+            authorList.push({ name: a["@id"], id: a["@id"] });
+          }
+        }
+      } else {
+        authorList.push({ name: String(a) });
+      }
     }
   } else if (root.creator) {
-    if (Array.isArray(root.creator)) {
-      authors = root.creator.map((c) => resolveLink(c, graph)).join(", ");
-    } else {
-      authors = resolveLink(root.creator, graph);
+    const rawCreators = Array.isArray(root.creator)
+      ? root.creator
+      : [root.creator];
+    for (const c of rawCreators) {
+      authorList.push({
+        name: resolveLink(c, graph),
+        id: typeof c === "object" && c !== null ? c["@id"] : undefined,
+      });
+    }
+  }
+
+  const aboutList: DefinedTermEntry[] = [];
+  if (root.about) {
+    const rawAbout = Array.isArray(root.about) ? root.about : [root.about];
+    for (const a of rawAbout) {
+      if (typeof a === "object" && a !== null && a["@id"]) {
+        const termEntity = graph.find((e) => e["@id"] === a["@id"]);
+        if (termEntity?.name) {
+          aboutList.push({
+            name: termEntity.name,
+            id: a["@id"],
+            termCode: termEntity.termCode,
+          });
+        } else {
+          aboutList.push({ name: a["@id"], id: a["@id"] });
+        }
+      }
     }
   }
 
@@ -258,7 +295,8 @@ export const processOverview = (metadata: Metadata): OverviewData => {
       root.datePublished || root.dateCreated || root.dateModified || undefined,
     content_size: root.contentSize || undefined,
     description: root.description || root.abstract || undefined,
-    authors: authors || undefined,
+    authors: authorList.length > 0 ? authorList : undefined,
+    about: aboutList.length > 0 ? aboutList : undefined,
     publisher: publisher || undefined,
     principal_investigator:
       root.principalInvestigator || (root.PI as any)?.name || undefined,

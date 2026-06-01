@@ -171,11 +171,12 @@ const getImageUrlFromBundle = (bundle: any, metadata: any): string | null => {
 
 export default function MetadataDisplayPage() {
   const params = useParams<{ arkId?: string }>();
-  const arkId =
+  const rawArkId =
     params?.arkId ??
     (window.location.pathname.includes("/view/")
       ? window.location.pathname.split("/view/")[1]
       : "");
+  const arkId = rawArkId.replace(/\/+$/, "");
 
   const { isLoggedIn } = useContext(AuthContext);
 

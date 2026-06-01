@@ -200,6 +200,45 @@ const ConfigurableMetadataTable: React.FC<ConfigurableMetadataTableProps> = ({
       if (value.toLowerCase() === "false") return "No";
     }
 
+    // AuthorEntry: { name, id? }
+    if (
+      key === "authors" &&
+      typeof value === "object" &&
+      value !== null &&
+      "name" in value &&
+      !Array.isArray(value)
+    ) {
+      const author = value as { name: string; id?: string };
+      if (author.id) {
+        const href = author.id.startsWith("ark:")
+          ? `${feUrl}${author.id}`
+          : author.id;
+        return (
+          <a href={href} target="_blank" rel="noopener noreferrer">
+            {author.name}
+          </a>
+        );
+      }
+      return author.name;
+    }
+
+    // DefinedTermEntry: { name, id, termCode? }
+    if (
+      key === "about" &&
+      typeof value === "object" &&
+      value !== null &&
+      "name" in value &&
+      "id" in value &&
+      !Array.isArray(value)
+    ) {
+      const term = value as { name: string; id: string };
+      return (
+        <a href={term.id} target="_blank" rel="noopener noreferrer">
+          {term.name}
+        </a>
+      );
+    }
+
     if (Array.isArray(value)) {
       if (propDefinition.key === "keywords") {
         const validKeywords = value.map(String).filter((k) => k.trim() !== "");

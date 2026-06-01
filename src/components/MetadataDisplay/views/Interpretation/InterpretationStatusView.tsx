@@ -39,14 +39,20 @@ export default function InterpretationStatusView({
     hasExisting ? "prompt" : "triggering"
   );
   const intervalRef = useRef<number | null>(null);
+  // Prevent StrictMode double-mount from creating a second task + interval.
+  const triggeredArkRef = useRef<string | null>(null);
 
   // Auto-trigger if no existing interpretation
   useEffect(() => {
-    if (!hasExisting) {
+    if (!hasExisting && triggeredArkRef.current !== arkId) {
+      triggeredArkRef.current = arkId;
       triggerRun(true);
     }
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, [arkId]);
 
@@ -64,7 +70,13 @@ export default function InterpretationStatusView({
   }
 
   function startPolling(taskId: string) {
-    // Poll immediately, then on interval
+    // Always clear any prior interval — otherwise re-runs and StrictMode
+    // double-mounts leave old intervals polling stale task_ids, which makes
+    // the UI flicker between different tasks' states.
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     poll(taskId);
     intervalRef.current = window.setInterval(() => poll(taskId), POLL_INTERVAL);
   }

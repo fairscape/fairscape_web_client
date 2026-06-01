@@ -44,6 +44,7 @@ const releaseMainProperties: MetadataProperty[] = [
   { key: "copyright", name: "Copyright" },
   { key: "content_size", name: "Content Size" },
   { key: "keywords", name: "Keywords" },
+  { key: "about", name: "Topics" },
   { key: "citation", name: "Citation" },
   { key: "funding", name: "Funding" },
   { key: "related_publications", name: "Related Publications" },

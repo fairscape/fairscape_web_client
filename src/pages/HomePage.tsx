@@ -304,6 +304,20 @@ const HomePage: React.FC = () => {
             validation component for the datasets, and a REST API to perform
             various operations on the server-side.
           </p>
+          <p>
+            Every release produced by FAIRSCAPE is an RO-Crate that conforms to
+            the{" "}
+            <a
+              href="https://w3id.org/fairscape/profile/0.1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="external-link"
+            >
+              Fairscape Release RO-Crate Profile v0.1
+            </a>
+            , a versioned specification built on RO-Crate 1.2, the EVI
+            ontology, PROV-O, Schema.org, and Croissant 1.0.
+          </p>
         </OverviewSection>
 
         <FeaturesSection>

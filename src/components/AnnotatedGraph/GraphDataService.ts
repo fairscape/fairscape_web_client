@@ -7,22 +7,37 @@ export class GraphDataService {
   constructor(rawData: RawGraphData) {
     this.graphDict = rawData["@graph"] || {};
 
-    // Extract outputs from evi:outputs on the ROCrate root entity
+    // Extract outputs from the ROCrate root entity. The outputs may be
+    // stored under any of these keys depending on how the crate was serialized:
+    //   - "evi:outputs"                    (compact lowercase)
+    //   - "EVI:outputs"                    (compact uppercase)
+    //   - "https://w3id.org/EVI#outputs"   (expanded full IRI)
+    // Prefer whichever variant has the most entries — condensed crates often
+    // keep the full IRI form authoritative while leaving an older lowercase
+    // copy with stale single-entry data.
     this.outputs = rawData.outputs || [];
     if (this.outputs.length === 0) {
-      // Find the ROCrate root and use its evi:outputs
       for (const entity of Object.values(this.graphDict)) {
         const types = Array.isArray(entity["@type"])
           ? entity["@type"]
           : [entity["@type"]];
         if (types.some((t) => t && t.includes("ROCrate"))) {
-          this.outputs = entity["evi:outputs"] || [];
+          const candidates = [
+            entity["evi:outputs"],
+            entity["EVI:outputs"],
+            entity["https://w3id.org/EVI#outputs"],
+          ].filter((c): c is Array<{ "@id": string }> => Array.isArray(c));
+          if (candidates.length > 0) {
+            this.outputs = candidates.reduce((a, b) => (b.length > a.length ? b : a));
+          }
           break;
         }
       }
     }
 
-    // Fallback: scan hasPart from the end, find first Dataset
+    // Fallback: scan hasPart from the end, find first plain Dataset
+    // (excluding DatasetGroup, which only appears in condensed crates and
+    // is not a true output).
     if (this.outputs.length === 0) {
       for (const entity of Object.values(this.graphDict)) {
         const types = Array.isArray(entity["@type"])
@@ -40,7 +55,10 @@ export class GraphDataService {
               const partTypes = Array.isArray(partEntity["@type"])
                 ? partEntity["@type"]
                 : [partEntity["@type"]];
-              if (partTypes.some((t) => t && t.includes("Dataset"))) {
+              const isDataset = partTypes.some(
+                (t) => t && t.includes("Dataset") && !t.includes("DatasetGroup")
+              );
+              if (isDataset) {
                 this.outputs = [{ "@id": partId }];
                 break;
               }

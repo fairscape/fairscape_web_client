@@ -147,12 +147,18 @@ export function createEvidenceNode(
 
   const properties = getDisplayableProperties(entityData);
 
-  // DatasetGroup nodes support progressive expansion of their member datasets
+  // DatasetGroup nodes support progressive expansion of their member datasets.
+  // Only members actually present in the graph data are expandable — the rest
+  // were dropped by server-side condensation and can't be materialized.
   if (type === "DatasetGroup") {
     const memberIds = entityData["evi:memberIds"];
     if (Array.isArray(memberIds)) {
-      // Filter out summary strings like "... and N more (total: M)"
-      properties._childNodeIds = memberIds.filter((id: any) => typeof id === "string" && id.startsWith("ark:"));
+      properties._childNodeIds = memberIds.filter(
+        (id: any) =>
+          typeof id === "string" &&
+          id.startsWith("ark:") &&
+          dataService.getNode(id) !== null
+      );
       properties._visibleChildren = 0;
     }
   }
@@ -320,8 +326,10 @@ export class GraphBuilder {
 
     const nextChildId = _childNodeIds[_visibleChildren];
     this.addNode(nextChildId);
-    const edge = createEdge(collectionNode.id, nextChildId, "contains");
-    this.edges.set(edge.id, edge);
+    if (this.visibleNodes.has(nextChildId)) {
+      const edge = createEdge(collectionNode.id, nextChildId, "contains");
+      this.edges.set(edge.id, edge);
+    }
 
     const newVisibleCount = _visibleChildren + 1;
     collectionNode.data.properties._visibleChildren = newVisibleCount;

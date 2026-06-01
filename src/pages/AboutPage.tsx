@@ -234,6 +234,25 @@ const AboutPage: React.FC = () => {
       </ContentSection>
 
       <ContentSection>
+        <h2>Conformance &amp; Specification</h2>
+        <p>
+          Every dataset packaged by FAIRSCAPE is published as an RO-Crate that
+          conforms to the{" "}
+          <a
+            href="https://w3id.org/fairscape/profile/0.1"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Fairscape Release RO-Crate Profile v0.1
+          </a>
+          . The profile specification — built on RO-Crate 1.2, the EVI
+          ontology, PROV-O, Schema.org, and Croissant 1.0 — defines the
+          required entity types, properties, and supporting files that make a
+          release machine-validatable and AI-Ready.
+        </p>
+      </ContentSection>
+
+      <ContentSection>
         <h2>Publications</h2>
         <p>
           The research and development of FAIRSCAPE and its underlying
