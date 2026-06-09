@@ -45,6 +45,18 @@ export const findRootEntity = (
   );
 };
 
+// Render a date range (e.g. ["9/1/2022", "1/31/2026"]) as "9/1/2022 - 1/31/2026"
+// rather than the comma-separated form used for generic arrays.
+const formatTimeframe = (value: unknown): string | undefined => {
+  if (Array.isArray(value)) {
+    const parts = value.filter(
+      (v) => v !== null && v !== undefined && v !== ""
+    );
+    return parts.length > 0 ? parts.join(" - ") : undefined;
+  }
+  return (value as string) || undefined;
+};
+
 const resolveField = (
   root: RawGraphEntity,
   topLevelKey: string,
@@ -435,7 +447,7 @@ export const processAIReady = (metadata: Metadata): AIReadyData => {
     dataCollectionMissingData:
       root["rai:dataCollectionMissingData"] || undefined,
     dataCollectionRawData: root["rai:dataCollectionRawData"] || undefined,
-    dataCollectionTimeframe: root["rai:dataCollectionTimeframe"] || undefined,
+    dataCollectionTimeframe: formatTimeframe(root["rai:dataCollectionTimeframe"]),
     dataImputationProtocol: root["rai:dataImputationProtocol"] || undefined,
     dataManipulationProtocol:
       root["rai:dataManipulationProtocol"] || undefined,
