@@ -14,6 +14,7 @@ import {
 import { RiPercentLine } from "react-icons/ri";
 import { useMetadataApi } from "../api/metadataApi";
 import { MdOutlineQueryStats } from "react-icons/md";
+import type { DownloadError } from "../hooks/useDownloads";
 
 type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema";
 
@@ -33,6 +34,8 @@ interface MetadataNavigationSidebarProps {
   hasSchemas: boolean;
   isLoggedIn: boolean;
   onInterpret: () => void;
+  downloadError?: DownloadError | null;
+  clearDownloadError?: () => void;
 }
 
 export default function MetadataNavigationSidebar({
@@ -50,6 +53,8 @@ export default function MetadataNavigationSidebar({
   hasSchemas,
   isLoggedIn,
   onInterpret,
+  downloadError,
+  clearDownloadError,
 }: MetadataNavigationSidebarProps) {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -70,6 +75,13 @@ export default function MetadataNavigationSidebar({
   const showDataDownload =
     (bundleKind === "rocrate" && hasDistribution) ||
     (bundleKind !== "rocrate" && bundleKind !== "release" && hasContentUrl);
+
+  // Close the dropdown before running a download so it doesn't cover the
+  // notice that may appear beneath the Download button.
+  const runDownload = (action: () => void) => {
+    setDownloadOpen(false);
+    action();
+  };
 
   const handleEdit = () => {
     window.location.href = `/edit/${arkId}`;
@@ -224,21 +236,21 @@ export default function MetadataNavigationSidebar({
 
             {downloadOpen && (
               <DropdownMenu>
-                <DropdownItem onClick={downloadJSON}>
+                <DropdownItem onClick={() => runDownload(downloadJSON)}>
                   {kindLabel} JSON
                 </DropdownItem>
                 {showAdvancedDownloads && (
                   <>
-                    <DropdownItem onClick={downloadCroissant}>
+                    <DropdownItem onClick={() => runDownload(downloadCroissant)}>
                       Croissant JSON
                     </DropdownItem>
-                    <DropdownItem onClick={downloadHTML}>
+                    <DropdownItem onClick={() => runDownload(downloadHTML)}>
                       Datasheet HTML
                     </DropdownItem>
                   </>
                 )}
                 {showDataDownload && (
-                  <DropdownItem onClick={downloadZip}>
+                  <DropdownItem onClick={() => runDownload(downloadZip)}>
                     {isRoCrateLike
                       ? "RO-Crate Zip"
                       : `${capitalize(bundleKind)} Data`}
@@ -247,6 +259,24 @@ export default function MetadataNavigationSidebar({
               </DropdownMenu>
             )}
           </DownloadSection>
+
+          {downloadError && (
+            <DownloadNotice $variant={downloadError.type} role="alert">
+              <NoticeIcon aria-hidden="true">!</NoticeIcon>
+              <NoticeBody>
+                <NoticeTitle>{downloadError.title}</NoticeTitle>
+                <NoticeText>{downloadError.message}</NoticeText>
+              </NoticeBody>
+              {clearDownloadError && (
+                <NoticeClose
+                  onClick={clearDownloadError}
+                  aria-label="Dismiss notice"
+                >
+                  ×
+                </NoticeClose>
+              )}
+            </DownloadNotice>
+          )}
 
           {showReScoreView && (
             <ActionButton onClick={handleRescore}>
@@ -473,4 +503,65 @@ const OwnerNote = styled.div`
   font-size: 12px;
   color: #856404;
   text-align: center;
+`;
+
+const DownloadNotice = styled.div<{ $variant: "unauthenticated" | "generic" }>`
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid
+    ${({ $variant }) => ($variant === "generic" ? "#f1aeb5" : "#ffe08a")};
+  background: ${({ $variant }) =>
+    $variant === "generic" ? "#fdf0f1" : "#fff8e6"};
+  color: ${({ $variant }) => ($variant === "generic" ? "#842029" : "#7a5a00")};
+`;
+
+const NoticeIcon = styled.span`
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+`;
+
+const NoticeBody = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const NoticeTitle = styled.div`
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 2px;
+`;
+
+const NoticeText = styled.div`
+  font-size: 12px;
+  line-height: 1.45;
+`;
+
+const NoticeClose = styled.button`
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+  }
 `;

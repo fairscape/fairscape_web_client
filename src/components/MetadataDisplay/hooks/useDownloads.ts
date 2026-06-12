@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useHttp } from "../api/httpClient";
 
 interface DownloadHookParams {
@@ -7,14 +7,44 @@ interface DownloadHookParams {
   contentRef: React.RefObject<HTMLDivElement>;
 }
 
+export interface DownloadError {
+  type: "unauthenticated" | "generic";
+  title: string;
+  message: string;
+}
+
 export function useDownloads({
   arkId,
   bundle,
   contentRef,
 }: DownloadHookParams) {
   const http = useHttp();
+  const [downloadError, setDownloadError] = useState<DownloadError | null>(null);
+  const clearDownloadError = useCallback(() => setDownloadError(null), []);
+
+  // Downloads of unpublished data return a 401/403 from the API. Surface that
+  // as an "Unauthenticated" banner instead of failing silently.
+  const handleDownloadError = useCallback((error: unknown, action: string) => {
+    console.error(`Error ${action}:`, error);
+    const message = error instanceof Error ? error.message : String(error);
+    if (/\b(401|403)\b/.test(message)) {
+      setDownloadError({
+        type: "unauthenticated",
+        title: "Unauthenticated",
+        message:
+          "This dataset hasn't been published yet, so its data isn't available to download. Sign in as the owner, or wait until it's published.",
+      });
+    } else {
+      setDownloadError({
+        type: "generic",
+        title: "Download failed",
+        message: `Something went wrong while ${action}. Please try again.`,
+      });
+    }
+  }, []);
 
   const downloadZip = useCallback(async () => {
+    clearDownloadError();
     try {
       const metadata = bundle?.rocrate ?? bundle?.main;
       const hasDistribution = !!bundle?.distribution;
@@ -50,11 +80,12 @@ export function useDownloads({
         window.open(contentUrl, "_blank");
       }
     } catch (error) {
-      console.error("Error downloading data:", error);
+      handleDownloadError(error, "downloading data");
     }
-  }, [arkId, http, bundle]);
+  }, [arkId, http, bundle, clearDownloadError, handleDownloadError]);
 
   const downloadJSON = useCallback(async () => {
+    clearDownloadError();
     try {
       const data = await http(`/rocrate/${arkId}`, {
         headers: { Accept: "application/json" },
@@ -70,11 +101,12 @@ export function useDownloads({
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading JSON:", error);
+      handleDownloadError(error, "downloading JSON");
     }
-  }, [arkId, http]);
+  }, [arkId, http, clearDownloadError, handleDownloadError]);
 
   const downloadCroissant = useCallback(async () => {
+    clearDownloadError();
     try {
       const data = await http(`/rocrate/${arkId}`, {
         headers: { Accept: "application/vnd.mlcommons-croissant+json" },
@@ -90,9 +122,9 @@ export function useDownloads({
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading Croissant:", error);
+      handleDownloadError(error, "downloading Croissant");
     }
-  }, [arkId, http]);
+  }, [arkId, http, clearDownloadError, handleDownloadError]);
 
   const downloadHTML = useCallback(() => {
     try {
@@ -133,5 +165,7 @@ export function useDownloads({
     downloadJSON,
     downloadCroissant,
     downloadHTML,
+    downloadError,
+    clearDownloadError,
   };
 }

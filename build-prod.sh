@@ -9,9 +9,9 @@ DATE=$(date '+%Y-%m-%d')
 sudo docker build \
   --no-cache \
   -f Dockerfile \
-  -t ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v1 .
+  -t ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v3 .
 
 
-sudo docker push ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v1
+sudo docker push ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}.v3
 
 #docker run -p 5173:80 ghcr.io/fairscape/fairscapefrontend:RELEASE.${DATE}

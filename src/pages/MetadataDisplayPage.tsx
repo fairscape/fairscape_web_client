@@ -193,12 +193,18 @@ export default function MetadataDisplayPage() {
   const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
   const http = useHttp();
 
-  const { downloadZip, downloadJSON, downloadCroissant, downloadHTML } =
-    useDownloads({
-      arkId,
-      bundle,
-      contentRef,
-    });
+  const {
+    downloadZip,
+    downloadJSON,
+    downloadCroissant,
+    downloadHTML,
+    downloadError,
+    clearDownloadError,
+  } = useDownloads({
+    arkId,
+    bundle,
+    contentRef,
+  });
 
   const { title, version } = useMemo(
     () => deriveTitleAndVersion(bundle?.rocrate ?? bundle?.main),
@@ -529,6 +535,8 @@ export default function MetadataDisplayPage() {
             hasSchemas={hasSchemas}
             isLoggedIn={!!isLoggedIn}
             onInterpret={handleInterpret}
+            downloadError={downloadError}
+            clearDownloadError={clearDownloadError}
           />
         )}
       </PageContainer>
