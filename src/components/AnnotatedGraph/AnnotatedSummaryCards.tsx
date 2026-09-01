@@ -45,8 +45,8 @@ const SummarySection = styled.div`
 
 const SummaryCard = styled.div`
   background: #fff;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
+  border: 1px solid #e2e8ea;
+  border-radius: 2px;
   margin-bottom: 16px;
   overflow: hidden;
 `;
@@ -85,7 +85,7 @@ const SummaryBody = styled.div`
 const AssumptionsList = styled.div`
   .assumption-item {
     margin: 4px 0;
-    border-radius: 4px;
+    border-radius: 2px;
     font-size: 13px;
     line-height: 1.5;
   }
@@ -110,9 +110,18 @@ const AssumptionsList = styled.div`
     flex-shrink: 0;
     margin-top: 1px;
   }
-  .badge-critical { background: #7b2d8e; color: #fff; }
-  .badge-major { background: #d68910; color: #fff; }
-  .badge-minor { background: #1a5276; color: #fff; }
+  .badge-critical {
+    background: #7b2d8e;
+    color: #fff;
+  }
+  .badge-major {
+    background: #d68910;
+    color: #fff;
+  }
+  .badge-minor {
+    background: #1a5276;
+    color: #fff;
+  }
   .assumption-source {
     flex-shrink: 0;
     font-size: 11px;
@@ -178,7 +187,9 @@ const AssumptionDetails = styled.div`
   .evidence-link {
     color: #007bff;
     text-decoration: none;
-    &:hover { text-decoration: underline; }
+    &:hover {
+      text-decoration: underline;
+    }
   }
 `;
 
@@ -190,12 +201,14 @@ const ImpactGroupHeader = styled.div<{ $color: string }>`
   cursor: pointer;
   user-select: none;
 
-  &:first-child { padding-top: 0; }
+  &:first-child {
+    padding-top: 0;
+  }
 
   .group-label {
     font-size: 13px;
     font-weight: 600;
-    color: ${(props) => props.$color};
+    color: ${(s) => s.$color};
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -208,7 +221,9 @@ const ImpactGroupHeader = styled.div<{ $color: string }>`
     color: #95a5a6;
   }
 
-  &:hover .group-label { opacity: 0.8; }
+  &:hover .group-label {
+    opacity: 0.8;
+  }
 `;
 
 const MetaInfo = styled.div`
@@ -220,8 +235,8 @@ const MetaInfo = styled.div`
   color: #666;
   margin-bottom: 16px;
   padding: 8px 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  background: #f7f9f9;
+  border-radius: 2px;
 
   span {
     color: #333;
@@ -263,7 +278,7 @@ const OverviewContent = styled.div`
   .overview-tag {
     display: inline-block;
     padding: 1px 8px;
-    border-radius: 12px;
+    border-radius: 2px;
     font-size: 12px;
     background: #e8f0fe;
     color: #1a5276;
@@ -271,7 +286,9 @@ const OverviewContent = styled.div`
   .overview-license-link {
     color: #007bff;
     text-decoration: none;
-    &:hover { text-decoration: underline; }
+    &:hover {
+      text-decoration: underline;
+    }
   }
   .overview-assumption {
     display: inline-flex;
@@ -299,13 +316,13 @@ const PipelineStepsContainer = styled.div`
 
 const AudienceButton = styled.button<{ $active: boolean }>`
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid ${(props) => (props.$active ? "#2c3e50" : "#dee2e6")};
-  background: ${(props) => (props.$active ? "#2c3e50" : "#fff")};
-  color: ${(props) => (props.$active ? "#fff" : "#555")};
+  border: 1px solid ${(s) => (s.$active ? "#2c3e50" : "#E2E8EA")};
+  background: ${(s) => (s.$active ? "#2c3e50" : "#fff")};
+  color: ${(s) => (s.$active ? "#fff" : "#555")};
   transition: all 0.15s ease;
 
   &:hover {
@@ -320,9 +337,12 @@ const AudienceButton = styled.button<{ $active: boolean }>`
 
 function getAssumptionCssClass(a: GraphAssumption): string {
   switch (a.impact) {
-    case "CRITICAL": return "critical";
-    case "MAJOR": return "major";
-    default: return "minor";
+    case "CRITICAL":
+      return "critical";
+    case "MAJOR":
+      return "major";
+    default:
+      return "minor";
   }
 }
 
@@ -391,9 +411,11 @@ function AssumptionItem({
 }) {
   const [expanded, setExpanded] = useState(false);
   const cssClass = getAssumptionCssClass(assumption);
-  const displayName = assumption.name || (assumption.description.length > 80
-    ? assumption.description.slice(0, 80) + "..."
-    : assumption.description);
+  const displayName =
+    assumption.name ||
+    (assumption.description.length > 80
+      ? assumption.description.slice(0, 80) + "..."
+      : assumption.description);
 
   const rocrateId = data["evi:annotates"]?.["@id"];
   const sourceId = assumption.sourceAnnotation?.["@id"];
@@ -409,7 +431,10 @@ function AssumptionItem({
   const isReviewRecommended = assumption.reviewRecommended === true;
 
   return (
-    <div className={`assumption-item assumption-${cssClass}`} style={!isReviewRecommended ? { opacity: 0.7 } : undefined}>
+    <div
+      className={`assumption-item assumption-${cssClass}`}
+      style={!isReviewRecommended ? { opacity: 0.7 } : undefined}
+    >
       <AssumptionRow onClick={() => setExpanded(!expanded)}>
         <AssumptionChevron>{expanded ? "\u25BC" : "\u25B6"}</AssumptionChevron>
         <span className={`assumption-level-badge badge-${cssClass}`}>
@@ -417,15 +442,33 @@ function AssumptionItem({
         </span>
         <AssumptionName>{displayName}</AssumptionName>
         {isReviewRecommended && (
-          <span style={{ fontSize: 10, fontWeight: 600, color: "#8e44ad", background: "#f3e8f9", padding: "1px 6px", borderRadius: 3, flexShrink: 0 }}>
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: "#8e44ad",
+              background: "#f3e8f9",
+              padding: "1px 6px",
+              borderRadius: 3,
+              flexShrink: 0,
+            }}
+          >
             Review suggested
           </span>
         )}
         <span
           className="assumption-source"
           onClick={handleSourceClick}
-          title={onHighlightNode && sourceId && !isPipelineWide ? `Click to highlight: ${sourceLabel}` : undefined}
-          style={onHighlightNode && sourceId && !isPipelineWide ? { cursor: "pointer", color: "#555" } : undefined}
+          title={
+            onHighlightNode && sourceId && !isPipelineWide
+              ? `Click to highlight: ${sourceLabel}`
+              : undefined
+          }
+          style={
+            onHighlightNode && sourceId && !isPipelineWide
+              ? { cursor: "pointer", color: "#555" }
+              : undefined
+          }
         >
           {sourceLabel}
           {onHighlightNode && sourceId && !isPipelineWide && (
@@ -446,7 +489,9 @@ function AssumptionItem({
           {assumption.downstreamImpacts && (
             <div className="detail-section">
               <div className="detail-label">If Wrong</div>
-              <div className="downstream-impacts">{assumption.downstreamImpacts}</div>
+              <div className="downstream-impacts">
+                {assumption.downstreamImpacts}
+              </div>
             </div>
           )}
 
@@ -479,7 +524,15 @@ function AssumptionItem({
           {assumption.recommendedValidation && (
             <div className="detail-section">
               <div className="detail-label">How to Validate</div>
-              <div style={{ background: "#e8f5e9", borderLeft: "3px solid #43a047", padding: "4px 8px", borderRadius: 2, marginTop: 2 }}>
+              <div
+                style={{
+                  background: "#e8f5e9",
+                  borderLeft: "3px solid #43a047",
+                  padding: "4px 8px",
+                  borderRadius: 2,
+                  marginTop: 2,
+                }}
+              >
                 {assumption.recommendedValidation}
               </div>
             </div>
@@ -569,7 +622,7 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
 }) => {
   const [selectedAudience, setSelectedAudience] = useState("datasci");
   const [expandedGroups, setExpandedGroups] = useState<Set<AssumptionImpact>>(
-    () => new Set(["CRITICAL"])
+    () => new Set(["CRITICAL"]),
   );
 
   const toggleGroup = (impact: AssumptionImpact) => {
@@ -592,7 +645,11 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
   const assumptions = perspective?.assumptions || [];
 
   const groupedAssumptions = useMemo(() => {
-    const groups: Record<AssumptionImpact, GraphAssumption[]> = { CRITICAL: [], MAJOR: [], MINOR: [] };
+    const groups: Record<AssumptionImpact, GraphAssumption[]> = {
+      CRITICAL: [],
+      MAJOR: [],
+      MINOR: [],
+    };
     for (const a of assumptions) {
       if (a.impact in groups) {
         groups[a.impact].push(a);
@@ -602,7 +659,9 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
   }, [assumptions]);
 
   const availableAudiences = useMemo(() => {
-    return AUDIENCE_OPTIONS.filter((opt) => resolveAudience(data, opt.key) !== null);
+    return AUDIENCE_OPTIONS.filter(
+      (opt) => resolveAudience(data, opt.key) !== null,
+    );
   }, [data]);
 
   return (
@@ -627,8 +686,17 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
           </div>
         )}
         {availableAudiences.length > 1 && (
-          <div style={{ marginLeft: "auto", display: "flex", gap: 4, alignItems: "center" }}>
-            <span style={{ fontSize: 11, color: "#999", marginRight: 2 }}>Audience:</span>
+          <div
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              gap: 4,
+              alignItems: "center",
+            }}
+          >
+            <span style={{ fontSize: 11, color: "#999", marginRight: 2 }}>
+              Audience:
+            </span>
             {availableAudiences.map((opt) => (
               <AudienceButton
                 key={opt.key}
@@ -647,28 +715,32 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
         <CollapsibleCard title="Overview" defaultOpen={true}>
           <OverviewContent>
             <div className="overview-description">
-              {data["evi:overview"].pipelineDescription || data["evi:overview"].dataDescription}
+              {data["evi:overview"].pipelineDescription ||
+                data["evi:overview"].dataDescription}
             </div>
 
-            {data["evi:overview"].pipelineSteps && data["evi:overview"].pipelineSteps.length > 0 && (
-              <div className="overview-row">
-                <span className="overview-label">Pipeline</span>
-                <PipelineStepsContainer>
-                  <ul>
-                    {data["evi:overview"].pipelineSteps.map((step, i) => (
-                      <li key={i}>{step}</li>
-                    ))}
-                  </ul>
-                </PipelineStepsContainer>
-              </div>
-            )}
+            {data["evi:overview"].pipelineSteps &&
+              data["evi:overview"].pipelineSteps.length > 0 && (
+                <div className="overview-row">
+                  <span className="overview-label">Pipeline</span>
+                  <PipelineStepsContainer>
+                    <ul>
+                      {data["evi:overview"].pipelineSteps.map((step, i) => (
+                        <li key={i}>{step}</li>
+                      ))}
+                    </ul>
+                  </PipelineStepsContainer>
+                </div>
+              )}
 
             {data["evi:overview"].dataFormats.length > 0 && (
               <div className="overview-row">
                 <span className="overview-label">Formats</span>
                 <div className="overview-tags">
                   {data["evi:overview"].dataFormats.map((fmt) => (
-                    <span key={fmt} className="overview-tag">{fmt}</span>
+                    <span key={fmt} className="overview-tag">
+                      {fmt}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -679,7 +751,9 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
                 <span className="overview-label">Keywords</span>
                 <div className="overview-tags">
                   {data["evi:overview"].keywords.map((kw) => (
-                    <span key={kw} className="overview-tag">{kw}</span>
+                    <span key={kw} className="overview-tag">
+                      {kw}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -727,7 +801,12 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
                           padding: "1px 5px",
                           borderRadius: 3,
                           color: "#fff",
-                          background: a.impact === "CRITICAL" ? "#7b2d8e" : a.impact === "MAJOR" ? "#d68910" : "#1a5276",
+                          background:
+                            a.impact === "CRITICAL"
+                              ? "#7b2d8e"
+                              : a.impact === "MAJOR"
+                                ? "#d68910"
+                                : "#1a5276",
                         }}
                       >
                         {a.impact.slice(0, 5)}
@@ -749,9 +828,7 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
 
       {/* 2. Assumptions — open to CRITICAL by default */}
       {assumptions.length > 0 && (
-        <CollapsibleCard
-          title={`Assumptions (${assumptions.length})`}
-        >
+        <CollapsibleCard title={`Assumptions (${assumptions.length})`}>
           <AssumptionsList>
             {IMPACT_ORDER.map((impact) => {
               const group = groupedAssumptions[impact];
@@ -763,26 +840,28 @@ const AnnotatedSummaryCards: React.FC<AnnotatedSummaryCardsProps> = ({
                     $color={IMPACT_COLORS[impact]}
                     onClick={() => toggleGroup(impact)}
                   >
-                    <span className="group-toggle">{isGroupExpanded ? "\u25BC" : "\u25B6"}</span>
+                    <span className="group-toggle">
+                      {isGroupExpanded ? "\u25BC" : "\u25B6"}
+                    </span>
                     <span className="group-label">{impact}</span>
                     <span className="group-count">({group.length})</span>
                   </ImpactGroupHeader>
-                  {isGroupExpanded && group.map((a, i) => (
-                    <AssumptionItem
-                      key={i}
-                      assumption={a}
-                      sourceLabel={getSourceLabel(a, data)}
-                      onHighlightNode={onHighlightNode}
-                      data={data}
-                    />
-                  ))}
+                  {isGroupExpanded &&
+                    group.map((a, i) => (
+                      <AssumptionItem
+                        key={i}
+                        assumption={a}
+                        sourceLabel={getSourceLabel(a, data)}
+                        onHighlightNode={onHighlightNode}
+                        data={data}
+                      />
+                    ))}
                 </React.Fragment>
               );
             })}
           </AssumptionsList>
         </CollapsibleCard>
       )}
-
     </SummarySection>
   );
 };

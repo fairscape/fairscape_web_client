@@ -11,64 +11,61 @@ const PageContainer = styled.div`
 `;
 
 const HeaderSection = styled.header`
-  background: linear-gradient(
-    135deg,
-    ${({ theme }) => theme.colors.primaryLight} 0%,
-    ${({ theme }) => theme.colors.secondaryLight} 100%
-  );
-  color: ${({ theme }) => theme.colors.text};
-  padding: ${({ theme }) => theme.spacing.xl};
-  text-align: center;
-  border-radius: ${({ theme }) => theme.borderRadius};
+  padding: ${({ theme }) => theme.spacing.xl} 0
+    ${({ theme }) => theme.spacing.lg};
+  text-align: left;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.ink};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 `;
 
 const PageTitle = styled.h1`
   margin-bottom: ${({ theme }) => theme.spacing.md};
   font-size: 2.5rem;
   font-weight: 700;
-  color: ${({ theme }) => theme.colors.primaryDark};
+  letter-spacing: -0.03em;
+  color: ${({ theme }) => theme.colors.ink};
 `;
 
 const PageSubtitle = styled.p`
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   max-width: 800px;
-  margin: 0 auto ${({ theme }) => theme.spacing.lg} auto;
-  opacity: 0.9;
-  line-height: 1.6;
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
+  color: ${({ theme }) => theme.colors.textSecondary};
+  line-height: 1.65;
 `;
 
 const ContentSection = styled.section`
   background-color: ${({ theme }) => theme.colors.surface};
   padding: ${({ theme }) => theme.spacing.xl};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid ${({ theme }) => theme.colors.border};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
 
   h2 {
     margin-top: 0;
     margin-bottom: ${({ theme }) => theme.spacing.lg};
-    color: ${({ theme }) => theme.colors.primary};
-    font-size: 1.8rem;
-    border-bottom: 2px solid ${({ theme }) => theme.colors.border};
-    padding-bottom: ${({ theme }) => theme.spacing.sm};
+    color: ${({ theme }) => theme.colors.ink};
+    font-size: 1.4rem;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    border-top: 2px solid ${({ theme }) => theme.colors.ink};
+    padding-top: ${({ theme }) => theme.spacing.md};
   }
 
   p {
     margin-bottom: ${({ theme }) => theme.spacing.md};
     line-height: 1.7;
-    font-size: 1.05rem;
+    font-size: 15px;
+    color: ${({ theme }) => theme.colors.textSecondary};
   }
 
   a {
-    color: ${({ theme }) => theme.colors.secondary};
+    color: ${({ theme }) => theme.colors.primary};
     text-decoration: none;
     font-weight: 500;
     &:hover {
       text-decoration: underline;
-      color: ${({ theme }) => theme.colors.secondaryDark};
+      color: ${({ theme }) => theme.colors.primaryDark};
     }
   }
 `;
@@ -78,42 +75,45 @@ const PublicationList = styled.ul`
   padding-left: 0;
 
   li {
-    background-color: ${({ theme }) => theme.colors.background};
-    padding: ${({ theme }) => theme.spacing.lg};
-    margin-bottom: ${({ theme }) => theme.spacing.md};
-    border-radius: ${({ theme }) => theme.borderRadius};
-    border: 1px solid ${({ theme }) => theme.colors.borderLight};
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
-    transition: box-shadow 0.2s ease-in-out;
+    padding: ${({ theme }) => theme.spacing.lg} 0;
+    border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 
-    &:hover {
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+    &:first-child {
+      padding-top: 0;
+    }
+
+    &:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
     }
   }
 
   h3 {
-    font-size: 1.25rem;
-    color: ${({ theme }) => theme.colors.primaryDark};
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: ${({ theme }) => theme.colors.primary};
     margin-top: 0;
     margin-bottom: ${({ theme }) => theme.spacing.xs};
   }
 
   .authors {
-    font-style: italic;
-    color: ${({ theme }) => theme.colors.textOffset};
-    margin-bottom: ${({ theme }) => theme.spacing.sm};
-    font-size: 0.95rem;
+    color: ${({ theme }) => theme.colors.textSecondary};
+    margin-bottom: ${({ theme }) => theme.spacing.xs};
+    font-size: 0.9rem;
   }
 
   .journal-info {
-    font-size: 0.9rem;
-    color: ${({ theme }) => theme.colors.textMuted};
+    font-family: ${({ theme }) => theme.fonts.mono};
+    font-size: 0.78rem;
+    color: ${({ theme }) => theme.colors.ink3};
     margin-bottom: ${({ theme }) => theme.spacing.md};
   }
 
   .abstract {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     line-height: 1.6;
+    color: ${({ theme }) => theme.colors.textSecondary};
     margin-bottom: ${({ theme }) => theme.spacing.sm};
     max-height: 120px; /* Limit initial height */
     overflow: hidden;
@@ -126,10 +126,10 @@ const PublicationList = styled.ul`
   }
 
   .read-more {
-    color: ${({ theme }) => theme.colors.secondary};
+    color: ${({ theme }) => theme.colors.primary};
     cursor: pointer;
-    font-weight: bold;
-    font-size: 0.9rem;
+    font-weight: 600;
+    font-size: 0.85rem;
     display: inline-block;
     margin-top: ${({ theme }) => theme.spacing.xs};
   }
@@ -230,6 +230,25 @@ const AboutPage: React.FC = () => {
           seamlessly integrate AI-Readiness and FAIR principles into their
           workflows, thereby accelerating discovery and enhancing the
           reliability of biomedical science.
+        </p>
+      </ContentSection>
+
+      <ContentSection>
+        <h2>Conformance &amp; Specification</h2>
+        <p>
+          Every dataset packaged by FAIRSCAPE is published as an RO-Crate that
+          conforms to the{" "}
+          <a
+            href="https://w3id.org/fairscape/profile/0.1"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Fairscape Release RO-Crate Profile v0.1
+          </a>
+          . The profile specification — built on RO-Crate 1.2, the EVI ontology,
+          PROV-O, Schema.org, and Croissant 1.0 — defines the required entity
+          types, properties, and supporting files that make a release
+          machine-validatable and AI-Ready.
         </p>
       </ContentSection>
 

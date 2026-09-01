@@ -45,7 +45,7 @@ export class GraphDataService {
   }
 
   resolveReference(
-    ref: { "@id": string } | string | undefined
+    ref: { "@id": string } | string | undefined,
   ): RawGraphEntity | null {
     if (!ref) return null;
     const id = typeof ref === "string" ? ref : ref["@id"];
@@ -53,7 +53,7 @@ export class GraphDataService {
   }
 
   resolveReferences(
-    refs: { "@id": string } | Array<{ "@id": string }> | undefined
+    refs: { "@id": string } | Array<{ "@id": string }> | undefined,
   ): RawGraphEntity[] {
     if (!refs) return [];
     const refsArray = Array.isArray(refs) ? refs : [refs];
@@ -64,7 +64,7 @@ export class GraphDataService {
 
   getRelatedNodes(
     nodeId: string,
-    relationshipType: keyof RawGraphEntity
+    relationshipType: keyof RawGraphEntity,
   ): RawGraphEntity[] {
     const node = this.getNode(nodeId);
     if (!node) return [];
@@ -172,7 +172,7 @@ export class GraphDataService {
       for (const rel of relationships) {
         const relatedNodes = this.getRelatedNodes(
           id,
-          rel as keyof RawGraphEntity
+          rel as keyof RawGraphEntity,
         );
         for (const relatedNode of relatedNodes) {
           if (!visited.has(relatedNode["@id"])) {

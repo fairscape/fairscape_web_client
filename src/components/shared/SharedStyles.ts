@@ -117,9 +117,9 @@ export const Section = styled.div`
 `;
 
 export const SectionTitle = styled.h2`
-  font-size: ${typography.h2};
-  color: ${colors.primary};
-  margin: 0 0 ${spacing.sm} 0;
+  font-size: 1.5rem;
+  color: #3e7aa8;
+  margin: 0 0 20px 0;
 `;
 
 export const PageTitle = styled.h1`
@@ -131,6 +131,6 @@ export const PageTitle = styled.h1`
 
 export const ButtonGroup = styled.div`
   display: flex;
-  gap: ${spacing.md};
+  gap: 5px;
   flex-wrap: wrap;
 `;

@@ -11,19 +11,20 @@ const ProfileContainer = styled.div`
 `;
 
 const UserCircle = styled.button`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  background-color: ${({ theme }) => theme.colors.primaryTint};
+  color: ${({ theme }) => theme.colors.primary};
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  font-weight: bold;
-  border: 2px solid ${({ theme }) => theme.colors.surface};
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 `;
 
 const DropdownMenu = styled.div`
@@ -32,11 +33,17 @@ const DropdownMenu = styled.div`
   right: 0;
   background-color: ${({ theme }) => theme.colors.surface};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  border-color: ${({ theme }) => theme.colors.borderStrong};
   padding: ${({ theme }) => theme.spacing.md};
   width: 280px;
+  max-width: calc(100vw - 32px);
   z-index: 100;
+
+  @media (max-width: 768px) {
+    left: 0;
+    right: auto;
+  }
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.sm};
@@ -65,7 +72,7 @@ const UserInfo = styled.p`
 
 const DropdownLink = styled(Link)`
   padding: ${({ theme }) => theme.spacing.sm};
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   color: ${({ theme }) => theme.colors.text};
   text-decoration: none;
   display: flex;
@@ -85,14 +92,13 @@ const LogoutButton = styled.button`
   padding: ${({ theme }) => theme.spacing.sm};
   text-align: left;
   width: 100%;
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
 
   &:hover {
-    background-color: ${({ theme }) =>
-      theme.colors.error}1A; // Light red background
+    background-color: ${({ theme }) => theme.colors.error}1A; // Light red background
   }
 `;
 

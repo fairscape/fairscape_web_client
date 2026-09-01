@@ -22,13 +22,13 @@ export function useEvidenceApi() {
 
   async function pollBuild(
     taskId: string,
-    { maxAttempts = 15, initialDelayMs = 800, backoff = 1.35 } = {}
+    { maxAttempts = 15, initialDelayMs = 800, backoff = 1.35 } = {},
   ): Promise<PollResult> {
     let delay = initialDelayMs;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const res: PollResult = await http(
         `/evidencegraph/build/status/${encodeURIComponent(taskId)}`,
-        { method: "GET" }
+        { method: "GET" },
       );
       if (res.status === "SUCCESS" || res.status === "FAILURE") return res;
       await new Promise((r) => setTimeout(r, delay));

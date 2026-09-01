@@ -10,20 +10,27 @@ const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   margin-bottom: ${({ theme }) => theme.spacing.md};
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   table-layout: fixed;
+
+  thead {
+    border-top: 2px solid ${({ theme }) => theme.colors.ink};
+  }
 `;
 const TableHeader = styled.th`
   text-align: left;
-  padding: ${({ theme }) => theme.spacing.md};
+  padding: 9px ${({ theme }) => theme.spacing.md};
   background-color: ${({ theme }) => theme.colors.background};
-  font-weight: bold;
-  color: ${({ theme }) => theme.colors.primary};
-  border-bottom: 2px solid ${({ theme }) => theme.colors.border};
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.colors.ink3};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 const TableCell = styled.td<{ isDescription?: boolean }>`
   text-align: left;
-  padding: ${({ theme }) => theme.spacing.md};
+  padding: 11px ${({ theme }) => theme.spacing.md};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   word-wrap: break-word;
   ${({ isDescription }) =>
@@ -36,9 +43,6 @@ const TableCell = styled.td<{ isDescription?: boolean }>`
     `}
 `;
 const TableRow = styled.tr`
-  &:nth-child(even) {
-    background-color: ${({ theme }) => theme.colors.backgroundAlt};
-  }
   &:hover {
     background-color: ${({ theme }) => theme.colors.backgroundHover};
   }
@@ -171,11 +175,11 @@ const EntityTable: React.FC<EntityTableProps> = ({
       console.error("Download failed:", error);
       if (error.response && error.response.status === 401) {
         setAlertMessage(
-          "You must be a member of the group to download this data."
+          "You must be a member of the group to download this data.",
         );
       } else {
         setAlertMessage(
-          `Download failed. Please try again. Error: ${error.message}`
+          `Download failed. Please try again. Error: ${error.message}`,
         );
       }
       setShowAlert(true);

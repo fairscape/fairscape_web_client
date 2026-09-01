@@ -9,33 +9,7 @@ import {
   getDisplayableProperties,
 } from "./utils/graphUtils";
 import styled from "styled-components"; // Ensure styled-components is imported
-
-const getNodeColor = (type: string): string => {
-  switch (type) {
-    case "Dataset":
-    case "Sample":
-      return "#8AE68A";
-    case "ROCrate":
-      return "#64C2A6";
-    case "Computation":
-    case "Experiment":
-      return "#FD9A9A";
-    case "Software":
-    case "Instrument":
-      return "#FFC107";
-    case "MLModel":
-      return "#C8A2FF";
-    case "Annotation":
-      return "#FFA07A";
-    case "DatasetCollection":
-    case "DatasetGroup":
-      return "#B5DEFF";
-    case "Person":
-      return "#87CEEB"; 
-    default:
-      return "#E0E0E0"; 
-  }
-};
+import { getNodeColor } from "../shared/nodeColors";
 
 const TooltipWrapper = styled.div`
   max-width: 480px;
@@ -120,18 +94,19 @@ const NodeWrapper = styled.div<{
 }>`
   background: #fff;
   padding: 0;
-  border-radius: 5px;
+  border-radius: 2px;
   border: 1px solid #ddd; /* Base border */
   text-align: center;
   width: 180px;
   height: 90px;
   font-size: 13px;
   position: relative;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border 0.2s ease,
+    box-shadow 0.2s ease;
   cursor: default;
 
   /* Add dashed border for expandable nodes */
@@ -144,19 +119,17 @@ const NodeWrapper = styled.div<{
 
   /* Highlight styles applied via class names */
   &.path-highlight {
-    box-shadow: 0 0 0 3px rgba(255, 0, 114, 0.7) !important;
     border: 2px solid rgba(255, 0, 114, 0.9) !important; /* Override dashed border if highlighted */
     z-index: 2; /* Ensure highlighted nodes are above non-highlighted */
   }
   &.path-start-end {
-    box-shadow: 0 0 0 4px rgba(0, 114, 255, 0.7) !important;
     border: 2px solid rgba(0, 114, 255, 0.9) !important; /* Override dashed/highlight border */
     z-index: 3; /* Ensure start/end nodes are highest */
   }
 `;
 
 const NodeHeader = styled.div<{ bgColor: string }>`
-  background: ${(props) => props.bgColor};
+  background: ${(e) => e.bgColor};
   padding: 8px 6px;
   font-size: 14px;
   font-weight: bold;
@@ -200,7 +173,7 @@ const InfoButton = styled.button<{ bgColor: string }>`
   right: 0;
   width: 22px;
   height: 22px;
-  background: ${(props) => props.bgColor};
+  background: ${(e) => e.bgColor};
   color: #333;
   border: none;
   font-size: 12px;
@@ -210,7 +183,6 @@ const InfoButton = styled.button<{ bgColor: string }>`
   justify-content: center;
   cursor: pointer;
   z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   padding: 0;
   margin: 0;
   border-bottom-left-radius: 4px;
@@ -280,7 +252,9 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
             data.properties?.["evi:memberCount"] !== undefined && (
               <div className="prop-item">
                 <span className="prop-key">Members:</span>
-                <span className="prop-value">{data.properties["evi:memberCount"]}</span>
+                <span className="prop-value">
+                  {data.properties["evi:memberCount"]}
+                </span>
               </div>
             )}
         </div>
@@ -304,7 +278,10 @@ const EvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = ({
         {data.expandable && (
           <em className="expand-hint">
             (Click node center to expand{" "}
-            {data.type === "DatasetCollection" || data.type === "DatasetGroup" ? "next item" : "details"})
+            {data.type === "DatasetCollection" || data.type === "DatasetGroup"
+              ? "next item"
+              : "details"}
+            )
             <br />
             (Shift+Click to select for path)
           </em>

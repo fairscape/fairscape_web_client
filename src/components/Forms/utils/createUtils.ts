@@ -6,7 +6,7 @@ import {
 
 export const fetchParentMetadata = async (
   parentArkId: string,
-  metadataApi: any
+  metadataApi: any,
 ): Promise<any | null> => {
   try {
     const response = await metadataApi.getMain(parentArkId);
@@ -21,7 +21,7 @@ export const initializeCreateForm = (
   config: any,
   parentMetadata: any | null,
   parentArkId: string | null,
-  entityType: string
+  entityType: string,
 ): any => {
   const formData: any = {};
 
@@ -86,7 +86,7 @@ export const generateArkId = (entityType: string, name: string): string => {
 export const generateCreatePayload = (
   entityType: string,
   formData: any,
-  extraFields: any
+  extraFields: any,
 ): any => {
   // Transform form data according to schema requirements
   const transformedData = transformFormDataToPayload(entityType, formData);
@@ -119,7 +119,7 @@ export const generateCreatePayload = (
 
 export const validateRequiredFields = (
   formData: any,
-  config: any
+  config: any,
 ): string[] => {
   const missingFields: string[] = [];
 

@@ -10,8 +10,6 @@ const CardContainer = styled.div`
   border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: ${({ theme }) => theme.spacing.md};
   margin-bottom: ${({ theme }) => theme.spacing.md};
-  box-shadow: ${({ theme }) =>
-    theme.shadows?.small || "0 1px 3px rgba(0,0,0,0.05)"};
   display: flex;
   flex-direction: column;
 `;
@@ -27,7 +25,7 @@ const CardHeader = styled.div`
 
 const SubcrateName = styled.h3`
   font-size: 18px;
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
   margin: 0;
   word-break: break-all;
 `;
@@ -49,8 +47,7 @@ const DetailItemWrapper = styled.div`
   word-break: break-word;
 
   strong {
-    color: ${({ theme }) =>
-      theme.colors.textSlightlyLighter || theme.colors.text};
+    color: ${({ theme }) => theme.colors.textSlightlyLighter || theme.colors.text};
     margin-right: ${({ theme }) => theme.spacing.xxs};
   }
 
@@ -69,16 +66,15 @@ const KeywordsContainerStyled = styled.div`
 
 const KeywordPillSubdued = styled.span`
   display: inline-block;
-  background-color: ${({ theme }) => theme.colors.lightGrey || "#e9ecef"};
-  color: ${({ theme }) =>
-    theme.colors.textSlightlyLighter || theme.colors.text};
+  background-color: ${({ theme }) => theme.colors.lightGrey || "#EBF2F4"};
+  color: ${({ theme }) => theme.colors.textSlightlyLighter || theme.colors.text};
   padding: 3px 7px;
   border-radius: ${({ theme }) => theme.borderRadius.sm};
   font-size: 12px;
   font-weight: 400;
   margin-right: ${({ theme }) => theme.spacing.xs};
   margin-bottom: ${({ theme }) => theme.spacing.xs};
-  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#ced4da"};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#C3CED2"};
 `;
 
 const SubcrateLinkButton = styled.a`
@@ -132,8 +128,8 @@ const DetailDisplay: React.FC<{
     const arkLink = value.startsWith("ark:")
       ? `${feUrl}${value}`
       : value.startsWith("http")
-      ? value
-      : null;
+        ? value
+        : null;
     if (arkLink) {
       displayValue = (
         <a href={arkLink} target="_blank" rel="noopener noreferrer">
@@ -241,11 +237,11 @@ const SubcrateCard: React.FC<SubcrateCardProps> = ({
   const keywordsArray = Array.isArray(keywords)
     ? keywords
     : typeof keywords === "string"
-    ? keywords
-        .split(/[,;]\s*/)
-        .map((k) => k.trim())
-        .filter((k) => k)
-    : [];
+      ? keywords
+          .split(/[,;]\s*/)
+          .map((k) => k.trim())
+          .filter((k) => k)
+      : [];
 
   let linkForButton: string | undefined = undefined;
   let buttonText: string = "View Details";

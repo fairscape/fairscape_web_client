@@ -91,7 +91,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFilesUpload }) => {
 
       processItems();
     },
-    [onFilesUpload]
+    [onFilesUpload],
   );
 
   const handleFileSelect = useCallback(
@@ -104,7 +104,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFilesUpload }) => {
         e.target.value = "";
       }
     },
-    [onFilesUpload]
+    [onFilesUpload],
   );
 
   const handleBrowseFiles = useCallback(() => {

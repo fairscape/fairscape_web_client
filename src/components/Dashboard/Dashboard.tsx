@@ -7,8 +7,7 @@ import { AuthContext } from "../../context/AuthContext";
 // Import TreeView Component
 import ROCrateTreeView from "./ROCrateTreeView";
 
-const API_URL =
-  window.API_URL;
+const API_URL = window.API_URL;
 
 const DashboardContainer = styled.div`
   padding: ${({ theme }) => theme.spacing.lg};
@@ -44,7 +43,7 @@ const ErrorMessage = styled.div`
   padding: ${({ theme }) => theme.spacing.md};
   background-color: #fff3f3;
   border: 1px solid #ffcaca;
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   color: #d8000c;
   margin-bottom: ${({ theme }) => theme.spacing.lg};
 `;
@@ -95,7 +94,7 @@ const Dashboard: React.FC = () => {
           } catch (err: any) {
             console.error("Error fetching from API:", err);
             throw new Error(
-              err.response?.data?.message || "Failed to fetch data from API"
+              err.response?.data?.message || "Failed to fetch data from API",
             );
           }
         }

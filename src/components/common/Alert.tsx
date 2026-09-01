@@ -14,10 +14,9 @@ interface AlertProps {
 
 const AlertContainer = styled.div<{ $type: AlertType }>`
   padding: ${({ theme }) => theme.spacing.md};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid;
-  background-color: ${({ theme, $type }) =>
-    theme.colors[$type] + "20"}; // Use theme color with opacity
+  background-color: ${({ theme, $type }) => theme.colors[$type] + "20"}; // Use theme color with opacity
   border-color: ${({ theme, $type }) => theme.colors[$type]};
   color: ${({ theme, $type }) => theme.colors[$type]};
   margin-bottom: ${({ theme }) => theme.spacing.md};

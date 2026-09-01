@@ -9,16 +9,17 @@ export const Container = styled.div`
 `;
 
 export const Header = styled.header`
-  margin-bottom: 30px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.ink};
   padding-bottom: 20px;
-  border-bottom: 2px solid ${({ theme }) => theme.colors.primary};
 `;
 
 export const PageTitle = styled.h1`
   font-size: 28px;
-  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 700;
+  letter-spacing: -0.02em;
   margin: 0;
-  font-weight: 600;
+  color: ${({ theme }) => theme.colors.ink};
 `;
 
 export const GenerateButtonContainer = styled.div`

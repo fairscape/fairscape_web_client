@@ -8,7 +8,7 @@ export const useD4DConversion = () => {
   const [error, setError] = useState<string | null>(null);
 
   const convertIssue = async (
-    issue: IssueDetail
+    issue: IssueDetail,
   ): Promise<D4DConversionResult | null> => {
     setLoading(true);
     setError(null);

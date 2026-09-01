@@ -81,13 +81,16 @@ const DynamicEntityForm: React.FC<DynamicEntityFormProps> = ({
   }, [schema]);
 
   const initializeFormData = useCallback(() => {
-    return schema.properties.reduce((acc, prop) => {
-      if (prop.type !== "relationships") {
-        acc[prop.name] =
-          prop.defaultValue !== undefined ? prop.defaultValue : "";
-      }
-      return acc;
-    }, {} as Record<string, any>);
+    return schema.properties.reduce(
+      (acc, prop) => {
+        if (prop.type !== "relationships") {
+          acc[prop.name] =
+            prop.defaultValue !== undefined ? prop.defaultValue : "";
+        }
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
   }, [schema]);
 
   // Initialize state for selected relationships based on config
@@ -109,7 +112,7 @@ const DynamicEntityForm: React.FC<DynamicEntityFormProps> = ({
 
   // Helper to get base type (Dataset, Software)
   const getBaseType = (
-    typeInfo: string | string[] | undefined
+    typeInfo: string | string[] | undefined,
   ): string | null => {
     if (!typeInfo) return null;
     const typeString = Array.isArray(typeInfo)
@@ -206,14 +209,14 @@ const DynamicEntityForm: React.FC<DynamicEntityFormProps> = ({
       (key) =>
         (preview[key] === undefined ||
           (Array.isArray(preview[key]) && preview[key].length === 0)) &&
-        delete preview[key]
+        delete preview[key],
     );
 
     setJsonLdPreview(preview);
   }, [formData, selectedRelationships, entityType, schema]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -223,7 +226,7 @@ const DynamicEntityForm: React.FC<DynamicEntityFormProps> = ({
   const handleRelationshipSelection = (
     targetId: string, // e.g., "usedDataset"
     entityId: string, // The ID of the entity being selected/deselected
-    checked: boolean
+    checked: boolean,
   ) => {
     setSelectedRelationships((prev) => {
       const currentSelection = prev[targetId] || [];
@@ -313,7 +316,7 @@ const DynamicEntityForm: React.FC<DynamicEntityFormProps> = ({
                             handleRelationshipSelection(
                               target.id,
                               entity["@id"],
-                              e.target.checked
+                              e.target.checked,
                             )
                           }
                         >
@@ -394,7 +397,7 @@ const DynamicEntityForm: React.FC<DynamicEntityFormProps> = ({
   };
 
   const relationshipProp = schema.properties.find(
-    (p) => p.type === "relationships"
+    (p) => p.type === "relationships",
   );
 
   return (

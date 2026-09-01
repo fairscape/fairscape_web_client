@@ -44,8 +44,8 @@ const ObjectInventoryTable: React.FC<Props> = ({
         ? o.fileData
           ? "Local file"
           : o.contentUrl
-          ? "External URL"
-          : "Unknown"
+            ? "External URL"
+            : "Unknown"
         : "—";
 
     const rows = [...filtered];
@@ -55,18 +55,18 @@ const ObjectInventoryTable: React.FC<Props> = ({
         sortKey === "name"
           ? a.name || ""
           : sortKey === "type"
-          ? a["@type"]
-          : sortKey === "status"
-          ? getStatus(a)
-          : getSource(a);
+            ? a["@type"]
+            : sortKey === "status"
+              ? getStatus(a)
+              : getSource(a);
       const bv =
         sortKey === "name"
           ? b.name || ""
           : sortKey === "type"
-          ? b["@type"]
-          : sortKey === "status"
-          ? getStatus(b)
-          : getSource(b);
+            ? b["@type"]
+            : sortKey === "status"
+              ? getStatus(b)
+              : getSource(b);
       return av.localeCompare(bv) * mul;
     });
     return rows;
@@ -168,8 +168,8 @@ const ObjectInventoryTable: React.FC<Props> = ({
               ? o.fileData
                 ? "Local file"
                 : o.contentUrl
-                ? "External URL"
-                : "Unknown"
+                  ? "External URL"
+                  : "Unknown"
               : "—";
             return (
               <tr key={o["@id"]}>
@@ -373,8 +373,9 @@ const Status = styled.span<{ $ok?: boolean }>`
 `;
 
 const Mono = styled.code`
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
   font-size: 0.8rem;
   color: #6b7280;
   white-space: nowrap;

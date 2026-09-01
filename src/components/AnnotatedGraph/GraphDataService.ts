@@ -1,4 +1,8 @@
-import { RawGraphData, RawGraphEntity, AnnotationData } from "../../types/graph";
+import {
+  RawGraphData,
+  RawGraphEntity,
+  AnnotationData,
+} from "../../types/graph";
 
 export class GraphDataService {
   private graphDict: { [arkId: string]: RawGraphEntity };
@@ -33,7 +37,8 @@ export class GraphDataService {
           if (Array.isArray(hasPart)) {
             for (let i = hasPart.length - 1; i >= 0; i--) {
               const partRef = hasPart[i];
-              const partId = typeof partRef === "string" ? partRef : partRef?.["@id"];
+              const partId =
+                typeof partRef === "string" ? partRef : partRef?.["@id"];
               if (!partId) continue;
               const partEntity = this.graphDict[partId];
               if (!partEntity) continue;
@@ -76,7 +81,7 @@ export class GraphDataService {
   }
 
   resolveReference(
-    ref: { "@id": string } | string | undefined
+    ref: { "@id": string } | string | undefined,
   ): RawGraphEntity | null {
     if (!ref) return null;
     const id = typeof ref === "string" ? ref : ref["@id"];
@@ -84,7 +89,7 @@ export class GraphDataService {
   }
 
   resolveReferences(
-    refs: { "@id": string } | Array<{ "@id": string }> | undefined
+    refs: { "@id": string } | Array<{ "@id": string }> | undefined,
   ): RawGraphEntity[] {
     if (!refs) return [];
     const refsArray = Array.isArray(refs) ? refs : [refs];
@@ -95,7 +100,7 @@ export class GraphDataService {
 
   getRelatedNodes(
     nodeId: string,
-    relationshipType: keyof RawGraphEntity
+    relationshipType: keyof RawGraphEntity,
   ): RawGraphEntity[] {
     const node = this.getNode(nodeId);
     if (!node) return [];
@@ -169,7 +174,8 @@ export class GraphDataService {
     const annotatedBy = node["evi:annotatedBy"];
     if (annotatedBy && Array.isArray(annotatedBy) && annotatedBy.length > 0) {
       const annotationEntity = this.getNode(annotatedBy[0]["@id"]);
-      if (annotationEntity) return annotationEntity as unknown as AnnotationData;
+      if (annotationEntity)
+        return annotationEntity as unknown as AnnotationData;
     }
 
     return null;
@@ -183,7 +189,10 @@ export class GraphDataService {
       ? entity["@type"]
       : [entity["@type"]];
     return types.some(
-      (t) => t && (t.includes("AnnotatedComputation") || t.includes("AnnotatedEvidenceGraph"))
+      (t) =>
+        t &&
+        (t.includes("AnnotatedComputation") ||
+          t.includes("AnnotatedEvidenceGraph")),
     );
   }
 
@@ -203,12 +212,21 @@ export class GraphDataService {
       if (!node) continue;
 
       const relationships = [
-        "generatedBy", "usedDataset", "usedSoftware", "usedSample",
-        "usedInstrument", "usedMLModel", "hasOutputs", "createdBy",
+        "generatedBy",
+        "usedDataset",
+        "usedSoftware",
+        "usedSample",
+        "usedInstrument",
+        "usedMLModel",
+        "hasOutputs",
+        "createdBy",
       ];
 
       for (const rel of relationships) {
-        const relatedNodes = this.getRelatedNodes(id, rel as keyof RawGraphEntity);
+        const relatedNodes = this.getRelatedNodes(
+          id,
+          rel as keyof RawGraphEntity,
+        );
         for (const relatedNode of relatedNodes) {
           if (!visited.has(relatedNode["@id"])) {
             queue.push({

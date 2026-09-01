@@ -56,7 +56,7 @@ const CreateEntityPage: React.FC = () => {
         selectedConfig,
         parent,
         parentArkId,
-        entityType || ""
+        entityType || "",
       );
       setFormData(initialFormData);
 
@@ -113,7 +113,10 @@ const CreateEntityPage: React.FC = () => {
         description: prev.description || fileMetadata.description,
         contentSize: prev.contentSize || fileMetadata.contentSize,
         filename: prev.filename || fileMetadata.filename,
-        "@id": shouldUpdateId && entityType ? generateArkId(entityType, updatedName) : prev["@id"],
+        "@id":
+          shouldUpdateId && entityType
+            ? generateArkId(entityType, updatedName)
+            : prev["@id"],
       };
     });
   };
@@ -126,7 +129,7 @@ const CreateEntityPage: React.FC = () => {
     const missingFields = validateRequiredFields(formData, config);
     if (missingFields.length > 0) {
       alert(
-        `Missing required fields:\n\n${missingFields.map((f) => `• ${f}`).join("\n")}`
+        `Missing required fields:\n\n${missingFields.map((f) => `• ${f}`).join("\n")}`,
       );
       return;
     }
@@ -170,7 +173,7 @@ const CreateEntityPage: React.FC = () => {
     const missingFields = validateRequiredFields(formData, config);
     if (missingFields.length > 0) {
       alert(
-        `Cannot download: Missing required fields:\n\n${missingFields.map((f) => `• ${f}`).join("\n")}`
+        `Cannot download: Missing required fields:\n\n${missingFields.map((f) => `• ${f}`).join("\n")}`,
       );
       return;
     }
@@ -198,7 +201,7 @@ const CreateEntityPage: React.FC = () => {
   const handleCancel = () => {
     if (
       window.confirm(
-        "Are you sure you want to cancel? Unsaved changes will be lost."
+        "Are you sure you want to cancel? Unsaved changes will be lost.",
       )
     ) {
       if (parentArkId) {
@@ -279,7 +282,7 @@ const CreateEntityPage: React.FC = () => {
 
 const PageContainer = styled.div`
   min-height: 100vh;
-  background-color: #f9fafb;
+  background-color: #f7f9f9;
   padding: 20px;
 `;
 
@@ -297,13 +300,13 @@ const TitleSection = styled.div`
 const PageTitle = styled.h1`
   font-size: 2rem;
   font-weight: 700;
-  color: #111827;
+  color: #18242a;
   margin: 0;
 `;
 
 const ParentInfo = styled.div`
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #51626b;
   font-family: monospace;
 `;
 
@@ -335,12 +338,12 @@ const LoadingContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f9fafb;
+  background-color: #f7f9f9;
 `;
 
 const LoadingText = styled.div`
   font-size: 1.125rem;
-  color: #6b7280;
+  color: #51626b;
 `;
 
 const ErrorContainer = styled.div`
@@ -348,7 +351,7 @@ const ErrorContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f9fafb;
+  background-color: #f7f9f9;
 `;
 
 const ErrorText = styled.div`

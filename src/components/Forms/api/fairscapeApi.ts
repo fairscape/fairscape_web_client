@@ -12,7 +12,7 @@ export function useFairscapeApi() {
      */
     uploadRoCrate: async (
       rocrate: any,
-      baseDatasetArk?: string
+      baseDatasetArk?: string,
     ): Promise<any> => {
       const path = baseDatasetArk
         ? `/rocrate/metadata?baseDatasetArk=${encodeURIComponent(baseDatasetArk)}`
@@ -30,7 +30,7 @@ export function useFairscapeApi() {
     updateGitHubFile: async (
       fileUrl: string,
       yamlContent: string,
-      commitMessage: string = "Update D4D from Fairscape review"
+      commitMessage: string = "Update D4D from Fairscape review",
     ): Promise<any> => {
       const formData = new FormData();
       formData.append("file_url", fileUrl);

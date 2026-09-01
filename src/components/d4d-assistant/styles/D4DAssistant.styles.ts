@@ -18,10 +18,10 @@ export const BackButton = styled.button`
   left: 0;
   top: 0;
   padding: 10px 20px;
-  background: #6c757d;
+  background: #51626b;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   font-weight: 600;
   transition: background 0.2s;
@@ -49,9 +49,9 @@ export const IssueMetadata = styled.p`
 `;
 
 export const InfoBanner = styled.div`
-  background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%);
+  background: #ebf2f4;
   border: 2px solid #3e7aa8;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 30px;
   margin-bottom: 30px;
   display: flex;
@@ -96,7 +96,7 @@ export const InfoBannerWarning = styled.div`
   gap: 10px;
   background: #fff3cd;
   border: 1px solid #ffc107;
-  border-radius: 6px;
+  border-radius: 2px;
   padding: 12px 15px;
   color: #856404;
   margin-top: 15px;
@@ -185,6 +185,10 @@ export const TwoColumnLayout = styled.div`
   grid-template-columns: 1fr 450px;
   gap: 30px;
   align-items: start;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const LeftColumn = styled.div``;
@@ -193,17 +197,19 @@ export const RightColumn = styled.div``;
 
 export const Section = styled.div`
   background: white;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 30px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
 `;
 
 export const CreateCard = styled.div`
   background: white;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 50px 40px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 768px) {
+    padding: 32px 20px;
+  }
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -237,7 +243,7 @@ export const CreateButton = styled.button`
   background: #28a745;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   font-weight: 600;
   font-size: 1.1rem;
   cursor: pointer;
@@ -257,7 +263,7 @@ export const SectionTitle = styled.h2`
 
 export const IssuesTable = styled.div`
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  border-radius: 2px;
   overflow: hidden;
 `;
 
@@ -270,7 +276,7 @@ export const StyledIssueRow = styled.div`
   transition: background 0.2s;
 
   &:hover {
-    background: #f8f9fa;
+    background: #f7f9f9;
   }
 
   &:last-child {
@@ -311,7 +317,7 @@ export const IssueLabel = styled.span`
   background: #e7f3ff;
   color: #0366d6;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: 2px;
   font-size: 0.75rem;
 `;
 
@@ -357,11 +363,11 @@ export const HelpText = styled.p`
 `;
 
 export const ExpandedHelp = styled.div`
-  background: #f8f9fa;
+  background: #f7f9f9;
   border-left: 3px solid #3e7aa8;
   padding: 20px;
   margin: 15px 0;
-  border-radius: 4px;
+  border-radius: 2px;
 `;
 
 export const ExpandedHelpTitle = styled.h4`
@@ -399,7 +405,7 @@ export const ExpandedHelpExample = styled.div`
   border: 1px solid #e0e0e0;
   padding: 12px;
   margin-top: 10px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 0.85rem;
   color: #333;
   font-family: monospace;
@@ -416,7 +422,7 @@ export const Select = styled.select`
   padding: 12px 16px;
   font-size: 1rem;
   border: 2px solid #3e7aa8;
-  border-radius: 6px;
+  border-radius: 2px;
   background: white;
   cursor: pointer;
   transition: border-color 0.2s;
@@ -424,7 +430,6 @@ export const Select = styled.select`
   &:focus {
     outline: none;
     border-color: #2c5f8d;
-    box-shadow: 0 0 0 3px rgba(62, 122, 168, 0.1);
   }
 `;
 
@@ -433,7 +438,7 @@ export const Textarea = styled.textarea`
   padding: 12px 16px;
   font-size: 1rem;
   border: 2px solid #3e7aa8;
-  border-radius: 6px;
+  border-radius: 2px;
   font-family: inherit;
   resize: vertical;
   transition: border-color 0.2s;
@@ -441,7 +446,6 @@ export const Textarea = styled.textarea`
   &:focus {
     outline: none;
     border-color: #2c5f8d;
-    box-shadow: 0 0 0 3px rgba(62, 122, 168, 0.1);
   }
 `;
 
@@ -462,7 +466,7 @@ export const UploadButton = styled.button`
   background: #3e7aa8;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
@@ -475,8 +479,8 @@ export const UploadButton = styled.button`
 export const FilesList = styled.div`
   margin-top: 15px;
   padding: 15px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  background: #f7f9f9;
+  border-radius: 2px;
 `;
 
 export const FileItem = styled.div`
@@ -541,15 +545,13 @@ export const SubmitButton = styled.button`
   background: #3e7aa8;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
     background: #2c5a7a;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
   &:active {
@@ -568,7 +570,7 @@ export const ReviewButton = styled.button`
   background: #3e7aa8;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -578,8 +580,6 @@ export const ReviewButton = styled.button`
 
   &:hover:not(:disabled) {
     background: #2c5a7a;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
   &:active {
@@ -594,16 +594,16 @@ export const ReviewButton = styled.button`
 `;
 
 export const IssueBody = styled.div`
-  background: #f8f9fa;
+  background: #f7f9f9;
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  border-radius: 2px;
   padding: 20px;
 `;
 
 export const Comment = styled.div`
-  background: #f8f9fa;
+  background: #f7f9f9;
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  border-radius: 2px;
   padding: 20px;
   margin-bottom: 15px;
 `;
@@ -746,9 +746,9 @@ export const DialogContent = styled.div`
 `;
 
 export const DialogTitle = styled.h3`
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   color: #3e7aa8;
-  margin: 0 0 20px 0;
+  margin: 0;
 `;
 
 export const DialogBody = styled.div`
@@ -756,27 +756,33 @@ export const DialogBody = styled.div`
 `;
 
 export const DialogText = styled.p`
-  color: #333;
-  line-height: 1.6;
-  margin: 0 0 15px 0;
+  color: #666;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
 `;
 
 export const DialogNote = styled.div`
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
-  background: #e3f2fd;
-  border-left: 3px solid #3e7aa8;
-  padding: 12px 15px;
-  border-radius: 4px;
-  color: #333;
-  font-size: 0.9rem;
-  margin-top: 15px;
+  padding: 12px 16px;
+  background: #f0f8ff;
+  border: 1px solid #3e7aa8;
+  border-radius: 2px;
+  margin-bottom: 12px;
 
   svg {
-    flex-shrink: 0;
+    animation: spin 2s linear infinite;
     color: #3e7aa8;
-    margin-top: 2px;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;
 

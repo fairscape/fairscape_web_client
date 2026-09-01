@@ -130,12 +130,17 @@ const Sidebar = styled.div`
   gap: 20px;
   position: sticky;
   top: 20px;
+
+  @media (max-width: 1024px) {
+    position: static;
+    width: 100%;
+  }
 `;
 
 const SidebarSection = styled.div`
   background: white;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 20px;
 `;
 
@@ -154,18 +159,18 @@ const VisibilityToggle = styled.div`
 
 const VisibilityButton = styled.button<{ active: boolean }>`
   padding: 10px 16px;
-  border: 2px solid ${(props) => (props.active ? "#3e7aa8" : "#e0e0e0")};
-  background: ${(props) => (props.active ? "#e8f4f8" : "white")};
-  color: ${(props) => (props.active ? "#3e7aa8" : "#666")};
-  border-radius: 6px;
+  border: 2px solid ${(e) => (e.active ? "#3e7aa8" : "#e0e0e0")};
+  background: ${(e) => (e.active ? "#e8f4f8" : "white")};
+  color: ${(e) => (e.active ? "#3e7aa8" : "#666")};
+  border-radius: 2px;
   font-size: 0.9rem;
-  font-weight: ${(props) => (props.active ? "600" : "400")};
+  font-weight: ${(e) => (e.active ? "600" : "400")};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
     border-color: #3e7aa8;
-    background: ${(props) => (props.active ? "#e8f4f8" : "#f5f5f5")};
+    background: ${(e) => (e.active ? "#e8f4f8" : "#f5f5f5")};
   }
 `;
 
@@ -186,12 +191,12 @@ const ProgressBar = styled.div`
   width: 100%;
   height: 8px;
   background: #e0e0e0;
-  border-radius: 4px;
+  border-radius: 2px;
   overflow: hidden;
 `;
 
 const ProgressFill = styled.div<{ width: number }>`
-  width: ${(props) => props.width}%;
+  width: ${(e) => e.width}%;
   height: 100%;
   background: #3e7aa8;
   transition: width 0.3s;
@@ -237,40 +242,23 @@ const ActionButton = styled.button<{
   padding: 12px 20px;
   margin-bottom: 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   font-size: 1rem;
   font-weight: 600;
-  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
+  cursor: ${(e) => (e.disabled ? "not-allowed" : "pointer")};
   transition: all 0.2s;
 
-  background: ${(props) => {
-    if (props.disabled) return "#e0e0e0";
-    if (props.primary) return "#3e7aa8";
-    if (props.variant === "secondary") return "white";
-    return "#5a9bc4";
-  }};
+  background: ${(e) => (e.disabled ? "#e0e0e0" : e.primary ? "#3e7aa8" : e.variant === "secondary" ? "white" : "#5a9bc4")};
 
-  color: ${(props) => {
-    if (props.disabled) return "#999";
-    if (props.variant === "secondary") return "#666";
-    return "white";
-  }};
+  color: ${(e) => (e.disabled ? "#999" : e.variant === "secondary" ? "#666" : "white")};
 
-  border: ${(props) =>
-    props.variant === "secondary" ? "2px solid #e0e0e0" : "none"};
+  border: ${(e) => (e.variant === "secondary" ? "2px solid #e0e0e0" : "none")};
 
   &:hover {
-    ${(props) =>
-      !props.disabled &&
+    ${(e) =>
+      !e.disabled &&
       `
-      background: ${
-        props.primary
-          ? "#2d5f7f"
-          : props.variant === "secondary"
-          ? "#f5f5f5"
-          : "#4a8aad"
-      };
-      transform: translateY(-1px);
+      background: ${e.primary ? "#2d5f7f" : e.variant === "secondary" ? "#f5f5f5" : "#4a8aad"};
     `}
   }
 

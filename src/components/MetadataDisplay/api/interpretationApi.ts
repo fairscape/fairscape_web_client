@@ -21,7 +21,7 @@ export function useInterpretationApi() {
 
   const triggerInterpretation = (
     ark: string,
-    force: boolean = true
+    force: boolean = true,
   ): Promise<{ task_id: string }> =>
     http(`/interpretation/${encodeURIComponent(ark)}?force=${force}`, {
       method: "POST",

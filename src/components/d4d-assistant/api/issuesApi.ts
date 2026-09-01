@@ -9,7 +9,7 @@ export const fetchIssues = async (state: string = "open"): Promise<Issue[]> => {
 };
 
 export const fetchIssueDetail = async (
-  issueNumber: number
+  issueNumber: number,
 ): Promise<IssueDetail> => {
   const response = await fetch(`${API_URL}/issues/${issueNumber}`);
   if (!response.ok) throw new Error("Failed to fetch issue details");
@@ -20,7 +20,7 @@ export const createIssue = async (
   title: string,
   body: string,
   labels: string[],
-  files: File[]
+  files: File[],
 ): Promise<any> => {
   const formData = new FormData();
   formData.append("title", title);
@@ -39,7 +39,7 @@ export const createIssue = async (
 
 export const addComment = async (
   issueNumber: number,
-  body: string
+  body: string,
 ): Promise<any> => {
   const response = await fetch(`${API_URL}/issues/${issueNumber}/comments`, {
     method: "POST",
@@ -53,7 +53,7 @@ export const addComment = async (
 
 export const updateIssue = async (
   issueNumber: number,
-  updates: { state?: string; title?: string; body?: string; labels?: string[] }
+  updates: { state?: string; title?: string; body?: string; labels?: string[] },
 ): Promise<any> => {
   const response = await fetch(`${API_URL}/issues/${issueNumber}`, {
     method: "PATCH",

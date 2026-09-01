@@ -9,7 +9,7 @@ export const SectionHeader = styled.div`
 
 export const SectionTitle = styled.h2`
   font-size: 20px;
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
   margin-top: 0;
   margin-bottom: 0;
 `;

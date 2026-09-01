@@ -1,13 +1,13 @@
 import { Metadata, RawGraphEntity } from "../types";
 
 export const findRootEntity = (
-  graph: RawGraphEntity[]
+  graph: RawGraphEntity[],
 ): RawGraphEntity | undefined => {
   const metadataDescriptor = graph.find(
     (e) =>
       e["@id"] === "ro-crate-metadata.json" ||
       e["@id"] === null ||
-      e["@id"] === "./ro-crate-metadata.json"
+      e["@id"] === "./ro-crate-metadata.json",
   );
 
   let rootId = metadataDescriptor?.about?.["@id"];
@@ -25,7 +25,7 @@ export const findRootEntity = (
     const mainEntity = graph.find(
       (e) =>
         Array.isArray(e["@type"]) &&
-        e["@type"].includes("https://w3id.org/EVI#ROCrate")
+        e["@type"].includes("https://w3id.org/EVI#ROCrate"),
     );
     if (mainEntity) return mainEntity;
   }
@@ -40,7 +40,7 @@ export const findRootEntity = (
       (e) =>
         (Array.isArray(e["@type"]) &&
           e["@type"].includes("https://w3id.org/EVI#ROCrate")) ||
-        e["@id"] === "./"
+        e["@id"] === "./",
     ) || graph.find((e) => e["@id"] === "./")
   );
 };
@@ -48,7 +48,7 @@ export const findRootEntity = (
 const resolveField = (
   root: RawGraphEntity,
   topLevelKey: string,
-  additionalPropertyNames?: string[]
+  additionalPropertyNames?: string[],
 ): any => {
   if (root[topLevelKey] !== undefined && root[topLevelKey] !== null) {
     return root[topLevelKey];
@@ -85,7 +85,7 @@ export interface OverviewData {
   release_date?: string;
   content_size?: string;
   description?: string;
-  authors?: string;
+  authors?: Array<{ name: string; id?: string }>;
   publisher?: string;
   principal_investigator?: string;
   contact_email?: string;
@@ -111,43 +111,52 @@ export const processOverview = (metadata: Metadata): OverviewData => {
 
   if (!root) return {} as OverviewData;
 
-  let authors = "";
+  const authors: Array<{ name: string; id?: string }> = [];
   if (root.author) {
-    if (Array.isArray(root.author)) {
-      authors = root.author
-        .map((a) =>
-          typeof a === "object" && a !== null && a.name ? a.name : String(a)
-        )
-        .join("; ");
-    } else if (
-      typeof root.author === "object" &&
-      root.author !== null &&
-      (root.author as any).name
-    ) {
-      authors = (root.author as any).name;
-    } else {
-      authors = String(root.author);
+    const list = Array.isArray(root.author) ? root.author : [root.author];
+    for (const a of list) {
+      if (typeof a === "object" && a !== null) {
+        if ((a as any).name) {
+          authors.push({
+            name: (a as any).name,
+            id: (a as any)["@id"] || undefined,
+          });
+        } else if ((a as any)["@id"]) {
+          const referenced = graph.find((g) => g["@id"] === (a as any)["@id"]);
+          authors.push(
+            referenced?.name
+              ? { name: referenced.name, id: (a as any)["@id"] }
+              : { name: (a as any)["@id"], id: (a as any)["@id"] },
+          );
+        }
+      } else {
+        authors.push({ name: String(a) });
+      }
     }
   } else if (root.creator) {
-    if (Array.isArray(root.creator)) {
-      authors = root.creator.map((c) => resolveLink(c, graph)).join(", ");
-    } else {
-      authors = resolveLink(root.creator, graph);
+    const list = Array.isArray(root.creator) ? root.creator : [root.creator];
+    for (const c of list) {
+      authors.push({
+        name: resolveLink(c, graph),
+        id: typeof c === "object" && c !== null ? (c as any)["@id"] : undefined,
+      });
     }
   }
 
   const publisherValue = root.publisher || root.sdPublisher;
-  const publisher = resolveLink(publisherValue, graph);
+  const publisher = publisherValue
+    ? resolveLink(publisherValue, graph)
+    : undefined;
 
   let doi;
   const identifiers = Array.isArray(root.identifier)
     ? root.identifier
     : root.identifier
-    ? [root.identifier]
-    : [];
+      ? [root.identifier]
+      : [];
   const doiObject = identifiers.find(
     (id) =>
-      typeof id === "object" && id !== null && (id as any).propertyID === "doi"
+      typeof id === "object" && id !== null && (id as any).propertyID === "doi",
   );
 
   if (doiObject) {
@@ -156,7 +165,7 @@ export const processOverview = (metadata: Metadata): OverviewData => {
     const doiString = identifiers.find(
       (id) =>
         typeof id === "string" &&
-        (id.startsWith("https://doi.org/") || id.startsWith("doi:"))
+        (id.startsWith("https://doi.org/") || id.startsWith("doi:")),
     );
     if (doiString) doi = doiString;
   }
@@ -258,7 +267,7 @@ export const processOverview = (metadata: Metadata): OverviewData => {
       root.datePublished || root.dateCreated || root.dateModified || undefined,
     content_size: root.contentSize || undefined,
     description: root.description || root.abstract || undefined,
-    authors: authors || undefined,
+    authors: authors.length ? authors : undefined,
     publisher: publisher || undefined,
     principal_investigator:
       root.principalInvestigator || (root.PI as any)?.name || undefined,
@@ -305,7 +314,7 @@ export interface ComplianceEthicsData {
 }
 
 export const processComplianceEthics = (
-  metadata: Metadata
+  metadata: Metadata,
 ): ComplianceEthicsData => {
   const graph = (metadata["@graph"] as RawGraphEntity[]) || [];
   const root = findRootEntity(graph);
@@ -335,9 +344,8 @@ export const processComplianceEthics = (
         "Human Subject Data",
       ]) ?? undefined,
     humanSubjectResearch:
-      resolveField(root, "humanSubjectResearch", [
-        "Human Subject Research",
-      ]) ?? undefined,
+      resolveField(root, "humanSubjectResearch", ["Human Subject Research"]) ??
+      undefined,
     dataGovernanceCommittee:
       resolveField(root, "dataGovernanceCommittee", [
         "Data Governance Committee",
@@ -399,8 +407,7 @@ export const processAIReady = (metadata: Metadata): AIReadyData => {
     dataCollectionRawData: root["rai:dataCollectionRawData"] || undefined,
     dataCollectionTimeframe: root["rai:dataCollectionTimeframe"] || undefined,
     dataImputationProtocol: root["rai:dataImputationProtocol"] || undefined,
-    dataManipulationProtocol:
-      root["rai:dataManipulationProtocol"] || undefined,
+    dataManipulationProtocol: root["rai:dataManipulationProtocol"] || undefined,
     dataPreprocessingProtocol:
       root["rai:dataPreprocessingProtocol"] || undefined,
     dataAnnotationProtocol: root["rai:dataAnnotationProtocol"] || undefined,
@@ -453,11 +460,11 @@ export const processDistribution = (metadata: Metadata): DistributionData => {
   const identifiers = Array.isArray(root.identifier)
     ? root.identifier
     : root.identifier
-    ? [root.identifier]
-    : [];
+      ? [root.identifier]
+      : [];
   const doiObject = identifiers.find(
     (id) =>
-      typeof id === "object" && id !== null && (id as any).propertyID === "doi"
+      typeof id === "object" && id !== null && (id as any).propertyID === "doi",
   );
   if (doiObject) {
     doi = (doiObject as any).value || (doiObject as any)["@id"];
@@ -465,7 +472,7 @@ export const processDistribution = (metadata: Metadata): DistributionData => {
     const doiString = identifiers.find(
       (id) =>
         typeof id === "string" &&
-        (id.startsWith("https://doi.org/") || id.startsWith("doi:"))
+        (id.startsWith("https://doi.org/") || id.startsWith("doi:")),
     );
     if (doiString) doi = doiString;
   }
@@ -562,7 +569,7 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
                 .map((a) =>
                   typeof a === "object" && a !== null && a.name
                     ? a.name
-                    : String(a)
+                    : String(a),
                 )
                 .join("; ");
             } else if (
@@ -613,7 +620,7 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
           if (metadataPath && typeof metadataPath === "string") {
             const basePath = metadataPath.substring(
               0,
-              metadataPath.lastIndexOf("/")
+              metadataPath.lastIndexOf("/"),
             );
             previewUrl = `/data/${basePath}/ro-crate-preview.html`;
             if (basePath === "" && partId !== "./") {
@@ -629,13 +636,13 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
           const subIdentifiers = Array.isArray(partEntity.identifier)
             ? partEntity.identifier
             : partEntity.identifier
-            ? [partEntity.identifier]
-            : [];
+              ? [partEntity.identifier]
+              : [];
           const subDoiObject = subIdentifiers.find(
             (id) =>
               typeof id === "object" &&
               id !== null &&
-              (id as any).propertyID === "doi"
+              (id as any).propertyID === "doi",
           );
           if (subDoiObject) {
             subcrateDOI =
@@ -644,7 +651,7 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
             const subDoiString = subIdentifiers.find(
               (id) =>
                 typeof id === "string" &&
-                (id.startsWith("https://doi.org/") || id.startsWith("doi:"))
+                (id.startsWith("https://doi.org/") || id.startsWith("doi:")),
             );
             if (subDoiString) subcrateDOI = subDoiString;
           }
@@ -656,7 +663,7 @@ export const processCompositionRefs = (metadata: Metadata): CompositionData => {
           ) {
             subcrateDOI = `https://doi.org/${subcrateDOI.replace(
               /^doi:\s*/,
-              ""
+              "",
             )}`;
           }
 

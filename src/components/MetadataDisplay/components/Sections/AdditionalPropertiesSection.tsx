@@ -1,35 +1,12 @@
 import React from "react";
 import styled from "styled-components";
-
-const SectionContainer = styled.div`
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-`;
-
-const SectionHeader = styled.div`
-  margin: 25px 0 15px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  color: ${({ theme }) => theme.colors.primary};
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 20px;
-  color: ${({ theme }) => theme.colors.primary};
-  margin-top: 0;
-  margin-bottom: 0;
-`;
+import { SectionContainer, SectionHeader } from "../../shared.styles";
 
 const Container = styled.div`
-  padding: 0 ${({ theme }) => theme.spacing.lg}
-    ${({ theme }) => theme.spacing.lg};
-  line-height: 1.6;
-  word-break: break-word;
-  background-color: ${({ theme }) => theme.colors.background || "#ffffff"};
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  background-color: ${({ theme }) => theme.colors.background};
+  padding: ${({ theme }) => theme.spacing.lg};
   border-radius: ${({ theme }) => theme.borderRadius.md};
-  box-shadow: ${({ theme }) =>
-    theme.shadows?.subtle || "0 2px 4px rgba(0,0,0,0.06)"};
-  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
 `;
 
 const PropertyItem = styled.div`
@@ -90,33 +67,29 @@ const AdditionalPropertiesSection: React.FC<
 
   return (
     <SectionContainer data-testid="additional-properties-section">
-      <SectionHeader>
-        <SectionTitle>Additional Properties</SectionTitle>
-      </SectionHeader>
-      <Container>
-        {properties.map((prop, index) => (
-          <PropertyItem key={index}>
-            <h3>{prop.name}</h3>
-            {Array.isArray(prop.value) ? (
-              <div className="value-content">
-                <ul>
-                  {prop.value.map((item, itemIndex) => (
-                    <li
-                      key={itemIndex}
-                      dangerouslySetInnerHTML={{ __html: String(item) }}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div
-                className="value-content"
-                dangerouslySetInnerHTML={{ __html: String(prop.value) }}
-              />
-            )}
-          </PropertyItem>
-        ))}
-      </Container>
+      <SectionHeader>Additional Properties</SectionHeader>
+      {properties.map((prop, index) => (
+        <PropertyItem key={index}>
+          <h3>{prop.name}</h3>
+          {Array.isArray(prop.value) ? (
+            <div className="value-content">
+              <ul>
+                {prop.value.map((item, itemIndex) => (
+                  <li
+                    key={itemIndex}
+                    dangerouslySetInnerHTML={{ __html: String(item) }}
+                  />
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div
+              className="value-content"
+              dangerouslySetInnerHTML={{ __html: String(prop.value) }}
+            />
+          )}
+        </PropertyItem>
+      ))}
     </SectionContainer>
   );
 };

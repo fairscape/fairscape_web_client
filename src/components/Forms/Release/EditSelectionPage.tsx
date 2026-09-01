@@ -54,29 +54,26 @@ const EditSelectionPage: React.FC<EditSelectionPageProps> = ({
 };
 
 const Header = styled.div`
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 30px;
-`;
-
-const BackButton = styled.button`
-  position: absolute;
-  left: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  background: #6c757d;
+  margin-bottom: 8px;
+`;
+
+const BackButton = styled.button`
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #3e7aa8;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 14px;
+  transition: all 0.2s;
 
   &:hover {
-    background: #5a6268;
+    background: #2d5f7f;
   }
 `;
 
@@ -87,43 +84,52 @@ const Title = styled.h2`
 `;
 
 const EditContent = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  align-items: start;
+  display: flex;
+  gap: 10px;
 `;
 
-const UploadSection = styled.div``;
+const UploadSection = styled.div`
+  max-width: 800px;
+  margin: 0 auto;
+`;
 
-const SavedSection = styled.div``;
+const SavedSection = styled.div`
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  background: #f7f9f9;
+  border-radius: 2px 8px 0 0;
+  overflow: hidden;
+`;
 
 const SectionTitle = styled.h3`
   color: #3e7aa8;
   font-size: 18px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
 `;
 
 const Description = styled.p`
-  color: #666;
   margin-bottom: 20px;
-  line-height: 1.5;
+  color: #666;
+  background: #fff3cd;
+  padding: 12px;
+  border-radius: 2px;
+  border: 1px solid #ffeeba;
 `;
 
 const UploadButton = styled.button`
+  background: transparent;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 4px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: #3e7aa8;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
 
   &:hover {
-    background: #2c5f8d;
+    opacity: 0.7;
   }
 `;
 

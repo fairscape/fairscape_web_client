@@ -5,14 +5,19 @@ function safeFilename(name: string): string {
 }
 
 function ext(ds: DatasetInfo): string {
-  return (ds.fileFormat || "").toLowerCase().includes("parquet") ? ".parquet" : ".csv";
+  return (ds.fileFormat || "").toLowerCase().includes("parquet")
+    ? ".parquet"
+    : ".csv";
 }
 
 export function generateCLISingle(ds: DatasetInfo): string {
   return `# Download: ${ds.name}\ncurl -L -o "${safeFilename(ds.name)}${ext(ds)}" "${ds.contentUrl}"\n`;
 }
 
-export function generateCLIMulti(groups: DatasetGroup[], ungrouped: DatasetInfo[]): string {
+export function generateCLIMulti(
+  groups: DatasetGroup[],
+  ungrouped: DatasetInfo[],
+): string {
   let code = `#!/bin/bash\n# Download all datasets\n\nmkdir -p data\ncd data\n\n`;
 
   for (const group of groups) {
@@ -21,11 +26,16 @@ export function generateCLIMulti(groups: DatasetGroup[], ungrouped: DatasetInfo[
       code += `# ${group.schemaName}\n`;
       code += `curl -L -o "${safeFilename(ds.name)}${ext(ds)}" "${ds.contentUrl}"\n\n`;
     } else {
-      const fileExt = (group.fileFormat || "").toLowerCase().includes("parquet") ? ".parquet" : ".csv";
+      const fileExt = (group.fileFormat || "").toLowerCase().includes("parquet")
+        ? ".parquet"
+        : ".csv";
       code += `# ${group.schemaName} (${group.datasets.length} files)\n`;
       code += `mkdir -p "${safeFilename(group.schemaName)}"\n`;
       code += `urls=(\n`;
-      const show = group.datasets.length <= 6 ? group.datasets : group.datasets.slice(0, 3);
+      const show =
+        group.datasets.length <= 6
+          ? group.datasets
+          : group.datasets.slice(0, 3);
       const remaining = group.datasets.length - show.length;
       for (const ds of show) {
         code += `  "${ds.contentUrl}"  # ${ds.name}\n`;
@@ -45,7 +55,8 @@ export function generateCLIMulti(groups: DatasetGroup[], ungrouped: DatasetInfo[
     code += `curl -L -o "${safeFilename(ds.name)}${ext(ds)}" "${ds.contentUrl}"\n`;
   }
 
-  const total = groups.reduce((s, g) => s + g.datasets.length, 0) + ungrouped.length;
+  const total =
+    groups.reduce((s, g) => s + g.datasets.length, 0) + ungrouped.length;
   code += `\necho "Done! ${total} files total."\n`;
   return code;
 }

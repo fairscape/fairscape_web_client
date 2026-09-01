@@ -137,7 +137,7 @@ export class FileProcessingService {
 
   private async peekFileContent(
     file: File,
-    bytes = 1024
+    bytes = 1024,
   ): Promise<string | null> {
     try {
       const slice = file.slice(0, Math.min(bytes, file.size));
@@ -237,7 +237,7 @@ export class FileProcessingService {
     }
 
     const hasHighBytes = Array.from(content).some(
-      (char) => char.charCodeAt(0) > 127
+      (char) => char.charCodeAt(0) > 127,
     );
 
     return hasHighBytes ? "UTF-8" : "ASCII";
@@ -301,7 +301,7 @@ export class FileProcessingService {
 
     if (!/^[\w\-. ()]+$/.test(file.name)) {
       warnings.push(
-        "Filename contains special characters that may cause issues"
+        "Filename contains special characters that may cause issues",
       );
     }
 

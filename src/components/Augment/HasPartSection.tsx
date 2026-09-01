@@ -67,12 +67,12 @@ const HasPartSection: React.FC<HasPartSectionProps> = ({
                     {Array.isArray(entity.author)
                       ? entity.author
                           .map((a: any) =>
-                            typeof a === "object" && a.name ? a.name : a
+                            typeof a === "object" && a.name ? a.name : a,
                           )
                           .join(", ")
                       : typeof entity.author === "object" && entity.author?.name
-                      ? entity.author.name
-                      : entity.author || "-"}
+                        ? entity.author.name
+                        : entity.author || "-"}
                   </td>
                   {/* Add other cells */}
                 </tr>

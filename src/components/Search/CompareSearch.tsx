@@ -17,7 +17,7 @@ const SearchInput = styled.input`
   flex: 1;
   padding: ${({ theme }) => theme.spacing.md};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   margin-right: ${({ theme }) => theme.spacing.md};
   font-family: ${({ theme }) => theme.fonts.main};
   font-size: 1rem;
@@ -29,11 +29,10 @@ const SearchInput = styled.input`
 `;
 
 const SearchButton = styled.button<{ isLoading?: boolean }>`
-  background-color: ${({ theme, isLoading }) =>
-    isLoading ? theme.colors.primaryLight : theme.colors.primary};
+  background-color: ${({ theme, isLoading }) => (isLoading ? theme.colors.primaryLight : theme.colors.primary)};
   color: white;
   border: none;
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.lg};
   font-weight: 600;
   cursor: ${({ isLoading }) => (isLoading ? "not-allowed" : "pointer")};
@@ -56,7 +55,7 @@ const MetadataContainer = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.lg};
   background-color: ${({ theme }) => theme.colors.background};
   padding: ${({ theme }) => theme.spacing.md};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -65,12 +64,14 @@ const MetadataContainer = styled.div`
 
 const MetadataBox = styled.div`
   padding: ${({ theme }) => theme.spacing.md};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   background-color: ${({ theme }) => theme.colors.surface};
 `;
 
 const MetadataTitle = styled.h3`
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
+  font-weight: 650;
+  letter-spacing: -0.015em;
   margin: 0 0 ${({ theme }) => theme.spacing.sm} 0;
   font-size: 1.1rem;
 `;
@@ -85,7 +86,7 @@ const ErrorMetadata = styled.div`
   color: ${({ theme }) => theme.colors.error};
   padding: ${({ theme }) => theme.spacing.sm};
   background-color: #ffebee;
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border-left: 4px solid ${({ theme }) => theme.colors.error};
 `;
 
@@ -102,7 +103,9 @@ const ResultsGrid = styled.div`
 const ResultsSection = styled.div``;
 
 const ResultsTitle = styled.h2`
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
+  font-weight: 650;
+  letter-spacing: -0.015em;
   margin-bottom: ${({ theme }) => theme.spacing.md};
   font-size: 1.3rem;
   display: flex;
@@ -128,8 +131,7 @@ const LoadingIndicator = styled.span`
 
 const ResultCard = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid ${({ theme }) => theme.colors.border};
   padding: ${({ theme }) => theme.spacing.lg};
   margin-bottom: ${({ theme }) => theme.spacing.md};
@@ -181,15 +183,10 @@ const ResultDescription = styled.p`
 `;
 
 const ScoreBadge = styled.span<{ score: number }>`
-  background-color: ${({ theme, score }) =>
-    score > 0.7
-      ? theme.colors.success || "#4CAF50"
-      : score > 0.5
-      ? theme.colors.primary
-      : theme.colors.textSecondary};
+  background-color: ${({ theme, score }) => (score > 0.7 ? theme.colors.success || "#4CAF50" : score > 0.5 ? theme.colors.primary : theme.colors.textSecondary)};
   color: white;
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
-  border-radius: 16px;
+  border-radius: 2px;
   font-size: 0.75rem;
   font-weight: 600;
 `;
@@ -205,7 +202,7 @@ const Keyword = styled.span`
   background-color: ${({ theme }) => theme.colors.background};
   color: ${({ theme }) => theme.colors.textSecondary};
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
-  border-radius: 16px;
+  border-radius: 2px;
   font-size: 0.75rem;
 `;
 
@@ -248,7 +245,7 @@ const CompareSearch: React.FC = () => {
   const [loading, setLoading] = useState({ basic: false, semantic: false });
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [basicMetadata, setBasicMetadata] = useState<SearchMetadataInfo | null>(
-    null
+    null,
   );
   const [semanticMetadata, setSemanticMetadata] =
     useState<SearchMetadataInfo | null>(null);
@@ -261,7 +258,7 @@ const CompareSearch: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_URL}/search/${searchType}?query=${encodeURIComponent(query)}`
+        `${API_URL}/search/${searchType}?query=${encodeURIComponent(query)}`,
       );
 
       if (!response.ok) {
@@ -269,7 +266,7 @@ const CompareSearch: React.FC = () => {
           .json()
           .catch(() => ({ detail: "Unknown server error" }));
         throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
+          errorData.detail || `HTTP error! status: ${response.status}`,
         );
       }
 

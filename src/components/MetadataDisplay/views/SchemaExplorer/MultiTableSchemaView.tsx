@@ -17,10 +17,10 @@ const MultiTableSchemaView: React.FC<MultiTableSchemaViewProps> = ({
   metadata,
 }) => {
   const [activeTab, setActiveTab] = useState<string>(
-    schemas.length > 0 ? schemas[0].id : ""
+    schemas.length > 0 ? schemas[0].id : "",
   );
   const [specialTab, setSpecialTab] = useState<SpecialTab | null>(
-    schemas.length >= 2 ? "relationships" : null
+    schemas.length >= 2 ? "relationships" : null,
   );
 
   const activeSchema = schemas.find((s) => s.id === activeTab);
@@ -34,7 +34,7 @@ const MultiTableSchemaView: React.FC<MultiTableSchemaViewProps> = ({
       const colMap = new Map<string, string[]>();
       for (const jk of joinKeys) {
         if (jk.schemas.includes(schema.name) && schema.properties[jk.column]) {
-          const others = jk.schemas.filter(s => s !== schema.name);
+          const others = jk.schemas.filter((s) => s !== schema.name);
           colMap.set(jk.column, others);
         }
       }
@@ -45,10 +45,12 @@ const MultiTableSchemaView: React.FC<MultiTableSchemaViewProps> = ({
 
   const hasDatasets = useMemo(() => {
     if (!metadata?.["@graph"]) return false;
-    return metadata["@graph"].some((e: any) =>
-      Array.isArray(e["@type"]) &&
-      e["@type"].some((t: string) => t.includes("Dataset")) &&
-      e.contentUrl && e.contentUrl !== "Embargoed"
+    return metadata["@graph"].some(
+      (e: any) =>
+        Array.isArray(e["@type"]) &&
+        e["@type"].some((t: string) => t.includes("Dataset")) &&
+        e.contentUrl &&
+        e.contentUrl !== "Embargoed",
     );
   }, [metadata]);
 
@@ -90,10 +92,7 @@ const MultiTableSchemaView: React.FC<MultiTableSchemaViewProps> = ({
       {specialTab === "relationships" ? (
         <RelationshipDiagram schemas={schemas} />
       ) : specialTab === "code" ? (
-        <CodeSnippetsView
-          metadata={metadata}
-          bundleKind="rocrate"
-        />
+        <CodeSnippetsView metadata={metadata} bundleKind="rocrate" />
       ) : activeSchema ? (
         <ColumnDetailPanel
           schemaName={activeSchema.name}

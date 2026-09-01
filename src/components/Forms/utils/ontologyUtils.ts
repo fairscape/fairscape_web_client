@@ -21,21 +21,21 @@ const PREFERRED_ONTOLOGIES = [
 
 const getOntologyPriority = (source: string): number => {
   const preferred = PREFERRED_ONTOLOGIES.find(
-    (ont) => ont.name.toLowerCase() === source.toLowerCase()
+    (ont) => ont.name.toLowerCase() === source.toLowerCase(),
   );
   return preferred ? preferred.priority : 999;
 };
 
 const isPreferredOntology = (source: string): boolean => {
   return PREFERRED_ONTOLOGIES.some(
-    (ont) => ont.name.toLowerCase() === source.toLowerCase()
+    (ont) => ont.name.toLowerCase() === source.toLowerCase(),
   );
 };
 
 let debounceTimer: NodeJS.Timeout | null = null;
 
 export const searchOntologyTerms = async (
-  query: string
+  query: string,
 ): Promise<OntologyResult[]> => {
   if (!query || query.length < 3) {
     return [];
@@ -44,8 +44,8 @@ export const searchOntologyTerms = async (
   try {
     const response = await fetch(
       `${BIOPORTAL_BASE_URL}/search?q=${encodeURIComponent(
-        query
-      )}&pagesize=10&apikey=${BIOPORTAL_API_KEY}`
+        query,
+      )}&pagesize=10&apikey=${BIOPORTAL_API_KEY}`,
     );
 
     if (!response.ok) {
@@ -88,7 +88,7 @@ export const searchOntologyTerms = async (
 
 export const debouncedSearchOntologyTerms = (
   query: string,
-  callback: (results: OntologyResult[]) => void
+  callback: (results: OntologyResult[]) => void,
 ) => {
   if (debounceTimer) {
     clearTimeout(debounceTimer);

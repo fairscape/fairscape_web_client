@@ -2,101 +2,83 @@ import React from "react";
 import styled from "styled-components";
 
 export const PageContainer = styled.div`
-  max-width: 1400px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px;
-  background-color: #f8f9fa;
-  min-height: 100vh;
+  padding: 8px 12px 40px;
 `;
 
 export const Card = styled.div`
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e0e0e0;
+  background: #fff;
+  border: 1px solid #e7e7e9;
+  border-radius: 2px;
+  padding: 18px;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+  outline: none;
+
+  &:hover,
+  &:focus {
+    border-color: #3e7aa8;
+  }
 `;
 
 export const StyledButton = styled.button<{ variant?: string }>`
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid #e2e8ea;
+  color: #51626b;
+  border-radius: 2px;
+  width: 28px;
+  height: 28px;
+  line-height: 1;
+  font-size: 14px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
 
-  ${({ variant }) => {
-    switch (variant) {
-      case "secondary":
-        return `
-          background-color: #6c757d;
-          color: white;
-          &:hover {
-            background-color: #5a6268;
-          }
-        `;
-      case "danger":
-        return `
-          background-color: #dc3545;
-          color: white;
-          &:hover {
-            background-color: #c82333;
-          }
-        `;
-      default:
-        return `
-          background-color: #3e7aa8;
-          color: white;
-          &:hover {
-            background-color: #2c5f8d;
-          }
-        `;
-    }
-  }}
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  &:hover,
+  &:focus {
+    background: #fff1f2;
+    color: #b91c1c;
+    border-color: #fecaca;
   }
 `;
 
 const FieldWrapper = styled.div`
   margin-bottom: 20px;
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const Label = styled.label`
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
-  font-size: 14px;
-
-  span.required {
-    color: #dc3545;
-    margin-left: 4px;
-  }
+  font-size: 0.95rem;
 `;
 
 const StyledInput = styled.input`
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: border-color 0.15s ease;
+  border: 1px solid #e0e0e0;
+  border-radius: 2px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
 
   &:focus {
     outline: none;
     border-color: #3e7aa8;
-    box-shadow: 0 0 0 2px rgba(62, 122, 168, 0.1);
-  }
-
-  &::placeholder {
-    color: #999;
   }
 `;
 
@@ -120,22 +102,16 @@ const StyledSelect = styled.select`
 const StyledTextArea = styled.textarea`
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 14px;
-  min-height: 100px;
-  resize: vertical;
+  border: 1px solid #e0e0e0;
+  border-radius: 2px;
+  font-size: 0.95rem;
   font-family: inherit;
-  transition: border-color 0.15s ease;
+  resize: vertical;
+  transition: border-color 0.2s;
 
   &:focus {
     outline: none;
     border-color: #3e7aa8;
-    box-shadow: 0 0 0 2px rgba(62, 122, 168, 0.1);
-  }
-
-  &::placeholder {
-    color: #999;
   }
 `;
 
@@ -266,24 +242,30 @@ export const Divider = styled.hr`
 
 export const InfoText = styled.p`
   color: #666;
-  font-size: 14px;
-  margin-bottom: 15px;
+  font-size: 16px;
+  margin-bottom: 20px;
 `;
 
 export const ErrorMessage = styled.div`
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 12px;
-  border-radius: 4px;
-  border: 1px solid #f5c6cb;
-  margin-bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  background: ${(e) => (e.complete ? "#d4edda" : "#fff3cd")};
+  color: ${(e) => (e.complete ? "#155724" : "#856404")};
+  border: 1px solid ${(e) => (e.complete ? "#c3e6cb" : "#ffeeba")};
+
+  svg {
+    font-size: 14px;
+  }
 `;
 
 export const SuccessMessage = styled.div`
-  background-color: #d4edda;
-  color: #155724;
-  padding: 12px;
-  border-radius: 4px;
-  border: 1px solid #c3e6cb;
-  margin-bottom: 20px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 2px;
+  padding: 20px;
 `;

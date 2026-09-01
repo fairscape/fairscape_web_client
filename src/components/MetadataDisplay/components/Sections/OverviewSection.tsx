@@ -39,8 +39,8 @@ const DetailDisplay: React.FC<{
     const arkLink = value.startsWith("ark:")
       ? `https://n2t.net/${value}`
       : value.startsWith("http")
-      ? value
-      : null;
+        ? value
+        : null;
     if (arkLink) {
       displayValue = (
         <a href={arkLink} target="_blank" rel="noopener noreferrer">
@@ -132,11 +132,11 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ overviewData }) => {
   const keywordsArray = Array.isArray(keywords)
     ? keywords
     : typeof keywords === "string"
-    ? keywords
-        .split(/[,;]\s*/)
-        .map((k) => k.trim())
-        .filter((k) => k)
-    : [];
+      ? keywords
+          .split(/[,;]\s*/)
+          .map((k) => k.trim())
+          .filter((k) => k)
+      : [];
 
   return (
     <SectionContainer data-testid="overview-section">

@@ -5,18 +5,20 @@ import { Form, Button, ListGroup, Col, Row } from "react-bootstrap";
 export const FormSection = styled.div`
   background-color: white;
   padding: ${({ theme }) => theme.spacing.lg};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 `;
 
 export const FormSectionTitle = styled.h3`
-  font-size: 20px;
-  color: ${({ theme }) => theme.colors.primary};
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: ${({ theme }) => theme.colors.ink};
   margin-top: 0;
   margin-bottom: ${({ theme }) => theme.spacing.lg};
   padding-bottom: ${({ theme }) => theme.spacing.sm};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 export const FormRow = styled(Form.Group).attrs({ as: Row })`
@@ -136,34 +138,22 @@ export const StyledButton = styled(Button)`
   gap: 10px;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
   padding: 10px 20px;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
+  transition:
+    background-color 0.2s,
+    opacity 0.2s;
   min-width: 150px;
   text-align: center;
 
-  background-color: ${({ theme, variant }) =>
-    variant === "secondary"
-      ? "#6c757d"
-      : variant === "success"
-      ? theme.colors.success
-      : variant === "danger"
-      ? theme.colors.danger
-      : theme.colors.primary};
+  background-color: ${({ theme, variant }) => (variant === "secondary" ? "#51626B" : variant === "success" ? theme.colors.success : variant === "danger" ? theme.colors.danger : theme.colors.primary)};
 
   &:hover {
     color: white;
     opacity: 0.85;
-    background-color: ${({ theme, variant }) =>
-      variant === "secondary"
-        ? "#5a6268"
-        : variant === "success"
-        ? theme.colors.success
-        : variant === "danger"
-        ? theme.colors.danger
-        : theme.colors.primary};
+    background-color: ${({ theme, variant }) => (variant === "secondary" ? "#5a6268" : variant === "success" ? theme.colors.success : variant === "danger" ? theme.colors.danger : theme.colors.primary)};
   }
 
   &:disabled {
@@ -178,10 +168,10 @@ interface JsonLdPreviewProps {
 
 export const JsonLdPreview = styled.div`
   margin-top: 30px;
-  border: 1px solid #3e7aa8;
+  border: 1px solid ${({ theme }) => theme.colors.border};
   padding: 20px;
-  background-color: #f0f8ff;
-  border-radius: 4px;
+  background-color: ${({ theme }) => theme.colors.background};
+  border-radius: 2px;
   max-height: 400px;
   overflow-y: auto;
 
@@ -202,7 +192,7 @@ export const DraggableArea = styled(Row)`
   padding: ${({ theme }) => theme.spacing.md};
   background-color: #f8f9fa;
   border: 1px solid ${({ theme }) => theme.colors.borderLight};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
 `;
 
 export const ColumnHeader = styled.h4`
@@ -220,7 +210,7 @@ export const StyledListGroup = styled(ListGroup)`
   overflow-y: auto;
   background-color: #ffffff;
   border: 1px solid #ced4da;
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: ${({ theme }) => theme.spacing.sm};
   margin-bottom: ${({ theme }) => theme.spacing.md};
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075);
@@ -254,8 +244,8 @@ export const StyledListItem = styled(ListGroup.Item)`
 export const EntityTableContainer = styled.div`
   max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #dee2e6;
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border: 1px solid #e2e8ea;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   margin-top: ${({ theme }) => theme.spacing.sm};
 `;
 
@@ -264,30 +254,34 @@ export const EntityTable = styled.table`
   border-collapse: collapse;
   font-size: 0.85rem;
 
+  thead {
+    border-top: 2px solid ${({ theme }) => theme.colors.ink};
+  }
+
   th,
   td {
-    border: 1px solid #dee2e6;
-    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8ea;
+    padding: 9px 10px;
     text-align: left;
     vertical-align: middle;
     word-break: break-word;
   }
 
   th {
-    background-color: #e9ecef;
-    color: #495057;
-    font-weight: 600;
+    background-color: ${({ theme }) => theme.colors.background};
+    font-family: ${({ theme }) => theme.fonts.mono};
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: ${({ theme }) => theme.colors.ink3};
     position: sticky;
     top: 0;
     z-index: 1;
   }
 
-  tr:nth-child(even) td {
-    background-color: #f8f9fa;
-  }
-
   tr:hover td {
-    background-color: #e2f1ff;
+    background-color: ${({ theme }) => theme.colors.primaryTint};
     cursor: default;
   }
 
@@ -296,37 +290,49 @@ export const EntityTable = styled.table`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-family: monospace;
+    font-family: ${({ theme }) => theme.fonts.mono};
     font-size: 0.8rem;
   }
 `;
 
 export const PageTitle = styled.h1`
   font-size: 28px;
-  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: ${({ theme }) => theme.colors.ink};
   margin-bottom: ${({ theme }) => theme.spacing.lg};
   text-align: center;
 `;
 
 export const Card = styled.div`
   background-color: white;
-  padding: ${({ theme }) =>
-    theme.spacing?.lg || "1.5rem"}; // Use theme spacing or fallback
-  border-radius: ${({ theme }) =>
-    theme.borderRadius || "8px"}; // Use theme radius or fallback
-  margin-bottom: ${({ theme }) =>
-    theme.spacing?.xl || "2rem"}; // Use theme spacing or fallback
-  border: 1px solid ${({ theme }) => theme.colors?.borderLight || "#dee2e6"}; // Use theme color or fallback
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); // Subtle shadow
+  padding: ${({ theme }) => {
+    var t;
+    return ((t = theme.spacing) == null ? void 0 : t.lg) || "1.5rem";
+  }}; // Use theme spacing or fallback
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  margin-bottom: ${({ theme }) => {
+    var t;
+    return ((t = theme.spacing) == null ? void 0 : t.xl) || "2rem";
+  }}; // Use theme spacing or fallback
+  border: 1px solid
+    ${({ theme }) => {
+    var t;
+    return ((t = theme.colors) == null ? void 0 : t.borderLight) || "#E2E8EA";
+  }}; // Use theme color or fallback
 `;
 
 // --- New Component for Selection ---
 export const SelectionGroupContainer = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.lg || "1.5rem"};
   padding: ${({ theme }) => theme.spacing.md || "1rem"};
-  border: 1px solid ${({ theme }) => theme.colors?.borderLight || "#dee2e6"};
-  border-radius: ${({ theme }) => theme.borderRadius || "4px"};
-  background-color: #f8f9fa; // Light background for the group
+  border: 1px solid
+    ${({ theme }) => {
+    var t;
+    return ((t = theme.colors) == null ? void 0 : t.borderLight) || "#E2E8EA";
+  }};
+  border-radius: ${({ theme }) => theme.borderRadius.md || "4px"};
+  background-color: #f7f9f9; // Light background for the group
 `;
 
 export const SelectionGroupTitle = styled.h5`
@@ -347,13 +353,13 @@ export const SelectionItemLabel = styled(Form.Check.Label)`
   cursor: pointer;
 
   &:hover {
-    background-color: #e9ecef; // Subtle hover effect
+    background-color: #ebf2f4; // Subtle hover effect
   }
 `;
 
 export const SelectionItemDetails = styled.span`
   font-size: 0.8rem;
-  color: #6c757d;
+  color: #51626b;
   margin-left: 8px;
   display: block; // Show details on new line or adjust as needed
 `;

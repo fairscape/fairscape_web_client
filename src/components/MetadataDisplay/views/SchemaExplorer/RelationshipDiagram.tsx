@@ -31,33 +31,33 @@ const FilterBar = styled.div`
   flex-wrap: wrap;
   gap: 6px;
   padding: 8px 12px;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
+  background: #f7f9f9;
+  border: 1px solid #e2e8ea;
   border-bottom: none;
-  border-radius: 8px 8px 0 0;
+  border-radius: 2px 8px 0 0;
   align-items: center;
 `;
 
 const FilterLabel = styled.span`
   font-size: 0.78rem;
-  color: #6c757d;
+  color: #51626b;
   font-weight: 500;
   margin-right: 4px;
 `;
 
 const FilterChip = styled.button<{ $active: boolean }>`
   padding: 3px 10px;
-  border-radius: 12px;
-  border: 1px solid ${({ $active }) => $active ? '#005f73' : '#dee2e6'};
-  background: ${({ $active }) => $active ? '#005f73' : 'white'};
-  color: ${({ $active }) => $active ? 'white' : '#6c757d'};
+  border-radius: 2px;
+  border: 1px solid ${({ $active }) => ($active ? "#005f73" : "#E2E8EA")};
+  background: ${({ $active }) => ($active ? "#005f73" : "white")};
+  color: ${({ $active }) => ($active ? "white" : "#51626B")};
   font-size: 0.78rem;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover {
     border-color: #005f73;
-    color: ${({ $active }) => $active ? 'white' : '#005f73'};
+    color: ${({ $active }) => ($active ? "white" : "#005f73")};
   }
 `;
 
@@ -75,14 +75,22 @@ interface SchemaTableNodeData {
   totalColumnCount: number;
 }
 
-const SchemaTableNode: React.FC<NodeProps<SchemaTableNodeData>> = ({ data }) => {
-  const remaining = data.totalColumnCount - data.joinColumns.length - data.sampleColumns.length;
+const SchemaTableNode: React.FC<NodeProps<SchemaTableNodeData>> = ({
+  data,
+}) => {
+  const remaining =
+    data.totalColumnCount - data.joinColumns.length - data.sampleColumns.length;
   return (
     <TableNodeContainer>
       <Handle
         type="target"
         position={Position.Left}
-        style={{ width: 8, height: 8, background: "#94d2bd", border: "2px solid #005f73" }}
+        style={{
+          width: 8,
+          height: 8,
+          background: "#94d2bd",
+          border: "2px solid #005f73",
+        }}
       />
       <TableNodeHeader>{data.schemaName}</TableNodeHeader>
       <TableNodeBody>
@@ -92,9 +100,7 @@ const SchemaTableNode: React.FC<NodeProps<SchemaTableNodeData>> = ({ data }) => 
           </TableNodeColumnRow>
         ))}
         {data.sampleColumns.map((col) => (
-          <TableNodeColumnRow key={col}>
-            {col}
-          </TableNodeColumnRow>
+          <TableNodeColumnRow key={col}>{col}</TableNodeColumnRow>
         ))}
         {remaining > 0 && (
           <TableNodeMoreRow>+{remaining} more columns</TableNodeMoreRow>
@@ -103,7 +109,12 @@ const SchemaTableNode: React.FC<NodeProps<SchemaTableNodeData>> = ({ data }) => 
       <Handle
         type="source"
         position={Position.Right}
-        style={{ width: 8, height: 8, background: "#94d2bd", border: "2px solid #005f73" }}
+        style={{
+          width: 8,
+          height: 8,
+          background: "#94d2bd",
+          border: "2px solid #005f73",
+        }}
       />
     </TableNodeContainer>
   );
@@ -114,7 +125,11 @@ const nodeTypes = { schemaTable: SchemaTableNode };
 
 /* ---- Layout ---- */
 
-function computeNodeHeight(joinCols: number, sampleCols: number, hasMore: boolean): number {
+function computeNodeHeight(
+  joinCols: number,
+  sampleCols: number,
+  hasMore: boolean,
+): number {
   const rows = joinCols + sampleCols + (hasMore ? 1 : 0);
   return HEADER_HEIGHT + rows * ROW_HEIGHT + PADDING;
 }
@@ -122,7 +137,7 @@ function computeNodeHeight(joinCols: number, sampleCols: number, hasMore: boolea
 function buildLayout(
   schemas: SchemaInfo[],
   joinKeys: ReturnType<typeof detectJoinKeys>,
-  nodeSizes: Map<string, { width: number; height: number }>
+  nodeSizes: Map<string, { width: number; height: number }>,
 ) {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
@@ -176,10 +191,13 @@ const RelationshipDiagram: React.FC<RelationshipDiagramProps> = ({
 
   const visibleSchemas = useMemo(
     () => schemas.filter((s) => !excluded.has(s.id)),
-    [schemas, excluded]
+    [schemas, excluded],
   );
 
-  const joinKeys = useMemo(() => detectJoinKeys(visibleSchemas), [visibleSchemas]);
+  const joinKeys = useMemo(
+    () => detectJoinKeys(visibleSchemas),
+    [visibleSchemas],
+  );
 
   const { initialNodes, initialEdges } = useMemo(() => {
     // Pre-compute node data and sizes
@@ -208,7 +226,11 @@ const RelationshipDiagram: React.FC<RelationshipDiagramProps> = ({
       nodeDataMap.set(schema.id, data);
       nodeSizes.set(schema.id, {
         width: NODE_WIDTH,
-        height: computeNodeHeight(joinCols.length, sampleCols.length, remaining > 0),
+        height: computeNodeHeight(
+          joinCols.length,
+          sampleCols.length,
+          remaining > 0,
+        ),
       });
     }
 
@@ -235,8 +257,12 @@ const RelationshipDiagram: React.FC<RelationshipDiagramProps> = ({
     for (const jk of joinKeys) {
       for (let i = 0; i < jk.schemas.length; i++) {
         for (let j = i + 1; j < jk.schemas.length; j++) {
-          const srcSchema = visibleSchemas.find((s) => s.name === jk.schemas[i]);
-          const tgtSchema = visibleSchemas.find((s) => s.name === jk.schemas[j]);
+          const srcSchema = visibleSchemas.find(
+            (s) => s.name === jk.schemas[i],
+          );
+          const tgtSchema = visibleSchemas.find(
+            (s) => s.name === jk.schemas[j],
+          );
           if (srcSchema && tgtSchema) {
             const key = [srcSchema.id, tgtSchema.id].sort().join("--");
             if (!edgeMap[key]) edgeMap[key] = [];
@@ -252,7 +278,10 @@ const RelationshipDiagram: React.FC<RelationshipDiagramProps> = ({
         id: key,
         source,
         target,
-        label: columns.length <= 3 ? columns.join(", ") : `${columns.length} shared cols`,
+        label:
+          columns.length <= 3
+            ? columns.join(", ")
+            : `${columns.length} shared cols`,
         labelStyle: { fontSize: "0.72rem", fill: "#495057" },
         labelBgStyle: { fill: "white", fillOpacity: 0.9 },
         labelBgPadding: [4, 4] as [number, number],
@@ -301,23 +330,29 @@ const RelationshipDiagram: React.FC<RelationshipDiagramProps> = ({
             : "No shared columns found between the selected tables."}
         </div>
       ) : (
-      <DiagramContainer style={schemas.length > 2 ? { borderTopLeftRadius: 0, borderTopRightRadius: 0 } : undefined}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-        nodesDraggable={true}
-        nodesConnectable={false}
-        elementsSelectable={true}
-      >
-        <Controls />
-        <Background gap={16} size={1} color="#f0f0f0" />
-      </ReactFlow>
-    </DiagramContainer>
+        <DiagramContainer
+          style={
+            schemas.length > 2
+              ? { borderTopLeftRadius: 0, borderTopRightRadius: 0 }
+              : undefined
+          }
+        >
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.3 }}
+            nodesDraggable={true}
+            nodesConnectable={false}
+            elementsSelectable={true}
+          >
+            <Controls />
+            <Background gap={16} size={1} color="#f0f0f0" />
+          </ReactFlow>
+        </DiagramContainer>
       )}
     </>
   );

@@ -6,7 +6,7 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 const Container = styled.div`
   position: relative;
   margin-bottom: 16px;
-  border-radius: 8px;
+  border-radius: 2px;
   overflow: hidden;
 `;
 
@@ -15,8 +15,9 @@ const CopyButton = styled.button<{ $copied?: boolean }>`
   top: 8px;
   right: 8px;
   padding: 4px 12px;
-  border: 1px solid ${({ $copied }) => ($copied ? "#2e7d32" : "rgba(255,255,255,0.3)")};
-  border-radius: 4px;
+  border: 1px solid
+    ${({ $copied }) => ($copied ? "#2e7d32" : "rgba(255,255,255,0.3)")};
+  border-radius: 2px;
   background: ${({ $copied }) => ($copied ? "#2e7d32" : "rgba(255,255,255,0.1)")};
   color: white;
   font-size: 0.78rem;
@@ -26,7 +27,7 @@ const CopyButton = styled.button<{ $copied?: boolean }>`
 
   &:hover {
     background: ${({ $copied }) => ($copied ? "#2e7d32" : "rgba(255,255,255,0.2)")};
-    border-color: rgba(255,255,255,0.5);
+    border-color: rgba(255, 255, 255, 0.5);
   }
 `;
 

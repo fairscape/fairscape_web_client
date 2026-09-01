@@ -90,9 +90,7 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({
           </FileIcon>
           <FileDetails>
             <FileName>{uploadedFile.name}</FileName>
-            <FileSize>
-              {(uploadedFile.size / 1024).toFixed(2)} KB
-            </FileSize>
+            <FileSize>{(uploadedFile.size / 1024).toFixed(2)} KB</FileSize>
           </FileDetails>
           <RemoveButton onClick={onRemoveFile} title="Remove file">
             <FiX />
@@ -117,8 +115,8 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({
 
 const Container = styled.div`
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1px solid #e2e8ea;
+  border-radius: 2px;
   padding: 24px;
   margin-bottom: 20px;
 `;
@@ -130,26 +128,26 @@ const Header = styled.div`
 const Title = styled.h3`
   font-size: 1rem;
   font-weight: 600;
-  color: #111827;
+  color: #18242a;
   margin: 0;
 `;
 
 const DropZone = styled.div<{ isDragging: boolean }>`
-  border: 2px dashed ${(props) => (props.isDragging ? "#3b82f6" : "#d1d5db")};
-  border-radius: 8px;
+  border: 2px dashed ${(e) => (e.isDragging ? "#005F73" : "#C3CED2")};
+  border-radius: 2px;
   padding: 40px 20px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
-  background-color: ${(props) => (props.isDragging ? "#eff6ff" : "#f9fafb")};
+  background-color: ${(e) => (e.isDragging ? "#EBF2F4" : "#F7F9F9")};
 
   &:hover {
-    border-color: #3b82f6;
-    background-color: #eff6ff;
+    border-color: #005f73;
+    background-color: #ebf2f4;
   }
 
   svg {
-    color: ${(props) => (props.isDragging ? "#3b82f6" : "#9ca3af")};
+    color: ${(e) => (e.isDragging ? "#005F73" : "#84939A")};
     margin-bottom: 12px;
   }
 `;
@@ -157,13 +155,13 @@ const DropZone = styled.div<{ isDragging: boolean }>`
 const DropText = styled.div`
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: #18242a;
   margin-bottom: 4px;
 `;
 
 const DropSubtext = styled.div`
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #51626b;
 `;
 
 const FileInfo = styled.div`
@@ -171,9 +169,9 @@ const FileInfo = styled.div`
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  background-color: #f7f9f9;
+  border: 1px solid #e2e8ea;
+  border-radius: 2px;
 `;
 
 const FileIcon = styled.div`
@@ -182,9 +180,9 @@ const FileIcon = styled.div`
   justify-content: center;
   width: 48px;
   height: 48px;
-  background-color: #eff6ff;
-  border-radius: 8px;
-  color: #3b82f6;
+  background-color: #ebf2f4;
+  border-radius: 2px;
+  color: #005f73;
   flex-shrink: 0;
 `;
 
@@ -196,7 +194,7 @@ const FileDetails = styled.div`
 const FileName = styled.div`
   font-size: 0.875rem;
   font-weight: 500;
-  color: #111827;
+  color: #18242a;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -204,7 +202,7 @@ const FileName = styled.div`
 
 const FileSize = styled.div`
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #51626b;
   margin-top: 2px;
 `;
 
@@ -214,7 +212,7 @@ const RemoveButton = styled.button`
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: 2px;
   border: 1px solid #fecaca;
   background-color: #fef2f2;
   color: #ef4444;
@@ -235,15 +233,15 @@ const InfoBox = styled.div`
   display: flex;
   gap: 8px;
   padding: 12px;
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  background-color: #ebf2f4;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   margin-top: 16px;
   align-items: flex-start;
 
   svg {
     flex-shrink: 0;
-    color: #3b82f6;
+    color: #005f73;
     font-size: 1rem;
     margin-top: 2px;
   }

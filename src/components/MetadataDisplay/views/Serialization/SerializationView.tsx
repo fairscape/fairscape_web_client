@@ -23,21 +23,29 @@ const ButtonGroupContainer = styled.div`
 const ButtonGroup = styled.div`
   display: inline-flex;
   background-color: #f0f2f5;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 4px;
 `;
 
 const SelectButton = styled.button<{ $active?: boolean; $disabled?: boolean }>`
   padding: 8px 16px;
   background-color: ${({ $active }) => ($active ? "white" : "transparent")};
-  color: ${({ theme, $active, $disabled }) =>
-    $disabled
-      ? (theme?.colors?.textSecondary || "#6c757d") + "80"
+  color: ${({ theme, $active, $disabled }) => {
+    var e, l, c;
+    return $disabled
+      ? (((e = theme == null ? void 0 : theme.colors) == null
+          ? void 0
+          : e.textSecondary) || "#51626B") + "80"
       : $active
-      ? theme?.colors?.primary || "#007bff"
-      : theme?.colors?.textSecondary || "#6c757d"};
+        ? ((l = theme == null ? void 0 : theme.colors) == null
+            ? void 0
+            : l.primary) || "#007bff"
+        : ((c = theme == null ? void 0 : theme.colors) == null
+            ? void 0
+            : c.textSecondary) || "#51626B";
+  }};
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
   font-size: 0.9rem;
   font-weight: 500;
@@ -45,8 +53,7 @@ const SelectButton = styled.button<{ $active?: boolean; $disabled?: boolean }>`
   margin: 0 2px;
 
   &:hover:not(:disabled) {
-    background-color: ${({ $active }) =>
-      $active ? "white" : "rgba(255, 255, 255, 0.5)"};
+    background-color: ${({ $active }) => ($active ? "white" : "rgba(255, 255, 255, 0.5)")};
   }
 
   &:active:not(:disabled) {
@@ -57,12 +64,11 @@ const SelectButton = styled.button<{ $active?: boolean; $disabled?: boolean }>`
 const PreWrapper = styled.div`
   position: relative;
   background-color: white;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 20px;
   max-height: 500px;
   overflow: auto;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f0f0f0;
+  border: 1px solid #f7f9f9;
 `;
 
 const Pre = styled.pre`
@@ -71,8 +77,18 @@ const Pre = styled.pre`
   word-wrap: break-word;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.9rem;
-  color: ${({ theme }) => theme?.colors?.text || "#212529"};
+  color: ${({ theme }) => {
+    var t;
+    return (
+      ((t = theme == null ? void 0 : theme.colors) == null ? void 0 : t.text) ||
+      "#18242A"
+    );
+  }};
   padding-right: 80px;
+
+  @media (max-width: 768px) {
+    padding-right: 48px;
+  }
 `;
 
 const CopyButton = styled.button`
@@ -82,16 +98,29 @@ const CopyButton = styled.button`
   background-color: white;
   border: 1px solid #eaeaea;
   padding: 8px 12px;
-  border-radius: 6px;
-  color: ${({ theme }) => theme?.colors?.textSecondary || "#6c757d"};
+  border-radius: 2px;
+  color: ${({ theme }) => {
+    var t;
+    return (
+      ((t = theme == null ? void 0 : theme.colors) == null
+        ? void 0
+        : t.textSecondary) || "#51626B"
+    );
+  }};
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 500;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
   &:hover {
-    background-color: ${({ theme }) => theme?.colors?.background || "#f8f9fa"};
+    background-color: ${({ theme }) => {
+      var t;
+      return (
+        ((t = theme == null ? void 0 : theme.colors) == null
+          ? void 0
+          : t.background) || "#F7F9F9"
+      );
+    }};
     border-color: #d0d0d0;
   }
 

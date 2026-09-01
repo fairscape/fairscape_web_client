@@ -3,39 +3,36 @@ import styled from "styled-components";
 import { MetadataProperty } from "../../types/metadataPropertyLists";
 
 const SectionContainer = styled.div`
-  background-color: ${({ theme }) => theme.colors.background || "#ffffff"};
+  background-color: ${({ theme }) => theme.colors.surface};
   padding: ${({ theme }) => theme.spacing.lg};
   border-radius: ${({ theme }) => theme.borderRadius.md};
   margin-bottom: ${({ theme }) => theme.spacing.lg};
-  box-shadow: ${({ theme }) =>
-    theme.shadows?.subtle || "0 2px 4px rgba(0,0,0,0.06)"};
-  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
+  border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const Header = styled.h2`
-  font-size: 22px;
-  color: ${({ theme }) => theme.colors.primary};
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: ${({ theme }) => theme.colors.ink};
   margin-top: 0;
   margin-bottom: ${({ theme }) => theme.spacing.md};
-  padding-bottom: ${({ theme }) => theme.spacing.sm};
-  border-bottom: 2px solid
-    ${({ theme }) => theme.colors.secondary || theme.colors.primary};
+  padding-top: ${({ theme }) => theme.spacing.md};
+  border-top: 2px solid ${({ theme }) => theme.colors.ink};
 `;
 
 const DetailsGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2px;
 `;
 
 const DetailItemRow = styled.div`
   display: grid;
-  grid-template-columns: minmax(160px, 220px) 1fr;
-  gap: ${({ theme }) => theme.spacing.md};
-  padding: ${({ theme }) => theme.spacing.sm} 0;
-  align-items: start;
-  border-bottom: 1px solid
-    ${({ theme }) => theme.colors.borderLight || "#f0f0f0"};
+  grid-template-columns: minmax(160px, 200px) 1fr;
+  gap: ${({ theme }) => theme.spacing.lg};
+  padding: 13px 0;
+  align-items: baseline;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 
   &:last-child {
     border-bottom: none;
@@ -49,8 +46,9 @@ const DetailItemRow = styled.div`
 `;
 
 const DetailLabel = styled.div`
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
+  font-size: 13px;
+  font-weight: 550;
+  color: ${({ theme }) => theme.colors.ink3};
   padding-right: ${({ theme }) => theme.spacing.sm};
   line-height: 1.5;
   word-break: break-word;
@@ -62,10 +60,9 @@ const DetailLabel = styled.div`
 `;
 
 const DetailValue = styled.div`
-  font-size: 15px;
-  line-height: 1.5;
-  color: ${({ theme }) =>
-    theme.colors.textSlightlyLighter || theme.colors.text};
+  font-size: 14px;
+  line-height: 1.6;
+  color: ${({ theme }) => theme.colors.ink};
   word-break: break-word;
   max-height: 300px;
   overflow-y: auto;
@@ -80,13 +77,14 @@ const DetailValue = styled.div`
   }
   .keyword-pill-in-table {
     display: inline-block;
-    background-color: ${({ theme }) =>
-      theme.colors.secondary || theme.colors.primary};
-    color: white;
-    padding: 2px 6px;
-    border-radius: ${({ theme }) => theme.borderRadius.sm};
+    font-family: ${({ theme }) => theme.fonts.mono};
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
+    color: ${({ theme }) => theme.colors.textSecondary};
+    background-color: ${({ theme }) => theme.colors.background};
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    padding: 2px 8px;
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
     margin-right: ${({ theme }) => theme.spacing.xs};
     margin-bottom: ${({ theme }) => theme.spacing.xs};
     &:last-child {
@@ -118,8 +116,7 @@ const BrandedButton = styled.a`
   border-radius: ${({ theme }) => theme.borderRadius.md};
   font-weight: 600;
   text-decoration: none !important;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease-in-out;
 
   &.kaggle {
     background-color: #ffffff;
@@ -128,8 +125,6 @@ const BrandedButton = styled.a`
 
     &:hover {
       background-color: #f0faff;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-      transform: translateY(-1px);
     }
   }
 `;
@@ -150,7 +145,7 @@ const ConfigurableMetadataTable: React.FC<ConfigurableMetadataTableProps> = ({
   const formatValue = (
     key: string,
     value: any,
-    propDefinition: MetadataProperty
+    propDefinition: MetadataProperty,
   ): React.ReactNode => {
     if (value === null || value === undefined) return null;
     if (key === "kaggleUrl" && typeof value === "string") {
@@ -200,6 +195,27 @@ const ConfigurableMetadataTable: React.FC<ConfigurableMetadataTableProps> = ({
       if (value.toLowerCase() === "false") return "No";
     }
 
+    if (
+      key === "authors" &&
+      typeof value === "object" &&
+      value !== null &&
+      "name" in value &&
+      !Array.isArray(value)
+    ) {
+      const author = value as { name: string; id?: string };
+      if (author.id) {
+        const href = author.id.startsWith("ark:")
+          ? `${feUrl}${author.id}`
+          : author.id;
+        return (
+          <a href={href} target="_blank" rel="noopener noreferrer">
+            {author.name}
+          </a>
+        );
+      }
+      return author.name;
+    }
+
     if (Array.isArray(value)) {
       if (propDefinition.key === "keywords") {
         const validKeywords = value.map(String).filter((k) => k.trim() !== "");
@@ -246,8 +262,8 @@ const ConfigurableMetadataTable: React.FC<ConfigurableMetadataTableProps> = ({
           const doiLink = value.startsWith("doi:")
             ? `https://doi.org/${value.substring(4)}`
             : value.startsWith("https://doi.org/")
-            ? value
-            : `https://doi.org/${value}`;
+              ? value
+              : `https://doi.org/${value}`;
           return (
             <a href={doiLink} target="_blank" rel="noopener noreferrer">
               {value}

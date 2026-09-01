@@ -1,8 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import styled from "styled-components";
 
-const API_URL =
-  window.API_URL;
+const API_URL = window.API_URL;
 const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5173";
 
 interface UploadError {
@@ -28,12 +27,14 @@ const TrackerContainer = styled.div`
   margin-top: ${({ theme }) => theme.spacing.xl};
   padding: ${({ theme }) => theme.spacing.lg};
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const TrackerTitle = styled.h3`
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
+  font-weight: 650;
+  letter-spacing: -0.015em;
   margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
@@ -41,15 +42,14 @@ const ProgressBarContainer = styled.div`
   position: relative;
   height: 40px;
   background-color: ${({ theme }) => theme.colors.background};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   overflow: hidden;
   margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
 const ProgressBarFill = styled.div<{ failed: boolean }>`
   height: 100%;
-  background-color: ${({ theme, failed }) =>
-    failed ? theme.colors.error : theme.colors.success};
+  background-color: ${({ theme, failed }) => (failed ? theme.colors.error : theme.colors.success)};
   transition: width 0.5s ease;
 `;
 
@@ -64,8 +64,7 @@ const Step = styled.div<{ active: boolean }>`
   text-align: center;
   padding: ${({ theme }) => theme.spacing.xs};
   font-weight: ${({ active }) => (active ? "bold" : "normal")};
-  color: ${({ theme, active }) =>
-    active ? theme.colors.primary : theme.colors.textSecondary};
+  color: ${({ theme, active }) => (active ? theme.colors.primary : theme.colors.textSecondary)};
   border-bottom: 2px solid
     ${({ theme, active }) => (active ? theme.colors.primary : "transparent")};
 `;
@@ -75,7 +74,7 @@ const ErrorMessage = styled.div`
   padding: ${({ theme }) => theme.spacing.md};
   margin-top: ${({ theme }) => theme.spacing.md};
   background-color: #fff0f0;
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border-left: 4px solid ${({ theme }) => theme.colors.error};
 `;
 
@@ -83,7 +82,7 @@ const StatusDetailsContainer = styled.div`
   margin-top: ${({ theme }) => theme.spacing.md};
   padding: ${({ theme }) => theme.spacing.md};
   background-color: ${({ theme }) => theme.colors.background};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
 `;
 
 const ResultLink = styled.a`
@@ -120,7 +119,7 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -188,7 +187,7 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
     if (uploadError) {
       setStatus("Failed");
       setError(
-        `Upload Failed: Status ${uploadError.status} - ${uploadError.message}`
+        `Upload Failed: Status ${uploadError.status} - ${uploadError.message}`,
       );
       setSuccess(false);
       setCompleted(true);
@@ -210,7 +209,7 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({
       checkUploadStatus(); // Initial check
       intervalRef.current = window.setInterval(
         checkUploadStatus,
-        1000
+        1000,
       ) as unknown as number;
     } else {
       // Reset or initial state before any upload starts for this component instance

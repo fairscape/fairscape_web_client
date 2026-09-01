@@ -11,24 +11,19 @@ const ModalBackdrop = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1050; // Higher than typical Bootstrap navbar/modal-backdrop
+  justify-content: center;
+  z-index: 1000;
 `;
 
 // Basic Modal Content Area
 const ModalContent = styled.div`
   background: white;
-  padding: 30px;
-  border-radius: 8px;
-  max-width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  z-index: 1060;
+  border-radius: 2px;
+  width: 90%;
+  max-width: 500px;
 `;
 
 interface AddEntityModalProps {

@@ -64,8 +64,8 @@ const ExtraFieldsSection: React.FC<ExtraFieldsSectionProps> = ({
 
 const Container = styled.div`
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1px solid #e2e8ea;
+  border-radius: 2px;
   padding: 24px;
   margin-top: 30px;
 `;
@@ -80,7 +80,7 @@ const Header = styled.div`
 const Title = styled.h2`
   font-size: 1.25rem;
   font-weight: 600;
-  color: #111827;
+  color: #18242a;
   margin: 0;
 `;
 
@@ -88,15 +88,15 @@ const AddButton = styled.button`
   padding: 8px 16px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #3b82f6;
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  color: #005f73;
+  background-color: #ebf2f4;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #dbeafe;
+    background-color: #ebf2f4;
   }
 `;
 
@@ -115,7 +115,7 @@ const FieldRow = styled.div`
 const FieldName = styled.div`
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: #18242a;
   min-width: 150px;
 `;
 
@@ -123,13 +123,13 @@ const FieldInput = styled.input`
   flex: 1;
   padding: 10px 12px;
   font-size: 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: #005f73;
   }
 `;
 
@@ -139,7 +139,7 @@ const RemoveButton = styled.button`
   color: #ef4444;
   background-color: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   transition: background-color 0.2s;
 

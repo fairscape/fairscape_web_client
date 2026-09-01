@@ -4,7 +4,7 @@ import styled from "styled-components";
 import Header from "./Header";
 import Footer from "./Footer";
 
-const LayoutContainer = styled.div`
+const LayoutWrapper = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -16,18 +16,12 @@ const MainContent = styled.main`
   padding: 1;
 `;
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
-  return (
-    <LayoutContainer>
-      <Header />
-      <MainContent>{children}</MainContent>
-      <Footer />
-    </LayoutContainer>
-  );
-};
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <LayoutWrapper>
+    <Header />
+    <MainContent>{children}</MainContent>
+    <Footer />
+  </LayoutWrapper>
+);
 
 export default Layout;

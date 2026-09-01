@@ -4,8 +4,8 @@ export function detectKind(rawType: unknown): Kind {
   const types: string[] = Array.isArray(rawType)
     ? rawType.map(String)
     : rawType
-    ? [String(rawType)]
-    : [];
+      ? [String(rawType)]
+      : [];
 
   if (matches(types, "dataset")) return "Dataset";
   if (matches(types, "software")) return "Software";
@@ -41,7 +41,7 @@ export const baseType = (t: string) => {
 export const typeMatches = (rawType: unknown, want: string) => {
   const w = want.toLowerCase();
   return normalizeTypeArray(rawType).some(
-    (t) => baseType(t).toLowerCase() === w
+    (t) => baseType(t).toLowerCase() === w,
   );
 };
 

@@ -93,7 +93,7 @@ export function detectFileType(filename: string): FileType {
 export function getDefaultMetadata(
   file: File,
   fileType: FileType,
-  author: string
+  author: string,
 ) {
   const baseName = file.name.replace(/\.[^/.]+$/, "");
   const baseMetadata = {

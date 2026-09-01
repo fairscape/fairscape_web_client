@@ -1,4 +1,8 @@
-import type { DatasetInfo, DatasetGroup, JoinKeyInfo } from "../CodeSnippetsView";
+import type {
+  DatasetInfo,
+  DatasetGroup,
+  JoinKeyInfo,
+} from "../CodeSnippetsView";
 
 function varName(name: string): string {
   return name
@@ -10,7 +14,10 @@ function varName(name: string): string {
 }
 
 function isParquet(fmt: string, url: string): boolean {
-  return (fmt || "").toLowerCase().includes("parquet") || (url || "").toLowerCase().endsWith(".parquet");
+  return (
+    (fmt || "").toLowerCase().includes("parquet") ||
+    (url || "").toLowerCase().endsWith(".parquet")
+  );
 }
 
 export function generateRSingle(ds: DatasetInfo): string {
@@ -35,10 +42,12 @@ export function generateRSingle(ds: DatasetInfo): string {
 export function generateRMulti(
   groups: DatasetGroup[],
   ungrouped: DatasetInfo[],
-  joinKeys: JoinKeyInfo[]
+  joinKeys: JoinKeyInfo[],
 ): string {
-  const needsArrow = groups.some((g) => isParquet(g.fileFormat || "", g.datasets[0]?.contentUrl || ""))
-    || ungrouped.some((ds) => isParquet(ds.fileFormat || "", ds.contentUrl));
+  const needsArrow =
+    groups.some((g) =>
+      isParquet(g.fileFormat || "", g.datasets[0]?.contentUrl || ""),
+    ) || ungrouped.some((ds) => isParquet(ds.fileFormat || "", ds.contentUrl));
 
   let code = `library(dplyr)\n`;
   if (needsArrow) code += `library(arrow)\n`;
@@ -47,7 +56,10 @@ export function generateRMulti(
   const loadedVars: { varName: string; schemaName: string }[] = [];
 
   for (const group of groups) {
-    const parquet = isParquet(group.fileFormat || "", group.datasets[0]?.contentUrl || "");
+    const parquet = isParquet(
+      group.fileFormat || "",
+      group.datasets[0]?.contentUrl || "",
+    );
     const readFn = parquet ? "read_parquet" : "read.csv";
 
     if (group.datasets.length === 1) {
@@ -61,7 +73,10 @@ export function generateRMulti(
       const dfVn = varName(group.schemaName) + "_all";
       code += `# ${group.schemaName} (${group.datasets.length} files)\n`;
       code += `${listVn} <- c(\n`;
-      const show = group.datasets.length <= 6 ? group.datasets : group.datasets.slice(0, 3);
+      const show =
+        group.datasets.length <= 6
+          ? group.datasets
+          : group.datasets.slice(0, 3);
       const remaining = group.datasets.length - show.length;
       for (const ds of show) {
         code += `  "${ds.contentUrl}",  # ${ds.name}\n`;

@@ -43,6 +43,7 @@ const InstructionTitle = styled.h3`
 const InstructionList = styled.ul`
   margin: 0;
   padding-left: 20px;
+  list-style-type: disc;
 `;
 
 const InstructionItem = styled.li`

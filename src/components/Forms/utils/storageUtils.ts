@@ -50,7 +50,7 @@ export const saveCrate = (
   formData: any,
   reviewState?: any,
   provenance?: ProvenanceState | null,
-  finalArk?: string | null
+  finalArk?: string | null,
 ): boolean => {
   try {
     const crateId =
@@ -66,7 +66,7 @@ export const saveCrate = (
     if (reviewState) {
       const total = Object.keys(reviewState).length;
       const reviewed = Object.values(reviewState).filter(
-        (state: any) => state.reviewed
+        (state: any) => state.reviewed,
       ).length;
       reviewProgress = { reviewed, total };
     }
@@ -75,7 +75,8 @@ export const saveCrate = (
       formData: { ...formData, "@id": crateId },
       reviewState,
       provenance: provenance || existingSaved[crateId]?.provenance,
-      finalArk: finalArk !== undefined ? finalArk : existingSaved[crateId]?.finalArk,
+      finalArk:
+        finalArk !== undefined ? finalArk : existingSaved[crateId]?.finalArk,
       savedAt: existingSaved[crateId]?.savedAt || now,
       lastModified: now,
       metadata: {
@@ -112,7 +113,7 @@ export const getSavedCratesList = (): SavedCrate[] => {
   const savedCrates = getSavedCrates();
   return Object.values(savedCrates).sort(
     (a, b) =>
-      new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+      new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime(),
   );
 };
 
@@ -134,13 +135,18 @@ export const getAllSavedCrates = (): SavedCrateMetadata[] => {
     })
     .sort(
       (a, b) =>
-        new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+        new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime(),
     );
 };
 
 export const loadCrate = (
-  id: string
-): { formData: any; reviewState?: any; provenance?: ProvenanceState | null; finalArk?: string | null } | null => {
+  id: string,
+): {
+  formData: any;
+  reviewState?: any;
+  provenance?: ProvenanceState | null;
+  finalArk?: string | null;
+} | null => {
   try {
     const savedCrates = getSavedCrates();
     const crate = savedCrates[id];

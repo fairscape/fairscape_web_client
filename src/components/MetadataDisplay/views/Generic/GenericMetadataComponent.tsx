@@ -83,13 +83,13 @@ const MetricsTable = styled.table`
 const MarkdownContainer = styled.div`
   padding: 15px;
   background-color: ${({ theme }) => theme.colors.background};
-  border-radius: 5px;
+  border-radius: 2px;
   border: 1px solid ${({ theme }) => theme.colors.border};
 
   /* Syntax highlighter handles pre and code blocks */
   pre {
     margin: 1em 0;
-    border-radius: 5px;
+    border-radius: 2px;
     overflow-x: auto;
   }
 
@@ -264,7 +264,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     } catch (error: any) {
       console.error("Download failed:", error);
       setAlertMessage(
-        error.response?.data?.message || error.message || "Download failed."
+        error.response?.data?.message || error.message || "Download failed.",
       );
       setShowAlert(true);
     }
@@ -326,7 +326,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   const renderLinkValue = (
     value: string | { "@id": string },
     index?: number,
-    isArk?: boolean
+    isArk?: boolean,
   ) => {
     const id = typeof value === "object" ? value["@id"] : value;
     if (!id || typeof id !== "string")
@@ -393,7 +393,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
           item === null ||
           (typeof item === "string" &&
             (item.startsWith("ark:") || item.startsWith("http"))) ||
-          (typeof item === "object" && item !== null && item["@id"])
+          (typeof item === "object" && item !== null && item["@id"]),
       );
       if (allPrimitivesOrSimpleLinks) {
         return (
@@ -430,7 +430,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   const formatMainListValue = (
     key: string,
     value: any,
-    propName: string
+    propName: string,
   ): React.ReactNode => {
     if (value === null || value === undefined) return "Not specified";
 
@@ -593,7 +593,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
               {renderLinkValue(
                 item,
                 index,
-                item?.startsWith && item.startsWith("ark:")
+                item?.startsWith && item.startsWith("ark:"),
               )}
             </ListItemStyled>
           ))}
@@ -605,7 +605,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
         return renderLinkValue(
           value["@id"],
           undefined,
-          value["@id"].startsWith("ark:")
+          value["@id"].startsWith("ark:"),
         );
       try {
         return JSON.stringify(value);
@@ -617,16 +617,16 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
     return renderLinkValue(
       String(value),
       undefined,
-      key === "@id" || (typeof value === "string" && value.startsWith("ark:"))
+      key === "@id" || (typeof value === "string" && value.startsWith("ark:")),
     );
   };
 
   const renderPropertyGroup = (
     group: PropertyGroup,
-    entity: RawGraphEntity
+    entity: RawGraphEntity,
   ) => {
     const hasAnyValue = group.properties.some(
-      (propKey) => entity[propKey] !== undefined
+      (propKey) => entity[propKey] !== undefined,
     );
 
     if (!hasAnyValue) return null;
@@ -704,7 +704,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
   const propertyGroups = getPropertyGroups();
 
   const groupedPropertyKeys = new Set(
-    propertyGroups.flatMap((group) => group.properties)
+    propertyGroups.flatMap((group) => group.properties),
   );
 
   const renderedGroups = new Set<string>();
@@ -748,7 +748,7 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
 
           if (groupedPropertyKeys.has(prop.key)) {
             const group = propertyGroups.find((g) =>
-              g.properties.includes(prop.key)
+              g.properties.includes(prop.key),
             );
             if (group && !renderedGroups.has(group.key)) {
               renderedGroups.add(group.key);
@@ -783,13 +783,16 @@ const GenericMetadataComponent: React.FC<GenericMetadataComponentProps> = ({
             <ModalTitle>
               Schema Property Details: {expandedSchemaPropertyDetails.name}
             </ModalTitle>
-            {Object.entries(expandedSchemaPropertyDetails).map(([key, value]) =>
-              key === "name" ? null : (
-                <ModalPropertyDetail key={key}>
-                  <strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong>
-                  {renderModalValueContent(value)}
-                </ModalPropertyDetail>
-              )
+            {Object.entries(expandedSchemaPropertyDetails).map(
+              ([key, value]) =>
+                key === "name" ? null : (
+                  <ModalPropertyDetail key={key}>
+                    <strong>
+                      {key.charAt(0).toUpperCase() + key.slice(1)}:
+                    </strong>
+                    {renderModalValueContent(value)}
+                  </ModalPropertyDetail>
+                ),
             )}
           </ModalContent>
         </ModalOverlay>

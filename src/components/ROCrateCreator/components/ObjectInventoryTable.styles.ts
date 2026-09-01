@@ -152,8 +152,9 @@ const Status = styled.span<{ $ok?: boolean }>`
 `;
 
 const Mono = styled.code`
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
   font-size: 0.8rem;
   color: #6b7280;
   white-space: nowrap;

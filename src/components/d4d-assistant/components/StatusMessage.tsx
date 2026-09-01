@@ -31,23 +31,14 @@ const Message = styled.div<{ type: "success" | "error" | "info" }>`
   top: 20px;
   right: 20px;
   padding: 15px 20px;
-  border-radius: 6px;
+  border-radius: 2px;
   font-weight: 500;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   animation: slideIn 0.3s ease-out;
 
-  background-color: ${(props) => {
-    if (props.type === "success") return colors.successLight;
-    if (props.type === "error") return colors.errorLight;
-    return colors.primaryLight;
-  }};
+  background-color: ${(s) => (s.type === "success" ? y.successLight : s.type === "error" ? y.errorLight : y.primaryLight)};
 
-  color: ${(props) => {
-    if (props.type === "success") return colors.success;
-    if (props.type === "error") return colors.error;
-    return colors.primary;
-  }};
+  color: ${(s) => (s.type === "success" ? y.success : s.type === "error" ? y.error : y.primary)};
 
   @keyframes slideIn {
     from {

@@ -20,7 +20,7 @@ const extractYamlUrlFromComments = (comments: any[]): string => {
   for (const comment of comments) {
     if (comment.user === "d4dassistant") {
       const match = comment.body.match(
-        /Datasheet available at:\s*(https:\/\/\S+\.yaml)/
+        /Datasheet available at:\s*(https:\/\/\S+\.yaml)/,
       );
       if (match) return match[1];
     }
@@ -78,7 +78,7 @@ ${formData.instructions || "No additional instructions"}`;
         `D4D for ${formData.project}`,
         body,
         ["d4d-assistant"],
-        formData.files
+        formData.files,
       );
 
       showStatus("Issue created successfully!", "success");
@@ -89,7 +89,7 @@ ${formData.instructions || "No additional instructions"}`;
         `Error creating issue: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
-        "error"
+        "error",
       );
     }
   };
@@ -106,7 +106,7 @@ ${formData.instructions || "No additional instructions"}`;
         `Error adding comment: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
-        "error"
+        "error",
       );
     }
   };
@@ -150,10 +150,7 @@ ${formData.instructions || "No additional instructions"}`;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown error occurred";
-      showStatus(
-        `Error: ${message}`,
-        "error"
-      );
+      showStatus(`Error: ${message}`, "error");
     }
     setReviewLoading(false);
   };

@@ -8,35 +8,40 @@ const API_URL = window.API_URL;
 
 const TableContainer = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  overflow: hidden;
+  overflow-x: auto;
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: ${({ theme }) => theme.fonts.main};
 `;
 
 const TableHead = styled.thead`
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
+  background-color: ${({ theme }) => theme.colors.background};
+  border-top: 2px solid ${({ theme }) => theme.colors.ink};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const TableHeaderCell = styled.th`
-  padding: ${({ theme }) => theme.spacing.md};
+  padding: 10px ${({ theme }) => theme.spacing.md};
   text-align: left;
-  font-weight: 600;
-  font-size: 14px;
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.colors.ink3};
 `;
 
 const TableRow = styled.tr<{ expanded?: boolean }>`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  background-color: ${({ theme, expanded }) => (expanded ? theme.colors.primaryTint : "transparent")};
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.background};
+    background-color: ${({ theme, expanded }) => (expanded ? theme.colors.primaryTint : theme.colors.background)};
   }
 `;
 
@@ -54,21 +59,29 @@ const ExpandCell = styled(TableCell)`
 
 const ExpandIcon = styled.span<{ expanded: boolean }>`
   display: inline-block;
+  font-family: ${({ theme }) => theme.fonts.mono};
   transition: transform 0.2s;
   transform: ${({ expanded }) => (expanded ? "rotate(90deg)" : "rotate(0deg)")};
-  font-size: 12px;
+  font-size: 11px;
+  color: ${({ theme, expanded }) => (expanded ? theme.colors.primary : theme.colors.ink3)};
 `;
 
 const NameCell = styled(TableCell)`
   width: 20%;
   min-width: 150px;
   max-width: 250px;
+
+  @media (max-width: 768px) {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
 `;
 
 const NameLink = styled(Link)`
   color: ${({ theme }) => theme.colors.primary};
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
 
   &:hover {
@@ -78,29 +91,42 @@ const NameLink = styled(Link)`
 
 const DescriptionCell = styled(TableCell)`
   width: 50%;
-  color: ${({ theme }) => theme.colors.text};
-  font-size: 13px;
-  line-height: 1.4;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 13.5px;
+  line-height: 1.55;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const DetailsCell = styled(TableCell)`
   width: 30%;
   max-width: 200px;
-  color: ${({ theme }) => theme.colors.textSecondary || "#858585"};
+  font-family: ${({ theme }) => theme.fonts.mono};
+  color: ${({ theme }) => theme.colors.textSecondary};
   font-size: 12px;
-  line-height: 1.3;
+  line-height: 1.4;
   word-wrap: break-word;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const TreeContainer = styled.td`
   padding: 0;
-  background-color: ${({ theme }) => theme.colors.background};
+  background-color: ${({ theme }) => theme.colors.surface};
 `;
 
 const TreeContent = styled.div`
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   padding-left: 60px;
   border-top: 1px solid ${({ theme }) => theme.colors.border};
+
+  @media (max-width: 768px) {
+    padding-left: ${({ theme }) => theme.spacing.md};
+  }
 `;
 
 const EmptyMessage = styled.div`
@@ -199,7 +225,8 @@ const ROCrateTreeView: React.FC<ROCrateTreeViewProps> = ({ rocrates }) => {
     const parts: string[] = [];
     if (counts.datasets > 0) parts.push(`${counts.datasets} datasets`);
     if (counts.software > 0) parts.push(`${counts.software} software`);
-    if (counts.computations > 0) parts.push(`${counts.computations} computations`);
+    if (counts.computations > 0)
+      parts.push(`${counts.computations} computations`);
     if (counts.schemas > 0) parts.push(`${counts.schemas} schemas`);
     if (counts.samples > 0) parts.push(`${counts.samples} samples`);
     if (counts.mlModels > 0) parts.push(`${counts.mlModels} ML models`);
@@ -217,7 +244,7 @@ const ROCrateTreeView: React.FC<ROCrateTreeViewProps> = ({ rocrates }) => {
       const arkId = extractArkIdentifier(crateId);
       const response = await axios.get(
         `${API_URL}/rocrate/summary/${arkId}?limit=${limit}`,
-        { headers }
+        { headers },
       );
 
       return response.data;
@@ -230,7 +257,7 @@ const ROCrateTreeView: React.FC<ROCrateTreeViewProps> = ({ rocrates }) => {
   const loadMoreItems = async (
     crateId: string,
     category: string,
-    offset: number
+    offset: number,
   ) => {
     const arkId = extractArkIdentifier(crateId);
     const token = localStorage.getItem("token");
@@ -254,7 +281,7 @@ const ROCrateTreeView: React.FC<ROCrateTreeViewProps> = ({ rocrates }) => {
     try {
       const response = await axios.get(
         `${API_URL}/rocrate/summary/${arkId}?limit=5&offset=${offset}`,
-        { headers }
+        { headers },
       );
 
       const newItems = response.data[category] || [];
@@ -418,7 +445,7 @@ const ROCrateTreeView: React.FC<ROCrateTreeViewProps> = ({ rocrates }) => {
     crateId: string,
     category: string,
     count: number,
-    level: number
+    level: number,
   ) => {
     const state = crateStates[crateId];
     const categoryState = state?.categories?.[category];
@@ -440,7 +467,9 @@ const ROCrateTreeView: React.FC<ROCrateTreeViewProps> = ({ rocrates }) => {
         defaultExpanded={false}
         hasMore={hasMore}
         loading={categoryState?.loading}
-        onLoadMore={() => loadMoreItems(crateId, category, categoryState?.offset || 5)}
+        onLoadMore={() =>
+          loadMoreItems(crateId, category, categoryState?.offset || 5)
+        }
       >
         {items.map((item) => {
           const isNestedRocrate = category === "rocrates";
@@ -452,7 +481,11 @@ const ROCrateTreeView: React.FC<ROCrateTreeViewProps> = ({ rocrates }) => {
               level={level + 1}
               linkTo={`/view/${extractArkIdentifier(item["@id"])}`}
               expandable={isNestedRocrate}
-              onExpand={isNestedRocrate ? () => handleCrateExpand(item["@id"]) : undefined}
+              onExpand={
+                isNestedRocrate
+                  ? () => handleCrateExpand(item["@id"])
+                  : undefined
+              }
             >
               {isNestedRocrate && renderCrateContents(item["@id"], level + 1)}
             </TreeNode>
@@ -484,7 +517,7 @@ const ROCrateTreeView: React.FC<ROCrateTreeViewProps> = ({ rocrates }) => {
     return (
       <>
         {categories.map((category) =>
-          renderCategory(crateId, category, counts[category], level)
+          renderCategory(crateId, category, counts[category], level),
         )}
       </>
     );
@@ -520,14 +553,14 @@ const ROCrateTreeView: React.FC<ROCrateTreeViewProps> = ({ rocrates }) => {
                     <ExpandIcon expanded={isExpanded}>▶</ExpandIcon>
                   </ExpandCell>
                   <NameCell>
-                    <NameLink to={`/view/${extractArkIdentifier(crate["@id"])}`}>
+                    <NameLink
+                      to={`/view/${extractArkIdentifier(crate["@id"])}`}
+                    >
                       {crate.name}
                     </NameLink>
                   </NameCell>
                   <DescriptionCell>{crate.description}</DescriptionCell>
-                  <DetailsCell>
-                    {formatCountsDetails(crate.counts)}
-                  </DetailsCell>
+                  <DetailsCell>{formatCountsDetails(crate.counts)}</DetailsCell>
                 </TableRow>
                 {isExpanded && (
                   <TableRow>

@@ -7,7 +7,7 @@ const Container = styled.div`
   align-items: center;
   padding: 2rem;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: #f7f9f9;
 `;
 
 const Title = styled.h1`
@@ -100,7 +100,6 @@ const CenterContent = styled.div`
   padding: 1rem;
   border-radius: 50%;
   background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 `;
 
 const CenterTitle = styled.h2`
@@ -122,9 +121,8 @@ const DetailPanel = styled.div`
   max-width: 800px;
   width: 100%;
   background: white;
-  border-radius: 12px;
+  border-radius: 2px;
   padding: 2rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 `;
 
 const DetailTitle = styled.h3`
@@ -366,7 +364,7 @@ const AIReadinessDefinitionsPage = () => {
               const midAngle = criteria.angle;
               const textPos = getTextPosition(
                 midAngle,
-                (innerRadius + outerRadius) / 2
+                (innerRadius + outerRadius) / 2,
               );
 
               const isActive = currentCriteria?.id === criteria.id;
@@ -389,7 +387,7 @@ const AIReadinessDefinitionsPage = () => {
                       startAngle,
                       endAngle,
                       innerRadius,
-                      outerRadius
+                      outerRadius,
                     )}
                     fill={isActive ? criteria.color : criteria.color + "CC"}
                     style={{

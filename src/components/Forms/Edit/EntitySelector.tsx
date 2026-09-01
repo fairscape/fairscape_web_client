@@ -12,7 +12,15 @@ interface Entity {
 interface EntitySelectorProps {
   value: string; // CSV of ARK IDs
   onChange: (value: string) => void;
-  filterType?: "Dataset" | "Software" | "Computation" | "Schema" | "Annotation" | "Experiment" | "Sample" | "Instrument";
+  filterType?:
+    | "Dataset"
+    | "Software"
+    | "Computation"
+    | "Schema"
+    | "Annotation"
+    | "Experiment"
+    | "Sample"
+    | "Instrument";
   parentRoCrateId?: string; // ARK ID of parent RO-Crate
   placeholder?: string;
 }
@@ -68,7 +76,8 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
         const response = await metadataApi.getRoCrate(parentRoCrateId);
 
         // Get @graph - this is where ALL entities live
-        const graph = response?.metadata?.["@graph"] || response?.["@graph"] || [];
+        const graph =
+          response?.metadata?.["@graph"] || response?.["@graph"] || [];
 
         if (!Array.isArray(graph)) {
           console.warn("EntitySelector: No @graph array found");
@@ -85,10 +94,12 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           const arkId = item["@id"];
 
           // Skip metadata entities
-          if (!arkId ||
-              arkId === "ro-crate-metadata.json" ||
-              arkId === "./" ||
-              arkId === null) {
+          if (
+            !arkId ||
+            arkId === "ro-crate-metadata.json" ||
+            arkId === "./" ||
+            arkId === null
+          ) {
             continue;
           }
 
@@ -102,8 +113,8 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           }
 
           // Find the EVI type (e.g., "https://w3id.org/EVI#Dataset")
-          const eviType = types.find((t: string) =>
-            t.includes("EVI#") || t.includes("w3id.org/EVI")
+          const eviType = types.find(
+            (t: string) => t.includes("EVI#") || t.includes("w3id.org/EVI"),
           );
 
           let simpleType = undefined;
@@ -126,9 +137,10 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           });
         }
 
-        console.log(`EntitySelector: Extracted ${entities.length} entities${filterType ? ` of type ${filterType}` : ''}`);
+        console.log(
+          `EntitySelector: Extracted ${entities.length} entities${filterType ? ` of type ${filterType}` : ""}`,
+        );
         setAvailableEntities(entities);
-
       } catch (error) {
         console.error("EntitySelector: Failed to fetch entities:", error);
         setAvailableEntities([]);
@@ -185,7 +197,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
       .filter(
         (entity) =>
           entity.name.toLowerCase().includes(searchLower) ||
-          entity.id.toLowerCase().includes(searchLower)
+          entity.id.toLowerCase().includes(searchLower),
       )
       .slice(0, 50); // Limit to 50 results to avoid performance issues with large RO-Crates
 
@@ -212,7 +224,9 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           addEntity({ id: trimmed, name: trimmed });
         } else {
           // Show error or warning
-          alert("Please enter a valid ARK ID starting with 'ark:' or select from the dropdown");
+          alert(
+            "Please enter a valid ARK ID starting with 'ark:' or select from the dropdown",
+          );
         }
       }
     }
@@ -250,8 +264,8 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           {loading
             ? "Loading entities from RO-Crate..."
             : parentRoCrateId
-            ? `Search ${availableEntities.length} entities in this RO-Crate or press Enter to add custom ARK ID`
-            : "Enter ARK ID and press Enter (e.g., ark:59853/dataset-name-abc123)"}
+              ? `Search ${availableEntities.length} entities in this RO-Crate or press Enter to add custom ARK ID`
+              : "Enter ARK ID and press Enter (e.g., ark:59853/dataset-name-abc123)"}
         </HelpText>
         {showDropdown && filteredSuggestions.length > 0 && (
           <Dropdown>
@@ -261,10 +275,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
               </DropdownHeader>
             )}
             {filteredSuggestions.map((entity, index) => (
-              <DropdownItem
-                key={index}
-                onClick={() => addEntity(entity)}
-              >
+              <DropdownItem key={index} onClick={() => addEntity(entity)}>
                 <EntityName>
                   {entity.name}
                   {entity.type && <TypeBadge>{entity.type}</TypeBadge>}
@@ -294,8 +305,8 @@ const EntityContainer = styled.div`
   margin-bottom: 10px;
   min-height: 40px;
   padding: 8px;
-  background: #f8f9fa;
-  border-radius: 4px;
+  background: #f7f9f9;
+  border-radius: 2px;
   border: 1px solid #e0e0e0;
 `;
 
@@ -312,7 +323,7 @@ const Chip = styled.div`
   background: #3e7aa8;
   color: white;
   padding: 6px 10px;
-  border-radius: 16px;
+  border-radius: 2px;
   font-size: 13px;
   font-weight: 500;
   max-width: 300px;
@@ -330,7 +341,7 @@ const ChipText = styled.span`
 const TypeBadge = styled.span`
   background: rgba(255, 255, 255, 0.3);
   padding: 2px 6px;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 11px;
   font-weight: 600;
 `;
@@ -364,19 +375,18 @@ const InputWrapper = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   font-size: 14px;
   transition: border-color 0.15s ease;
 
   &:focus {
     outline: none;
     border-color: #3e7aa8;
-    box-shadow: 0 0 0 2px rgba(62, 122, 168, 0.1);
   }
 
   &:disabled {
-    background-color: #f0f0f0;
+    background-color: #f7f9f9;
     cursor: not-allowed;
   }
 `;
@@ -395,9 +405,8 @@ const Dropdown = styled.div`
   right: 0;
   margin-top: 4px;
   background: white;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   max-height: 400px;
   overflow-y: auto;
   z-index: 1000;
@@ -405,7 +414,7 @@ const Dropdown = styled.div`
 
 const DropdownHeader = styled.div`
   padding: 8px 12px;
-  background: #f8f9fa;
+  background: #f7f9f9;
   border-bottom: 1px solid #e0e0e0;
   font-size: 12px;
   color: #666;
@@ -418,11 +427,11 @@ const DropdownHeader = styled.div`
 const DropdownItem = styled.div`
   padding: 12px;
   cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f7f9f9;
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: #f8f9fa;
+    background-color: #f7f9f9;
   }
 
   &:last-child {

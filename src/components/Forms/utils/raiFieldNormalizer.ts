@@ -36,7 +36,10 @@ const ARRAY_RAI_FIELDS = [
 ] as const;
 
 // All RAI fields
-export const ALL_RAI_FIELDS = [...STRING_RAI_FIELDS, ...ARRAY_RAI_FIELDS] as const;
+export const ALL_RAI_FIELDS = [
+  ...STRING_RAI_FIELDS,
+  ...ARRAY_RAI_FIELDS,
+] as const;
 
 /**
  * Convert a value to a string.
@@ -64,7 +67,10 @@ function toArrayValue(value: unknown): string[] {
     return value.map(String).filter(Boolean);
   }
   if (typeof value === "string") {
-    return value.split("\n").map((s) => s.trim()).filter(Boolean);
+    return value
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   return [String(value)];
 }
@@ -74,7 +80,7 @@ function toArrayValue(value: unknown): string[] {
  */
 export function normalizeRaiFieldValue(
   fieldName: string,
-  value: unknown
+  value: unknown,
 ): string | string[] | null {
   if (value === null || value === undefined || value === "") {
     return null;
@@ -102,7 +108,7 @@ export function normalizeRaiFieldValue(
  * @returns New object with normalized RAI field values
  */
 export function normalizeRaiFieldsForApi<T extends Record<string, unknown>>(
-  data: T
+  data: T,
 ): T {
   const result = { ...data };
 
@@ -128,12 +134,16 @@ export function normalizeRaiFieldsForApi<T extends Record<string, unknown>>(
  * @returns New object with all RAI fields as strings
  */
 export function normalizeRaiFieldsForForm<T extends Record<string, unknown>>(
-  data: T
+  data: T,
 ): T {
   const result = { ...data };
 
   for (const field of ALL_RAI_FIELDS) {
-    if (field in result && result[field] !== null && result[field] !== undefined) {
+    if (
+      field in result &&
+      result[field] !== null &&
+      result[field] !== undefined
+    ) {
       (result as Record<string, unknown>)[field] = toStringValue(result[field]);
     } else {
       (result as Record<string, unknown>)[field] = "";

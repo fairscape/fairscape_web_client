@@ -14,7 +14,7 @@ interface ButtonGroupProps {
 const Group = styled.div`
   display: inline-flex;
   background-color: #f0f2f5;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 4px;
 `;
 
@@ -53,21 +53,37 @@ const BaseButtonStyles = `
 `;
 
 const Button = styled.button<{ $active?: boolean }>`
-  ${BaseButtonStyles}
+  padding: 8px 16px;
   background-color: ${({ $active }) => ($active ? "white" : "transparent")};
-  color: ${({ theme, $active }) =>
-    $active ? theme.colors.primary : theme.colors.textSecondary};
+  color: ${({ theme, $active, $disabled }) => {
+    var e, l, c;
+    return $disabled
+      ? (((e = theme == null ? void 0 : theme.colors) == null
+          ? void 0
+          : e.textSecondary) || "#51626B") + "80"
+      : $active
+        ? ((l = theme == null ? void 0 : theme.colors) == null
+            ? void 0
+            : l.primary) || "#007bff"
+        : ((c = theme == null ? void 0 : theme.colors) == null
+            ? void 0
+            : c.textSecondary) || "#51626B";
+  }};
+  border: none;
+  border-radius: 2px;
+  cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin: 0 2px;
 
   &:hover:not(:disabled) {
-    background-color: ${({ $active }) =>
-      $active ? "white" : "rgba(255, 255, 255, 0.5)"};
+    background-color: ${({ $active }) => ($active ? "white" : "rgba(255, 255, 255, 0.5)")};
   }
 
-  ${({ $active }) =>
-    $active &&
-    `
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  `}
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
 `;
 
 const ButtonGroup: React.FC<ButtonGroupProps> = ({

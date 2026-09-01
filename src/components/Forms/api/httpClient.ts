@@ -35,7 +35,7 @@ export function useHttp() {
         method,
         headers: merge(
           merge({ Accept: "application/json" }, auth),
-          merge(ct, headers)
+          merge(ct, headers),
         ),
         body: body && !(body instanceof FormData) ? JSON.stringify(body) : body,
         signal,
@@ -50,7 +50,7 @@ export function useHttp() {
       if (contentType.includes("application/json")) return resp.json();
       return resp.text();
     },
-    [token]
+    [token],
   );
 
   return http;

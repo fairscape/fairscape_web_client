@@ -97,7 +97,7 @@ export class ROCratePackager {
 
   private objectToGraphItem(
     obj: MetadataObject,
-    crateState: ROCrateState
+    crateState: ROCrateState,
   ): any {
     const item: any = {
       "@id": obj["@id"],
@@ -159,7 +159,7 @@ export class ROCratePackager {
             "@type": "prov:Usage",
             "prov:entity": { "@id": id },
             "prov:hadRole": { "@type": "prov:Role", "rdfs:label": "software" },
-          })
+          }),
         );
       }
 
@@ -236,7 +236,7 @@ export class ROCratePackager {
         const graph = metadata["@graph"];
 
         const metadataDescriptor = graph.find(
-          (item: any) => item["@id"] === "ro-crate-metadata.json"
+          (item: any) => item["@id"] === "ro-crate-metadata.json",
         );
         if (!metadataDescriptor) {
           errors.push("Missing metadata descriptor in @graph");

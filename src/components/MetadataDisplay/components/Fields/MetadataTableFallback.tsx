@@ -10,24 +10,16 @@ interface MetadataTableFallbackProps {
 const MetadataTable = styled.table`
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
 
-  th,
   td {
+    padding: 8px;
     border: 1px solid ${({ theme }) => theme.colors.border};
-    padding: ${({ theme }) => theme.spacing.sm}
-      ${({ theme }) => theme.spacing.md};
-    text-align: left;
-    vertical-align: top;
   }
 
-  th {
-    background-color: ${({ theme }) => theme.colors.background};
+  td:first-child {
     font-weight: 600;
-    width: 25%;
-  }
-  td {
-    word-break: break-word;
+    background-color: ${({ theme }) => theme.colors.backgroundAlt};
+    width: 40%;
   }
 `;
 
@@ -36,7 +28,7 @@ const MetadataTableFallback: React.FC<MetadataTableFallbackProps> = ({
 }) => {
   // Render all top-level properties except @context
   const propertiesToRender = Object.entries(metadata).filter(
-    ([key]) => key !== "@context"
+    ([key]) => key !== "@context",
   );
 
   return (

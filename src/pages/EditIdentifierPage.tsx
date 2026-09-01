@@ -78,7 +78,7 @@ const EditIdentifierPage: React.FC = () => {
 
   const [reviewStates, setReviewStates] = useState<ReviewStates>({});
   const [llmPopulatedFields, setLlmPopulatedFields] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [llmModalOpen, setLlmModalOpen] = useState(false);
   const [fieldVisibility, setFieldVisibility] = useState<
@@ -163,7 +163,7 @@ const EditIdentifierPage: React.FC = () => {
 
     const mergedFormData = await llmApi.processDocumentsForEdit(
       documents,
-      formData
+      formData,
     );
 
     const {
@@ -184,7 +184,7 @@ const EditIdentifierPage: React.FC = () => {
 
   const handleReviewAction = (
     fieldName: string,
-    action: "approve" | "reject"
+    action: "approve" | "reject",
   ) => {
     setReviewStates((prev) => {
       if (!prev[fieldName]) return prev;
@@ -214,7 +214,7 @@ const EditIdentifierPage: React.FC = () => {
   };
 
   const handleVisibilityChange = (
-    newVisibility: "minimal" | "ai-ready" | "all"
+    newVisibility: "minimal" | "ai-ready" | "all",
   ) => {
     if (!visibilityLocked) {
       setFieldVisibility(newVisibility);
@@ -224,7 +224,7 @@ const EditIdentifierPage: React.FC = () => {
   const handleUpdate = async () => {
     if (hasUnreviewedFields(reviewStates)) {
       const confirmed = window.confirm(
-        "You have unreviewed LLM-generated fields. Are you sure you want to save?"
+        "You have unreviewed LLM-generated fields. Are you sure you want to save?",
       );
       if (!confirmed) return;
     }
@@ -235,7 +235,7 @@ const EditIdentifierPage: React.FC = () => {
       formData,
       extraFields,
       metadata,
-      config
+      config,
     );
 
     try {
@@ -263,7 +263,7 @@ const EditIdentifierPage: React.FC = () => {
     if (hasChanges()) {
       if (
         window.confirm(
-          "You have unsaved changes. Are you sure you want to cancel?"
+          "You have unsaved changes. Are you sure you want to cancel?",
         )
       ) {
         setFormData(JSON.parse(JSON.stringify(originalFormData)));
@@ -359,24 +359,28 @@ const EditIdentifierPage: React.FC = () => {
 
 const PageTitle = styled.h1`
   font-size: 2rem;
-  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: ${({ theme }) => theme.colors.ink};
   text-align: center;
   margin-bottom: 10px;
 `;
 
 const MetadataType = styled.div`
   text-align: center;
-  font-size: 1.2rem;
-  color: ${({ theme }) => theme.colors.textSecondary};
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.colors.primary};
   margin-bottom: 5px;
-  font-weight: 600;
 `;
 
 const ArkDisplay = styled.div`
   text-align: center;
-  font-family: monospace;
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors.textSecondary};
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors.ink3};
   margin-bottom: 30px;
 `;
 
@@ -384,6 +388,10 @@ const MainContent = styled.div`
   display: flex;
   gap: 30px;
   align-items: flex-start;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+  }
 `;
 
 const FormColumn = styled.div`

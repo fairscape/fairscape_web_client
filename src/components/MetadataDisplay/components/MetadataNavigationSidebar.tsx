@@ -16,7 +16,14 @@ import { RiPercentLine } from "react-icons/ri";
 import { useMetadataApi } from "../api/metadataApi";
 import { MdOutlineQueryStats } from "react-icons/md";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema";
+type ViewType =
+  | "metadata"
+  | "serialization"
+  | "graph"
+  | "score"
+  | "statistics"
+  | "interpretation"
+  | "schema";
 
 interface MetadataNavigationSidebarProps {
   activeView: ViewType;
@@ -135,7 +142,10 @@ export default function MetadataNavigationSidebar({
             </ViewButton>
           )}
 
-          {(bundleKind === "rocrate" || bundleKind === "release" || bundleKind === "dataset" || bundleKind === "schema") && (
+          {(bundleKind === "rocrate" ||
+            bundleKind === "release" ||
+            bundleKind === "dataset" ||
+            bundleKind === "schema") && (
             <ViewButton
               active={activeView === "schema"}
               onClick={() => onViewChange("schema")}
@@ -144,7 +154,6 @@ export default function MetadataNavigationSidebar({
               <span>Schema Explorer</span>
             </ViewButton>
           )}
-
         </Section>
 
         <Divider />
@@ -267,14 +276,20 @@ const SidebarContainer = styled.div`
   top: 20px;
   width: 250px;
   height: fit-content;
+
+  /* Stacked layout: move above the content so the view switcher stays reachable */
+  @media (max-width: 1024px) {
+    position: static;
+    width: 100%;
+    order: -1;
+  }
 `;
 
 const SidebarContent = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: ${({ theme }) => theme.colors.surface};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #dee2e6;
+  border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const Section = styled.div`
@@ -283,17 +298,31 @@ const Section = styled.div`
   &:last-child {
     margin-bottom: 0;
   }
+
+  /* Stacked layout: sections become wrapping rows of compact buttons */
+  @media (max-width: 1024px) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 14px;
-  color: #005f73;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #dee2e6;
-  font-weight: 700;
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 11px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: ${({ theme }) => theme.colors.ink3};
+  font-weight: 500;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+
+  @media (max-width: 1024px) {
+    flex-basis: 100%;
+    margin-bottom: 2px;
+  }
 `;
 
 const ViewButton = styled.button<{ active?: boolean }>`
@@ -301,28 +330,41 @@ const ViewButton = styled.button<{ active?: boolean }>`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  margin-bottom: 8px;
+  padding: 10px;
   border: none;
-  border-radius: 6px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 0;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-  background: ${({ active }) => (active ? "#005f73" : "transparent")};
-  color: ${({ active }) => (active ? "white" : "#212529")};
+  font-weight: ${({ active }) => (active ? 600 : 450)};
+  transition: background 0.15s ease;
+  background: ${({ active, theme }) => (active ? theme.colors.primaryTint : "transparent")};
+  color: ${({ active, theme }) => (active ? theme.colors.primary : theme.colors.textSecondary)};
+  box-shadow: ${({ active, theme }) => (active ? `inset 2px 0 0 ${theme.colors.primary}` : "none")};
 
   &:hover {
-    background: ${({ active }) => (active ? "#005f73" : "#f8f9fa")};
-    transform: translateX(2px);
+    background: ${({ theme }) => theme.colors.primaryTint};
+    color: ${({ theme }) => theme.colors.primary};
   }
 
   svg {
-    font-size: 18px;
+    font-size: 16px;
     flex-shrink: 0;
   }
 
   span {
-    font-size: 14px;
+    font-size: 13.5px;
+  }
+
+  /* Stacked layout: vertical list items become pills */
+  @media (max-width: 1024px) {
+    width: auto;
+    padding: 8px 12px;
+    gap: 8px;
+    border: 1px solid
+      ${({ active, theme }) => (active ? theme.colors.primary : theme.colors.borderStrong)};
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
+    box-shadow: none;
+    background: ${({ active, theme }) => (active ? theme.colors.primaryTint : theme.colors.surface)};
   }
 `;
 
@@ -331,40 +373,40 @@ const ActionButton = styled.button`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 9px 12px;
   margin-top: 8px;
   margin-bottom: 8px;
-  border: 1px solid #005f73;
-  border-radius: 6px;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-  background: white;
-  color: #005f73;
+  font-weight: 550;
+  transition: background 0.15s ease;
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.primary};
 
   &:hover:not(:disabled) {
-    background: #005f73;
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: ${({ theme }) => theme.colors.primaryTint};
   }
 
   &:disabled {
-    opacity: 0.4;
     cursor: not-allowed;
-    transform: none;
-    background: #f8f9fa;
-    border-color: #dee2e6;
-    color: #6c757d;
+    background: ${({ theme }) => theme.colors.background};
+    border-color: ${({ theme }) => theme.colors.border};
+    color: ${({ theme }) => theme.colors.ink3};
   }
 
   svg {
-    font-size: 18px;
+    font-size: 16px;
     flex-shrink: 0;
   }
 
   span {
-    font-size: 14px;
+    font-size: 13.5px;
+  }
+
+  @media (max-width: 1024px) {
+    width: auto;
+    margin: 0;
   }
 `;
 
@@ -372,6 +414,10 @@ const DownloadSection = styled.div`
   position: relative;
   margin-top: 8px;
   margin-bottom: 8px;
+
+  @media (max-width: 1024px) {
+    margin: 0;
+  }
 `;
 
 const DownloadButton = styled.button`
@@ -379,20 +425,22 @@ const DownloadButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
-  border: 1px solid #005f73;
-  border-radius: 6px;
+  padding: 9px 12px;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-  background: white;
-  color: #005f73;
+  font-weight: 550;
+  transition: background 0.15s ease;
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.primary};
 
   &:hover {
-    background: #005f73;
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: ${({ theme }) => theme.colors.primaryTint};
+  }
+
+  @media (max-width: 1024px) {
+    width: auto;
+    gap: 8px;
   }
 `;
 
@@ -427,48 +475,61 @@ const DropdownMenu = styled.div`
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   z-index: 1000;
   overflow: hidden;
+
+  /* Stacked layout: the trigger button is compact, so size to the items */
+  @media (max-width: 1024px) {
+    right: auto;
+    min-width: 200px;
+  }
 `;
 
 const DropdownItem = styled.button`
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border: none;
-  background: white;
-  color: #212529;
+  border-radius: 0;
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.text};
   text-align: left;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   transition: background 0.15s;
 
   &:hover {
-    background: #f8f9fa;
+    background: ${({ theme }) => theme.colors.primaryTint};
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   }
 `;
 
 const Divider = styled.hr`
   margin: 20px 0;
   border: none;
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const OwnerNote = styled.div`
-  margin-top: 12px;
-  padding: 8px;
-  background: #fff3cd;
-  border: 1px solid #ffeeba;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #856404;
-  text-align: center;
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid
+    ${({ $variant }) => ($variant === "generic" ? "#f1aeb5" : "#ffe08a")};
+  background: ${({ $variant }) => ($variant === "generic" ? "#fdf0f1" : "#fff8e6")};
+  color: ${({ $variant }) => ($variant === "generic" ? "#842029" : "#7a5a00")};
+
+  @media (max-width: 1024px) {
+    flex-basis: 100%;
+    margin-top: 0;
+  }
 `;

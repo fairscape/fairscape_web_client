@@ -23,23 +23,31 @@ import { GraphBuilder } from "./graphUtils";
 import { getLayoutedElements } from "../EvidenceGraph/utils/layoutUtils";
 import AnnotatedEvidenceNodeComponent from "./AnnotatedEvidenceNode";
 
-export const GraphDataServiceContext = React.createContext<GraphDataService | null>(null);
+export const GraphDataServiceContext =
+  React.createContext<GraphDataService | null>(null);
 
 const ViewerWrapper = styled.div`
   width: 100%;
   height: 600px;
   position: relative;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
+  border: 1px solid #e2e8ea;
+  border-radius: 2px;
   background-color: #fff;
 
   .react-flow__edge path {
-    transition: stroke 0.2s ease, stroke-width 0.2s ease;
+    transition:
+      stroke 0.2s ease,
+      stroke-width 0.2s ease;
   }
 
   @keyframes node-highlight-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(44, 62, 80, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(44, 62, 80, 0.15); }
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(44, 62, 80, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(44, 62, 80, 0.15);
+    }
   }
 
   .react-flow__node.highlighted-node > div {
@@ -69,26 +77,36 @@ interface GraphRendererProps {
   highlightNodeId?: string | null;
 }
 
-const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService, highlightNodeId }) => {
-  const [nodes, setNodes, onNodesChangeInternal] = useNodesState<RFNode["data"]>([]);
+const GraphRenderer: React.FC<GraphRendererProps> = ({
+  dataService,
+  highlightNodeId,
+}) => {
+  const [nodes, setNodes, onNodesChangeInternal] = useNodesState<
+    RFNode["data"]
+  >([]);
   const [edges, setEdges, onEdgesChangeInternal] = useEdgesState<RFEdge>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { fitView } = useReactFlow();
   const graphBuilderRef = useRef<GraphBuilder | null>(null);
 
   const applyLayout = useCallback(
-    (elements: { nodes: EvidenceNode[]; edges: EvidenceEdge[] }, fit = false) => {
+    (
+      elements: { nodes: EvidenceNode[]; edges: EvidenceEdge[] },
+      fit = false,
+    ) => {
       setIsLoading(true);
       setTimeout(() => {
         try {
-          const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-            elements.nodes as Node[],
-            elements.edges as Edge[],
-            "LR"
-          );
+          const { nodes: layoutedNodes, edges: layoutedEdges } =
+            getLayoutedElements(
+              elements.nodes as Node[],
+              elements.edges as Edge[],
+              "LR",
+            );
           setNodes(layoutedNodes as RFNode[]);
           setEdges(layoutedEdges as RFEdge[]);
-          if (fit) setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 100);
+          if (fit)
+            setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 100);
         } catch (e) {
           console.error("Layout failed:", e);
           setNodes(elements.nodes as RFNode[]);
@@ -98,7 +116,7 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService, highlightNod
         }
       }, 10);
     },
-    [setNodes, setEdges, fitView]
+    [setNodes, setEdges, fitView],
   );
 
   useEffect(() => {
@@ -120,7 +138,11 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService, highlightNod
 
     // Pan to the node
     if (targetNode.position) {
-      fitView({ nodes: [{ id: highlightNodeId }], padding: 0.5, duration: 500 });
+      fitView({
+        nodes: [{ id: highlightNodeId }],
+        padding: 0.5,
+        duration: 500,
+      });
     }
 
     // Apply highlight class
@@ -128,14 +150,12 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService, highlightNod
       nds.map((n) => ({
         ...n,
         className: n.id === highlightNodeId ? "highlighted-node" : "",
-      }))
+      })),
     );
 
     // Remove highlight after animation
     const timer = setTimeout(() => {
-      setNodes((nds) =>
-        nds.map((n) => ({ ...n, className: "" }))
-      );
+      setNodes((nds) => nds.map((n) => ({ ...n, className: "" })));
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -154,22 +174,22 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService, highlightNod
         }
       }, 10);
     },
-    [dataService, applyLayout]
+    [dataService, applyLayout],
   );
 
   const handleNodesChange: OnNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const relevant = changes.filter(
-        (c) => !isLoading || (c.type === "position" && c.dragging === true)
+        (c) => !isLoading || (c.type === "position" && c.dragging === true),
       );
       if (relevant.length) onNodesChangeInternal(relevant);
     },
-    [isLoading, onNodesChangeInternal]
+    [isLoading, onNodesChangeInternal],
   );
 
   const handleEdgesChange: OnEdgesChange = useCallback(
     (changes: EdgeChange[]) => onEdgesChangeInternal(changes),
-    [onEdgesChangeInternal]
+    [onEdgesChangeInternal],
   );
 
   return (
@@ -189,7 +209,12 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({ dataService, highlightNod
           maxZoom={4}
           fitView={false}
         >
-          <Background variant={BackgroundVariant.Dots} gap={15} size={0.5} color="#ccc" />
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={15}
+            size={0.5}
+            color="#ccc"
+          />
           <Controls />
         </ReactFlow>
       </ViewerWrapper>
@@ -202,7 +227,10 @@ interface AnnotatedGraphViewerProps {
   highlightNodeId?: string | null;
 }
 
-const AnnotatedGraphViewer: React.FC<AnnotatedGraphViewerProps> = ({ graphData, highlightNodeId }) => {
+const AnnotatedGraphViewer: React.FC<AnnotatedGraphViewerProps> = ({
+  graphData,
+  highlightNodeId,
+}) => {
   const [dataService, setDataService] = useState<GraphDataService | null>(null);
 
   useEffect(() => {
@@ -215,7 +243,18 @@ const AnnotatedGraphViewer: React.FC<AnnotatedGraphViewerProps> = ({ graphData, 
 
   if (!graphData) {
     return (
-      <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ddd", borderRadius: 8, background: "#f8f9fa", color: "#666" }}>
+      <div
+        style={{
+          height: 200,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "1px solid #ddd",
+          borderRadius: 8,
+          background: "#f8f9fa",
+          color: "#666",
+        }}
+      >
         No annotated evidence graph data available
       </div>
     );
@@ -223,7 +262,10 @@ const AnnotatedGraphViewer: React.FC<AnnotatedGraphViewerProps> = ({ graphData, 
 
   return (
     <ReactFlowProvider>
-      <GraphRenderer dataService={dataService} highlightNodeId={highlightNodeId} />
+      <GraphRenderer
+        dataService={dataService}
+        highlightNodeId={highlightNodeId}
+      />
     </ReactFlowProvider>
   );
 };

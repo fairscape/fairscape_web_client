@@ -7,13 +7,15 @@ import {
   StyledFormControl,
 } from "./SharedComponents"; // Import styled components
 
-interface KeywordsFieldProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+interface KeywordsFieldProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange"
+> {
   label: string;
   name: string;
   value?: string;
   onChange: (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
 }
 

@@ -1,4 +1,11 @@
-import React, { useContext, useMemo, useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import styled from "styled-components";
 import { useParams, Link } from "react-router-dom";
 
@@ -23,20 +30,44 @@ import { useMetadataBundle } from "../components/MetadataDisplay/hooks/useMetada
 import { useDownloads } from "../components/MetadataDisplay/hooks/useDownloads";
 import { deriveTitleAndVersion } from "../components/MetadataDisplay/utils/title";
 import { useHttp } from "../components/MetadataDisplay/api/httpClient";
+import { TypeTag, ArkId, Mono } from "../components/shared/DirectionA";
 
-type ViewType = "metadata" | "serialization" | "graph" | "score" | "statistics" | "interpretation" | "schema";
+type ViewType =
+  | "metadata"
+  | "serialization"
+  | "graph"
+  | "score"
+  | "statistics"
+  | "interpretation"
+  | "schema";
+
+const FullWidthWrapper = styled.div`
+  margin-left: calc(-1 * ${({ theme }) => theme.spacing.lg});
+  margin-right: calc(-1 * ${({ theme }) => theme.spacing.lg});
+  width: calc(100% + 2 * ${({ theme }) => theme.spacing.lg});
+
+  /* main's padding shrinks to spacing.md on mobile - mirror it here */
+  @media (max-width: 768px) {
+    margin-left: calc(-1 * ${({ theme }) => theme.spacing.md});
+    margin-right: calc(-1 * ${({ theme }) => theme.spacing.md});
+    width: calc(100% + 2 * ${({ theme }) => theme.spacing.md});
+  }
+`;
 
 const PageContainer = styled.div`
   display: flex;
   gap: 30px;
   margin: 0 auto;
   padding: 20px;
-`;
 
-const FullWidthWrapper = styled.div`
-  margin-left: calc(-1 * ${({ theme }) => theme.spacing.lg});
-  margin-right: calc(-1 * ${({ theme }) => theme.spacing.lg});
-  width: calc(100% + 2 * ${({ theme }) => theme.spacing.lg});
+  @media (max-width: 1024px) {
+    flex-direction: column;
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 0;
+    gap: 20px;
+  }
 `;
 
 const ContentWrapper = styled.div`
@@ -46,33 +77,26 @@ const ContentWrapper = styled.div`
 
 const Container = styled.div`
   background-color: white;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  padding: 28px 32px;
+
+  @media (max-width: 768px) {
+    padding: 20px 16px;
+  }
 `;
 
 const Header = styled.header`
-  margin-bottom: 20px;
-  border-bottom: 2px solid ${({ theme }) => theme.colors.primary};
-  padding-bottom: 15px;
-  background-color: ${({ theme }) => theme.colors.background};
-  padding: 20px;
-  border-radius: 5px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  margin-bottom: 5px;
-  color: ${({ theme }) => theme.colors.primary};
-`;
-
-const VersionInfo = styled.div`
-  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-bottom: 24px;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.ink};
+  padding-bottom: 20px;
 `;
 
 const PartOfInfo = styled.div`
-  color: ${({ theme }) => theme.colors.textSecondary};
-  margin-bottom: 5px;
-  font-weight: 500;
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.ink3};
+  margin-bottom: 14px;
 
   a {
     color: ${({ theme }) => theme.colors.primary};
@@ -84,9 +108,32 @@ const PartOfInfo = styled.div`
   }
 `;
 
+const TitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+`;
+
+const PageTitle = styled.h1`
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: ${({ theme }) => theme.colors.ink};
+`;
+
+const IdRow = styled.div`
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+`;
+
 const ImagePreviewSection = styled.div`
   margin: 20px 0;
-  border-radius: 8px;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   overflow: hidden;
   background-color: ${({ theme }) => theme.colors.background};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -98,14 +145,6 @@ const PreviewImage = styled.img`
   object-fit: contain;
   display: block;
   background-color: #f5f5f5;
-`;
-
-const ImageLabel = styled.div`
-  padding: 10px 15px;
-  font-size: 14px;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  background-color: ${({ theme }) => theme.colors.backgroundAlt};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const FigureLegend = styled.div`
@@ -120,12 +159,10 @@ const FigureLegend = styled.div`
 
 const Footer = styled.footer`
   margin-top: 30px;
-  padding: 20px;
-  background-color: ${({ theme }) => theme.colors.background};
+  padding: 18px 0 0;
   border-top: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 5px;
-  font-size: 14px;
-  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.ink3};
   text-align: center;
 
   a {
@@ -159,7 +196,7 @@ const getImageUrlFromBundle = (bundle: any, metadata: any): string | null => {
 
   const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"];
   const hasImageExtension = imageExtensions.some((ext) =>
-    path.toLowerCase().endsWith(ext)
+    path.toLowerCase().endsWith(ext),
   );
 
   if (!hasImageExtension) return null;
@@ -192,6 +229,71 @@ export default function MetadataDisplayPage() {
   const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
   const http = useHttp();
 
+  // Resolve the crate this object is part of so the header can name it.
+  const [parentCrate, setParentCrate] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!bundle) {
+      setParentCrate(null);
+      return;
+    }
+    const collect = (node: any): any[] => {
+      if (!node) return [];
+      if (Array.isArray(node.isPartOf)) return node.isPartOf;
+      const graph = node["@graph"];
+      if (Array.isArray(graph)) {
+        for (const entry of graph) {
+          if (entry && Array.isArray(entry.isPartOf) && entry.isPartOf.length) {
+            return entry.isPartOf;
+          }
+        }
+      }
+      return [];
+    };
+    const candidates = [
+      ...(Array.isArray(bundle.isPartOf) ? bundle.isPartOf : []),
+      ...collect(bundle.main),
+      ...collect(bundle.rocrate),
+    ];
+    const seen = new Set<string>();
+    const unique = candidates.filter((entry: any) => {
+      const id = entry?.["@id"];
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+    if (unique.length === 0) {
+      setParentCrate(null);
+      return;
+    }
+    (async () => {
+      const resolved = await Promise.all(
+        unique.map(async (entry: any) => {
+          try {
+            const data = await http(
+              `/rocrate/view/${encodeURIComponent(entry["@id"])}`,
+            );
+            const name =
+              data?.metadata?.name || data?.name || entry.name || "RO-Crate";
+            return { id: entry["@id"], name };
+          } catch {
+            return null;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const found = resolved.filter(Boolean) as { id: string; name: string }[];
+      setParentCrate(found.length ? found[found.length - 1] : null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bundle, http]);
+
   const { downloadZip, downloadJSON, downloadCroissant, downloadHTML } =
     useDownloads({
       arkId,
@@ -201,7 +303,7 @@ export default function MetadataDisplayPage() {
 
   const { title, version } = useMemo(
     () => deriveTitleAndVersion(bundle?.rocrate ?? bundle?.main),
-    [bundle]
+    [bundle],
   );
 
   const metadata = useMemo(() => bundle?.rocrate ?? bundle?.main, [bundle]);
@@ -214,7 +316,7 @@ export default function MetadataDisplayPage() {
     () =>
       !!bundle?.descriptiveStatistics &&
       Object.keys(bundle.descriptiveStatistics).length > 0,
-    [bundle]
+    [bundle],
   );
 
   useEffect(() => {
@@ -340,7 +442,7 @@ export default function MetadataDisplayPage() {
             json={JSON.stringify(
               bundle.serializations?.json ?? bundle.main,
               null,
-              2
+              2,
             )}
             rdfXml={bundle.serializations?.rdfXml ?? null}
             turtle={bundle.serializations?.turtle ?? null}
@@ -372,11 +474,18 @@ export default function MetadataDisplayPage() {
 
         // Annotated evidence graph path
         if (bundle.evidence.isAnnotated && bundle.evidence.annotatedData) {
-          const rawGraphData = { "@graph": bundle.evidence.annotatedData["@graph"] };
+          const rawGraphData = {
+            "@graph": bundle.evidence.annotatedData["@graph"],
+          };
           return (
             <AnnotatedSummaryCards
               data={bundle.evidence.annotatedData}
-              graphElement={<AnnotatedGraphViewer graphData={rawGraphData} highlightNodeId={highlightNodeId} />}
+              graphElement={
+                <AnnotatedGraphViewer
+                  graphData={rawGraphData}
+                  highlightNodeId={highlightNodeId}
+                />
+              }
               onHighlightNode={handleHighlightNode}
             />
           );
@@ -446,21 +555,24 @@ export default function MetadataDisplayPage() {
         <ContentWrapper>
           <Container ref={contentRef}>
             <Header>
-              <PageTitle>{title}</PageTitle>
-              {(() => {
-                const isPartOfList = bundle?.isPartOf || metadata?.isPartOf;
-                console.log("isPartOfList:", isPartOfList);
-                const lastIsPartOf = isPartOfList?.[isPartOfList.length - 1];
-                return lastIsPartOf ? (
-                  <PartOfInfo>
-                    Part of:{" "}
-                    <Link to={`/view/${lastIsPartOf["@id"]}`}>
-                      {lastIsPartOf.name || "RO-Crate"}
-                    </Link>
-                  </PartOfInfo>
-                ) : null;
-              })()}
-              <VersionInfo>Version: {version}</VersionInfo>
+              {parentCrate && (
+                <PartOfInfo>
+                  Part of:{" "}
+                  <Link to={`/view/${parentCrate.id}`}>{parentCrate.name}</Link>
+                </PartOfInfo>
+              )}
+              <TitleRow>
+                <PageTitle>{title}</PageTitle>
+                {bundle?.kind && (
+                  <TypeTag>
+                    {bundle.kind === "rocrate" ? "RO-Crate" : bundle.kind}
+                  </TypeTag>
+                )}
+              </TitleRow>
+              <IdRow>
+                <ArkId>{arkId}</ArkId>
+                <Mono>v{version}</Mono>
+              </IdRow>
             </Header>
 
             {imageBlobUrl && view === "metadata" && (

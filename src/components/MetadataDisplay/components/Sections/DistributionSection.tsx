@@ -22,7 +22,7 @@ const DistributionSection2: React.FC<DistributionSectionProps> = ({
 }) => {
   const fieldsToRender = Object.entries(distributionData)
     .filter(
-      ([, value]) => value !== undefined && value !== null && value !== ""
+      ([, value]) => value !== undefined && value !== null && value !== "",
     )
     .map(([key, value]) => {
       let label = key.replace(/_/g, " ").replace(/([A-Z])/g, " $1");

@@ -27,7 +27,7 @@ interface StatisticsViewerProps {
 const SectionHeading = styled.h3`
   font-size: 1rem;
   font-weight: 600;
-  color: #212529;
+  color: #18242a;
   margin: 0 0 12px 0;
 `;
 
@@ -41,16 +41,16 @@ const SplitControls = styled.div`
 const ButtonGroup = styled.div`
   display: inline-flex;
   background-color: #f0f2f5;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 4px;
 `;
 
 const SplitButton = styled.button<{ $active?: boolean }>`
   padding: 6px 14px;
   background-color: ${({ $active }) => ($active ? "white" : "transparent")};
-  color: ${({ $active }) => ($active ? "#005f73" : "#6c757d")};
+  color: ${({ $active }) => ($active ? "#005f73" : "#51626B")};
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
@@ -58,8 +58,7 @@ const SplitButton = styled.button<{ $active?: boolean }>`
   margin: 0 2px;
 
   &:hover {
-    background-color: ${({ $active }) =>
-      $active ? "white" : "rgba(255, 255, 255, 0.5)"};
+    background-color: ${({ $active }) => ($active ? "white" : "rgba(255, 255, 255, 0.5)")};
   }
 `;
 
@@ -68,7 +67,7 @@ const CompareButton = styled.button<{ $active?: boolean }>`
   background-color: ${({ $active }) => ($active ? "#005f73" : "transparent")};
   color: ${({ $active }) => ($active ? "white" : "#005f73")};
   border: 1px solid #005f73;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
@@ -80,16 +79,16 @@ const CompareButton = styled.button<{ $active?: boolean }>`
 `;
 
 const SplitHeader = styled.div`
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
+  background-color: #f7f9f9;
+  border: 1px solid #ebf2f4;
+  border-radius: 2px;
   padding: 10px 14px;
   margin-bottom: 12px;
 `;
 
 const SplitName = styled.span`
   font-weight: 600;
-  color: #212529;
+  color: #18242a;
   font-size: 0.9rem;
 `;
 
@@ -97,22 +96,22 @@ const QueryBadge = styled.code`
   display: inline-block;
   margin-top: 4px;
   padding: 4px 8px;
-  background-color: #e9ecef;
-  border-radius: 4px;
+  background-color: #ebf2f4;
+  border-radius: 2px;
   font-size: 0.8rem;
-  color: #495057;
+  color: #51626b;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 `;
 
 const SplitDescription = styled.p`
   margin: 4px 0 0 0;
   font-size: 0.8rem;
-  color: #6c757d;
+  color: #51626b;
 `;
 
 const Divider = styled.hr`
   border: none;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid #ebf2f4;
   margin: 24px 0;
 `;
 
@@ -127,10 +126,10 @@ const HistogramSection = styled.div`
 
 const ColumnSelect = styled.select`
   padding: 6px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   font-size: 0.85rem;
-  color: #495057;
+  color: #51626b;
   background-color: #fff;
   margin-left: 10px;
   cursor: pointer;
@@ -153,7 +152,7 @@ const LegendItem = styled.div`
   align-items: center;
   gap: 6px;
   font-size: 0.8rem;
-  color: #495057;
+  color: #51626b;
 `;
 
 const LegendSwatch = styled.div<{ $color: string }>`
@@ -339,7 +338,9 @@ function HistogramChart({
     // Convert counts to percentages per series
     const toPercent = (counts: number[]) => {
       const total = counts.reduce((a, b) => a + b, 0);
-      return total > 0 ? counts.map((c) => (c / total) * 100) : counts.map(() => 0);
+      return total > 0
+        ? counts.map((c) => (c / total) * 100)
+        : counts.map(() => 0);
     };
 
     const allSeries = [
@@ -380,7 +381,12 @@ function HistogramChart({
       .style("font-size", "10px");
 
     g.append("g")
-      .call(d3.axisLeft(y).ticks(6).tickFormat((d) => `${d}%`))
+      .call(
+        d3
+          .axisLeft(y)
+          .ticks(6)
+          .tickFormat((d) => `${d}%`),
+      )
       .selectAll("text")
       .style("font-size", "11px");
 
@@ -435,25 +441,25 @@ const StatisticsViewer = ({
 }: StatisticsViewerProps) => {
   const splitNames = useMemo(
     () => (splitStatistics ? Object.keys(splitStatistics) : []),
-    [splitStatistics]
+    [splitStatistics],
   );
   const hasSplits = splitNames.length > 0;
 
   const [selectedSplits, setSelectedSplits] = useState<string[]>(() =>
-    splitNames.length > 0 ? [splitNames[0]] : []
+    splitNames.length > 0 ? [splitNames[0]] : [],
   );
   const [compareMode, setCompareMode] = useState(false);
   const [selectedHistColumn, setSelectedHistColumn] = useState<string>("");
 
   const allDataRows = useMemo(
     () => toStatRows(descriptiveStatistics),
-    [descriptiveStatistics]
+    [descriptiveStatistics],
   );
 
   // Numeric columns that have histogram data
   const numericColumns = useMemo(
     () => allDataRows.filter((r) => r.histogram_bins && r.histogram_counts),
-    [allDataRows]
+    [allDataRows],
   );
 
   // Auto-select first numeric column
@@ -466,7 +472,7 @@ const StatisticsViewer = ({
   const toggleSplit = (name: string) => {
     if (compareMode) {
       setSelectedSplits((prev) =>
-        prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]
+        prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name],
       );
     } else {
       setSelectedSplits([name]);
@@ -488,7 +494,7 @@ const StatisticsViewer = ({
     if (!selectedHistColumn) return null;
 
     const totalRow = allDataRows.find(
-      (r) => r.columnName === selectedHistColumn
+      (r) => r.columnName === selectedHistColumn,
     );
     if (!totalRow?.histogram_bins || !totalRow?.histogram_counts) return null;
 

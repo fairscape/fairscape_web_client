@@ -46,7 +46,7 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
       !newSubCrate.keywords
     ) {
       alert(
-        "ID, name, description, version, and keywords are required for sub-crates"
+        "ID, name, description, version, and keywords are required for sub-crates",
       );
       return;
     }
@@ -92,7 +92,7 @@ const SubCrateManager: React.FC<SubCrateManagerProps> = ({
   };
 
   const nonSubCrateHasPart = (existingHasPart || []).filter(
-    (hp) => !subCrates.some((sc) => sc["@id"] === hp["@id"])
+    (hp) => !subCrates.some((sc) => sc["@id"] === hp["@id"]),
   );
 
   return (
@@ -292,16 +292,14 @@ const SubTitle = styled.h4`
 const ReferenceList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 30px;
 `;
 
 const ReferenceItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border-radius: 4px;
+  cursor: pointer;
 `;
 
 const ReferenceId = styled.span`
@@ -313,17 +311,22 @@ const ReferenceId = styled.span`
 const SubCrateList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 `;
 
 const SubCrateItem = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #dee2e6;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 2px;
+  background: #f7f9f9;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #ebf2f4;
+  }
 `;
 
 const SubCrateInfo = styled.div`
@@ -350,33 +353,31 @@ const SubCratePath = styled.div`
 `;
 
 const RemoveButton = styled.button`
-  background: transparent;
+  padding: 8px 16px;
+  background: #3e7aa8;
+  color: white;
   border: none;
-  color: #dc3545;
+  border-radius: 2px;
   cursor: pointer;
-  padding: 4px;
-  transition: opacity 0.2s;
+  font-weight: 600;
 
   &:hover {
-    opacity: 0.7;
+    background: #2c5f8d;
   }
 `;
 
 const AddButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: #3e7aa8;
+  padding: 8px 12px;
+  background: #dc3545;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s;
+  display: flex;
+  align-items: center;
 
   &:hover {
-    background: #2c5f8d;
+    background: #c82333;
   }
 `;
 
@@ -390,9 +391,8 @@ const AddFormContainer = styled.div`
 
 const FormHeader = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 8px;
 `;
 
 const FormTitle = styled.h4`
@@ -403,10 +403,15 @@ const FormTitle = styled.h4`
 const CloseButton = styled.button`
   background: transparent;
   border: none;
-  color: #6c757d;
+  color: #dc3545;
   cursor: pointer;
-  font-size: 20px;
-  padding: 0;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    opacity: 0.7;
+  }
 `;
 
 const FormField = styled.div`
@@ -462,35 +467,54 @@ const HelpText = styled.div`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  flex-direction: column;
+  gap: 8px;
 `;
 
 const SaveButton = styled.button`
-  padding: 8px 16px;
-  background: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: 10px 16px;
+  border: 2px solid ${(e) => (e.active ? "#3e7aa8" : "#e0e0e0")};
+  background: ${(e) => (e.active ? "#e8f4f8" : "white")};
+  color: ${(e) => (e.active ? "#3e7aa8" : "#666")};
+  border-radius: 2px;
+  font-size: 0.9rem;
+  font-weight: ${(e) => (e.active ? "600" : "400")};
   cursor: pointer;
-  font-weight: 600;
+  transition: all 0.2s;
 
   &:hover {
-    background: #218838;
+    border-color: #3e7aa8;
+    background: ${(e) => (e.active ? "#e8f4f8" : "#f5f5f5")};
   }
 `;
 
 const CancelButton = styled.button`
-  padding: 8px 16px;
-  background: #6c757d;
-  color: white;
+  width: 100%;
+  padding: 12px 20px;
+  margin-bottom: 10px;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  border-radius: 2px;
+  font-size: 1rem;
   font-weight: 600;
+  cursor: ${(e) => (e.disabled ? "not-allowed" : "pointer")};
+  transition: all 0.2s;
+
+  background: ${(e) => (e.disabled ? "#e0e0e0" : e.primary ? "#3e7aa8" : e.variant === "secondary" ? "white" : "#5a9bc4")};
+
+  color: ${(e) => (e.disabled ? "#999" : e.variant === "secondary" ? "#666" : "white")};
+
+  border: ${(e) => (e.variant === "secondary" ? "2px solid #e0e0e0" : "none")};
 
   &:hover {
-    background: #5a6268;
+    ${(e) =>
+      !e.disabled &&
+      `
+      background: ${e.primary ? "#2d5f7f" : e.variant === "secondary" ? "#f5f5f5" : "#4a8aad"};
+    `}
+  }
+
+  &:last-child {
+    margin-bottom: 0;
   }
 `;
 

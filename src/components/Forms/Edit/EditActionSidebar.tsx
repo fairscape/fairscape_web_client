@@ -218,14 +218,18 @@ const SidebarContainer = styled.div`
   top: 20px;
   width: 250px;
   height: fit-content;
+
+  @media (max-width: 1024px) {
+    position: static;
+    width: 100%;
+  }
 `;
 
 const SidebarContent = styled.div`
   background: white;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #dee2e6;
+  border: 1px solid #e2e8ea;
 `;
 
 const Section = styled.div`
@@ -237,14 +241,15 @@ const Section = styled.div`
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 14px;
-  color: #005f73;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #dee2e6;
-  font-weight: 700;
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 11px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: ${({ theme }) => theme.colors.ink3};
+  font-weight: 500;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const ViewButton = styled.button<{ active?: boolean }>`
@@ -252,28 +257,29 @@ const ViewButton = styled.button<{ active?: boolean }>`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  margin-bottom: 8px;
+  padding: 10px;
   border: none;
-  border-radius: 6px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 0;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-  background: ${({ active }) => (active ? "#005f73" : "transparent")};
-  color: ${({ active }) => (active ? "white" : "#212529")};
+  font-weight: ${({ active }) => (active ? 600 : 450)};
+  transition: background 0.15s ease;
+  background: ${({ active, theme }) => (active ? theme.colors.primaryTint : "transparent")};
+  color: ${({ active, theme }) => (active ? theme.colors.primary : theme.colors.textSecondary)};
+  box-shadow: ${({ active, theme }) => (active ? `inset 2px 0 0 ${theme.colors.primary}` : "none")};
 
   &:hover {
-    background: ${({ active }) => (active ? "#005f73" : "#f8f9fa")};
-    transform: translateX(2px);
+    background: ${({ theme }) => theme.colors.primaryTint};
+    color: ${({ theme }) => theme.colors.primary};
   }
 
   svg {
-    font-size: 18px;
+    font-size: 16px;
     flex-shrink: 0;
   }
 
   span {
-    font-size: 14px;
+    font-size: 13.5px;
   }
 `;
 
@@ -282,30 +288,25 @@ const ActionButton = styled.button`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 9px 12px;
   margin-bottom: 8px;
-  border: 1px solid #005f73;
-  border-radius: 6px;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
+  border-radius: 2px;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
+  font-weight: 550;
+  transition: background 0.15s ease;
   background: white;
-  color: #005f73;
+  color: ${({ theme }) => theme.colors.primary};
 
   &:hover:not(:disabled) {
-    background: #005f73;
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: ${({ theme }) => theme.colors.primaryTint};
   }
 
   &:disabled {
-    opacity: 0.4;
     cursor: not-allowed;
-    transform: none;
-    background: #f8f9fa;
-    border-color: #dee2e6;
-    color: #6c757d;
+    background: #f7f9f9;
+    border-color: #e2e8ea;
+    color: ${({ theme }) => theme.colors.ink3};
   }
 
   svg {
@@ -321,7 +322,7 @@ const ActionButton = styled.button`
 const Divider = styled.hr`
   margin: 20px 0;
   border: none;
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid #e2e8ea;
 `;
 
 const ViewLink = styled.a`
@@ -332,46 +333,36 @@ const ViewLink = styled.a`
   gap: 12px;
   padding: 12px;
   margin-bottom: 8px;
-  border: 1px solid #6c757d;
-  border-radius: 6px;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
+  border-radius: 2px;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
+  font-weight: 550;
+  transition: background 0.15s ease;
   background: white;
-  color: #6c757d;
+  color: ${({ theme }) => theme.colors.textSecondary};
 
   &:hover {
-    background: #6c757d;
-    color: white;
+    background: ${({ theme }) => theme.colors.primaryTint};
+    color: ${({ theme }) => theme.colors.primary};
   }
 `;
 
 const StatusMessage = styled.div<{ status: string }>`
   margin-top: 12px;
   padding: 10px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 13px;
   text-align: center;
   font-weight: 600;
-  background-color: ${({ status }) =>
-    status === "success"
-      ? "#d4edda"
-      : status === "error"
-      ? "#f8d7da"
-      : "#e2e3e5"};
-  color: ${({ status }) =>
-    status === "success"
-      ? "#155724"
-      : status === "error"
-      ? "#721c24"
-      : "#383d41"};
+  background-color: ${({ status }) => (status === "success" ? "#d4edda" : status === "error" ? "#f8d7da" : "#e2e3e5")};
+  color: ${({ status }) => (status === "success" ? "#155724" : status === "error" ? "#721c24" : "#383d41")};
 `;
 
 const ProgressBar = styled.div`
   width: 100%;
   height: 8px;
-  background-color: #e5e7eb;
-  border-radius: 4px;
+  background-color: #e2e8ea;
+  border-radius: 2px;
   overflow: hidden;
   margin-bottom: 8px;
 `;
@@ -385,7 +376,7 @@ const ProgressFill = styled.div<{ percentage: number }>`
 
 const ProgressText = styled.div`
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #51626b;
   margin-bottom: 16px;
 `;
 
@@ -397,20 +388,10 @@ const FieldsList = styled.div`
 const FieldItem = styled.div<{ status: ReviewStatus }>`
   padding: 10px;
   margin-bottom: 8px;
-  border-radius: 6px;
+  border-radius: 2px;
   border: 1px solid
-    ${({ status }) =>
-      status === ReviewStatus.Pending
-        ? "#f59e0b"
-        : status === ReviewStatus.Approved
-        ? "#10b981"
-        : "#ef4444"};
-  background-color: ${({ status }) =>
-    status === ReviewStatus.Pending
-      ? "#fffbeb"
-      : status === ReviewStatus.Approved
-      ? "#f0fdf4"
-      : "#fef2f2"};
+    ${({ status }) => (status === h.Pending ? "#f59e0b" : status === h.Approved ? "#10b981" : "#ef4444")};
+  background-color: ${({ status }) => (status === h.Pending ? "#fffbeb" : status === h.Approved ? "#f0fdf4" : "#fef2f2")};
 `;
 
 const FieldHeader = styled.div<{ clickable: boolean }>`
@@ -428,22 +409,17 @@ const FieldHeader = styled.div<{ clickable: boolean }>`
 const FieldName = styled.span`
   font-weight: 600;
   font-size: 0.75rem;
-  color: #111827;
+  color: #18242a;
 `;
 
 const StatusIndicator = styled.span<{ status: ReviewStatus }>`
   font-size: 0.875rem;
-  color: ${({ status }) =>
-    status === ReviewStatus.Pending
-      ? "#f59e0b"
-      : status === ReviewStatus.Approved
-      ? "#10b981"
-      : "#ef4444"};
+  color: ${({ status }) => (status === h.Pending ? "#f59e0b" : status === h.Approved ? "#10b981" : "#ef4444")};
 `;
 
 const ValuePreview = styled.div`
   font-size: 0.7rem;
-  color: #6b7280;
+  color: #51626b;
   margin-bottom: 6px;
   font-style: italic;
 `;
@@ -459,10 +435,9 @@ const ActionButtonSmall = styled.button<{ variant: "approve" | "reject" }>`
   font-size: 0.7rem;
   font-weight: 600;
   color: white;
-  background-color: ${({ variant }) =>
-    variant === "approve" ? "#10b981" : "#ef4444"};
+  background-color: ${({ variant }) => (variant === "approve" ? "#10b981" : "#ef4444")};
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
   transition: opacity 0.2s;
 

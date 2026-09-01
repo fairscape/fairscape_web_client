@@ -25,7 +25,8 @@ export interface RawGraphData {
 }
 
 export type AssumptionImpact = "CRITICAL" | "MAJOR" | "MINOR";
-export type ComputationReviewStatus = "clear" | "review_recommended" | "error_detected";
+export type ComputationReviewStatus =
+  "clear" | "review_recommended" | "error_detected";
 
 export interface ComputationError {
   description: string;
@@ -37,16 +38,25 @@ export interface ComputationError {
 /** Normalize legacy impact values (FOUNDATIONAL, SIGNIFICANT, INCIDENTAL, CONSEQUENTIAL) to current names. */
 export function normalizeImpact(raw: string): AssumptionImpact {
   switch (raw) {
-    case "CRITICAL": return "CRITICAL";
-    case "MAJOR": return "MAJOR";
-    case "MINOR": return "MINOR";
+    case "CRITICAL":
+      return "CRITICAL";
+    case "MAJOR":
+      return "MAJOR";
+    case "MINOR":
+      return "MINOR";
     // Legacy names
-    case "FOUNDATIONAL": return "CRITICAL";
-    case "SIGNIFICANT": return "MAJOR";
-    case "INCIDENTAL": return "MINOR";
-    case "CONSEQUENTIAL": return "MAJOR";
-    case "MODERATE": return "MAJOR";
-    default: return "MINOR";
+    case "FOUNDATIONAL":
+      return "CRITICAL";
+    case "SIGNIFICANT":
+      return "MAJOR";
+    case "INCIDENTAL":
+      return "MINOR";
+    case "CONSEQUENTIAL":
+      return "MAJOR";
+    case "MODERATE":
+      return "MAJOR";
+    default:
+      return "MINOR";
   }
 }
 

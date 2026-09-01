@@ -5,7 +5,7 @@ export const Layout = styled.div`
   flex-direction: column;
   width: 100%;
   flex: 1;
-  background: #f8f9fa;
+  background: #f7f9f9;
   position: relative;
   box-sizing: border-box;
   overflow: hidden;
@@ -19,7 +19,6 @@ export const OverallScoreBanner = styled.div`
   font-size: 1.8rem;
   color: white;
   background: #2c3e50;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
 `;
 
@@ -28,6 +27,11 @@ export const Body = styled.div`
   flex: 1;
   min-height: 0;
   overflow: hidden;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    overflow-y: auto;
+  }
 `;
 
 export const LeftNav = styled.div`
@@ -40,6 +44,13 @@ export const LeftNav = styled.div`
   justify-content: space-evenly;
   overflow-y: auto;
   flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-height: 240px;
+    border-right: none;
+    border-bottom: 1px solid #e1e4e8;
+  }
 `;
 
 export const LeftNavList = styled.div`
@@ -60,19 +71,17 @@ export const CriteriaItem = styled.div<{
   align-items: center;
   gap: 10px;
   padding: 12px;
-  border-radius: 10px;
-  background: ${(props) => props.$bg};
-  border-left: 4px solid ${(props) => props.$accent};
+  border-radius: 2px;
+  background: ${(e) => e.$bg};
+  border-left: 4px solid ${(e) => e.$accent};
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: ${(p) =>
-    p.$complete ? "none" : "inset 0 0 0 1px rgba(231,76,60,0.25)"};
+  box-shadow: ${(e) => (e.$complete ? "none" : "inset 0 0 0 1px rgba(231,76,60,0.25)")};
 
-  ${(props) =>
-    props.$active &&
+  ${(e) =>
+    e.$active &&
     `
     transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   `}
 
   &:hover {
@@ -90,8 +99,8 @@ export const CriteriaStatus = styled.span<{ $complete: boolean }>`
   justify-content: center;
   font-size: 12px;
   font-weight: 800;
-  background: ${(p) => (p.$complete ? "#d4edda" : "#f8d7da")};
-  color: ${(p) => (p.$complete ? "#155724" : "#721c24")};
+  background: ${(e) => (e.$complete ? "#d4edda" : "#f8d7da")};
+  color: ${(e) => (e.$complete ? "#155724" : "#721c24")};
 `;
 
 export const CriteriaText = styled.div`
@@ -163,8 +172,8 @@ export const SectionTitle = styled.h3<{ $accent: string }>`
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 16px;
-  color: ${(props) => props.$accent};
-  border-bottom: 2px solid ${(props) => props.$accent}33;
+  color: ${(e) => e.$accent};
+  border-bottom: 2px solid ${(e) => e.$accent}33;
   padding-bottom: 8px;
 `;
 
@@ -177,12 +186,11 @@ export const SubCriteriaGrid = styled.div`
 export const SubCriterionCard = styled.div<{ $accent: string }>`
   background: #fafbfc;
   border: 1px solid #e1e4e8;
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 16px;
   transition: box-shadow 0.15s ease;
 
   &:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -200,11 +208,11 @@ export const SubCriterionName = styled.span`
 
 export const StatusChip = styled.span<{ $met: boolean }>`
   padding: 4px 8px;
-  border-radius: 12px;
+  border-radius: 2px;
   font-size: 12px;
   font-weight: 600;
-  background: ${(props) => (props.$met ? "#d4edda" : "#f8d7da")};
-  color: ${(props) => (props.$met ? "#155724" : "#721c24")};
+  background: ${(e) => (e.$met ? "#d4edda" : "#f8d7da")};
+  color: ${(e) => (e.$met ? "#155724" : "#721c24")};
 `;
 
 export const InfoIcon = styled.span`
@@ -218,7 +226,7 @@ export const InfoIcon = styled.span`
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #f0f0f0;
+  background: #f7f9f9;
 
   &:hover > div,
   &:focus > div {
@@ -242,11 +250,10 @@ export const TooltipInner = styled.div`
   background: #2c3e50;
   color: white;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 2px;
   width: 300px;
   font-size: 12px;
   line-height: 1.5;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
   strong {
     display: block;
@@ -265,7 +272,7 @@ export const ViewSwitch = styled.div`
 `;
 
 export const View = styled.div<{ $visible: boolean }>`
-  display: ${(p) => (p.$visible ? "block" : "none")};
+  display: ${(e) => (e.$visible ? "block" : "none")};
   height: 100%;
 `;
 
@@ -295,20 +302,19 @@ export const SummaryCard = styled.div<{
   $complete: boolean;
 }>`
   border: 1px solid #e1e4e8;
-  border-radius: 12px;
+  border-radius: 2px;
   background: #fafbfc;
   padding: 16px;
-  transition: box-shadow 0.18s ease, transform 0.18s ease,
+  transition:
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
     border-color 0.18s ease;
   cursor: pointer;
-  border-top: 4px solid ${(p) => p.$accent};
-  box-shadow: ${(p) =>
-    p.$complete ? "none" : "inset 0 0 0 1px rgba(231,76,60,0.18)"};
+  border-top: 4px solid ${(e) => e.$accent};
+  box-shadow: ${(e) => (e.$complete ? "none" : "inset 0 0 0 1px rgba(231,76,60,0.18)")};
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
-    border-color: ${(p) => p.$accent};
+    border-color: ${(e) => e.$accent};
   }
 `;
 
@@ -331,8 +337,8 @@ export const SummaryScoreChip = styled.div<{ $accent: string }>`
   border-radius: 999px;
   font-weight: 700;
   font-size: 12px;
-  border: 2px solid ${(p) => p.$accent};
-  color: ${(p) => p.$accent};
+  border: 2px solid ${(e) => e.$accent};
+  color: ${(e) => e.$accent};
 `;
 
 export const MiniList = styled.ul`
@@ -349,10 +355,10 @@ export const MiniItem = styled.li<{ $met: boolean }>`
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  background: ${(p) => (p.$met ? "#eef8f0" : "#fff0f0")};
-  color: ${(p) => (p.$met ? "#155724" : "#721c24")};
+  background: ${(e) => (e.$met ? "#eef8f0" : "#fff0f0")};
+  color: ${(e) => (e.$met ? "#155724" : "#721c24")};
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 2px;
 `;
 
 export const MiniIcon = styled.span<{ $met: boolean }>`
@@ -365,8 +371,8 @@ export const MiniIcon = styled.span<{ $met: boolean }>`
   justify-content: center;
   font-size: 11px;
   font-weight: 800;
-  background: ${(p) => (p.$met ? "#d4edda" : "#f8d7da")};
-  color: ${(p) => (p.$met ? "#155724" : "#721c24")};
+  background: ${(e) => (e.$met ? "#d4edda" : "#f8d7da")};
+  color: ${(e) => (e.$met ? "#155724" : "#721c24")};
 `;
 
 export const BackLink = styled.button`

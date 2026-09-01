@@ -44,7 +44,7 @@ export const CustomAlert = ({
 export const ModalTitle = styled.h3`
   margin-top: 0;
   margin-bottom: ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
 `;
 
 export const ModalPropertyDetail = styled.div`
@@ -67,7 +67,7 @@ export const ModalPropertyDetail = styled.div`
   pre {
     background-color: ${({ theme }) => theme.colors.backgroundAlt};
     padding: ${({ theme }) => theme.spacing.sm};
-    border-radius: 4px;
+    border-radius: 2px;
     overflow-x: auto;
   }
 

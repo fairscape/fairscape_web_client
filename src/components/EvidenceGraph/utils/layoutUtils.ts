@@ -10,14 +10,42 @@ const ALIGNMENT = "DL";
 const MARGIN_X = 50;
 const MARGIN_Y = 50;
 
+// Above this many nodes dagre becomes too slow; fall back to a plain grid.
+const MAX_DAGRE_NODES = 800;
+
+const getGridLayout = (
+  nodes: Node[],
+  edges: Edge[],
+): { nodes: Node[]; edges: Edge[] } => {
+  const columns = Math.ceil(Math.sqrt(nodes.length));
+  return {
+    nodes: nodes.map((node, index) => ({
+      ...node,
+      position: {
+        x: MARGIN_X + (index % columns) * (NODE_WIDTH + NODE_SEP),
+        y: MARGIN_Y + Math.floor(index / columns) * (NODE_HEIGHT + NODE_SEP),
+      },
+      width: NODE_WIDTH,
+      height: NODE_HEIGHT,
+    })),
+    edges,
+  };
+};
+
 export const getLayoutedElements = (
   nodes: Node[],
   edges: Edge[],
-  direction = "LR" // Default to Left-to-Right
+  direction = "LR", // Default to Left-to-Right
 ): { nodes: Node[]; edges: Edge[] } => {
   if (!nodes || nodes.length === 0) {
-    console.log("Layout skipped: No nodes provided.");
     return { nodes, edges };
+  }
+
+  if (nodes.length > MAX_DAGRE_NODES) {
+    console.warn(
+      `Graph has ${nodes.length} nodes (> ${MAX_DAGRE_NODES}); using grid layout instead of dagre.`,
+    );
+    return getGridLayout(nodes, edges);
   }
 
   const dagreGraph = new dagre.graphlib.Graph();
@@ -39,15 +67,14 @@ export const getLayoutedElements = (
     });
   });
 
+  const nodeIds = new Set(nodes.map((n) => n.id));
+
   edges.forEach((edge) => {
-    if (
-      nodes.some((n) => n.id === edge.source) &&
-      nodes.some((n) => n.id === edge.target)
-    ) {
+    if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
       dagreGraph.setEdge(edge.source, edge.target);
     } else {
       console.warn(
-        `Skipping edge ${edge.id} due to missing source/target node in current layout batch.`
+        `Skipping edge ${edge.id} due to missing source/target node in current layout batch.`,
       );
     }
   });
@@ -75,7 +102,7 @@ export const getLayoutedElements = (
       };
     } else {
       console.warn(
-        `Node ${node.id} not found in Dagre layout results. Keeping original position.`
+        `Node ${node.id} not found in Dagre layout results. Keeping original position.`,
       );
       return {
         ...node,

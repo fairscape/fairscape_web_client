@@ -25,7 +25,7 @@ interface SubCrate {
 
 function generateArkId(
   name: string = "release",
-  version: string = "1.0"
+  version: string = "1.0",
 ): string {
   const NAAN = "59853";
 
@@ -64,7 +64,7 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
         length: parsed["@graph"]?.length,
       });
       throw new Error(
-        "Invalid RO-Crate structure: missing @graph or insufficient entries"
+        "Invalid RO-Crate structure: missing @graph or insufficient entries",
       );
     }
 
@@ -92,7 +92,7 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
       rootNode.hasPart.forEach((part: any) => {
         const partId = part["@id"];
         const partNode = parsed["@graph"].find(
-          (node: any) => node["@id"] === partId
+          (node: any) => node["@id"] === partId,
         );
         if (
           partNode &&
@@ -121,10 +121,10 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
 
     if (rootNode.isPartOf && Array.isArray(rootNode.isPartOf)) {
       const org = rootNode.isPartOf.find((item: any) =>
-        item["@id"]?.includes("organization")
+        item["@id"]?.includes("organization"),
       );
       const proj = rootNode.isPartOf.find((item: any) =>
-        item["@id"]?.includes("project")
+        item["@id"]?.includes("project"),
       );
 
       if (org) {
@@ -216,21 +216,26 @@ export function parseRoCrateMetadata(jsonContent: string): FormData {
       version: formData.version,
       author: formData.author,
     });
-    console.log("RAI fields present:",
-      Object.keys(formData).filter(k => k.startsWith("rai:")).length
+    console.log(
+      "RAI fields present:",
+      Object.keys(formData).filter((k) => k.startsWith("rai:")).length,
     );
 
     return formData;
   } catch (error) {
     console.error("!!! Error parsing RO-Crate metadata:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : String(error));
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : String(error),
+    );
     throw error;
   }
 }
 
 export function generateReleaseJson(formData: FormData): any {
   // Preserve existing @id if provided, otherwise generate one
-  const releaseId = formData["@id"] || generateArkId(formData.name, formData.version);
+  const releaseId =
+    formData["@id"] || generateArkId(formData.name, formData.version);
 
   const releaseNode: any = {
     "@id": releaseId,

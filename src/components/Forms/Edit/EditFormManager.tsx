@@ -36,15 +36,15 @@ const EditFormManager: React.FC<EditFormManagerProps> = ({
             reviewState.status === "pending"
               ? "#f59e0b"
               : reviewState.status === "approved"
-              ? "#10b981"
-              : "#ef4444"
+                ? "#10b981"
+                : "#ef4444"
           }`,
           backgroundColor:
             reviewState.status === "pending"
               ? "#fffbeb"
               : reviewState.status === "approved"
-              ? "#f0fdf4"
-              : "#fef2f2",
+                ? "#f0fdf4"
+                : "#fef2f2",
         }
       : {};
 
@@ -165,10 +165,16 @@ const EditFormManager: React.FC<EditFormManagerProps> = ({
   };
 
   // Helper function to determine entity filter type based on field name
-  const getFilterTypeForField = (fieldName: string): "Dataset" | "Software" | "Computation" | "Schema" | undefined => {
+  const getFilterTypeForField = (
+    fieldName: string,
+  ): "Dataset" | "Software" | "Computation" | "Schema" | undefined => {
     const nameLower = fieldName.toLowerCase();
 
-    if (nameLower.includes("computation") || fieldName === "generatedBy" || fieldName === "runBy") {
+    if (
+      nameLower.includes("computation") ||
+      fieldName === "generatedBy" ||
+      fieldName === "runBy"
+    ) {
       return "Computation";
     }
     if (nameLower.includes("dataset")) {
@@ -249,21 +255,21 @@ const Container = styled.div`
 
 const Section = styled.div`
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1px solid #e2e8ea;
+  border-radius: 2px;
   padding: 24px;
 `;
 
 const SectionTitle = styled.h2`
   font-size: 1.25rem;
   font-weight: 600;
-  color: #111827;
+  color: #18242a;
   margin: 0 0 8px 0;
 `;
 
 const SectionDescription = styled.p`
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #51626b;
   margin: 0 0 20px 0;
 `;
 
@@ -281,7 +287,7 @@ const FieldContainer = styled.div`
 const FieldLabel = styled.label`
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: #18242a;
   display: flex;
   align-items: center;
 `;
@@ -293,56 +299,56 @@ const Required = styled.span`
 
 const FieldDescription = styled.div`
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #51626b;
   margin-top: -4px;
 `;
 
 const TextInput = styled.input`
   padding: 10px 12px;
   font-size: 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: #005f73;
   }
 
   &:read-only {
-    background-color: #f3f4f6;
+    background-color: #f7f9f9;
     cursor: not-allowed;
-    color: #6b7280;
+    color: #51626b;
   }
 `;
 
 const TextArea = styled.textarea`
   padding: 10px 12px;
   font-size: 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   font-family: inherit;
   resize: vertical;
   transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: #005f73;
   }
 `;
 
 const Select = styled.select`
   padding: 10px 12px;
   font-size: 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   background-color: white;
   cursor: pointer;
   transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: #005f73;
   }
 `;
 
@@ -358,7 +364,7 @@ const RemoveButton = styled.button`
   color: #ef4444;
   background-color: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   transition: background-color 0.2s;
 
@@ -371,15 +377,15 @@ const AddButton = styled.button`
   padding: 8px 16px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #3b82f6;
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  color: #005f73;
+  background-color: #ebf2f4;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #dbeafe;
+    background-color: #ebf2f4;
   }
 `;
 

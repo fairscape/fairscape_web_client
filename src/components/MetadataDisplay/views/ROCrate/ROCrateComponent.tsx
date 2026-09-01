@@ -97,7 +97,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
     setShowAlert(false);
     const tempLoadingAnchor = document.querySelector(
-      `[data-testid="rocrate-download-button"]`
+      `[data-testid="rocrate-download-button"]`,
     ) as HTMLAnchorElement;
     let originalButtonText = "Download RO-Crate";
     if (tempLoadingAnchor) {
@@ -141,7 +141,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       const blobUrl = window.URL.createObjectURL(
         new Blob([response.data], {
           type: response.headers["content-type"] || "application/zip",
-        })
+        }),
       );
       const link = document.createElement("a");
       link.href = blobUrl;
@@ -222,7 +222,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
     if (!graph || !Array.isArray(graph)) return;
 
     const metadataEntity = graph.find(
-      (e) => e["@id"] === null || e["@id"] === "ro-crate-metadata.json"
+      (e) => e["@id"] === null || e["@id"] === "ro-crate-metadata.json",
     );
 
     const rootId = metadataEntity?.about?.["@id"] || "./";
@@ -230,7 +230,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
 
     if (!rootEntity && rootId !== "./") {
       console.warn(
-        `Could not find specified root entity with ID: ${rootId}. Root features might be unavailable.`
+        `Could not find specified root entity with ID: ${rootId}. Root features might be unavailable.`,
       );
     }
 
@@ -238,7 +238,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       (entity) =>
         entity["@id"] !== null &&
         entity["@id"] !== "ro-crate-metadata.json" &&
-        entity["@id"] !== rootId
+        entity["@id"] !== rootId,
     );
 
     const processedDatasets: EntityItem[] = [];
@@ -253,8 +253,8 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       const types = Array.isArray(entity["@type"])
         ? entity["@type"]
         : typeof entity["@type"] === "string"
-        ? [entity["@type"]]
-        : [];
+          ? [entity["@type"]]
+          : [];
       const name =
         entity.name ||
         entity["@id"]?.split("/").pop() ||

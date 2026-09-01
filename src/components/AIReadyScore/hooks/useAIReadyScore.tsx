@@ -26,7 +26,7 @@ function titleCaseFromSnake(key: string) {
 
 function transformScoreToMetadata(
   _criterionName: string,
-  scores: Record<string, any>
+  scores: Record<string, any>,
 ): Record<string, string> {
   const metadata: Record<string, string> = {};
   const displayNameMappings: Record<string, string> = {
@@ -61,7 +61,7 @@ function transformScoreToMetadata(
 
 function transformScoreToMetByKey(
   _criterionName: string,
-  scores: Record<string, any>
+  scores: Record<string, any>,
 ): Record<string, boolean> {
   const met: Record<string, boolean> = {};
   const displayNameMappings: Record<string, string> = {
@@ -182,11 +182,11 @@ export function transformAIReadyScore(data: AIReadyScore): CriteriaData[] {
       ],
       metadata: transformScoreToMetadata(
         "characterization",
-        data.characterization
+        data.characterization,
       ),
       metByKey: transformScoreToMetByKey(
         "characterization",
-        data.characterization
+        data.characterization,
       ),
     },
     {
@@ -208,11 +208,11 @@ export function transformAIReadyScore(data: AIReadyScore): CriteriaData[] {
       ],
       metadata: transformScoreToMetadata(
         "pre_model_explainability",
-        data.pre_model_explainability
+        data.pre_model_explainability,
       ),
       metByKey: transformScoreToMetByKey(
         "pre_model_explainability",
-        data.pre_model_explainability
+        data.pre_model_explainability,
       ),
     },
     {
@@ -308,7 +308,7 @@ export function useAIReadyScore(arkId: string) {
         if (pollCountRef.current >= MAX_POLLS) {
           clearTimer();
           setError(
-            "AI-Ready scoring is taking longer than expected. Please try again later."
+            "AI-Ready scoring is taking longer than expected. Please try again later.",
           );
           setProgress({ inProgress: false });
         }

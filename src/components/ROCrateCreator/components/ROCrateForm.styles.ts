@@ -1,12 +1,11 @@
 import styled from "styled-components";
 
 export const FormContainer = styled.div`
-  background-color: ${({ theme }) => theme.colors.background || "#ffffff"};
+  background-color: ${({ theme }) => theme.colors.surface};
   padding: ${({ theme }) => theme.spacing.lg};
   border-radius: ${({ theme }) => theme.borderRadius.md};
-  box-shadow: ${({ theme }) =>
-    theme.shadows?.subtle || "0 2px 4px rgba(0,0,0,0.06)"};
-  border: 1px solid ${({ theme }) => theme.colors.borderLight || "#e0e0e0"};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 export const FormHeader = styled.div`
@@ -24,11 +23,20 @@ export const FormTitle = styled.h2`
 
 export const FormGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: minmax(160px, 200px) 1fr;
   gap: ${({ theme }) => theme.spacing.lg};
+  padding: 13px 0;
+  align-items: baseline;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+
+  &:last-child {
+    border-bottom: none;
+  }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: ${({ theme }) => theme.spacing.xs};
+    padding: ${({ theme }) => theme.spacing.sm} 0;
   }
 `;
 
@@ -36,7 +44,7 @@ export const FormGroup = styled.div<{ $fullWidth?: boolean }>`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.xs};
-  grid-column: ${({ $fullWidth }) => ($fullWidth ? "1 / -1" : "auto")};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
 export const Label = styled.label`
@@ -46,20 +54,15 @@ export const Label = styled.label`
 `;
 
 export const Input = styled.input`
-  padding: ${({ theme }) => theme.spacing.sm};
+  padding: 6px ${({ theme }) => theme.spacing.sm};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.borderRadius.sm};
-  font-size: 15px;
-  transition: all 0.2s ease;
+  min-width: 240px;
+  font-size: 0.9rem;
 
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}20;
-  }
-
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.textSecondary};
   }
 `;
 
@@ -89,7 +92,6 @@ export const RequiredIndicator = styled.span`
 `;
 
 export const HelperText = styled.span`
-  font-size: 13px;
   color: ${({ theme }) => theme.colors.textSecondary};
-  margin-top: -4px;
+  font-size: 14px;
 `;

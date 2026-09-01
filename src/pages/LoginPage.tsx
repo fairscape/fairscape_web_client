@@ -9,7 +9,9 @@ const PageContainer = styled.div`
 `;
 
 const PageTitle = styled.h1`
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
+  font-weight: 650;
+  letter-spacing: -0.015em;
   margin-bottom: ${({ theme }) => theme.spacing.xl};
   text-align: center;
 `;

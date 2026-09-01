@@ -24,7 +24,7 @@ const ComplianceEthicsSection: React.FC<ComplianceEthicsSectionProps> = ({
   data,
 }) => {
   const hasData = Object.values(data).some(
-    (v) => v !== undefined && v !== null && v !== ""
+    (v) => v !== undefined && v !== null && v !== "",
   );
   if (!hasData) return null;
 

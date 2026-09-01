@@ -3,8 +3,7 @@ import styled from "styled-components";
 import axios, { AxiosError } from "axios";
 import { Pencil, Trash2, Save, X, Plus } from "lucide-react";
 
-const API_URL =
-  window.API_URL;
+const API_URL = window.API_URL;
 
 const TokensPageContainer = styled.div`
   padding: ${({ theme }) => theme.spacing.lg};
@@ -12,7 +11,9 @@ const TokensPageContainer = styled.div`
 
 const PageTitle = styled.h1`
   margin-bottom: ${({ theme }) => theme.spacing.lg};
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
+  font-weight: 650;
+  letter-spacing: -0.015em;
 `;
 
 const LoadingContainer = styled.div`
@@ -41,10 +42,9 @@ const Spinner = styled.div`
 
 const TableContainer = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  overflow: hidden;
+  overflow-x: auto;
 `;
 
 const Table = styled.table`
@@ -54,22 +54,25 @@ const Table = styled.table`
 `;
 
 const TableHead = styled.thead`
-  background-color: ${({ theme }) => theme.colors.primary};
+  background-color: ${({ theme }) => theme.colors.background};
+  border-top: 2px solid ${({ theme }) => theme.colors.ink};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const TableHeaderCell = styled.th`
-  padding: ${({ theme }) => theme.spacing.md};
+  padding: 9px ${({ theme }) => theme.spacing.md};
   text-align: left;
-  font-weight: 600;
-  color: white;
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.colors.ink3};
 `;
 
 const TableRow = styled.tr`
-  &:nth-child(odd) {
-    background-color: ${({ theme }) => theme.colors.background};
-  }
   &:hover {
-    background-color: ${({ theme }) => theme.colors.background};
+    background-color: ${({ theme }) => theme.colors.primaryTint};
   }
 `;
 
@@ -82,7 +85,7 @@ const StyledInput = styled.input`
   width: 100%;
   padding: ${({ theme }) => theme.spacing.sm};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-family: inherit;
   font-size: 1rem;
 `;
@@ -103,11 +106,11 @@ const ActionButton = styled.button`
     }
   }
   &.secondary {
-    background-color: ${({ theme }) => theme.colors.secondary};
-    color: white;
-    border: none;
+    background-color: ${({ theme }) => theme.colors.surface};
+    color: ${({ theme }) => theme.colors.primary};
+    border: 1px solid ${({ theme }) => theme.colors.borderStrong};
     &:hover:not(:disabled) {
-      background-color: ${({ theme }) => theme.colors.secondary}dd;
+      background-color: ${({ theme }) => theme.colors.primaryTint};
     }
   }
 `;
@@ -132,11 +135,9 @@ const NotificationWrapper = styled.div`
 
 const Notification = styled.div<{ severity: string }>`
   padding: ${({ theme }) => theme.spacing.md};
-  background-color: ${({ severity, theme }) =>
-    severity === "success" ? theme.colors.success : theme.colors.error};
+  background-color: ${({ severity, theme }) => (severity === "success" ? theme.colors.success : theme.colors.error)};
   color: white;
-  border-radius: ${({ theme }) => theme.borderRadius};
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   margin-bottom: ${({ theme }) => theme.spacing.md};
   position: relative;
   display: flex;
@@ -235,7 +236,7 @@ const DataverseTokensPage = () => {
         axiosError.response?.data?.error ||
           axiosError.response?.data?.message ||
           "Failed to fetch tokens",
-        "error"
+        "error",
       );
     } finally {
       setLoading(false);
@@ -265,7 +266,7 @@ const DataverseTokensPage = () => {
         axiosError.response?.data?.error ||
           axiosError.response?.data?.message ||
           "Failed to update token",
-        "error"
+        "error",
       );
     }
   };
@@ -285,7 +286,7 @@ const DataverseTokensPage = () => {
         axiosError.response?.data?.error ||
           axiosError.response?.data?.message ||
           "Failed to delete token",
-        "error"
+        "error",
       );
     }
   };
@@ -312,7 +313,7 @@ const DataverseTokensPage = () => {
         axiosError.response?.data?.error ||
           axiosError.response?.data?.message ||
           "Failed to add token",
-        "error"
+        "error",
       );
     }
   };
@@ -358,7 +359,7 @@ const DataverseTokensPage = () => {
                                     ...editToken,
                                     endpointURL: e.target.value,
                                   }
-                                : null
+                                : null,
                             )
                           }
                         />
@@ -374,7 +375,7 @@ const DataverseTokensPage = () => {
                                     ...editToken,
                                     tokenValue: e.target.value,
                                   }
-                                : null
+                                : null,
                             )
                           }
                         />

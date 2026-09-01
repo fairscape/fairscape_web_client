@@ -24,10 +24,14 @@ interface ProcessDocumentsOptions {
 
 function getStatusMessage(status: string): string {
   switch (status) {
-    case "PENDING": return "Queued...";
-    case "PROCESSING": return "Preparing request...";
-    case "WAITING_FOR_API": return "Waiting for Gemini (1-3 mins)...";
-    default: return "Processing...";
+    case "PENDING":
+      return "Queued...";
+    case "PROCESSING":
+      return "Preparing request...";
+    case "WAITING_FOR_API":
+      return "Waiting for Gemini (1-3 mins)...";
+    default:
+      return "Processing...";
   }
 }
 
@@ -37,7 +41,7 @@ export function useLLMAssistApi() {
   return {
     processDocuments: async (
       documents: UploadedFile[],
-      options?: ProcessDocumentsOptions
+      options?: ProcessDocumentsOptions,
     ): Promise<ProcessDocumentsResponse> => {
       const formData = new FormData();
       documents.forEach((doc) => {
@@ -73,8 +77,8 @@ export function useLLMAssistApi() {
         if (statusData.status === "JSON_PARSE_FAILED") {
           throw new Error(
             `LLM returned invalid JSON.\n` +
-            `Debug: ${window.location.origin}/api/llmassist/status/${task_id}\n` +
-            `${statusData.error?.message}`
+              `Debug: ${window.location.origin}/api/llmassist/status/${task_id}\n` +
+              `${statusData.error?.message}`,
           );
         }
 
@@ -100,7 +104,7 @@ export function useLLMAssistApi() {
 
     processDocumentsForEdit: async (
       documents: UploadedFile[],
-      existingFormData: FormData
+      existingFormData: FormData,
     ): Promise<FormData> => {
       const formData = new FormData();
       documents.forEach((doc) => {
@@ -151,7 +155,7 @@ export function useLLMAssistApi() {
 
           if (datasetNode.associatedPublication) {
             llmSuggestions.associatedPublication = Array.isArray(
-              datasetNode.associatedPublication
+              datasetNode.associatedPublication,
             )
               ? datasetNode.associatedPublication.join("\n")
               : datasetNode.associatedPublication;

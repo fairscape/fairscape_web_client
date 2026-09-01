@@ -62,7 +62,11 @@ const CreateRelease: React.FC = () => {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [uploadedCrate, setUploadedCrate] = useState<File | null>(null);
   const [supportingDocs, setSupportingDocs] = useState<UploadedFile[]>([]);
-  const [llmStatus, setLlmStatus] = useState<{state: string, message: string, elapsedSeconds: number} | null>(null);
+  const [llmStatus, setLlmStatus] = useState<{
+    state: string;
+    message: string;
+    elapsedSeconds: number;
+  } | null>(null);
   const [provenance, setProvenance] = useState<ProvenanceState | null>(null);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -82,10 +86,11 @@ const CreateRelease: React.FC = () => {
     if (state && state.fromD4D && state.rocrate) {
       console.log("Detected D4D flow initialization");
       console.log("state.rocrate type:", typeof state.rocrate);
-      console.log("state.rocrate preview:",
+      console.log(
+        "state.rocrate preview:",
         typeof state.rocrate === "string"
           ? state.rocrate.substring(0, 200)
-          : state.rocrate
+          : state.rocrate,
       );
 
       try {
@@ -140,7 +145,9 @@ const CreateRelease: React.FC = () => {
           message: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined,
         });
-        alert(`Failed to load RO-Crate data: ${error instanceof Error ? error.message : String(error)}`);
+        alert(
+          `Failed to load RO-Crate data: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     } else {
       console.log("Not D4D flow or missing data:", {
@@ -175,7 +182,7 @@ const CreateRelease: React.FC = () => {
   }, [provenance]);
 
   const handleCreateMethod = (
-    method: "manual" | "upload-existing" | "direct" | "interactive"
+    method: "manual" | "upload-existing" | "direct" | "interactive",
   ) => {
     setCurrentMethod(method);
 
@@ -209,7 +216,7 @@ const CreateRelease: React.FC = () => {
   };
 
   const handleUploadExisting = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -228,7 +235,7 @@ const CreateRelease: React.FC = () => {
       } catch (error) {
         console.error("Error parsing RO-Crate:", error);
         alert(
-          "Failed to parse RO-Crate metadata. Please check the file format."
+          "Failed to parse RO-Crate metadata. Please check the file format.",
         );
       }
     };
@@ -246,7 +253,7 @@ const CreateRelease: React.FC = () => {
     if (data.reviewState) {
       setReviewState(data.reviewState);
       const hasUnreviewed = Object.values(data.reviewState).some(
-        (state: any) => !state.reviewed
+        (state: any) => !state.reviewed,
       );
       setIsReviewRequired(hasUnreviewed);
     }
@@ -293,7 +300,7 @@ const CreateRelease: React.FC = () => {
       } catch (error) {
         console.error("Error parsing RO-Crate:", error);
         alert(
-          "Failed to parse RO-Crate metadata. Please check the file format."
+          "Failed to parse RO-Crate metadata. Please check the file format.",
         );
       }
     };
@@ -302,25 +309,29 @@ const CreateRelease: React.FC = () => {
   };
 
   const handleLLMAssist = async (documents: UploadedFile[]) => {
-    setLlmStatus({state: "PENDING", message: "Starting...", elapsedSeconds: 0});
+    setLlmStatus({
+      state: "PENDING",
+      message: "Starting...",
+      elapsedSeconds: 0,
+    });
     console.log("=== handleLLMAssist (Direct Flow) ===");
 
     try {
       const suggestedData = await llmApi.processDocuments(documents, {
-        onProgress: (status) => setLlmStatus(status)
+        onProgress: (status) => setLlmStatus(status),
       });
       console.log("LLM API response:", suggestedData);
 
       const { result, provenance } = suggestedData;
       console.log("Result type:", typeof result);
-      console.log("Result preview:",
-        typeof result === "string" ? result.substring(0, 200) : result
+      console.log(
+        "Result preview:",
+        typeof result === "string" ? result.substring(0, 200) : result,
       );
 
       // Convert result to string if it's not already
-      const rocrateString = typeof result === "string"
-        ? result
-        : JSON.stringify(result);
+      const rocrateString =
+        typeof result === "string" ? result : JSON.stringify(result);
 
       console.log("Parsing RO-Crate with parseRoCrateMetadata...");
       const parsedFormData = parseRoCrateMetadata(rocrateString);
@@ -354,7 +365,9 @@ const CreateRelease: React.FC = () => {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
-      alert(`Failed to process documents: ${error instanceof Error ? error.message : String(error)}`);
+      alert(
+        `Failed to process documents: ${error instanceof Error ? error.message : String(error)}`,
+      );
       setLlmStatus(null);
     }
   };
@@ -405,7 +418,7 @@ const CreateRelease: React.FC = () => {
   };
 
   const handleVisibilityChange = (
-    newVisibility: "minimal" | "ai-ready" | "all"
+    newVisibility: "minimal" | "ai-ready" | "all",
   ) => {
     setFieldVisibility(newVisibility);
   };
@@ -418,7 +431,7 @@ const CreateRelease: React.FC = () => {
     if (crateId && checkCrateExists(crateId)) {
       if (
         !window.confirm(
-          `A saved crate with ID "${crateId}" already exists. Do you want to overwrite it?`
+          `A saved crate with ID "${crateId}" already exists. Do you want to overwrite it?`,
         )
       ) {
         setSaveStatus("idle");
@@ -430,7 +443,7 @@ const CreateRelease: React.FC = () => {
       formData,
       isReviewRequired ? reviewState : undefined,
       provenance,
-      finalArk
+      finalArk,
     );
 
     if (success) {
@@ -446,7 +459,7 @@ const CreateRelease: React.FC = () => {
   const isAllSectionsReviewed = () => {
     if (!isReviewRequired) return true;
     return Object.entries(reviewState).every(
-      ([sectionId, state]) => sectionId === "subCrates" || state.reviewed
+      ([sectionId, state]) => sectionId === "subCrates" || state.reviewed,
     );
   };
 
@@ -489,10 +502,7 @@ const CreateRelease: React.FC = () => {
       }
 
       // Step 1: Upload to Fairscape with optional annotation
-      await fairscapeApi.uploadRoCrate(
-        finalRoCrate,
-        provenance?.outputArk
-      );
+      await fairscapeApi.uploadRoCrate(finalRoCrate, provenance?.outputArk);
 
       // Extract the @id from the generated RO-Crate (it's in @graph[1] - the root dataset node)
       const newFinalArk = finalRoCrate["@graph"][1]["@id"];
@@ -500,7 +510,12 @@ const CreateRelease: React.FC = () => {
       setFinalArk(newFinalArk);
 
       // Save the finalArk to storage
-      saveCrate(formData, isReviewRequired ? reviewState : undefined, provenance, newFinalArk);
+      saveCrate(
+        formData,
+        isReviewRequired ? reviewState : undefined,
+        provenance,
+        newFinalArk,
+      );
 
       // Step 2: If D4D flow, update GitHub YAML
       if (provenance?.requiresGithubPush && provenance.yamlUrl) {
@@ -520,7 +535,7 @@ const CreateRelease: React.FC = () => {
 
       // Offer download before navigating
       const shouldDownload = window.confirm(
-        `Successfully uploaded to Fairscape!\nARK: ${newFinalArk}\n\nWould you like to download a local copy before viewing the metadata page?`
+        `Successfully uploaded to Fairscape!\nARK: ${newFinalArk}\n\nWould you like to download a local copy before viewing the metadata page?`,
       );
 
       if (shouldDownload) {
@@ -553,7 +568,7 @@ const CreateRelease: React.FC = () => {
   const getReviewProgress = () => {
     const total = Object.keys(reviewState).length;
     const reviewed = Object.values(reviewState).filter(
-      (state) => state.reviewed
+      (state) => state.reviewed,
     ).length;
     return { reviewed, total };
   };
@@ -627,8 +642,9 @@ const CreateRelease: React.FC = () => {
 
 const MainContent = styled.div`
   display: flex;
-  gap: 30px;
   align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
 `;
 
 const FormColumn = styled.div`

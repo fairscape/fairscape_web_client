@@ -61,7 +61,7 @@ const Badge = styled.span<{ color: string }>`
   font-weight: 600;
   color: white;
   background-color: ${({ color }) => color};
-  border-radius: 4px;
+  border-radius: 2px;
 `;
 
 const Actions = styled.div`

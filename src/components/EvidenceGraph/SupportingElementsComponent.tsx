@@ -12,7 +12,9 @@ const Container = styled.div`
 
 const SectionTitle = styled.h3`
   font-size: 18px;
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
+  font-weight: 650;
+  letter-spacing: -0.015em;
   margin-top: 0;
   margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
@@ -25,21 +27,20 @@ const SearchInput = styled.input`
   width: 100%;
   padding: ${({ theme }) => theme.spacing.sm};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-size: 0.9rem;
   box-sizing: border-box;
 
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 2px ${({ theme }) => `${theme.colors.primary}33`};
   }
 `;
 
 const CollapsibleSection = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.sm};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   overflow: hidden;
 `;
 
@@ -47,10 +48,12 @@ const SectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
-  font-weight: 500;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  background-color: ${({ theme }) => theme.colors.background};
+  border-top: 2px solid ${({ theme }) => theme.colors.ink};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.ink};
+  font-weight: 600;
   cursor: pointer;
   font-size: 0.9rem;
 `;
@@ -69,22 +72,24 @@ const Table = styled.table`
 `;
 
 const TableHead = styled.thead`
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-bottom: 2px solid ${({ theme }) => theme.colors.primary};
+  background-color: ${({ theme }) => theme.colors.background};
+  border-top: 2px solid ${({ theme }) => theme.colors.ink};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const TableHeaderCell = styled.th`
-  padding: ${({ theme }) => theme.spacing.sm};
+  padding: 9px ${({ theme }) => theme.spacing.sm};
   text-align: left;
-  font-weight: bold;
-  font-size: 0.95rem;
-  color: ${({ theme }) => theme.colors.primary};
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.colors.ink3};
 `;
 
 const TableRow = styled.tr`
-  &:nth-child(odd) {
-    background-color: ${({ theme }) => theme.colors.background};
-  }
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   &:hover {
     background-color: ${({ theme }) => theme.colors.backgroundHover};
   }
@@ -119,11 +124,11 @@ const NoDataMessage = styled.p`
 `;
 
 const RelationshipButton = styled.button`
-  background-color: ${({ theme }) => theme.colors.secondary};
-  color: white;
-  border: none;
+  background-color: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.primary};
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
   font-size: 0.8rem;
   margin-left: 8px;
@@ -132,7 +137,7 @@ const RelationshipButton = styled.button`
     background-color: ${({ theme }) => theme.colors.primaryDark};
   }
   &:disabled {
-    background-color: ${({ theme }) => theme.colors.disabled};
+    background-color: ${({ theme }) => theme.colors.textSecondary};
     cursor: not-allowed;
   }
 `;
@@ -161,7 +166,7 @@ const getHighlightedText = (text: string, highlight: string): ReactNode[] => {
       <HighlightSpan key={`${part}-${i}`}>{part}</HighlightSpan>
     ) : (
       part
-    )
+    ),
   );
 };
 
@@ -172,7 +177,9 @@ const extractArkIdentifier = (url: string) => {
 
 const getEntityType = (typeUri: string | string[] | undefined): string => {
   if (!typeUri) return "Unknown";
-  const typeString = Array.isArray(typeUri) ? typeUri[typeUri.length - 1] : typeUri;
+  const typeString = Array.isArray(typeUri)
+    ? typeUri[typeUri.length - 1]
+    : typeUri;
   return typeString.split(/[#\/]/).pop() || "Unknown";
 };
 
@@ -200,8 +207,8 @@ const traverseAndCollect = ({
     typeof node["@type"] === "string"
       ? [node["@type"]]
       : Array.isArray(node["@type"])
-      ? node["@type"]
-      : ["Unknown"];
+        ? node["@type"]
+        : ["Unknown"];
   const outputElement: SupportingElement = {
     "@id": node["@id"],
     name: node.name || "N/A",
@@ -263,7 +270,7 @@ const traverseAndCollect = ({
 };
 
 export const extractSupportData = (
-  graphData: RawGraphData | null
+  graphData: RawGraphData | null,
 ): SupportData | null => {
   if (!graphData || !graphData["@graph"]) {
     return null;
@@ -285,7 +292,7 @@ export const extractSupportData = (
       traverseAndCollect({ node: rootEntity, results, seenIds });
     } else {
       graphEntities.forEach((entity) =>
-        traverseAndCollect({ node: entity, results, seenIds })
+        traverseAndCollect({ node: entity, results, seenIds }),
       );
     }
   } else if (typeof graphEntities === "object" && graphEntities !== null) {
@@ -390,9 +397,9 @@ const SupportingElementsComponent: React.FC<
         result[key] = supportData[key].filter(
           (el) =>
             (el.name && el.name.toLowerCase().includes(q)) ||
-            (el.description && el.description.toLowerCase().includes(q))
+            (el.description && el.description.toLowerCase().includes(q)),
         );
-      }
+      },
     );
 
     return result;
@@ -415,7 +422,7 @@ const SupportingElementsComponent: React.FC<
     setSearchTerm(e.target.value);
 
   const hasAnyElements = Object.values(supportData).some(
-    (arr) => arr.length > 0
+    (arr) => arr.length > 0,
   );
   if (!hasAnyElements) {
     return (
@@ -429,7 +436,7 @@ const SupportingElementsComponent: React.FC<
   }
 
   const hasFilteredElements = Object.values(filteredSupportData).some(
-    (arr) => arr.length > 0
+    (arr) => arr.length > 0,
   );
   const outputIds = dataService.getOutputNodes().map((n) => n["@id"]);
 
@@ -484,7 +491,7 @@ const SupportingElementsComponent: React.FC<
                               >
                                 {getHighlightedText(
                                   el.name || el["@id"],
-                                  searchTerm
+                                  searchTerm,
                                 )}
                               </StyledLink>
                               {isOutput && " (Output)"}
@@ -492,7 +499,7 @@ const SupportingElementsComponent: React.FC<
                             <DescriptionCell>
                               {getHighlightedText(
                                 el.description || "No description provided.",
-                                searchTerm
+                                searchTerm,
                               )}
                             </DescriptionCell>
                             <TableCell>

@@ -6,37 +6,20 @@ import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/light.css";
 import ReactMarkdown from "react-markdown";
 import styled from "styled-components";
-import { EvidenceNodeData, AnnotationData, Assumption, Concern, EvidencePointer, ComputationError, ComputationReviewStatus, normalizeImpact } from "../../types/graph";
+import {
+  EvidenceNodeData,
+  AnnotationData,
+  Assumption,
+  Concern,
+  EvidencePointer,
+  ComputationError,
+  ComputationReviewStatus,
+  normalizeImpact,
+} from "../../types/graph";
 import { formatPropertyValue, getDisplayableProperties } from "./graphUtils";
 import { GraphDataServiceContext } from "./AnnotatedGraphViewer";
 import AssumptionChainModal from "./AssumptionChainModal";
-
-const getNodeColor = (type: string): string => {
-  switch (type) {
-    case "Dataset":
-    case "Sample":
-      return "#8AE68A";
-    case "ROCrate":
-      return "#64C2A6";
-    case "Computation":
-      return "#7EB6E6";
-    case "Software":
-    case "Instrument":
-      return "#FFC107";
-    case "MLModel":
-      return "#C8A2FF";
-    case "Annotation":
-    case "AnnotatedComputation":
-      return "#FFA07A";
-    case "DatasetCollection":
-    case "DatasetGroup":
-      return "#B5DEFF";
-    case "Person":
-      return "#87CEEB";
-    default:
-      return "#E0E0E0";
-  }
-};
+import { getNodeColor } from "../shared/nodeColors";
 
 // ---------------------------------------------------------------------------
 // Computation status colors (green/purple/red circle on computation nodes)
@@ -53,16 +36,12 @@ function getStatusColor(status?: ComputationReviewStatus | string): string {
 }
 
 const StatusCircle = styled.span<{ $color: string }>`
-  width: 18px;
-  height: 18px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: ${(p) => p.$color};
-  border: 2.5px solid rgba(255, 255, 255, 0.95);
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  z-index: 5;
-  box-shadow: 0 0 0 2px ${(p) => p.$color}44, 0 2px 4px rgba(0, 0, 0, 0.3);
+  background: ${(e) => e.$fill};
+  border: 1.5px solid ${(e) => e.$border};
+  flex-shrink: 0;
 `;
 
 // ---------------------------------------------------------------------------
@@ -79,8 +58,14 @@ interface DisplayAssumption {
 }
 
 function getStepAssumptions(annotation: AnnotationData): DisplayAssumption[] {
-  if (annotation["evi:assumptions"] && annotation["evi:assumptions"].length > 0) {
-    return annotation["evi:assumptions"].map((a) => ({ ...a, impact: normalizeImpact(a.impact) }));
+  if (
+    annotation["evi:assumptions"] &&
+    annotation["evi:assumptions"].length > 0
+  ) {
+    return annotation["evi:assumptions"].map((a) => ({
+      ...a,
+      impact: normalizeImpact(a.impact),
+    }));
   }
   // Fallback: map old evi:concerns
   if (annotation["evi:concerns"] && annotation["evi:concerns"].length > 0) {
@@ -92,9 +77,15 @@ function getStepAssumptions(annotation: AnnotationData): DisplayAssumption[] {
   return [];
 }
 
-function getCodeAssumptions(ca: { assumptions?: Assumption[]; concerns?: Concern[] }): DisplayAssumption[] {
+function getCodeAssumptions(ca: {
+  assumptions?: Assumption[];
+  concerns?: Concern[];
+}): DisplayAssumption[] {
   if (ca.assumptions && ca.assumptions.length > 0) {
-    return ca.assumptions.map((a) => ({ ...a, impact: normalizeImpact(a.impact) }));
+    return ca.assumptions.map((a) => ({
+      ...a,
+      impact: normalizeImpact(a.impact),
+    }));
   }
   if (ca.concerns && ca.concerns.length > 0) {
     return ca.concerns.map((c) => ({
@@ -108,106 +99,89 @@ function getCodeAssumptions(ca: { assumptions?: Assumption[]; concerns?: Concern
 function getAssumptionCssClass(impact: string): string {
   // normalizeImpact should have already been called, but handle edge cases
   switch (normalizeImpact(impact)) {
-    case "CRITICAL": return "critical";
-    case "MAJOR": return "major";
-    case "MINOR": return "minor";
-    default: return "minor";
+    case "CRITICAL":
+      return "critical";
+    case "MAJOR":
+      return "major";
+    case "MINOR":
+      return "minor";
+    default:
+      return "minor";
   }
 }
 
 // --- Styled Components ---
 
 const NodeWrapper = styled.div<{ $expandable: boolean }>`
-  background: #fff;
-  padding: 0;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  text-align: center;
-  width: 180px;
-  height: 90px;
-  font-size: 13px;
-  position: relative;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  border: 1px solid ${(e) => (e.$selected ? "#2c3e50" : "#EBF2F4")};
+  border-radius: 2px;
+  background: ${(e) => (e.$selected ? "#fafbfc" : "#fff")};
+  box-shadow: ${(e) => (e.$selected ? "0 0 0 2px #2c3e50" : "none")};
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s;
   overflow: hidden;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
-  cursor: default;
+  cursor: pointer;
 
-  ${({ $expandable }) =>
-    $expandable &&
-    `border: 2px dashed #555; cursor: pointer;`}
+  &:hover {
+    border-color: #84939a;
+  }
 `;
 
 const NodeHeader = styled.div<{ $bgColor: string }>`
-  background: ${(props) => props.$bgColor};
-  padding: 8px 6px;
-  font-size: 14px;
-  font-weight: bold;
-  text-align: center;
-  width: 100%;
-  border-top-left-radius: 3px;
-  border-top-right-radius: 3px;
-  flex-shrink: 0;
+  background: ${(e) => e.$bg};
+  border-left: 3px solid ${(e) => e.$borderColor};
+  border-radius: 2px;
+  margin: 3px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #444;
+  overflow: hidden;
 `;
 
 const NodeContent = styled.div`
-  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 8px 10px;
-  width: 100%;
-  text-align: center;
-  word-break: break-word;
-  overflow: hidden;
-  font-size: 12px;
-  line-height: 1.3;
-  box-sizing: border-box;
+  gap: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    filter: brightness(0.96);
+  }
 `;
 
 const NodeLabel = styled.div`
-  width: 100%;
-  text-align: center;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 24px;
+  border-bottom: 1px solid #ebf2f4;
+  background: #f7f9f9;
+  flex-shrink: 0;
 `;
 
 const InfoButton = styled.button<{ $bgColor: string; $hasAnnotation: boolean }>`
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 22px;
-  height: 22px;
-  background: ${(props) => props.$bgColor};
-  color: #333;
-  border: none;
-  font-size: 12px;
-  font-weight: bold;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  padding: 0;
-  margin: 0;
-  border-bottom-left-radius: 4px;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
+  border: 1.5px solid ${(e) => (e.$active ? e.$color : "#ddd")};
+  background: ${(e) => (e.$active ? e.$bg : "#fff")};
+  color: ${(e) => (e.$active ? e.$color : "#bbb")};
+  transition: all 0.15s;
 
-  &:hover { opacity: 1; }
-
-  ${({ $hasAnnotation }) =>
-    $hasAnnotation &&
-    `
-    background: #2c3e50;
-    color: #fff;
-    opacity: 1;
-    box-shadow: 0 0 0 2px #2c3e50, 0 1px 3px rgba(0,0,0,0.3);
-  `}
+  &:hover {
+    border-color: ${(e) => e.$color};
+    color: ${(e) => e.$color};
+  }
 `;
 
 const TooltipWrapper = styled.div`
@@ -218,19 +192,89 @@ const TooltipWrapper = styled.div`
   font-family: sans-serif;
   color: #333;
 
-  h4 { margin: 0 0 8px; font-size: 1.1em; color: #000; border-bottom: 1px solid #eee; padding-bottom: 4px; }
-  .tooltip-section { margin-bottom: 8px; padding-bottom: 8px; &:not(:last-child) { border-bottom: 1px dotted #eee; } }
-  .prop-item { display: flex; margin: 4px 0; line-height: 1.4; }
-  .prop-key { font-weight: bold; min-width: 100px; flex-shrink: 0; margin-right: 8px; color: #555; }
-  .prop-value { word-break: break-word; a { color: #007bff; text-decoration: none; &:hover { text-decoration: underline; } } pre { margin: 0; white-space: pre-wrap; word-break: break-all; background: #f8f8f8; padding: 4px 6px; border-radius: 3px; font-size: 0.95em; max-height: 150px; overflow-y: auto; } }
+  h4 {
+    margin: 0 0 8px;
+    font-size: 1.1em;
+    color: #000;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+  }
+  .tooltip-section {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    &:not(:last-child) {
+      border-bottom: 1px dotted #eee;
+    }
+  }
+  .prop-item {
+    display: flex;
+    margin: 4px 0;
+    line-height: 1.4;
+  }
+  .prop-key {
+    font-weight: bold;
+    min-width: 100px;
+    flex-shrink: 0;
+    margin-right: 8px;
+    color: #555;
+  }
+  .prop-value {
+    word-break: break-word;
+    a {
+      color: #007bff;
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: #f8f8f8;
+      padding: 4px 6px;
+      border-radius: 3px;
+      font-size: 0.95em;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+  }
 
-  .annotation-summary { background: #f0f4ff; border: 1px solid #c5d5ea; border-radius: 4px; padding: 8px 10px; margin: 8px 0; }
-  .annotation-summary p { margin: 0 0 6px; font-size: 12.5px; line-height: 1.5; }
-  .assumptions-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; }
-  .assumptions-critical { background: #f3e8f9; color: #7b2d8e; }
-  .assumptions-major { background: #fef9e7; color: #d68910; }
-  .assumptions-minor { background: #eaf4fb; color: #1a5276; }
-  .assumptions-error { background: #fdecea; color: #c0392b; }
+  .annotation-summary {
+    background: #f0f4ff;
+    border: 1px solid #c5d5ea;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin: 8px 0;
+  }
+  .annotation-summary p {
+    margin: 0 0 6px;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .assumptions-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .assumptions-critical {
+    background: #f3e8f9;
+    color: #7b2d8e;
+  }
+  .assumptions-major {
+    background: #fef9e7;
+    color: #d68910;
+  }
+  .assumptions-minor {
+    background: #eaf4fb;
+    color: #1a5276;
+  }
+  .assumptions-error {
+    background: #fdecea;
+    color: #c0392b;
+  }
 
   .view-detail-btn {
     display: inline-block;
@@ -242,7 +286,9 @@ const TooltipWrapper = styled.div`
     border-radius: 3px;
     font-size: 12px;
     cursor: pointer;
-    &:hover { background: #34495e; }
+    &:hover {
+      background: #34495e;
+    }
   }
 `;
 
@@ -261,19 +307,37 @@ const ModalOverlay = styled.div`
 
 const ModalContent = styled.div`
   background: #fff;
-  border-radius: 8px;
+  border-radius: 2px;
   width: 100%;
   max-width: 1100px;
   overflow-y: auto;
   padding: 32px 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+  @media (max-width: 768px) {
+    padding: 20px 16px;
+  }
   font-family: sans-serif;
   font-size: 14px;
   color: #333;
+  outline: none;
 
-  h2 { margin: 0 0 16px; color: #2c3e50; font-size: 20px; }
-  h3 { margin: 16px 0 8px; color: #34495e; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
-  h4 { margin: 12px 0 6px; color: #555; font-size: 14px; }
+  h2 {
+    margin: 0 0 16px;
+    color: #2c3e50;
+    font-size: 20px;
+  }
+  h3 {
+    margin: 16px 0 8px;
+    color: #34495e;
+    font-size: 16px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+  }
+  h4 {
+    margin: 12px 0 6px;
+    color: #555;
+    font-size: 14px;
+  }
 
   .close-btn {
     float: right;
@@ -282,44 +346,83 @@ const ModalContent = styled.div`
     font-size: 24px;
     cursor: pointer;
     color: #666;
-    &:hover { color: #000; }
+    &:hover {
+      color: #000;
+    }
   }
 
   .assumption-item {
     padding: 6px 10px;
     margin: 4px 0;
-    border-radius: 4px;
+    border-radius: 2px;
     font-size: 13px;
     line-height: 1.5;
   }
-  .assumption-critical { background: #f3e8f9; border-left: 4px solid #7b2d8e; }
-  .assumption-major { background: #fef9e7; border-left: 4px solid #d68910; }
-  .assumption-minor { background: #eaf4fb; border-left: 4px solid #1a5276; }
+  .assumption-critical {
+    background: #f3e8f9;
+    border-left: 4px solid #7b2d8e;
+  }
+  .assumption-major {
+    background: #fef9e7;
+    border-left: 4px solid #d68910;
+  }
+  .assumption-minor {
+    background: #eaf4fb;
+    border-left: 4px solid #1a5276;
+  }
 
   .error-item {
     padding: 8px 10px;
     margin: 4px 0;
-    border-radius: 4px;
+    border-radius: 2px;
     font-size: 13px;
     line-height: 1.5;
     background: #fdecea;
     border-left: 4px solid #e74c3c;
   }
-  .error-item .error-severity { font-weight: 700; color: #c0392b; font-size: 11px; text-transform: uppercase; }
-  .error-item .error-desc { margin: 2px 0 4px; color: #555; }
-  .error-item .error-affected { background: #fff0ee; border-left: 3px solid #e74c3c; padding: 3px 8px; border-radius: 2px; margin-top: 4px; font-size: 12.5px; color: #7f1d1d; }
+  .error-item .error-severity {
+    font-weight: 700;
+    color: #c0392b;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+  .error-item .error-desc {
+    margin: 2px 0 4px;
+    color: #555;
+  }
+  .error-item .error-affected {
+    background: #fff0ee;
+    border-left: 3px solid #e74c3c;
+    padding: 3px 8px;
+    border-radius: 2px;
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: #7f1d1d;
+  }
 
   .code-analysis-card {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 6px;
+    background: #f7f9f9;
+    border: 1px solid #ebf2f4;
+    border-radius: 2px;
     padding: 12px 16px;
     margin: 8px 0;
   }
-  .code-analysis-card .software-name { font-weight: 600; color: #2c3e50; font-size: 14px; }
-  .code-analysis-card .summary { margin: 6px 0; color: #555; }
-  .key-functions { margin: 4px 0 4px 16px; }
-  .key-functions li { font-size: 13px; color: #666; }
+  .code-analysis-card .software-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+  }
+  .code-analysis-card .summary {
+    margin: 6px 0;
+    color: #555;
+  }
+  .key-functions {
+    margin: 4px 0 4px 16px;
+  }
+  .key-functions li {
+    font-size: 13px;
+    color: #666;
+  }
 
   .dataset-summary {
     display: flex;
@@ -334,40 +437,81 @@ const ModalContent = styled.div`
     border-radius: 3px;
     font-size: 11px;
     font-weight: 600;
-    background: #e9ecef;
-    color: #495057;
+    background: #ebf2f4;
+    color: #51626b;
     text-transform: uppercase;
   }
 
   .provenance-info {
-    background: #f8f9fa;
-    border-radius: 4px;
+    background: #f7f9f9;
+    border-radius: 2px;
     padding: 8px 12px;
     font-size: 13px;
     color: #666;
     margin-top: 12px;
   }
-  .provenance-info span { color: #333; font-weight: 500; }
+  .provenance-info span {
+    color: #333;
+    font-weight: 500;
+  }
 `;
 
 const ModalMarkdown = styled.div`
   font-size: 14px;
   line-height: 1.6;
-  p { margin: 0 0 8px; }
-  p:last-child { margin-bottom: 0; }
-  h1, h2, h3, h4, h5, h6 { margin: 12px 0 6px; color: #2c3e50; }
-  h1 { font-size: 18px; }
-  h2 { font-size: 16px; }
-  h3 { font-size: 15px; }
-  ul, ol { margin: 4px 0; padding-left: 20px; }
-  li { margin: 2px 0; }
-  strong { color: #2c3e50; }
-  code { background: #f1f3f5; padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+  p {
+    margin: 0 0 8px;
+  }
+  p:last-child {
+    margin-bottom: 0;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 12px 0 6px;
+    color: #2c3e50;
+  }
+  h1 {
+    font-size: 18px;
+  }
+  h2 {
+    font-size: 16px;
+  }
+  h3 {
+    font-size: 15px;
+  }
+  ul,
+  ol {
+    margin: 4px 0;
+    padding-left: 20px;
+  }
+  li {
+    margin: 2px 0;
+  }
+  strong {
+    color: #2c3e50;
+  }
+  code {
+    background: #f1f3f5;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
 `;
 
 const AssumptionDetailBlock = styled.div`
-  .assumption-name { font-weight: 600; color: #2c3e50; margin-bottom: 2px; }
-  .assumption-desc { margin: 2px 0 4px; color: #555; }
+  .assumption-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 2px;
+  }
+  .assumption-desc {
+    margin: 2px 0 4px;
+    color: #555;
+  }
   .assumption-downstream {
     background: #fff8e1;
     border-left: 3px solid #ffb300;
@@ -396,7 +540,9 @@ const AssumptionDetailBlock = styled.div`
   .evidence-link {
     color: #007bff;
     text-decoration: none;
-    &:hover { text-decoration: underline; }
+    &:hover {
+      text-decoration: underline;
+    }
   }
 `;
 
@@ -408,12 +554,14 @@ const ModalImpactGroupHeader = styled.div<{ $color: string }>`
   cursor: pointer;
   user-select: none;
 
-  &:first-child { padding-top: 0; }
+  &:first-child {
+    padding-top: 0;
+  }
 
   .group-label {
     font-size: 13px;
     font-weight: 600;
-    color: ${(props) => props.$color};
+    color: ${(e) => e.$color};
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -426,7 +574,9 @@ const ModalImpactGroupHeader = styled.div<{ $color: string }>`
     color: #95a5a6;
   }
 
-  &:hover .group-label { opacity: 0.8; }
+  &:hover .group-label {
+    opacity: 0.8;
+  }
 `;
 
 const ModalAssumptionRow = styled.div`
@@ -436,7 +586,9 @@ const ModalAssumptionRow = styled.div`
   align-items: flex-start;
   gap: 8px;
 
-  &:hover { filter: brightness(0.95); }
+  &:hover {
+    filter: brightness(0.95);
+  }
 `;
 
 const ModalAssumptionChevron = styled.span`
@@ -466,26 +618,45 @@ function EvidenceLink({ evidence }: { evidence: EvidencePointer }) {
   if (!arkId) return <span>Unknown</span>;
   return (
     <>
-      <a className="evidence-link" href={`/view/${arkId}`} target="_blank" rel="noopener noreferrer">
+      <a
+        className="evidence-link"
+        href={`/view/${arkId}`}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {arkId}
       </a>
-      {evidence.location && <span style={{ color: "#888", marginLeft: 6 }}>({evidence.location})</span>}
+      {evidence.location && (
+        <span style={{ color: "#888", marginLeft: 6 }}>
+          ({evidence.location})
+        </span>
+      )}
     </>
   );
 }
 
-function ModalAssumptionItem({ assumption }: { assumption: DisplayAssumption }) {
+function ModalAssumptionItem({
+  assumption,
+}: {
+  assumption: DisplayAssumption;
+}) {
   const [expanded, setExpanded] = useState(false);
   const cssClass = getAssumptionCssClass(assumption.impact);
-  const displayName = assumption.name || (assumption.description.length > 80
-    ? assumption.description.slice(0, 80) + "..."
-    : assumption.description);
+  const displayName =
+    assumption.name ||
+    (assumption.description.length > 80
+      ? assumption.description.slice(0, 80) + "..."
+      : assumption.description);
 
   return (
     <div className={`assumption-item assumption-${cssClass}`}>
       <ModalAssumptionRow onClick={() => setExpanded(!expanded)}>
-        <ModalAssumptionChevron>{expanded ? "\u25BC" : "\u25B6"}</ModalAssumptionChevron>
-        <span style={{ fontWeight: 600, color: "#2c3e50", flex: 1 }}>{displayName}</span>
+        <ModalAssumptionChevron>
+          {expanded ? "\u25BC" : "\u25B6"}
+        </ModalAssumptionChevron>
+        <span style={{ fontWeight: 600, color: "#2c3e50", flex: 1 }}>
+          {displayName}
+        </span>
       </ModalAssumptionRow>
       {expanded && (
         <ModalAssumptionExpanded>
@@ -510,8 +681,16 @@ function ModalAssumptionItem({ assumption }: { assumption: DisplayAssumption }) 
           )}
           {assumption.recommendedValidation && (
             <AssumptionDetailBlock>
-              <div className="assumption-downstream" style={{ background: "#e8f5e9", borderLeftColor: "#43a047" }}>
-                <div className="assumption-downstream-label" style={{ color: "#2e7d32" }}>How to Validate</div>
+              <div
+                className="assumption-downstream"
+                style={{ background: "#e8f5e9", borderLeftColor: "#43a047" }}
+              >
+                <div
+                  className="assumption-downstream-label"
+                  style={{ color: "#2e7d32" }}
+                >
+                  How to Validate
+                </div>
                 {assumption.recommendedValidation}
               </div>
             </AssumptionDetailBlock>
@@ -522,15 +701,22 @@ function ModalAssumptionItem({ assumption }: { assumption: DisplayAssumption }) 
   );
 }
 
-function ModalAssumptionsGrouped({ assumptions }: { assumptions: DisplayAssumption[] }) {
+function ModalAssumptionsGrouped({
+  assumptions,
+}: {
+  assumptions: DisplayAssumption[];
+}) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    () => new Set(["CRITICAL"])
+    () => new Set(["CRITICAL"]),
   );
 
-  const groups = MODAL_IMPACT_ORDER.reduce((acc, impact) => {
-    acc[impact] = assumptions.filter((a) => a.impact === impact);
-    return acc;
-  }, {} as Record<string, DisplayAssumption[]>);
+  const groups = MODAL_IMPACT_ORDER.reduce(
+    (acc, impact) => {
+      acc[impact] = assumptions.filter((a) => a.impact === impact);
+      return acc;
+    },
+    {} as Record<string, DisplayAssumption[]>,
+  );
 
   const toggleGroup = (impact: string) => {
     setExpandedGroups((prev) => {
@@ -549,14 +735,20 @@ function ModalAssumptionsGrouped({ assumptions }: { assumptions: DisplayAssumpti
         const isOpen = expandedGroups.has(impact);
         return (
           <React.Fragment key={impact}>
-            <ModalImpactGroupHeader $color={MODAL_IMPACT_COLORS[impact]} onClick={() => toggleGroup(impact)}>
-              <span className="group-toggle">{isOpen ? "\u25BC" : "\u25B6"}</span>
+            <ModalImpactGroupHeader
+              $color={MODAL_IMPACT_COLORS[impact]}
+              onClick={() => toggleGroup(impact)}
+            >
+              <span className="group-toggle">
+                {isOpen ? "\u25BC" : "\u25B6"}
+              </span>
               <span className="group-label">{impact}</span>
               <span className="group-count">({group.length})</span>
             </ModalImpactGroupHeader>
-            {isOpen && group.map((a, i) => (
-              <ModalAssumptionItem key={i} assumption={a} />
-            ))}
+            {isOpen &&
+              group.map((a, i) => (
+                <ModalAssumptionItem key={i} assumption={a} />
+              ))}
           </React.Fragment>
         );
       })}
@@ -564,12 +756,25 @@ function ModalAssumptionsGrouped({ assumptions }: { assumptions: DisplayAssumpti
   );
 }
 
-function CollapsibleSection({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+function CollapsibleSection({
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="collapsible-section">
-      <h3 onClick={() => setOpen(!open)} style={{ cursor: "pointer", userSelect: "none" }}>
-        <span style={{ fontSize: 10, color: "#95a5a6", marginRight: 6 }}>{open ? "\u25BC" : "\u25B6"}</span>
+      <h3
+        onClick={() => setOpen(!open)}
+        style={{ cursor: "pointer", userSelect: "none" }}
+      >
+        <span style={{ fontSize: 10, color: "#95a5a6", marginRight: 6 }}>
+          {open ? "\u25BC" : "\u25B6"}
+        </span>
         {title}
       </h3>
       {open && children}
@@ -602,18 +807,36 @@ function AnnotationDetailModal({
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
-        <button className="close-btn" onClick={onClose}>&times;</button>
+        <button className="close-btn" onClick={onClose}>
+          &times;
+        </button>
         <h2>Analysis: {nodeName}</h2>
 
         {/* Brief description from the computation itself */}
         {nodeDescription && (
-          <p style={{ margin: "0 0 12px", color: "#555", fontSize: "14px", lineHeight: 1.5 }}>
+          <p
+            style={{
+              margin: "0 0 12px",
+              color: "#555",
+              fontSize: "14px",
+              lineHeight: 1.5,
+            }}
+          >
             {nodeDescription}
           </p>
         )}
 
         {/* Compact two-column overview: Software, Inputs, Outputs */}
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 12px", fontSize: 13, margin: "8px 0 16px", alignItems: "baseline" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "auto 1fr",
+            gap: "4px 12px",
+            fontSize: 13,
+            margin: "8px 0 16px",
+            alignItems: "baseline",
+          }}
+        >
           {allCodeAnalysis.length > 0 && (
             <>
               <span style={{ fontWeight: 600, color: "#666" }}>Software</span>
@@ -624,7 +847,14 @@ function AnnotationDetailModal({
                   return (
                     <span key={i}>
                       {i > 0 && ", "}
-                      <a href={`/view/${id}`} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", textDecoration: "none" }}>{label}</a>
+                      <a
+                        href={`/view/${id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#007bff", textDecoration: "none" }}
+                      >
+                        {label}
+                      </a>
                     </span>
                   );
                 })}
@@ -641,7 +871,14 @@ function AnnotationDetailModal({
                   return (
                     <span key={i}>
                       {i > 0 && ", "}
-                      <a href={`/view/${id}`} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", textDecoration: "none" }}>{label}</a>
+                      <a
+                        href={`/view/${id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#007bff", textDecoration: "none" }}
+                      >
+                        {label}
+                      </a>
                     </span>
                   );
                 })}
@@ -658,7 +895,14 @@ function AnnotationDetailModal({
                   return (
                     <span key={i}>
                       {i > 0 && ", "}
-                      <a href={`/view/${id}`} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", textDecoration: "none" }}>{label}</a>
+                      <a
+                        href={`/view/${id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#007bff", textDecoration: "none" }}
+                      >
+                        {label}
+                      </a>
                     </span>
                   );
                 })}
@@ -669,28 +913,50 @@ function AnnotationDetailModal({
 
         {/* --- Detail sections (collapsible) --- */}
         <div style={{ borderTop: "2px solid #e9ecef", paddingTop: 8 }}>
-
           {/* Errors (if any) */}
           {(annotation["evi:errors"]?.length ?? 0) > 0 && (
-            <CollapsibleSection title={`Errors (${annotation["evi:errors"]!.length})`} defaultOpen={true}>
-              {annotation["evi:errors"]!.map((err: ComputationError, i: number) => (
-                <div key={i} className="error-item">
-                  <span className="error-severity">{err.severity}</span>
-                  <div className="error-desc">{err.description}</div>
-                  {err.affectedOutputs && (
-                    <div className="error-affected">
-                      <strong style={{ fontSize: 10, textTransform: "uppercase", color: "#999" }}>Affected outputs: </strong>
-                      {err.affectedOutputs}
-                    </div>
-                  )}
-                  {err.evidence && (
-                    <div style={{ fontSize: 12.5, color: "#666", marginTop: 4 }}>
-                      <span style={{ fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>Evidence: </span>
-                      <EvidenceLink evidence={err.evidence} />
-                    </div>
-                  )}
-                </div>
-              ))}
+            <CollapsibleSection
+              title={`Errors (${annotation["evi:errors"]!.length})`}
+              defaultOpen={true}
+            >
+              {annotation["evi:errors"]!.map(
+                (err: ComputationError, i: number) => (
+                  <div key={i} className="error-item">
+                    <span className="error-severity">{err.severity}</span>
+                    <div className="error-desc">{err.description}</div>
+                    {err.affectedOutputs && (
+                      <div className="error-affected">
+                        <strong
+                          style={{
+                            fontSize: 10,
+                            textTransform: "uppercase",
+                            color: "#999",
+                          }}
+                        >
+                          Affected outputs:{" "}
+                        </strong>
+                        {err.affectedOutputs}
+                      </div>
+                    )}
+                    {err.evidence && (
+                      <div
+                        style={{ fontSize: 12.5, color: "#666", marginTop: 4 }}
+                      >
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 11,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Evidence:{" "}
+                        </span>
+                        <EvidenceLink evidence={err.evidence} />
+                      </div>
+                    )}
+                  </div>
+                ),
+              )}
             </CollapsibleSection>
           )}
 
@@ -700,22 +966,50 @@ function AnnotationDetailModal({
               {allCodeAnalysis.map((ca, i) => {
                 const caAssumptions = getCodeAssumptions(ca);
                 return (
-                  <div key={i} className="code-analysis-card" style={{ marginBottom: 12 }}>
-                    <div className="software-name">{ca.name || ca.software["@id"]}</div>
+                  <div
+                    key={i}
+                    className="code-analysis-card"
+                    style={{ marginBottom: 12 }}
+                  >
+                    <div className="software-name">
+                      {ca.name || ca.software["@id"]}
+                    </div>
                     <ModalMarkdown className="summary">
                       <ReactMarkdown>{ca.summary}</ReactMarkdown>
                     </ModalMarkdown>
                     {ca.keyFunctions && ca.keyFunctions.length > 0 && (
                       <>
-                        <h4 style={{ margin: "10px 0 4px", color: "#666", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>Key Functions</h4>
+                        <h4
+                          style={{
+                            margin: "10px 0 4px",
+                            color: "#666",
+                            fontSize: 12,
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          Key Functions
+                        </h4>
                         <ul className="key-functions">
-                          {ca.keyFunctions.map((fn, j) => <li key={j}>{fn}</li>)}
+                          {ca.keyFunctions.map((fn, j) => (
+                            <li key={j}>{fn}</li>
+                          ))}
                         </ul>
                       </>
                     )}
                     {caAssumptions.length > 0 && (
                       <>
-                        <h4 style={{ margin: "10px 0 4px", color: "#666", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>Software Assumptions</h4>
+                        <h4
+                          style={{
+                            margin: "10px 0 4px",
+                            color: "#666",
+                            fontSize: 12,
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          Software Assumptions
+                        </h4>
                         <ModalAssumptionsGrouped assumptions={caAssumptions} />
                       </>
                     )}
@@ -730,18 +1024,42 @@ function AnnotationDetailModal({
             <CollapsibleSection title="Data">
               {hasDataQuality && (
                 <>
-                  <h4 style={{ margin: "0 0 6px", color: "#666", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>Data Quality</h4>
-                  {allDatasets.filter((ds) => ds.dataQuality).map((ds, i) => (
-                    <div key={i} style={{ marginBottom: 8, fontSize: 13 }}>
-                      <strong>{ds.name || ds.dataset["@id"]}</strong>
-                      <div style={{ marginTop: 2, color: "#6b7280" }}>{ds.dataQuality}</div>
-                    </div>
-                  ))}
+                  <h4
+                    style={{
+                      margin: "0 0 6px",
+                      color: "#666",
+                      fontSize: 12,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Data Quality
+                  </h4>
+                  {allDatasets
+                    .filter((ds) => ds.dataQuality)
+                    .map((ds, i) => (
+                      <div key={i} style={{ marginBottom: 8, fontSize: 13 }}>
+                        <strong>{ds.name || ds.dataset["@id"]}</strong>
+                        <div style={{ marginTop: 2, color: "#6b7280" }}>
+                          {ds.dataQuality}
+                        </div>
+                      </div>
+                    ))}
                 </>
               )}
               {stepAssumptions.length > 0 && (
                 <>
-                  <h4 style={{ margin: "12px 0 6px", color: "#666", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>Data Assumptions</h4>
+                  <h4
+                    style={{
+                      margin: "12px 0 6px",
+                      color: "#666",
+                      fontSize: 12,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Data Assumptions
+                  </h4>
                   <ModalAssumptionsGrouped assumptions={stepAssumptions} />
                 </>
               )}
@@ -762,15 +1080,22 @@ function AnnotationDetailModal({
             <div className="provenance-info">
               <span>LLM Model:</span> {annotation["evi:llmModel"]}
               {annotation["evi:llmTemperature"] !== undefined && (
-                <> &middot; <span>Temperature:</span> {annotation["evi:llmTemperature"]}</>
+                <>
+                  {" "}
+                  &middot; <span>Temperature:</span>{" "}
+                  {annotation["evi:llmTemperature"]}
+                </>
               )}
               &middot; <span>Date:</span> {annotation.dateCreated}
               {annotation["evi:interpreterVersion"] && (
-                <> &middot; <span>Version:</span> {annotation["evi:interpreterVersion"]}</>
+                <>
+                  {" "}
+                  &middot; <span>Version:</span>{" "}
+                  {annotation["evi:interpreterVersion"]}
+                </>
               )}
             </div>
           </CollapsibleSection>
-
         </div>
       </ModalContent>
     </ModalOverlay>
@@ -779,7 +1104,9 @@ function AnnotationDetailModal({
 
 // --- Main Node Component ---
 
-const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => {
+const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (
+  props,
+) => {
   const { data, isConnectable, id } = props;
   const className = (props as any).className || "";
   const nodeColor = getNodeColor(data.type);
@@ -798,7 +1125,9 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
     delete allProps["@type"];
     delete allProps.count;
 
-    const stepAssumptions = data._annotation ? getStepAssumptions(data._annotation) : [];
+    const stepAssumptions = data._annotation
+      ? getStepAssumptions(data._annotation)
+      : [];
 
     return (
       <TooltipWrapper>
@@ -815,35 +1144,60 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
               <span className="prop-value">{data.description}</span>
             </div>
           )}
-          {data.type === "DatasetCollection" && data.properties?.count !== undefined && (
-            <div className="prop-item">
-              <span className="prop-key">Items:</span>
-              <span className="prop-value">{data.properties.count}</span>
-            </div>
-          )}
+          {data.type === "DatasetCollection" &&
+            data.properties?.count !== undefined && (
+              <div className="prop-item">
+                <span className="prop-key">Items:</span>
+                <span className="prop-value">{data.properties.count}</span>
+              </div>
+            )}
         </div>
 
         {/* Annotation summary for computation nodes */}
         {hasAnnotation && data._annotation && (
           <div className="annotation-summary">
-            <p><strong>LLM Analysis:</strong> {data._annotation["evi:stepSummary"]?.substring(0, 200)}
-              {(data._annotation["evi:stepSummary"]?.length || 0) > 200 ? "..." : ""}
+            <p>
+              <strong>LLM Analysis:</strong>{" "}
+              {data._annotation["evi:stepSummary"]?.substring(0, 200)}
+              {(data._annotation["evi:stepSummary"]?.length || 0) > 200
+                ? "..."
+                : ""}
             </p>
             {(() => {
               const errors = data._annotation!["evi:errors"] || [];
               const errorCount = errors.length;
-              const critical = stepAssumptions.filter((a) => a.impact === "CRITICAL").length;
-              const major = stepAssumptions.filter((a) => a.impact === "MAJOR").length;
-              const minor = stepAssumptions.filter((a) => a.impact === "MINOR").length;
-              return (errorCount > 0 || stepAssumptions.length > 0) ? (
+              const critical = stepAssumptions.filter(
+                (a) => a.impact === "CRITICAL",
+              ).length;
+              const major = stepAssumptions.filter(
+                (a) => a.impact === "MAJOR",
+              ).length;
+              const minor = stepAssumptions.filter(
+                (a) => a.impact === "MINOR",
+              ).length;
+              return errorCount > 0 || stepAssumptions.length > 0 ? (
                 <div>
-                  {errorCount > 0 && <span className="assumptions-badge assumptions-error">{errorCount} {errorCount === 1 ? "Error" : "Errors"}</span>}
+                  {errorCount > 0 && (
+                    <span className="assumptions-badge assumptions-error">
+                      {errorCount} {errorCount === 1 ? "Error" : "Errors"}
+                    </span>
+                  )}
                   {errorCount > 0 && " "}
-                  {critical > 0 && <span className="assumptions-badge assumptions-critical">{critical} Critical</span>}
-                  {" "}
-                  {major > 0 && <span className="assumptions-badge assumptions-major">{major} Major</span>}
-                  {" "}
-                  {minor > 0 && <span className="assumptions-badge assumptions-minor">{minor} Minor</span>}
+                  {critical > 0 && (
+                    <span className="assumptions-badge assumptions-critical">
+                      {critical} Critical
+                    </span>
+                  )}{" "}
+                  {major > 0 && (
+                    <span className="assumptions-badge assumptions-major">
+                      {major} Major
+                    </span>
+                  )}{" "}
+                  {minor > 0 && (
+                    <span className="assumptions-badge assumptions-minor">
+                      {minor} Minor
+                    </span>
+                  )}
                 </div>
               ) : null;
             })()}
@@ -862,15 +1216,19 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
         {/* Other properties */}
         {!hasAnnotation && Object.entries(allProps).length > 0 && (
           <div className="tooltip-section">
-            {Object.entries(allProps).slice(0, 6).map(([key, value]) => (
-              <div key={key} className="prop-item">
-                <span className="prop-key">{key}:</span>
-                <span
-                  className="prop-value"
-                  dangerouslySetInnerHTML={{ __html: formatPropertyValue(value) }}
-                />
-              </div>
-            ))}
+            {Object.entries(allProps)
+              .slice(0, 6)
+              .map(([key, value]) => (
+                <div key={key} className="prop-item">
+                  <span className="prop-key">{key}:</span>
+                  <span
+                    className="prop-value"
+                    dangerouslySetInnerHTML={{
+                      __html: formatPropertyValue(value),
+                    }}
+                  />
+                </div>
+              ))}
           </div>
         )}
 
@@ -887,7 +1245,15 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
         )}
 
         {data.expandable && (
-          <em style={{ display: "block", marginTop: 10, color: "#007bff", fontStyle: "italic", fontSize: "0.9em" }}>
+          <em
+            style={{
+              display: "block",
+              marginTop: 10,
+              color: "#007bff",
+              fontStyle: "italic",
+              fontSize: "0.9em",
+            }}
+          >
             (Click node to expand)
           </em>
         )}
@@ -902,10 +1268,17 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
   return (
     <>
       <NodeWrapper $expandable={!!data.expandable} className={className}>
-        <Handle type="target" position={Position.Left} isConnectable={isConnectable} style={{ background: "#555", zIndex: 1 }} />
+        <Handle
+          type="target"
+          position={Position.Left}
+          isConnectable={isConnectable}
+          style={{ background: "#555", zIndex: 1 }}
+        />
 
         {data.type === "Computation" && hasAnnotation && data._annotation && (
-          <StatusCircle $color={getStatusColor(data._annotation["evi:computationStatus"])} />
+          <StatusCircle
+            $color={getStatusColor(data._annotation["evi:computationStatus"])}
+          />
         )}
 
         <NodeHeader $bgColor={nodeColor}>{data.type}</NodeHeader>
@@ -936,28 +1309,37 @@ const AnnotatedEvidenceNode: React.FC<NodeProps<EvidenceNodeData>> = (props) => 
           </InfoButton>
         </Tippy>
 
-        <Handle type="source" position={Position.Right} isConnectable={isConnectable} style={{ background: "#555", zIndex: 1 }} />
+        <Handle
+          type="source"
+          position={Position.Right}
+          isConnectable={isConnectable}
+          style={{ background: "#555", zIndex: 1 }}
+        />
       </NodeWrapper>
 
-      {showModal && data._annotation && createPortal(
-        <AnnotationDetailModal
-          annotation={data._annotation}
-          nodeName={data.label || data.displayName || id}
-          nodeDescription={data.description}
-          onClose={() => setShowModal(false)}
-        />,
-        document.body
-      )}
+      {showModal &&
+        data._annotation &&
+        createPortal(
+          <AnnotationDetailModal
+            annotation={data._annotation}
+            nodeName={data.label || data.displayName || id}
+            nodeDescription={data.description}
+            onClose={() => setShowModal(false)}
+          />,
+          document.body,
+        )}
 
-      {showChainModal && dataService && createPortal(
-        <AssumptionChainModal
-          datasetId={data.id}
-          datasetName={data.label || data.displayName || id}
-          dataService={dataService}
-          onClose={() => setShowChainModal(false)}
-        />,
-        document.body
-      )}
+      {showChainModal &&
+        dataService &&
+        createPortal(
+          <AssumptionChainModal
+            datasetId={data.id}
+            datasetName={data.label || data.displayName || id}
+            dataService={dataService}
+            onClose={() => setShowChainModal(false)}
+          />,
+          document.body,
+        )}
     </>
   );
 };

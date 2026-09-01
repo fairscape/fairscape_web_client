@@ -213,7 +213,9 @@ export const CancelButton = styled.button`
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 
   &:hover {
     background-color: ${({ theme }) => theme.colors.backgroundAlt || "#f9f9f9"};

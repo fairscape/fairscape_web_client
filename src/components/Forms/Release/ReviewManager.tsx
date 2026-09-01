@@ -14,7 +14,7 @@ const ReviewManager: React.FC<ReviewManagerProps> = ({
   isAllReviewed,
 }) => {
   const reviewedCount = Object.values(reviewState).filter(
-    (state: any) => state.reviewed
+    (state: any) => state.reviewed,
   ).length;
   const progress = (reviewedCount / totalSections) * 100;
 

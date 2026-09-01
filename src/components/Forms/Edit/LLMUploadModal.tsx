@@ -149,10 +149,9 @@ const Overlay = styled.div`
 
 const ModalContainer = styled.div`
   background: white;
-  border-radius: 12px;
+  border-radius: 2px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 `;
 
 const Header = styled.div`
@@ -160,13 +159,13 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e2e8ea;
 `;
 
 const Title = styled.h2`
   font-size: 1.25rem;
   font-weight: 600;
-  color: #111827;
+  color: #18242a;
   margin: 0;
 `;
 
@@ -174,7 +173,7 @@ const CloseButton = styled.button`
   background: none;
   border: none;
   font-size: 2rem;
-  color: #6b7280;
+  color: #51626b;
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -182,11 +181,11 @@ const CloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 2px;
   transition: background-color 0.2s;
 
   &:hover:not(:disabled) {
-    background-color: #f3f4f6;
+    background-color: #f7f9f9;
   }
 
   &:disabled {
@@ -201,7 +200,7 @@ const Content = styled.div`
 
 const Description = styled.p`
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #51626b;
   margin: 0 0 20px 0;
   line-height: 1.5;
 `;
@@ -217,18 +216,18 @@ const FileInput = styled.input`
 const FileLabel = styled.label<{ disabled: boolean }>`
   display: block;
   padding: 12px 16px;
-  background-color: #f3f4f6;
-  border: 2px dashed #d1d5db;
-  border-radius: 8px;
+  background-color: #f7f9f9;
+  border: 2px dashed #c3ced2;
+  border-radius: 2px;
   text-align: center;
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   transition: all 0.2s;
-  color: #374151;
+  color: #18242a;
   font-size: 0.875rem;
 
   &:hover:not([disabled]) {
-    background-color: #e5e7eb;
-    border-color: #9ca3af;
+    background-color: #e2e8ea;
+    border-color: #84939a;
   }
 
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
@@ -237,7 +236,7 @@ const FileLabel = styled.label<{ disabled: boolean }>`
 const FileInfo = styled.div`
   margin-top: 8px;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #51626b;
   text-align: center;
 `;
 
@@ -245,7 +244,7 @@ const ErrorMessage = styled.div`
   padding: 12px;
   background-color: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 6px;
+  border-radius: 2px;
   color: #991b1b;
   font-size: 0.875rem;
   margin-bottom: 16px;
@@ -260,8 +259,8 @@ const ProcessingIndicator = styled.div`
 `;
 
 const Spinner = styled.div`
-  border: 3px solid #e5e7eb;
-  border-top: 3px solid #3b82f6;
+  border: 3px solid #e2e8ea;
+  border-top: 3px solid #005f73;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -279,7 +278,7 @@ const Spinner = styled.div`
 
 const ProcessingText = styled.div`
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #51626b;
 `;
 
 const Footer = styled.div`
@@ -287,14 +286,14 @@ const Footer = styled.div`
   justify-content: flex-end;
   gap: 12px;
   padding: 20px 24px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #e2e8ea;
 `;
 
 const Button = styled.button`
   padding: 10px 20px;
   font-size: 0.875rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   transition: all 0.2s;
   border: none;
@@ -307,20 +306,20 @@ const Button = styled.button`
 
 const CancelButton = styled(Button)`
   background-color: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  color: #18242a;
+  border: 1px solid #c3ced2;
 
   &:hover:not(:disabled) {
-    background-color: #f9fafb;
+    background-color: #f7f9f9;
   }
 `;
 
 const GenerateButton = styled(Button)`
-  background-color: #3b82f6;
+  background-color: #005f73;
   color: white;
 
   &:hover:not(:disabled) {
-    background-color: #2563eb;
+    background-color: #003844;
   }
 `;
 

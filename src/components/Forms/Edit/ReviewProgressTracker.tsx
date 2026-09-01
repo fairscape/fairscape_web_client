@@ -102,24 +102,28 @@ const formatValue = (value: any): string => {
 
 const Container = styled.div`
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
+  border-radius: 2px;
+  padding: 20px;
+  border: 1px solid #e2e8ea;
 `;
 
 const Header = styled.h3`
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 12px 0;
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.colors.ink3};
+  font-weight: 500;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const ProgressBar = styled.div`
   width: 100%;
   height: 8px;
-  background-color: #e5e7eb;
-  border-radius: 4px;
+  background-color: #e2e8ea;
+  border-radius: 2px;
   overflow: hidden;
   margin-bottom: 8px;
 `;
@@ -133,39 +137,29 @@ const ProgressFill = styled.div<{ percentage: number }>`
 
 const ProgressText = styled.div`
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #51626b;
   margin-bottom: 16px;
 `;
 
 const FieldsList = styled.div`
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
 `;
 
 const FieldItem = styled.div<{ status: ReviewStatus }>`
-  padding: 12px;
+  padding: 10px;
   margin-bottom: 8px;
-  border-radius: 6px;
+  border-radius: 2px;
   border: 1px solid
-    ${({ status }) =>
-      status === ReviewStatus.Pending
-        ? "#f59e0b"
-        : status === ReviewStatus.Approved
-        ? "#10b981"
-        : "#ef4444"};
-  background-color: ${({ status }) =>
-    status === ReviewStatus.Pending
-      ? "#fffbeb"
-      : status === ReviewStatus.Approved
-      ? "#f0fdf4"
-      : "#fef2f2"};
+    ${({ status }) => (status === h.Pending ? "#f59e0b" : status === h.Approved ? "#10b981" : "#ef4444")};
+  background-color: ${({ status }) => (status === h.Pending ? "#fffbeb" : status === h.Approved ? "#f0fdf4" : "#fef2f2")};
 `;
 
 const FieldHeader = styled.div<{ clickable: boolean }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   cursor: ${({ clickable }) => (clickable ? "pointer" : "default")};
 
   &:hover {
@@ -175,42 +169,36 @@ const FieldHeader = styled.div<{ clickable: boolean }>`
 
 const FieldName = styled.span`
   font-weight: 600;
-  font-size: 0.875rem;
-  color: #111827;
+  font-size: 0.75rem;
+  color: #18242a;
 `;
 
 const StatusIndicator = styled.span<{ status: ReviewStatus }>`
-  font-size: 1rem;
-  color: ${({ status }) =>
-    status === ReviewStatus.Pending
-      ? "#f59e0b"
-      : status === ReviewStatus.Approved
-      ? "#10b981"
-      : "#ef4444"};
+  font-size: 0.875rem;
+  color: ${({ status }) => (status === h.Pending ? "#f59e0b" : status === h.Approved ? "#10b981" : "#ef4444")};
 `;
 
 const ValuePreview = styled.div`
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-bottom: 8px;
+  font-size: 0.7rem;
+  color: #51626b;
+  margin-bottom: 6px;
   font-style: italic;
 `;
 
 const Actions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: 6px;
 `;
 
 const ActionButton = styled.button<{ variant: "approve" | "reject" }>`
   flex: 1;
-  padding: 6px 12px;
-  font-size: 0.75rem;
+  padding: 4px 8px;
+  font-size: 0.7rem;
   font-weight: 600;
   color: white;
-  background-color: ${({ variant }) =>
-    variant === "approve" ? "#10b981" : "#ef4444"};
+  background-color: ${({ variant }) => (variant === "approve" ? "#10b981" : "#ef4444")};
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
   transition: opacity 0.2s;
 

@@ -58,44 +58,36 @@ const FieldVisibilitySelector: React.FC<FieldVisibilitySelectorProps> = ({
 
 const Container = styled.div`
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
+  border-radius: 2px;
+  padding: 20px;
+  border: 1px solid #e2e8ea;
 `;
 
 const Label = styled.div`
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 12px;
+  color: #51626b;
+  margin-bottom: 16px;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 8px;
+  gap: 6px;
 `;
 
 const VisibilityButton = styled.button<{ active: boolean }>`
   flex: 1;
-  padding: 10px 16px;
-  font-size: 0.875rem;
+  padding: 4px 8px;
+  font-size: 0.7rem;
   font-weight: 600;
-  color: ${({ active }) => (active ? "white" : "#374151")};
-  background-color: ${({ active }) => (active ? "#3b82f6" : "white")};
-  border: 1px solid ${({ active }) => (active ? "#3b82f6" : "#d1d5db")};
-  border-radius: 6px;
+  color: white;
+  background-color: ${({ variant }) => (variant === "approve" ? "#10b981" : "#ef4444")};
+  border: none;
+  border-radius: 2px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity 0.2s;
 
-  &:hover:not(:disabled) {
-    background-color: ${({ active }) => (active ? "#2563eb" : "#f9fafb")};
-    border-color: ${({ active }) => (active ? "#2563eb" : "#9ca3af")};
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
+  &:hover {
+    opacity: 0.8;
   }
 `;
 
@@ -108,8 +100,8 @@ const Count = styled.span`
 const DisabledMessage = styled.div`
   margin-top: 8px;
   font-size: 0.75rem;
-  color: #6b7280;
-  font-style: italic;
+  color: #51626b;
+  text-align: center;
 `;
 
 export default FieldVisibilitySelector;

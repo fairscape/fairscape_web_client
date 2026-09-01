@@ -54,7 +54,7 @@ const SavedCrateSelector: React.FC<SavedCrateSelectorProps> = ({
     if (window.confirm(`Are you sure you want to delete "${crateName}"?`)) {
       if (deleteSavedCrate(crateId)) {
         setSavedCrates((prev) =>
-          prev.filter((crate) => crate.metadata.id !== crateId)
+          prev.filter((crate) => crate.metadata.id !== crateId),
         );
       } else {
         alert("Failed to delete the saved crate. Please try again.");
@@ -174,13 +174,12 @@ const CrateItem = styled.div`
   align-items: center;
   padding: 20px;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background: #f8f9fa;
+  border-radius: 2px;
+  background: #f7f9f9;
   transition: all 0.2s;
 
   &:hover {
-    background: #e9ecef;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: #ebf2f4;
   }
 `;
 
@@ -206,12 +205,12 @@ const ReviewStatus = styled.div<{ complete?: boolean }>`
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 13px;
   margin-bottom: 8px;
-  background: ${(props) => (props.complete ? "#d4edda" : "#fff3cd")};
-  color: ${(props) => (props.complete ? "#155724" : "#856404")};
-  border: 1px solid ${(props) => (props.complete ? "#c3e6cb" : "#ffeeba")};
+  background: ${(e) => (e.complete ? "#d4edda" : "#fff3cd")};
+  color: ${(e) => (e.complete ? "#155724" : "#856404")};
+  border: 1px solid ${(e) => (e.complete ? "#c3e6cb" : "#ffeeba")};
 
   svg {
     font-size: 14px;
@@ -236,7 +235,7 @@ const LoadButton = styled.button`
   background: #3e7aa8;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
   font-weight: 600;
 
@@ -250,7 +249,7 @@ const DeleteButton = styled.button`
   background: #dc3545;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
   display: flex;
   align-items: center;

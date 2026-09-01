@@ -10,13 +10,14 @@ const LoginContainer = styled.div`
   margin: 0 auto;
   padding: ${({ theme }) => theme.spacing.xl};
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const LoginTitle = styled.h2`
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
+  font-weight: 650;
+  letter-spacing: -0.02em;
   margin-bottom: ${({ theme }) => theme.spacing.lg};
   text-align: center;
 `;
@@ -35,8 +36,8 @@ const Label = styled.label`
 const Input = styled.input`
   width: 100%;
   padding: ${({ theme }) => theme.spacing.md};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   transition: border-color 0.2s ease;
 
   &:focus {
@@ -54,16 +55,17 @@ const ErrorMessage = styled.p`
 const LoginButton = styled.button`
   width: 100%;
   padding: ${({ theme }) => theme.spacing.md};
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
-  border: none;
-  border-radius: ${({ theme }) => theme.borderRadius};
+  background-color: ${({ theme }) => theme.colors.secondary};
+  color: ${({ theme }) => theme.colors.ctaText};
+  border: 1px solid ${({ theme }) => theme.colors.secondary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
 
   &:hover:not(:disabled) {
-    background-color: ${({ theme }) => theme.colors.primaryLight};
+    background-color: #d98e00;
+    border-color: #d98e00;
   }
 
   &:disabled {

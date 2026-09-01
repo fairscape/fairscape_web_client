@@ -57,7 +57,7 @@ function getScoreColor(score: number, maxScore: number): string {
 function getScoreBackground(
   score: number,
   maxScore: number,
-  isActive: boolean
+  isActive: boolean,
 ): string {
   const percentage = (score / maxScore) * 100;
   const opacity = isActive ? 0.22 : 0.12;
@@ -80,16 +80,16 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
 
   const active = useMemo(
     () => criteriaData.find((c) => c.id === activeId) ?? criteriaData[0],
-    [criteriaData, activeId]
+    [criteriaData, activeId],
   );
 
   const totalScore = useMemo(
     () => criteriaData.reduce((sum, c) => sum + c.score, 0),
-    [criteriaData]
+    [criteriaData],
   );
   const maxTotal = useMemo(
     () => criteriaData.reduce((sum, c) => sum + c.maxScore, 0),
-    [criteriaData]
+    [criteriaData],
   );
   const pct = Math.round((totalScore / maxTotal) * 100);
 
@@ -102,7 +102,7 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
   const evidenceFor = (
     crit: CriteriaData,
     docKey: string,
-    displayName: string
+    displayName: string,
   ) => crit.metadata[docKey] ?? crit.metadata[displayName] ?? "";
 
   const formatLinks = (value: string) =>
@@ -111,7 +111,7 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
       (m) =>
         `<a href="${
           m.startsWith("http") ? m : `https://n2t.net/${m}`
-        }" target="_blank" rel="noopener noreferrer">${m}</a>`
+        }" target="_blank" rel="noopener noreferrer">${m}</a>`,
     );
 
   return (
@@ -128,7 +128,7 @@ const AIReadyScorePanel: React.FC<Props> = ({ criteriaData }) => {
               const bg = getScoreBackground(
                 c.score,
                 c.maxScore,
-                c.id === active.id
+                c.id === active.id,
               );
               return (
                 <CriteriaItem

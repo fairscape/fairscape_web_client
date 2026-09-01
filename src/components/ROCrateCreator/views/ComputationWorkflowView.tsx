@@ -48,7 +48,7 @@ const ComputationWorkflowView: React.FC<Props> = ({
 }) => {
   const initialAvailable = useMemo(
     () => [...datasets, ...software],
-    [datasets, software]
+    [datasets, software],
   );
 
   const [formData, setFormData] = useState<Partial<ComputationObject>>({
@@ -80,7 +80,7 @@ const ComputationWorkflowView: React.FC<Props> = ({
   const handleDragStart = (
     e: React.DragEvent,
     item: DataObject,
-    source: BucketKey
+    source: BucketKey,
   ) => {
     setDragged(item);
     e.dataTransfer.setData("source", source);
@@ -95,7 +95,8 @@ const ComputationWorkflowView: React.FC<Props> = ({
 
   const handleDrop = (e: React.DragEvent, destination: BucketKey) => {
     e.preventDefault();
-    const source = (e.dataTransfer.getData("source") as BucketKey) || "available";
+    const source =
+      (e.dataTransfer.getData("source") as BucketKey) || "available";
     if (!dragged) return;
 
     setAssignments((prev) => {
@@ -141,7 +142,7 @@ const ComputationWorkflowView: React.FC<Props> = ({
     title: string,
     key: BucketKey,
     items: DataObject[],
-    hint?: string
+    hint?: string,
   ) => (
     <Column>
       <ColumnHeader>
@@ -257,13 +258,19 @@ const ComputationWorkflowView: React.FC<Props> = ({
               placeholder="e.g., python analyze.py --input data.csv --output results.csv"
               rows={2}
             />
-            <HelperText>Command or script used to run this computation</HelperText>
+            <HelperText>
+              Command or script used to run this computation
+            </HelperText>
           </FormGroup>
         </FormGrid>
       </FormSection>
 
       <DragDropSection>
-        {renderDropZone("Available Objects", "available", assignments.available)}
+        {renderDropZone(
+          "Available Objects",
+          "available",
+          assignments.available,
+        )}
         {renderDropZone("Input Datasets", "inputs", assignments.inputs)}
         {renderDropZone("Output Datasets", "outputs", assignments.outputs)}
         {renderDropZone("Software Used", "software", assignments.software)}

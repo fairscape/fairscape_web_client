@@ -61,7 +61,7 @@ const MetadataEditorView: React.FC<MetadataEditorViewProps> = ({
 
   const handleFieldChange = (fieldName: string, value: any) => {
     if (!formData) return;
-    setFormData((prev) => ({ ...(prev as any), [fieldName]: value } as any));
+    setFormData((prev) => ({ ...(prev as any), [fieldName]: value }) as any);
   };
 
   const handleArrayAdd = (fieldName: string) => {
@@ -76,7 +76,7 @@ const MetadataEditorView: React.FC<MetadataEditorViewProps> = ({
   const handleArrayItemChange = (
     fieldName: string,
     index: number,
-    value: string
+    value: string,
   ) => {
     if (!formData) return;
     const currentArray = ((formData as any)[fieldName] as any[]) ?? [];

@@ -4,7 +4,7 @@ import { D4D_ASSISTANT_BOT } from "./constants";
 export const extractD4DYamlUrl = (comments: Comment[]): string | null => {
   const sortedComments = [...comments].sort(
     (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
   for (const comment of sortedComments) {
@@ -12,7 +12,7 @@ export const extractD4DYamlUrl = (comments: Comment[]): string | null => {
     console.log("Checking comment from:", comment.user);
     // Match both "D4D YAML Link" and "D4D YAML" formats
     const urlMatch = comment.body.match(
-      /📄\s+\*\*D4D YAML(?:\s+Link)?\*\*:\s*(https:\/\/raw\.githubusercontent\.com\/[^\s]+\.yaml)/
+      /📄\s+\*\*D4D YAML(?:\s+Link)?\*\*:\s*(https:\/\/raw\.githubusercontent\.com\/[^\s]+\.yaml)/,
     );
 
     if (urlMatch) {

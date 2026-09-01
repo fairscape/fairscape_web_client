@@ -39,21 +39,36 @@ interface ROCrateMetadata {
 
 // Styled container for the page
 const PageContainer = styled.div`
-  padding: ${({ theme }) => theme.spacing?.xl || "2rem"};
+  padding: ${({ theme }) => {
+    var t;
+    return ((t = theme.spacing) == null ? void 0 : t.xl) || "2rem";
+  }};
   max-width: 1600px;
   margin: 0 auto;
-  background-color: ${({ theme }) => theme.colors?.background || "#f8f9fa"};
+  background-color: ${({ theme }) => {
+    var t;
+    return ((t = theme.colors) == null ? void 0 : t.background) || "#F7F9F9";
+  }};
 `;
 
 // Styled container specifically for adding entities section
 const AddEntitiesSection = styled(Card)`
   // Use Card from SharedComponents
-  padding: ${({ theme }) => theme.spacing?.lg || "1.5rem"};
+  padding: ${({ theme }) => {
+    var t;
+    return ((t = theme.spacing) == null ? void 0 : t.lg) || "1.5rem";
+  }};
   background-color: #ffffff;
-  border-radius: ${({ theme }) => theme.borderRadius || "8px"};
-  margin-top: ${({ theme }) => theme.spacing?.lg || "1.5rem"};
-  border: 1px solid ${({ theme }) => theme.colors?.borderLight || "#dee2e6"};
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-radius: ${({ theme }) => theme.borderRadius.md || "8px"};
+  margin-top: ${({ theme }) => {
+    var t;
+    return ((t = theme.spacing) == null ? void 0 : t.lg) || "1.5rem";
+  }};
+  border: 1px solid
+    ${({ theme }) => {
+    var t;
+    return ((t = theme.colors) == null ? void 0 : t.borderLight) || "#E2E8EA";
+  }};
 `;
 
 const CreateRocratePage = () => {
@@ -131,7 +146,7 @@ const CreateRocratePage = () => {
           Object.keys(updatedRoot).forEach(
             (key) =>
               (updatedRoot as any)[key] === undefined &&
-              delete (updatedRoot as any)[key]
+              delete (updatedRoot as any)[key],
           );
           // Clean up empty arrays specifically
           if ((updatedRoot.keywords as string[])?.length === 0)
@@ -153,7 +168,7 @@ const CreateRocratePage = () => {
     setRocrateMetadata((prev) => {
       const newGraph = [...prev["@graph"]];
       const rootDatasetIndex = newGraph.findIndex(
-        (item) => item["@id"] === "./"
+        (item) => item["@id"] === "./",
       );
 
       const timestamp = Date.now(); // For unique ID generation
@@ -246,7 +261,7 @@ const CreateRocratePage = () => {
       // --- Process relationships for Computation entities ---
       if (entityType === "Computation") {
         const relationshipProp = schema.properties.find(
-          (p) => p.type === "relationships"
+          (p) => p.type === "relationships",
         );
         if (relationshipProp && relationshipProp.config) {
           const config = relationshipProp.config as {
@@ -269,7 +284,7 @@ const CreateRocratePage = () => {
       Object.keys(newEntity).forEach(
         (key) =>
           (newEntity as any)[key] === undefined &&
-          delete (newEntity as any)[key]
+          delete (newEntity as any)[key],
       );
 
       // --- Add the new entity to the graph ---
@@ -288,7 +303,7 @@ const CreateRocratePage = () => {
         // Add reference if not already present
         if (
           !(rootDataset.hasPart as Array<{ "@id": string }>).some(
-            (part) => part["@id"] === guid
+            (part) => part["@id"] === guid,
           )
         ) {
           (rootDataset.hasPart as Array<{ "@id": string }>).push({
@@ -365,11 +380,14 @@ const CreateRocratePage = () => {
                     {Array.isArray(entity["@type"])
                       ? entity["@type"]
                           .find((t: string) => t.includes("#"))
-                          ?.split("#")[1] || entity["@type"][entity["@type"].length - 1].split("/").pop()
+                          ?.split("#")[1] ||
+                        entity["@type"][entity["@type"].length - 1]
+                          .split("/")
+                          .pop()
                       : typeof entity["@type"] === "string"
-                      ? entity["@type"].split("#")[1] ||
-                        entity["@type"].split("/").pop()
-                      : "Unknown"}
+                        ? entity["@type"].split("#")[1] ||
+                          entity["@type"].split("/").pop()
+                        : "Unknown"}
                   </td>
                 </tr>
               ))}
@@ -395,10 +413,10 @@ const CreateRocratePage = () => {
             item["@id"] !== "ro-crate-metadata.json" &&
             (Array.isArray(item["@type"])
               ? item["@type"].some((t: string) => t === fullTypeUrl)
-              : item["@type"] === fullTypeUrl)
+              : item["@type"] === fullTypeUrl),
         );
       },
-    [rocrateMetadata]
+    [rocrateMetadata],
   );
 
   const datasets = getEntitiesByType("Dataset");
@@ -414,7 +432,7 @@ const CreateRocratePage = () => {
         name: (e.name as string) || "(Unnamed)",
         "@type": e["@type"], // Pass the full type info
       })),
-    [datasets, software] // Recompute only when datasets or software change
+    [datasets, software], // Recompute only when datasets or software change
   );
 
   return (
@@ -426,7 +444,7 @@ const CreateRocratePage = () => {
           // Find the root object, provide defaults if not found or partially formed
           initialData={
             (rocrateMetadata["@graph"].find(
-              (item) => item["@id"] === "./"
+              (item) => item["@id"] === "./",
             ) as Partial<ROCrateEntity & { keywords: string }>) || {
               keywords: "",
             } // Provide minimal default if root not found

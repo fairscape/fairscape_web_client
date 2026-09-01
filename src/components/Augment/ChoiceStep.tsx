@@ -27,7 +27,7 @@ interface ChoiceStepProps {
   onCrateUpload: (
     formData: InitialReleaseFormValues,
     hasPartEntities: CrateEntity[],
-    additionalProperties: AdditionalProperty[]
+    additionalProperties: AdditionalProperty[],
   ) => void;
 }
 
@@ -55,11 +55,11 @@ const ChoiceStep: React.FC<ChoiceStepProps> = ({
         if (uploadedCrateInfo && uploadedCrateInfo.rootNode) {
           const formData = mapJsonToFormData(uploadedCrateInfo.rootNode);
           const additionalProperties = mapJsonToAdditionalProperties(
-            uploadedCrateInfo.rootNode
+            uploadedCrateInfo.rootNode,
           );
           // Special handling for customPropertiesJson as it's a raw input
           const customPropertiesJson = mapJsonToCustomPropertiesJson(
-            uploadedCrateInfo.rootNode
+            uploadedCrateInfo.rootNode,
           );
           formData.customPropertiesJson = customPropertiesJson;
 
@@ -85,7 +85,7 @@ const ChoiceStep: React.FC<ChoiceStepProps> = ({
       } catch (error) {
         console.error("Error processing file:", error);
         alert(
-          "Failed to read or parse the file. Please ensure it's valid JSON."
+          "Failed to read or parse the file. Please ensure it's valid JSON.",
         );
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = ""; // Reset file input

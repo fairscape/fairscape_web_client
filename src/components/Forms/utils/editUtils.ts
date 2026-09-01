@@ -44,7 +44,7 @@ export const generateUpdatePayload = (
   formData: any,
   extraFields: any,
   originalMetadata: any,
-  config: any
+  config: any,
 ): any => {
   const payload: any = {
     ...originalMetadata,
@@ -72,7 +72,7 @@ export const generateUpdatePayload = (
 
 export const filterFieldsByVisibility = (
   config: any,
-  visibility: "minimal" | "ai-ready" | "all"
+  visibility: "minimal" | "ai-ready" | "all",
 ): any => {
   if (visibility === "all" || !config.sections) {
     return config;
@@ -85,11 +85,11 @@ export const filterFieldsByVisibility = (
 
       if (visibility === "minimal") {
         filteredSection.fields = section.fields?.filter(
-          (field: any) => field.required
+          (field: any) => field.required,
         );
       } else if (visibility === "ai-ready") {
         filteredSection.fields = section.fields?.filter(
-          (field: any) => field.aiReady
+          (field: any) => field.aiReady,
         );
       }
 
@@ -111,7 +111,7 @@ export const isFieldEmpty = (value: any): boolean => {
 export const initializeReviewStates = (
   llmPopulatedFields: Set<string>,
   formData: any,
-  config: any
+  config: any,
 ): any => {
   const reviewStates: any = {};
 

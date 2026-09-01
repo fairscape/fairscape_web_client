@@ -100,7 +100,7 @@ const StepTitle = styled.h2`
 const SummarySection = styled.div`
   background-color: white;
   padding: ${({ theme }) => theme.spacing.lg};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   border: 1px solid #eee;
@@ -201,7 +201,10 @@ const BaseButton = styled.button`
   padding: 10px 20px;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s,
+    opacity 0.2s;
   font-size: 14px;
   &:hover {
     opacity: 0.9;
@@ -312,7 +315,7 @@ const UploadedFilesContainer = styled.div`
   margin-bottom: 30px;
   background-color: #eaf3fa;
   padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.lg};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid #c1d9ed;
 `;
 const UploadedFileItem = styled.div`
@@ -355,7 +358,7 @@ const ReleaseForm = () => {
       customProperties: "{}",
       keywords: "",
       associatedPublication: "",
-    }
+    },
   );
   const [formKey, setFormKey] = useState<number>(Date.now());
 
@@ -424,7 +427,7 @@ const ReleaseForm = () => {
                   node["@id"] !== "./" &&
                   node["@id"] !== "ro-crate-metadata.json" &&
                   (node["@type"]?.includes("Dataset") ||
-                    node["@type"]?.includes("https://w3id.org/EVI#ROCrate"))
+                    node["@type"]?.includes("https://w3id.org/EVI#ROCrate")),
               ) || json["@graph"][1];
             if (!rootNode) {
               console.warn(`Skipping ${file.name}: No root node.`);
@@ -475,19 +478,19 @@ const ReleaseForm = () => {
       aggregatedValues.keywords
         ?.split(",")
         .map((k) => k.trim())
-        .filter(Boolean) ?? []
+        .filter(Boolean) ?? [],
     );
     const aggregatedAuthors = new Set<string>(
       aggregatedValues.author
         ?.split(",")
         .map((a) => a.trim())
-        .filter(Boolean) ?? []
+        .filter(Boolean) ?? [],
     );
     const aggregatedPublications = new Set<string>(
       aggregatedValues.associatedPublication
         ?.split(",")
         .map((p) => p.trim())
-        .filter(Boolean) ?? []
+        .filter(Boolean) ?? [],
     );
 
     crates.forEach((crate) => {
@@ -526,7 +529,7 @@ const ReleaseForm = () => {
           const doi = root.identifier.find(
             (id: string) =>
               typeof id === "string" &&
-              (id.startsWith("10.") || id.includes("doi.org"))
+              (id.startsWith("10.") || id.includes("doi.org")),
           );
           if (doi) aggregatedValues.doi = doi;
         }
@@ -543,7 +546,7 @@ const ReleaseForm = () => {
             if (typeof auth === "string") aggregatedAuthors.add(auth.trim());
             else if (typeof auth === "object" && auth.name)
               aggregatedAuthors.add(auth.name.trim());
-          }
+          },
         );
       if (root.associatedPublication)
         (Array.isArray(root.associatedPublication)
@@ -616,7 +619,7 @@ const ReleaseForm = () => {
         .trim();
     }
     aggregatedValues.associatedPublication = Array.from(
-      aggregatedPublications
+      aggregatedPublications,
     ).join(", ");
 
     // Generate Release Crate ID if needed
@@ -798,7 +801,8 @@ const ReleaseForm = () => {
       ...customProps,
     };
     Object.keys(releaseRootNode).forEach(
-      (key) => releaseRootNode[key] === undefined && delete releaseRootNode[key]
+      (key) =>
+        releaseRootNode[key] === undefined && delete releaseRootNode[key],
     );
 
     const roCrateJson = {

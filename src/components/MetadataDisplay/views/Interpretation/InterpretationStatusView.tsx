@@ -14,7 +14,11 @@ function extractErrorMessage(err: unknown): string {
     const obj = err as Record<string, unknown>;
     if (typeof obj.message === "string") return obj.message;
     if (typeof obj.details === "string") return obj.details;
-    try { return JSON.stringify(err); } catch { /* fall through */ }
+    try {
+      return JSON.stringify(err);
+    } catch {
+      /* fall through */
+    }
   }
   return String(err);
 }
@@ -36,7 +40,7 @@ export default function InterpretationStatusView({
   const [status, setStatus] = useState<InterpretationStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<"prompt" | "triggering" | "polling">(
-    hasExisting ? "prompt" : "triggering"
+    hasExisting ? "prompt" : "triggering",
   );
   const intervalRef = useRef<number | null>(null);
 
@@ -95,9 +99,7 @@ export default function InterpretationStatusView({
           An annotated evidence graph already exists for this RO-Crate.
         </PromptText>
         <ButtonRow>
-          <PromptButton onClick={onViewExisting}>
-            View Existing
-          </PromptButton>
+          <PromptButton onClick={onViewExisting}>View Existing</PromptButton>
           <PromptButton $primary onClick={() => triggerRun(true)}>
             Re-run Interpretation
           </PromptButton>
@@ -139,9 +141,7 @@ export default function InterpretationStatusView({
         <Spinner />
         <StatusText>
           <strong>Status:</strong> {status?.status ?? "PENDING"}
-          {status?.current_step && (
-            <span> &mdash; {status.current_step}</span>
-          )}
+          {status?.current_step && <span> &mdash; {status.current_step}</span>}
         </StatusText>
       </StatusRow>
 
@@ -209,7 +209,7 @@ const Spinner = styled.div`
 
 const StatusText = styled.div`
   font-size: 15px;
-  color: #212529;
+  color: #18242a;
 `;
 
 const ProgressSection = styled.div`
@@ -218,7 +218,7 @@ const ProgressSection = styled.div`
 
 const ProgressLabel = styled.div`
   font-size: 14px;
-  color: #495057;
+  color: #51626b;
   margin-bottom: 8px;
   font-weight: 500;
 `;
@@ -226,15 +226,15 @@ const ProgressLabel = styled.div`
 const ProgressBarTrack = styled.div`
   width: 100%;
   height: 12px;
-  background: #e9ecef;
-  border-radius: 6px;
+  background: #ebf2f4;
+  border-radius: 2px;
   overflow: hidden;
 `;
 
 const ProgressBarFill = styled.div`
   height: 100%;
   background: #005f73;
-  border-radius: 6px;
+  border-radius: 2px;
   transition: width 0.4s ease;
 `;
 
@@ -249,7 +249,7 @@ const ComputationRow = styled.div`
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: #212529;
+  color: #18242a;
   padding: 6px 0;
 `;
 
@@ -260,28 +260,21 @@ const ComputationIcon = styled.span<{
   text-align: center;
   font-weight: 700;
   flex-shrink: 0;
-  color: ${({ $status }) =>
-    $status === "done"
-      ? "#28a745"
-      : $status === "error"
-      ? "#dc3545"
-      : $status === "processing"
-      ? "#005f73"
-      : "#adb5bd"};
+  color: ${({ $status }) => ($status === "done" ? "#28a745" : $status === "error" ? "#dc3545" : $status === "processing" ? "#005f73" : "#84939A")};
 `;
 
 const ErrorBox = styled.div`
   padding: 16px;
   background: #f8d7da;
   border: 1px solid #f5c6cb;
-  border-radius: 6px;
+  border-radius: 2px;
   color: #721c24;
   font-size: 14px;
 `;
 
 const PromptText = styled.p`
   font-size: 15px;
-  color: #495057;
+  color: #51626b;
   margin-bottom: 20px;
 `;
 
@@ -292,7 +285,7 @@ const ButtonRow = styled.div`
 
 const PromptButton = styled.button<{ $primary?: boolean }>`
   padding: 10px 20px;
-  border-radius: 6px;
+  border-radius: 2px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -302,8 +295,6 @@ const PromptButton = styled.button<{ $primary?: boolean }>`
   color: ${({ $primary }) => ($primary ? "white" : "#005f73")};
 
   &:hover {
-    background: ${({ $primary }) => ($primary ? "#004050" : "#f8f9fa")};
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    background: ${({ $primary }) => ($primary ? "#004050" : "#F7F9F9")};
   }
 `;

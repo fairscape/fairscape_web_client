@@ -122,97 +122,104 @@ const ColumnDetailPanel: React.FC<ColumnDetailPanelProps> = ({
             const joinSchemas = joinColumns?.get(name);
             const isJoinKey = !!joinSchemas && joinSchemas.length > 0;
             return (
-            <React.Fragment key={name}>
-              <ExpandableRow
-                $expanded={expandedCol === name}
-                $isJoinKey={isJoinKey}
-                onClick={() =>
-                  setExpandedCol(expandedCol === name ? null : name)
-                }
-              >
-                <td>
-                  <strong>{name}</strong>
-                  {isJoinKey && (
-                    <JoinBadge title={`Shared with: ${joinSchemas.join(', ')}`}>
-                      &#x1F517; {joinSchemas.length} {joinSchemas.length === 1 ? 'link' : 'links'}
-                    </JoinBadge>
-                  )}
-                </td>
-                <td>
-                  <TypeBadge $type={prop.type}>{prop.type || "N/A"}</TypeBadge>
-                </td>
-                <td>{prop.description || "No description"}</td>
-                <td style={{ textAlign: "center" }}>
-                  {requiredSet.has(name) && (
-                    <RequiredBadge>Required</RequiredBadge>
-                  )}
-                </td>
-              </ExpandableRow>
-
-              {expandedCol === name && (
-                <DetailRow>
-                  <td colSpan={4}>
-                    <DetailPanel>
-                      {isJoinKey && (
-                        <DetailItem>
-                          <DetailItemLabel>Shared With</DetailItemLabel>
-                          <DetailItemValue>{joinSchemas.join(', ')}</DetailItemValue>
-                        </DetailItem>
-                      )}
-                      {prop.index !== undefined && (
-                        <DetailItem>
-                          <DetailItemLabel>Column Index</DetailItemLabel>
-                          <DetailItemValue>{prop.index}</DetailItemValue>
-                        </DetailItem>
-                      )}
-                      {prop.pattern && (
-                        <DetailItem>
-                          <DetailItemLabel>Pattern</DetailItemLabel>
-                          <DetailItemValue>{prop.pattern}</DetailItemValue>
-                        </DetailItem>
-                      )}
-                      {prop.minItems !== undefined && (
-                        <DetailItem>
-                          <DetailItemLabel>Min Items</DetailItemLabel>
-                          <DetailItemValue>{prop.minItems}</DetailItemValue>
-                        </DetailItem>
-                      )}
-                      {prop.maxItems !== undefined && (
-                        <DetailItem>
-                          <DetailItemLabel>Max Items</DetailItemLabel>
-                          <DetailItemValue>{prop.maxItems}</DetailItemValue>
-                        </DetailItem>
-                      )}
-                      {prop["value-url"] && (
-                        <DetailItem>
-                          <DetailItemLabel>Value URL</DetailItemLabel>
-                          <DetailItemValue>
-                            <a
-                              href={prop["value-url"]}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {prop["value-url"]}
-                            </a>
-                          </DetailItemValue>
-                        </DetailItem>
-                      )}
-                      {prop.items && (
-                        <DetailItem>
-                          <DetailItemLabel>Array Item Type</DetailItemLabel>
-                          <DetailItemValue>
-                            {typeof prop.items === "object"
-                              ? prop.items.type || JSON.stringify(prop.items)
-                              : String(prop.items)}
-                          </DetailItemValue>
-                        </DetailItem>
-                      )}
-                    </DetailPanel>
+              <React.Fragment key={name}>
+                <ExpandableRow
+                  $expanded={expandedCol === name}
+                  $isJoinKey={isJoinKey}
+                  onClick={() =>
+                    setExpandedCol(expandedCol === name ? null : name)
+                  }
+                >
+                  <td>
+                    <strong>{name}</strong>
+                    {isJoinKey && (
+                      <JoinBadge
+                        title={`Shared with: ${joinSchemas.join(", ")}`}
+                      >
+                        &#x1F517; {joinSchemas.length}{" "}
+                        {joinSchemas.length === 1 ? "link" : "links"}
+                      </JoinBadge>
+                    )}
                   </td>
-                </DetailRow>
-              )}
-            </React.Fragment>
-          );
+                  <td>
+                    <TypeBadge $type={prop.type}>
+                      {prop.type || "N/A"}
+                    </TypeBadge>
+                  </td>
+                  <td>{prop.description || "No description"}</td>
+                  <td style={{ textAlign: "center" }}>
+                    {requiredSet.has(name) && (
+                      <RequiredBadge>Required</RequiredBadge>
+                    )}
+                  </td>
+                </ExpandableRow>
+
+                {expandedCol === name && (
+                  <DetailRow>
+                    <td colSpan={4}>
+                      <DetailPanel>
+                        {isJoinKey && (
+                          <DetailItem>
+                            <DetailItemLabel>Shared With</DetailItemLabel>
+                            <DetailItemValue>
+                              {joinSchemas.join(", ")}
+                            </DetailItemValue>
+                          </DetailItem>
+                        )}
+                        {prop.index !== undefined && (
+                          <DetailItem>
+                            <DetailItemLabel>Column Index</DetailItemLabel>
+                            <DetailItemValue>{prop.index}</DetailItemValue>
+                          </DetailItem>
+                        )}
+                        {prop.pattern && (
+                          <DetailItem>
+                            <DetailItemLabel>Pattern</DetailItemLabel>
+                            <DetailItemValue>{prop.pattern}</DetailItemValue>
+                          </DetailItem>
+                        )}
+                        {prop.minItems !== undefined && (
+                          <DetailItem>
+                            <DetailItemLabel>Min Items</DetailItemLabel>
+                            <DetailItemValue>{prop.minItems}</DetailItemValue>
+                          </DetailItem>
+                        )}
+                        {prop.maxItems !== undefined && (
+                          <DetailItem>
+                            <DetailItemLabel>Max Items</DetailItemLabel>
+                            <DetailItemValue>{prop.maxItems}</DetailItemValue>
+                          </DetailItem>
+                        )}
+                        {prop["value-url"] && (
+                          <DetailItem>
+                            <DetailItemLabel>Value URL</DetailItemLabel>
+                            <DetailItemValue>
+                              <a
+                                href={prop["value-url"]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {prop["value-url"]}
+                              </a>
+                            </DetailItemValue>
+                          </DetailItem>
+                        )}
+                        {prop.items && (
+                          <DetailItem>
+                            <DetailItemLabel>Array Item Type</DetailItemLabel>
+                            <DetailItemValue>
+                              {typeof prop.items === "object"
+                                ? prop.items.type || JSON.stringify(prop.items)
+                                : String(prop.items)}
+                            </DetailItemValue>
+                          </DetailItem>
+                        )}
+                      </DetailPanel>
+                    </td>
+                  </DetailRow>
+                )}
+              </React.Fragment>
+            );
           })}
         </tbody>
       </ColumnTable>

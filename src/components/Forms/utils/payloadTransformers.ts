@@ -29,7 +29,7 @@ export const transformKeywordsToArray = (csvString: string): string[] => {
  * @returns Array of IdentifierValue objects
  */
 export const transformToIdentifierValueArray = (
-  arkIds: string | string[]
+  arkIds: string | string[],
 ): IdentifierValue[] => {
   if (!arkIds) {
     return [];
@@ -73,7 +73,10 @@ export const getEntitySchemaType = (entityType: string): string => {
     instrument: "https://w3id.org/EVI#Instrument",
   };
 
-  return typeMap[normalizedType] || `https://w3id.org/EVI#${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`;
+  return (
+    typeMap[normalizedType] ||
+    `https://w3id.org/EVI#${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`
+  );
 };
 
 /**
@@ -98,7 +101,7 @@ const IDENTIFIER_FIELDS = [
  */
 export const transformFormDataToPayload = (
   _entityType: string,
-  formData: any
+  formData: any,
 ): any => {
   const transformed: any = {};
 

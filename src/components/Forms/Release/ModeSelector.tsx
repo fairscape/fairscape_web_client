@@ -31,49 +31,59 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onModeSelect }) => {
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 40px;
+  gap: 28px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 12px 40px;
 `;
 
 const Title = styled.h2`
-  font-size: 1.5rem;
-  color: #333;
-  margin-bottom: 30px;
+  font-size: 1.35rem;
+  color: #2f5878;
+  margin: 0 0 8px 0;
 `;
 
 const CardsContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  max-width: 800px;
-  width: 100%;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const Card = styled.div`
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 30px;
+  background: #fff;
+  border: 1px solid #e7e7e9;
+  border-radius: 2px;
+  padding: 18px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+  outline: none;
 
-  &:hover {
+  &:hover,
+  &:focus {
     border-color: #3e7aa8;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
   }
 `;
 
 const CardTitle = styled.h3`
-  font-size: 1.25rem;
   color: #3e7aa8;
-  margin-bottom: 15px;
+  font-size: 18px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
 `;
 
 const CardDescription = styled.p`
-  font-size: 0.95rem;
+  margin-top: 10px;
+  font-size: 0.85rem;
   color: #666;
-  line-height: 1.5;
+  line-height: 1.4;
 `;
 
 export default ModeSelector;

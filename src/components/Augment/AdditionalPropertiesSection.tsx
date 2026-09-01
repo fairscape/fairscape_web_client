@@ -89,7 +89,7 @@ const AdditionalPropertiesSection: React.FC<
       setNewValue("");
     } else {
       alert(
-        "Please enter both a name and a value for the additional property."
+        "Please enter both a name and a value for the additional property.",
       );
     }
   };

@@ -17,7 +17,11 @@ interface DocumentUploaderProps {
   onSave?: () => void;
   saveStatus?: "idle" | "saving" | "saved" | "error";
   isLoading: boolean;
-  loadingStatus?: {state: string, message: string, elapsedSeconds: number} | null;
+  loadingStatus?: {
+    state: string;
+    message: string;
+    elapsedSeconds: number;
+  } | null;
   onSavedCrateSelect: (data: { formData: any; reviewState?: any }) => void;
 }
 
@@ -34,7 +38,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   const [activeTab, setActiveTab] = useState<"new" | "continue">("new");
 
   const handleSupportingDocsUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(e.target.files || []);
     const newDocs: UploadedFile[] = files.map((file) => ({
@@ -108,13 +112,28 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           )}
 
           {isLoading && loadingStatus && (
-            <div style={{textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '8px', margin: '20px 0'}}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "20px",
+                background: "#f8f9fa",
+                borderRadius: "8px",
+                margin: "20px 0",
+              }}
+            >
               <div>{loadingStatus.message}</div>
-              <div style={{color: '#7f8c8d', fontSize: '14px'}}>
-                Elapsed: {Math.floor(loadingStatus.elapsedSeconds / 60)}m {loadingStatus.elapsedSeconds % 60}s
+              <div style={{ color: "#7f8c8d", fontSize: "14px" }}>
+                Elapsed: {Math.floor(loadingStatus.elapsedSeconds / 60)}m{" "}
+                {loadingStatus.elapsedSeconds % 60}s
               </div>
               {loadingStatus.state === "WAITING_FOR_API" && (
-                <div style={{color: '#95a5a6', fontSize: '13px', marginTop: '8px'}}>
+                <div
+                  style={{
+                    color: "#95a5a6",
+                    fontSize: "13px",
+                    marginTop: "8px",
+                  }}
+                >
                   ⏱️ Typically takes 1-3 minutes
                 </div>
               )}
@@ -160,8 +179,8 @@ const TabContainer = styled.div`
   display: flex;
   gap: 0;
   margin-bottom: 20px;
-  background: #f0f0f0;
-  border-radius: 8px 8px 0 0;
+  background: #f7f9f9;
+  border-radius: 2px 8px 0 0;
   overflow: hidden;
 `;
 
@@ -169,14 +188,14 @@ const Tab = styled.button<{ active: boolean }>`
   flex: 1;
   padding: 12px 20px;
   border: none;
-  background: ${(props) => (props.active ? "white" : "transparent")};
-  color: ${(props) => (props.active ? "#3e7aa8" : "#666")};
-  font-weight: ${(props) => (props.active ? "600" : "400")};
+  background: ${(e) => (e.active ? "white" : "transparent")};
+  color: ${(e) => (e.active ? "#3e7aa8" : "#666")};
+  font-weight: ${(e) => (e.active ? "600" : "400")};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: ${(props) => (props.active ? "white" : "#e0e0e0")};
+    background: ${(e) => (e.active ? "white" : "#e0e0e0")};
   }
 `;
 
@@ -193,7 +212,7 @@ const Description = styled.p`
   color: #666;
   background: #fff3cd;
   padding: 12px;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1px solid #ffeeba;
 `;
 
@@ -212,8 +231,8 @@ const DocumentItem = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #f8f9fa;
-  border-radius: 4px;
+  background: #f7f9f9;
+  border-radius: 2px;
   margin-bottom: 8px;
   color: #666;
 `;

@@ -34,12 +34,14 @@ const ViewerWrapper = styled.div`
   height: 550px;
   position: relative;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   background-color: ${({ theme }) => theme.colors.surface};
   margin-bottom: ${({ theme }) => theme.spacing.lg};
   .react-flow__edge {
     path {
-      transition: stroke 0.2s ease, stroke-width 0.2s ease;
+      transition:
+        stroke 0.2s ease,
+        stroke-width 0.2s ease;
     }
     &.path-highlight {
       z-index: 1;
@@ -61,14 +63,30 @@ const LoadingOverlay = styled.div`
 `;
 const LegendWrapper = styled.div`
   position: absolute;
-  bottom: 10px;
-  right: 10px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 5;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 2px;
+  pointer-events: none;
+  user-select: none;
+
+  .hint-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #888;
+  }
+  svg {
+    display: block;
+  }
 `;
 const SelectionIndicator = styled.div`
   position: absolute;
@@ -77,7 +95,7 @@ const SelectionIndicator = styled.div`
   background: rgba(0, 114, 255, 0.1);
   color: #0056b3;
   padding: 5px 10px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 12px;
   z-index: 5;
   border: 1px solid rgba(0, 114, 255, 0.3);
@@ -104,7 +122,7 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
   const { fitView } = useReactFlow();
   const graphBuilderRef = useRef<GraphBuilder | null>(null);
   const [pathSelectionStart, setPathSelectionStart] = useState<string | null>(
-    null
+    null,
   );
   const [highlightedPath, setHighlightedPath] = useState<{
     nodes: string[];
@@ -119,7 +137,7 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
   const applyLayout = useCallback(
     (
       elements: { nodes: EvidenceNode[]; edges: EvidenceEdge[] },
-      fit = false
+      fit = false,
     ) => {
       setIsLoading(true);
       setTimeout(() => {
@@ -128,7 +146,7 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
             getLayoutedElements(
               elements.nodes as Node[],
               elements.edges as Edge[],
-              "LR"
+              "LR",
             );
           setNodes(layoutedNodes as RFNode[]);
           setEdges(layoutedEdges as RFEdge[]);
@@ -145,7 +163,7 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
         }
       }, 10);
     },
-    [setNodes, setEdges, fitView]
+    [setNodes, setEdges, fitView],
   );
 
   useEffect(() => {
@@ -163,7 +181,7 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
         edges: elements.edges
           .filter(
             (e) =>
-              targetPath.includes(e.source) && targetPath.includes(e.target)
+              targetPath.includes(e.source) && targetPath.includes(e.target),
           )
           .map((e) => e.id),
       });
@@ -195,14 +213,14 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
               nodes: path,
               edges: pathElements.edges
                 .filter(
-                  (e) => path.includes(e.source) && path.includes(e.target)
+                  (e) => path.includes(e.source) && path.includes(e.target),
                 )
                 .map((e) => e.id),
             });
             applyLayout(pathElements, false);
           } else {
             console.warn(
-              `No path found between ${pathSelectionStart} and ${node.id}`
+              `No path found between ${pathSelectionStart} and ${node.id}`,
             );
             clearHighlighting();
           }
@@ -230,22 +248,22 @@ const GraphRenderer: React.FC<GraphRendererProps> = ({
         event.stopPropagation();
       }, 10);
     },
-    [dataService, applyLayout, clearHighlighting, pathSelectionStart]
+    [dataService, applyLayout, clearHighlighting, pathSelectionStart],
   );
 
   const handleNodesChange: OnNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const relevant = changes.filter(
-        (c) => !isLoading || (c.type === "position" && c.dragging === true)
+        (c) => !isLoading || (c.type === "position" && c.dragging === true),
       );
       if (relevant.length) onNodesChangeInternal(relevant);
     },
-    [isLoading, onNodesChangeInternal]
+    [isLoading, onNodesChangeInternal],
   );
 
   const handleEdgesChange: OnEdgesChange = useCallback(
     (changes: EdgeChange[]) => onEdgesChangeInternal(changes),
-    [onEdgesChangeInternal]
+    [onEdgesChangeInternal],
   );
 
   const styledNodes = nodes.map((node) => {

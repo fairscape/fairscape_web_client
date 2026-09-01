@@ -26,7 +26,7 @@ const SearchOptionsContainer = styled.div`
 
 const SearchOption = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: ${({ theme }) => theme.spacing.xl};
   background-color: ${({ theme }) => theme.colors.surface};
   text-align: center;
@@ -62,7 +62,7 @@ const ActionButton = styled.button`
   color: white;
   border: none;
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;

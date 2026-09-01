@@ -69,12 +69,12 @@ export type TaskAccepted = {
   message?: string;
   task_id: string;
   status?: string;
-  status_endpoint: string; 
+  status_endpoint: string;
 };
 
 export type TaskStatus = {
   guid: string;
-  task_type: string; 
+  task_type: string;
   rocrate_id: string;
   status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | string;
   time_created?: string;
@@ -95,14 +95,14 @@ export function useAIReadyScoreApi() {
 
   return {
     getAIReadyScore: async (
-      ark: string
+      ark: string,
     ): Promise<AIReadyScore | TaskAccepted> => {
       const res = await http(
         `/rocrate/ai-ready-score/${encodeURIComponent(ark)}`,
         {
           method: "GET",
           headers: { Accept: "application/json" },
-        }
+        },
       );
       return res;
     },

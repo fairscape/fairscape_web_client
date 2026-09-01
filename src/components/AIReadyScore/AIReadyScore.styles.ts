@@ -3,20 +3,18 @@ import styled from "styled-components";
 export const Container = styled.div`
   display: flex;
   flex-direction: column;
-  height: 90vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  overflow: hidden;
+  align-items: center;
+  padding: 2rem;
+  min-height: 100vh;
+  background: #f7f9f9;
 `;
 
 export const Title = styled.h1`
   color: #2c3e50;
-  padding: 1rem 2rem;
-  margin: 0;
+  margin-bottom: 0.5rem;
   text-align: center;
   font-size: 2.5rem;
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 export const WheelContainer = styled.div`
@@ -83,7 +81,6 @@ export const CenterContent = styled.div`
   padding: 1rem;
   border-radius: 50%;
   background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 `;
 
 export const CenterTitle = styled.h2`
@@ -105,9 +102,8 @@ export const DetailPanel = styled.div`
   max-width: 800px;
   width: 100%;
   background: white;
-  border-radius: 12px;
+  border-radius: 2px;
   padding: 2rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 `;
 
 export const DetailTitle = styled.h3`
@@ -120,7 +116,7 @@ export const DetailTitle = styled.h3`
 export const DetailDescription = styled.p`
   color: #34495e;
   line-height: 1.6;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 `;
 
 export const MetadataGrid = styled.div`

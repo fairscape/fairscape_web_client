@@ -9,7 +9,7 @@ export const SectionHeader = styled.div`
 
 export const SectionTitle = styled.h2`
   font-size: 20px;
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
   margin-top: 0;
   margin-bottom: 0;
 `;
@@ -17,9 +17,8 @@ export const SectionTitle = styled.h2`
 export const UseCasesSection = styled.div`
   background-color: ${({ theme }) => theme.colors.background};
   padding: ${({ theme }) => theme.spacing.lg};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 `;
 
 export const UseCasesItem = styled.div`
@@ -34,4 +33,12 @@ export const UseCasesLabel = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
-export const UseCasesValue = styled.div``;
+export const UseCasesValue = styled.div`
+  padding: 12px 15px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: ${({ theme }) => theme.colors.text};
+  background-color: ${({ theme }) => theme.colors.background};
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  font-style: italic;
+`;

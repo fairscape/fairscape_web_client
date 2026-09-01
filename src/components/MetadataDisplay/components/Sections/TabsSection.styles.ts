@@ -10,11 +10,16 @@ export const TabsContainer = styled.div`
 export const Tab = styled.div<{ active: boolean }>`
   padding: 10px 15px;
   cursor: pointer;
-  border-bottom: 3px solid
+  border-bottom: 2px solid
     ${({ active, theme }) => (active ? theme.colors.primary : "transparent")};
-  font-weight: bold;
-  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 600;
+  color: ${({ active, theme }) => (active ? theme.colors.primary : theme.colors.textSecondary)};
   white-space: nowrap;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.primary};
+  }
 `;
 
 export const Badge = styled.span`

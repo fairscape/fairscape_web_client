@@ -17,7 +17,7 @@ export const generateTemporaryGuid = (type: string = "entity"): string => {
 
 // Helper to get a simple type string from @type
 export const getSimpleEntityType = (
-  typeInfo: string | string[] | undefined
+  typeInfo: string | string[] | undefined,
 ): string => {
   if (!typeInfo) return "Thing";
   const types = Array.isArray(typeInfo) ? typeInfo : [typeInfo];
@@ -33,7 +33,7 @@ export const getSimpleEntityType = (
 // Function to parse an uploaded RO-Crate JSON and extract relevant data
 export const parseUploadedCrate = (
   fileName: string,
-  jsonContent: any
+  jsonContent: any,
 ): UploadedCrateInfo | null => {
   if (!jsonContent || !Array.isArray(jsonContent["@graph"])) {
     console.warn(`Invalid RO-Crate structure in ${fileName}`);
@@ -42,18 +42,18 @@ export const parseUploadedCrate = (
 
   const graph = jsonContent["@graph"];
   const metadataDescriptor = graph.find(
-    (node: any) => node["@id"] === "ro-crate-metadata.json"
+    (node: any) => node["@id"] === "ro-crate-metadata.json",
   );
   const rootNode = graph.find(
     (node: any) =>
       node["@id"] === "./" || // Standard RO-Crate root
       node["@type"]?.includes("Dataset") ||
-      node["@type"]?.includes("https://w3id.org/EVI#ROCrate")
+      node["@type"]?.includes("https://w3id.org/EVI#ROCrate"),
   );
 
   if (!rootNode) {
     console.warn(
-      `Could not find the main root node (./, Dataset, or ROCrate type) in ${fileName}`
+      `Could not find the main root node (./, Dataset, or ROCrate type) in ${fileName}`,
     );
     // Attempt to use the first non-metadata descriptor node as a fallback? Or just skip?
     // Let's skip for now to avoid unexpected behavior.
@@ -100,12 +100,12 @@ export const mapJsonToFormData = (rootNode: any): InitialReleaseFormValues => {
     typeof rootNode.identifier === "string"
       ? rootNode.identifier
       : Array.isArray(rootNode.identifier)
-      ? rootNode.identifier.find(
-          (id: any) =>
-            typeof id === "string" &&
-            (id.startsWith("10.") || id.includes("doi.org"))
-        )
-      : undefined;
+        ? rootNode.identifier.find(
+            (id: any) =>
+              typeof id === "string" &&
+              (id.startsWith("10.") || id.includes("doi.org")),
+          )
+        : undefined;
   formData.release_date = rootNode.datePublished?.split("T")[0]; // Get YYYY-MM-DD
   formData.license_value =
     typeof rootNode.license === "object"
@@ -121,8 +121,8 @@ export const mapJsonToFormData = (rootNode: any): InitialReleaseFormValues => {
         .map((a: any) => (typeof a === "object" && a.name ? a.name : a))
         .join(", ")
     : typeof rootNode.author === "object" && rootNode.author.name
-    ? rootNode.author.name
-    : rootNode.author;
+      ? rootNode.author.name
+      : rootNode.author;
   formData.principal_investigator =
     typeof rootNode.principalInvestigator === "object" &&
     rootNode.principalInvestigator.name
@@ -150,14 +150,14 @@ export const mapJsonToFormData = (rootNode: any): InitialReleaseFormValues => {
           typeof p === "object" && p["@id"]
             ? p["@id"]
             : typeof p === "object" && p.name
-            ? p.name
-            : p
+              ? p.name
+              : p,
         )
         .join(", ")
     : typeof rootNode.associatedPublication === "object" &&
-      rootNode.associatedPublication["@id"]
-    ? rootNode.associatedPublication["@id"]
-    : rootNode.associatedPublication;
+        rootNode.associatedPublication["@id"]
+      ? rootNode.associatedPublication["@id"]
+      : rootNode.associatedPublication;
   formData.conditionsOfAccess = rootNode.conditionsOfAccess;
   formData.copyrightNotice =
     rootNode.copyrightNotice ||
@@ -217,7 +217,7 @@ export const mapJsonToFormData = (rootNode: any): InitialReleaseFormValues => {
 
 // Function to map parsed JSON-LD root node additional properties to AdditionalProperty[]
 export const mapJsonToAdditionalProperties = (
-  rootNode: any
+  rootNode: any,
 ): AdditionalProperty[] => {
   const additionalProps: AdditionalProperty[] = [];
   if (Array.isArray(rootNode?.additionalProperty)) {
@@ -301,7 +301,7 @@ export const mapJsonToCustomPropertiesJson = (rootNode: any): string => {
 export const generateReleaseCrateJson = (
   formData: ReleaseFormData,
   additionalProperties: AdditionalProperty[],
-  hasPartEntities: CrateEntity[]
+  hasPartEntities: CrateEntity[],
 ): any => {
   // Start with defaults from form data
   const finalData = { ...formData };
@@ -460,7 +460,7 @@ export const generateReleaseCrateJson = (
 
   // Clean up undefined values from the root node
   Object.keys(releaseRootNode).forEach(
-    (key) => releaseRootNode[key] === undefined && delete releaseRootNode[key]
+    (key) => releaseRootNode[key] === undefined && delete releaseRootNode[key],
   );
 
   // Construct the final @graph - root node + all hasPart entities

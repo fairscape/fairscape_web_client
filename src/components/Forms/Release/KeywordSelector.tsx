@@ -209,8 +209,8 @@ const KeywordContainer = styled.div`
   margin-bottom: 10px;
   min-height: 40px;
   padding: 8px;
-  background: #f8f9fa;
-  border-radius: 4px;
+  background: #f7f9f9;
+  border-radius: 2px;
   border: 1px solid #e0e0e0;
 `;
 
@@ -221,7 +221,7 @@ const Chip = styled.div`
   background: #3e7aa8;
   color: white;
   padding: 6px 10px;
-  border-radius: 16px;
+  border-radius: 2px;
   font-size: 13px;
   font-weight: 500;
 `;
@@ -257,15 +257,14 @@ const InputWrapper = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
+  border: 1px solid #c3ced2;
+  border-radius: 2px;
   font-size: 14px;
   transition: border-color 0.15s ease;
 
   &:focus {
     outline: none;
     border-color: #3e7aa8;
-    box-shadow: 0 0 0 2px rgba(62, 122, 168, 0.1);
   }
 `;
 
@@ -279,12 +278,11 @@ const HelpText = styled.div`
 const Dropdown = styled.div`
   position: fixed;
   background: white;
-  border: 1px solid #ced4da;
+  border: 1px solid #c3ced2;
   border-top: none;
   border-radius: 0 0 4px 4px;
   max-height: 300px;
   overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   z-index: 10000;
   margin-top: -1px;
 `;
@@ -292,14 +290,13 @@ const Dropdown = styled.div`
 const DropdownItem = styled.div<{ $preferred: boolean }>`
   padding: 12px;
   cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f7f9f9;
   transition: background 0.15s;
-  background: ${(props) => (props.$preferred ? "#f0f8ff" : "white")};
-  border-left: ${(props) =>
-    props.$preferred ? "3px solid #3e7aa8" : "3px solid transparent"};
+  background: ${(r) => (r.$preferred ? "#f0f8ff" : "white")};
+  border-left: ${(r) => (r.$preferred ? "3px solid #3e7aa8" : "3px solid transparent")};
 
   &:hover {
-    background: ${(props) => (props.$preferred ? "#e6f3ff" : "#f8f9fa")};
+    background: ${(r) => (r.$preferred ? "#e6f3ff" : "#F7F9F9")};
   }
 
   &:last-child {
@@ -322,14 +319,14 @@ const PreferredBadge = styled.span`
   color: #3e7aa8;
   background: #d4e8f5;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: 2px;
   text-transform: uppercase;
 `;
 
 const TermSource = styled.div<{ $preferred: boolean }>`
   font-size: 11px;
-  color: ${(props) => (props.$preferred ? "#2d5a7b" : "#3e7aa8")};
-  font-weight: ${(props) => (props.$preferred ? "700" : "600")};
+  color: ${(r) => (r.$preferred ? "#2d5a7b" : "#3e7aa8")};
+  font-weight: ${(r) => (r.$preferred ? "700" : "600")};
   text-transform: uppercase;
   margin-bottom: 4px;
 `;

@@ -1,4 +1,8 @@
-import type { DatasetInfo, DatasetGroup, JoinKeyInfo } from "../CodeSnippetsView";
+import type {
+  DatasetInfo,
+  DatasetGroup,
+  JoinKeyInfo,
+} from "../CodeSnippetsView";
 
 function varName(name: string): string {
   return name
@@ -10,7 +14,10 @@ function varName(name: string): string {
 }
 
 function isParquet(fmt: string, url: string): boolean {
-  return (fmt || "").toLowerCase().includes("parquet") || (url || "").toLowerCase().endsWith(".parquet");
+  return (
+    (fmt || "").toLowerCase().includes("parquet") ||
+    (url || "").toLowerCase().endsWith(".parquet")
+  );
 }
 
 function readerFn(fmt: string, url: string): string {
@@ -30,15 +37,19 @@ export function generatePythonSingle(ds: DatasetInfo): string {
 export function generatePythonMulti(
   groups: DatasetGroup[],
   ungrouped: DatasetInfo[],
-  joinKeys: JoinKeyInfo[]
+  joinKeys: JoinKeyInfo[],
 ): string {
   let code = `import pandas as pd\n\n`;
 
   // Emit each group: if 1 dataset, load directly; if many, use a loop with a list of URLs
-  const loadedVars: { varName: string; schemaName: string; isList: boolean }[] = [];
+  const loadedVars: { varName: string; schemaName: string; isList: boolean }[] =
+    [];
 
   for (const group of groups) {
-    const reader = readerFn(group.fileFormat || "", group.datasets[0]?.contentUrl || "");
+    const reader = readerFn(
+      group.fileFormat || "",
+      group.datasets[0]?.contentUrl || "",
+    );
 
     if (group.datasets.length === 1) {
       // Single dataset in this schema group — load directly
@@ -46,7 +57,11 @@ export function generatePythonMulti(
       const vn = varName(ds.name) || "df";
       code += `# ${group.schemaName}\n`;
       code += `${vn} = ${reader}("${ds.contentUrl}")\n\n`;
-      loadedVars.push({ varName: vn, schemaName: group.schemaName, isList: false });
+      loadedVars.push({
+        varName: vn,
+        schemaName: group.schemaName,
+        isList: false,
+      });
     } else {
       // Multiple datasets sharing same schema — load as list via loop
       const listVn = varName(group.schemaName) + "_list";
@@ -54,9 +69,10 @@ export function generatePythonMulti(
       code += `# ${group.schemaName} (${group.datasets.length} files)\n`;
       code += `${listVn}_urls = [\n`;
       // Show first 3 and last 1 to give the idea, then note the rest
-      const show = group.datasets.length <= 6 ? group.datasets : [
-        ...group.datasets.slice(0, 3),
-      ];
+      const show =
+        group.datasets.length <= 6
+          ? group.datasets
+          : [...group.datasets.slice(0, 3)];
       const remaining = group.datasets.length - show.length;
       for (const ds of show) {
         code += `    "${ds.contentUrl}",  # ${ds.name}\n`;
@@ -68,7 +84,11 @@ export function generatePythonMulti(
       code += `${listVn} = [${reader}(url) for url in ${listVn}_urls]\n`;
       code += `${dfVn} = pd.concat(${listVn}, ignore_index=True)\n`;
       code += `print(f"${group.schemaName}: {${dfVn}.shape[0]} rows from {len(${listVn})} files")\n\n`;
-      loadedVars.push({ varName: dfVn, schemaName: group.schemaName, isList: true });
+      loadedVars.push({
+        varName: dfVn,
+        schemaName: group.schemaName,
+        isList: true,
+      });
     }
   }
 
@@ -88,9 +108,10 @@ export function generatePythonMulti(
     code += `merged = ${loadedVars[0].varName}\n`;
 
     for (let i = 1; i < loadedVars.length; i++) {
-      const onClause = topJoinCols.length === 1
-        ? `"${topJoinCols[0]}"`
-        : `[${topJoinCols.map((c) => `"${c}"`).join(", ")}]`;
+      const onClause =
+        topJoinCols.length === 1
+          ? `"${topJoinCols[0]}"`
+          : `[${topJoinCols.map((c) => `"${c}"`).join(", ")}]`;
       code += `merged = merged.merge(${loadedVars[i].varName}, on=${onClause}, how="outer", suffixes=("", "_${varName(loadedVars[i].schemaName)}"))\n`;
     }
 

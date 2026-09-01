@@ -19,7 +19,6 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 20px;
   background-color: white;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 `;
 
 const Header = styled.header`
@@ -28,13 +27,15 @@ const Header = styled.header`
   padding-bottom: 15px;
   background-color: ${({ theme }) => theme.colors.background};
   padding: 20px;
-  border-radius: 5px;
+  border-radius: 2px;
 `;
 
 const PageTitle = styled.h1`
   font-size: 24px;
   margin-bottom: 5px;
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.ink};
+  font-weight: 650;
+  letter-spacing: -0.015em;
 `;
 
 const ArkIdDisplay = styled.div`
@@ -58,7 +59,7 @@ const Footer = styled.footer`
   padding: 20px;
   background-color: ${({ theme }) => theme.colors.background};
   border-top: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 5px;
+  border-radius: 2px;
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textSecondary};
   text-align: center;
@@ -74,8 +75,7 @@ const Footer = styled.footer`
 `;
 
 // API URL from environment variable
-const API_URL =
-  window.API_URL;
+const API_URL = window.API_URL;
 
 // --- Support Data Extraction Logic ---
 interface TraverseParams {
@@ -168,7 +168,7 @@ const traverseAndCollect = ({
 };
 
 const extractSupportData = (
-  graphData: RawGraphData | null
+  graphData: RawGraphData | null,
 ): SupportData | null => {
   if (
     !graphData ||
@@ -191,7 +191,7 @@ const extractSupportData = (
   const graphContent = graphData["@graph"];
   if (Array.isArray(graphContent)) {
     graphContent.forEach((item) =>
-      traverseAndCollect({ node: item, results, seenIds })
+      traverseAndCollect({ node: item, results, seenIds }),
     );
   } else if (typeof graphContent === "object" && graphContent !== null) {
     traverseAndCollect({ node: graphContent, results, seenIds });

@@ -32,7 +32,9 @@ function makeMarkdownCell(lines: string[]): NotebookCell {
 function makeCodeCell(code: string): NotebookCell {
   return {
     cell_type: "code",
-    source: code.split("\n").map((l, i, arr) => (i < arr.length - 1 ? l + "\n" : l)),
+    source: code
+      .split("\n")
+      .map((l, i, arr) => (i < arr.length - 1 ? l + "\n" : l)),
     metadata: {},
     outputs: [],
     execution_count: null,
@@ -63,7 +65,7 @@ function buildNotebook(cells: NotebookCell[]): NotebookJSON {
  */
 export function generateSchemaNotebook(
   title: string,
-  pythonCode: string
+  pythonCode: string,
 ): NotebookJSON {
   return buildNotebook([
     makeMarkdownCell([
@@ -77,20 +79,24 @@ export function generateSchemaNotebook(
     makeMarkdownCell(["## Inspect Column Types"]),
     makeCodeCell(
       "# Show dtypes for each loaded DataFrame\nimport pandas as pd\n\n" +
-      "for name, obj in list(locals().items()):\n" +
-      "    if isinstance(obj, pd.DataFrame):\n" +
-      '        print(f"\\n--- {name} ---")\n' +
-      "        print(f\"Shape: {obj.shape}\")\n" +
-      "        print(obj.dtypes)\n"
+        "for name, obj in list(locals().items()):\n" +
+        "    if isinstance(obj, pd.DataFrame):\n" +
+        '        print(f"\\n--- {name} ---")\n' +
+        '        print(f"Shape: {obj.shape}")\n' +
+        "        print(obj.dtypes)\n",
     ),
     makeMarkdownCell(["## Preview Data"]),
     makeCodeCell(
       "# Show first few rows of each DataFrame\nfor name, obj in list(locals().items()):\n" +
-      "    if isinstance(obj, pd.DataFrame):\n" +
-      '        print(f"\\n--- {name} (first 5 rows) ---")\n' +
-      "        display(obj.head())\n"
+        "    if isinstance(obj, pd.DataFrame):\n" +
+        '        print(f"\\n--- {name} (first 5 rows) ---")\n' +
+        "        display(obj.head())\n",
     ),
-    makeMarkdownCell(["## Your Analysis", "", "Add cells below to explore the data further."]),
+    makeMarkdownCell([
+      "## Your Analysis",
+      "",
+      "Add cells below to explore the data further.",
+    ]),
     makeCodeCell(""),
   ]);
 }
@@ -102,7 +108,7 @@ export function generateSchemaNotebook(
 export function generateCodeNotebook(
   title: string,
   pythonCode: string,
-  includeMetadata?: boolean
+  includeMetadata?: boolean,
 ): NotebookJSON {
   const cells: NotebookCell[] = [
     makeMarkdownCell([
@@ -119,25 +125,22 @@ export function generateCodeNotebook(
       makeMarkdownCell([
         "## RO-Crate Metadata",
         "",
-        "The `ro-crate-metadata.json` file is available in the file browser. "
-        + "Run the cell below to load it.",
+        "The `ro-crate-metadata.json` file is available in the file browser. " +
+          "Run the cell below to load it.",
       ]),
       makeCodeCell(
-        "import json\n\n"
-        + 'with open("ro-crate-metadata.json") as f:\n'
-        + "    rocrate_metadata = json.load(f)\n\n"
-        + 'print(f"RO-Crate: {rocrate_metadata.get(\'name\', \'Unknown\')}")\n'
-        + 'print(f"Entities in @graph: {len(rocrate_metadata.get(\'@graph\', []))}")\n'
-        + "for entry in rocrate_metadata.get('@graph', []):\n"
-        + "    print(f\"  - {entry.get('@type', '?'):30s} {entry.get('name', entry.get('@id', ''))}\")"
+        "import json\n\n" +
+          'with open("ro-crate-metadata.json") as f:\n' +
+          "    rocrate_metadata = json.load(f)\n\n" +
+          "print(f\"RO-Crate: {rocrate_metadata.get('name', 'Unknown')}\")\n" +
+          "print(f\"Entities in @graph: {len(rocrate_metadata.get('@graph', []))}\")\n" +
+          "for entry in rocrate_metadata.get('@graph', []):\n" +
+          "    print(f\"  - {entry.get('@type', '?'):30s} {entry.get('name', entry.get('@id', ''))}\")",
       ),
     );
   }
 
-  cells.push(
-    makeMarkdownCell(["## Explore"]),
-    makeCodeCell(""),
-  );
+  cells.push(makeMarkdownCell(["## Explore"]), makeCodeCell(""));
 
   return buildNotebook(cells);
 }
@@ -151,7 +154,7 @@ function writeToJupyterLiteFS(
   dbName: string,
   fname: string,
   content: string,
-  mimetype: string
+  mimetype: string,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(dbName);
@@ -205,8 +208,14 @@ function writeToJupyterLiteFS(
       const tx = db.transaction("files", "readwrite");
       const store = tx.objectStore("files");
       const put = store.put(model, fname);
-      put.onsuccess = () => { db.close(); resolve(); };
-      put.onerror = () => { db.close(); reject(put.error); };
+      put.onsuccess = () => {
+        db.close();
+        resolve();
+      };
+      put.onerror = () => {
+        db.close();
+        reject(put.error);
+      };
     }
   });
 }
@@ -219,14 +228,14 @@ function writeToJupyterLiteFS(
 export async function openInJupyterLite(
   notebook: NotebookJSON,
   filename?: string,
-  metadata?: any
+  metadata?: any,
 ): Promise<void> {
   const fname = filename || "explore.ipynb";
 
   // The notebook itself is small — localStorage is fine for it.
   localStorage.setItem(
     "fairscape:notebook",
-    JSON.stringify({ filename: fname, content: notebook })
+    JSON.stringify({ filename: fname, content: notebook }),
   );
 
   // Write large files directly to JupyterLite's IndexedDB.
@@ -239,10 +248,13 @@ export async function openInJupyterLite(
         dbName,
         "ro-crate-metadata.json",
         JSON.stringify(metadata, null, 2),
-        "application/json"
+        "application/json",
       );
     } catch (err) {
-      console.warn("[openInJupyterLite] Failed to write metadata to IndexedDB:", err);
+      console.warn(
+        "[openInJupyterLite] Failed to write metadata to IndexedDB:",
+        err,
+      );
     }
   }
 

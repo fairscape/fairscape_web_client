@@ -9,7 +9,7 @@ import {
 
 interface UnifiedStartingPageProps {
   onMethodSelect: (
-    method: "manual" | "upload-existing" | "direct" | "interactive"
+    method: "manual" | "upload-existing" | "direct" | "interactive",
   ) => void;
   onUploadExisting: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onCrateUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -57,12 +57,12 @@ const UnifiedStartingPage: React.FC<UnifiedStartingPageProps> = ({
 
   const handleDeleteCrate = async (
     e: React.MouseEvent | React.KeyboardEvent,
-    crate: SavedCrate
+    crate: SavedCrate,
   ) => {
     e.stopPropagation();
     e.preventDefault();
     const confirmDelete = window.confirm(
-      `Delete saved crate "${crate.name}"? This cannot be undone.`
+      `Delete saved crate "${crate.name}"? This cannot be undone.`,
     );
     if (!confirmDelete) return;
 
@@ -99,7 +99,7 @@ const UnifiedStartingPage: React.FC<UnifiedStartingPageProps> = ({
     ];
 
     return items.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
   }, [savedCrates, issues]);
 
@@ -264,7 +264,7 @@ const UnifiedStartingPage: React.FC<UnifiedStartingPageProps> = ({
                       </CardStatus>
                     </CardInfo>
                   </Card>
-                )
+                ),
             )}
           </CardGrid>
         )}
@@ -303,10 +303,9 @@ const TopGrid = styled.div`
 
 const Section = styled.section`
   background: #fff;
-  border-radius: 12px;
+  border-radius: 2px;
   padding: 24px;
   border: 1px solid #ececec;
-  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
 `;
 
 const SectionHeaderRow = styled.div`
@@ -349,15 +348,22 @@ const TwoByTwoGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const BaseButton = styled.button`
   padding: 12px 18px;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 0.975rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease;
   border: 0;
   &:active {
     transform: translateY(0);
@@ -367,11 +373,8 @@ const BaseButton = styled.button`
 const PrimaryButton = styled(BaseButton)`
   background-color: #3e7aa8;
   color: #fff;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
   &:hover {
     background-color: #2f5f82;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(62, 122, 168, 0.22);
   }
 `;
 
@@ -381,8 +384,6 @@ const SecondaryButton = styled(BaseButton)`
   border: 2px solid #3e7aa8;
   &:hover {
     background-color: #f4f8fb;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(62, 122, 168, 0.12);
   }
 `;
 
@@ -400,17 +401,17 @@ const CardGrid = styled.div`
 const Card = styled.div`
   background: #fff;
   border: 1px solid #e7e7e9;
-  border-radius: 12px;
+  border-radius: 2px;
   padding: 18px;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease,
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
     border-color 0.12s ease;
   outline: none;
 
   &:hover,
   &:focus {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 22px rgba(16, 24, 40, 0.12);
     border-color: #3e7aa8;
   }
 `;
@@ -429,7 +430,7 @@ const CardType = styled.span`
 
 const CardTitle = styled.h3`
   font-size: 1rem;
-  color: #1f2937;
+  color: #18242a;
   margin: 0;
   flex: 1;
   line-height: 1.35;
@@ -442,9 +443,9 @@ const CardTitle = styled.h3`
 const DeleteButton = styled.button`
   margin-left: auto;
   background: transparent;
-  border: 1px solid #e5e7eb;
-  color: #6b7280;
-  border-radius: 8px;
+  border: 1px solid #e2e8ea;
+  color: #51626b;
+  border-radius: 2px;
   width: 28px;
   height: 28px;
   line-height: 1;
@@ -453,7 +454,10 @@ const DeleteButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
 
   &:hover,
   &:focus {
@@ -480,30 +484,15 @@ const CardStatus = styled.span<{ status: string }>`
   padding: 5px 10px;
   border-radius: 999px;
   font-weight: 600;
-  background-color: ${(p) =>
-    /complete|closed/i.test(p.status)
-      ? "#e8f5ee"
-      : /open/i.test(p.status)
-      ? "#eef2ff"
-      : "#fff6e6"};
-  color: ${(p) =>
-    /complete|closed/i.test(p.status)
-      ? "#0a7a42"
-      : /open/i.test(p.status)
-      ? "#3949ab"
-      : "#b45309"};
+  background-color: ${(e) => (/complete|closed/i.test(e.status) ? "#e8f5ee" : /open/i.test(e.status) ? "#eef2ff" : "#fff6e6")};
+  color: ${(e) => (/complete|closed/i.test(e.status) ? "#0a7a42" : /open/i.test(e.status) ? "#3949ab" : "#b45309")};
   border: 1px solid
-    ${(p) =>
-      /complete|closed/i.test(p.status)
-        ? "#bfe6d1"
-        : /open/i.test(p.status)
-        ? "#c7d2fe"
-        : "#fde7c3"};
+    ${(e) => (/complete|closed/i.test(e.status) ? "#bfe6d1" : /open/i.test(e.status) ? "#c7d2fe" : "#fde7c3")};
 `;
 
 const SkeletonLine = styled.div`
   height: 12px;
-  border-radius: 6px;
+  border-radius: 2px;
   background: linear-gradient(90deg, #f2f4f7 25%, #eceff3 37%, #f2f4f7 63%);
   background-size: 400% 100%;
   animation: shimmer 1.2s ease-in-out infinite;
@@ -525,7 +514,7 @@ const SkeletonPill = styled(SkeletonLine)`
 
 const EmptyState = styled.div`
   border: 1px dashed #d5d9df;
-  border-radius: 12px;
+  border-radius: 2px;
   padding: 28px;
   text-align: center;
   background: #fafbfc;
@@ -539,7 +528,7 @@ const Emoji = styled.div`
 
 const EmptyTitle = styled.div`
   font-weight: 700;
-  color: #1f2937;
+  color: #18242a;
   margin-bottom: 4px;
 `;
 

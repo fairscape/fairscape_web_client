@@ -3,8 +3,7 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import StatusTracker from "./StatusTracker";
 
-const API_URL =
-  window.API_URL;
+const API_URL = window.API_URL;
 
 interface UploadError {
   status: string;
@@ -16,8 +15,7 @@ const UploadContainer = styled.div`
   margin: 0 auto;
   padding: ${({ theme }) => theme.spacing.xl};
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: ${({ theme }) => theme.borderRadius};
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
@@ -37,7 +35,7 @@ const FileInput = styled.input`
   width: 100%;
   padding: ${({ theme }) => theme.spacing.md};
   border: 1px dashed ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   background-color: ${({ theme }) => theme.colors.background};
   cursor: pointer;
 
@@ -64,14 +62,15 @@ const UploadButton = styled.button`
   background-color: ${({ theme }) => theme.colors.primary};
   color: white;
   border: none;
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
 
   &:hover:not(:disabled) {
     background-color: ${({ theme }) => theme.colors.primaryLight};
-    transform: translateY(-2px);
   }
 
   &:disabled {
@@ -85,7 +84,7 @@ const SuccessMessage = styled.div`
   margin-top: ${({ theme }) => theme.spacing.md};
   padding: ${({ theme }) => theme.spacing.md};
   background-color: ${({ theme }) => theme.colors.successLight};
-  border-radius: ${({ theme }) => theme.borderRadius};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-weight: 600;
   text-align: center;
 `;

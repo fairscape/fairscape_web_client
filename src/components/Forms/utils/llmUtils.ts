@@ -31,7 +31,7 @@ export const getEmptyFields = (formData: any, config: any): string[] => {
 export const processLLMResponse = (
   llmResponse: any,
   formData: any,
-  config: any
+  config: any,
 ): {
   updatedFormData: any;
   reviewStates: ReviewStates;
@@ -67,7 +67,7 @@ export const processLLMResponse = (
 
 export const mergeLLMSuggestionsForEdit = (
   llmSuggestions: any,
-  existingFormData: any
+  existingFormData: any,
 ): any => {
   const mergedData = { ...existingFormData };
 
@@ -93,7 +93,7 @@ export const findFieldInConfig = (fieldName: string, config: any): any => {
 
 export const validateLLMSuggestions = (
   suggestions: any,
-  config: any
+  config: any,
 ): boolean => {
   if (!suggestions || typeof suggestions !== "object") return false;
 
@@ -117,7 +117,7 @@ export const validateLLMSuggestions = (
 
 export const mergeWithReviewStatus = (
   currentReviewStates: ReviewStates,
-  newReviewStates: ReviewStates
+  newReviewStates: ReviewStates,
 ): ReviewStates => {
   return {
     ...currentReviewStates,
@@ -126,11 +126,11 @@ export const mergeWithReviewStatus = (
 };
 
 export const getReviewProgress = (
-  reviewStates: ReviewStates
+  reviewStates: ReviewStates,
 ): { reviewed: number; total: number } => {
   const total = Object.keys(reviewStates).length;
   const reviewed = Object.values(reviewStates).filter(
-    (state) => state.status !== ReviewStatus.Pending
+    (state) => state.status !== ReviewStatus.Pending,
   ).length;
 
   return { reviewed, total };
@@ -138,13 +138,13 @@ export const getReviewProgress = (
 
 export const hasUnreviewedFields = (reviewStates: ReviewStates): boolean => {
   return Object.values(reviewStates).some(
-    (state) => state.status === ReviewStatus.Pending
+    (state) => state.status === ReviewStatus.Pending,
   );
 };
 
 export const filterFieldsByVisibility = (
   config: any,
-  visibility: "minimal" | "ai-ready" | "all"
+  visibility: "minimal" | "ai-ready" | "all",
 ): any => {
   if (visibility === "all" || !config.sections) {
     return config;
@@ -157,11 +157,11 @@ export const filterFieldsByVisibility = (
 
       if (visibility === "minimal") {
         filteredSection.fields = section.fields?.filter(
-          (field: any) => field.required
+          (field: any) => field.required,
         );
       } else if (visibility === "ai-ready") {
         filteredSection.fields = section.fields?.filter(
-          (field: any) => field.aiReady
+          (field: any) => field.aiReady,
         );
       }
 
@@ -175,7 +175,7 @@ export const filterFieldsByVisibility = (
 export const initializeReviewStates = (
   llmPopulatedFields: Set<string>,
   formData: any,
-  config: any
+  config: any,
 ): ReviewStates => {
   const reviewStates: ReviewStates = {};
 

@@ -21,7 +21,7 @@ interface ROCrateFormProps {
 const ROCrateForm: React.FC<ROCrateFormProps> = ({ metadata, onChange }) => {
   const handleInputChange = (
     field: keyof ROCrateMetadata,
-    value: string | string[]
+    value: string | string[],
   ) => {
     onChange({
       ...metadata,

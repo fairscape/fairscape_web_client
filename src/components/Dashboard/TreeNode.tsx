@@ -3,21 +3,22 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 
 const NodeContainer = styled.div<{ level: number }>`
-  padding-left: ${({ level }) => level * 16}px;
+  padding-left: ${({ level }) => (level > 0 ? 16 : 0)}px;
+  border-left: ${({ level, theme }) => (level > 0 ? `1px solid ${theme.colors.border}` : "none")};
+  margin-left: ${({ level }) => (level > 0 ? 7 : 0)}px;
 `;
 
 const NodeHeader = styled.div<{ clickable?: boolean }>`
   display: flex;
   align-items: center;
-  padding: 2px 4px;
+  padding: 3px 4px;
   cursor: ${({ clickable }) => (clickable ? "pointer" : "default")};
   transition: background-color 0.1s;
   user-select: none;
-  height: 22px;
+  height: 24px;
 
   &:hover {
-    background-color: ${({ theme, clickable }) =>
-      clickable ? "rgba(90, 93, 94, 0.31)" : "transparent"};
+    background-color: ${({ theme, clickable }) => (clickable ? theme.colors.primaryTint : "transparent")};
   }
 `;
 
@@ -28,8 +29,9 @@ const ExpandIcon = styled.span<{ visible: boolean }>`
   width: 16px;
   height: 16px;
   margin-right: 2px;
-  font-size: 10px;
-  color: ${({ theme }) => theme.colors.text};
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 9px;
+  color: ${({ theme }) => theme.colors.ink3};
   visibility: ${({ visible }) => (visible ? "visible" : "hidden")};
 `;
 
@@ -37,10 +39,7 @@ const FolderIcon = styled.span<{ isOpen: boolean; isFolder: boolean }>`
   margin-right: 6px;
   font-size: 16px;
   line-height: 1;
-  ${({ isFolder, isOpen }) => {
-    if (!isFolder) return "";
-    return isOpen ? "" : "filter: brightness(0.9);";
-  }}
+  ${({ isFolder, isOpen }) => (isFolder ? (isOpen ? "" : "filter: brightness(0.9);") : "")}
 `;
 
 const NodeContent = styled.div`
@@ -57,17 +56,19 @@ const NodeLabelRow = styled.div`
 `;
 
 const NodeLabel = styled.span`
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.ink};
   font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
 const NodeLink = styled(Link)`
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.ink};
   text-decoration: none;
   font-size: 13px;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -78,37 +79,37 @@ const NodeLink = styled(Link)`
 `;
 
 const Description = styled.div`
-  color: ${({ theme }) => theme.colors.textSecondary || "#858585"};
+  color: ${({ theme }) => theme.colors.ink3};
   font-size: 12px;
   margin-top: 2px;
   margin-left: 22px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  opacity: 0.8;
 `;
 
 const Badge = styled.span`
-  color: ${({ theme }) => theme.colors.textSecondary || "#858585"};
+  font-family: ${({ theme }) => theme.fonts.mono};
+  color: ${({ theme }) => theme.colors.ink3};
   font-size: 11px;
   margin-left: 8px;
-  opacity: 0.7;
 `;
 
 const LoadMoreButton = styled.button<{ level: number }>`
   background: none;
   border: none;
+  font-family: ${({ theme }) => theme.fonts.mono};
   color: ${({ theme }) => theme.colors.primary};
   cursor: pointer;
   padding: 2px 4px;
   padding-left: ${({ level }) => level * 16 + 22}px;
-  font-size: 12px;
+  font-size: 11.5px;
   text-align: left;
-  height: 22px;
+  height: 24px;
   width: 100%;
 
   &:hover {
-    background-color: rgba(90, 93, 94, 0.31);
+    background-color: ${({ theme }) => theme.colors.primaryTint};
   }
 
   &:disabled {
@@ -117,7 +118,11 @@ const LoadMoreButton = styled.button<{ level: number }>`
   }
 `;
 
-const ChildrenContainer = styled.div``;
+const ChildrenContainer = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: ${({ theme }) => theme.spacing.xl} ${({ theme }) => theme.spacing.lg};
+`;
 
 export interface TreeNodeProps {
   label: string;
@@ -181,7 +186,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     return "📄";
   };
 
-  const isFolder = nodeType === "folder" || nodeType === "category" || nodeType === "rocrate";
+  const isFolder =
+    nodeType === "folder" || nodeType === "category" || nodeType === "rocrate";
 
   return (
     <>

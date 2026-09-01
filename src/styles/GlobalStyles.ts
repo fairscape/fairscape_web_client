@@ -37,6 +37,10 @@ export const GlobalStyle = createGlobalStyle<{ theme: ThemeType }>`
     max-width: 1280px; // Max width for content
     margin: 0 auto;
     padding: ${({ theme }) => theme.spacing.lg};
+
+    @media (max-width: 768px) {
+      padding: ${({ theme }) => theme.spacing.md};
+    }
   }
 
   a {
@@ -45,19 +49,21 @@ export const GlobalStyle = createGlobalStyle<{ theme: ThemeType }>`
     transition: color 0.2s ease-in-out;
 
     &:hover {
-      color: ${({ theme }) => theme.colors.primaryLight};
+      color: ${({ theme }) => theme.colors.primaryDark};
       text-decoration: underline;
     }
   }
 
   h1, h2, h3, h4, h5, h6 {
-    color: ${({ theme }) => theme.colors.primary};
+    color: ${({ theme }) => theme.colors.ink};
+    font-weight: 650;
+    letter-spacing: -0.02em;
     margin-bottom: ${({ theme }) => theme.spacing.md};
     line-height: 1.3;
   }
 
-  h1 { font-size: 2.2rem; }
-  h2 { font-size: 1.8rem; }
+  h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.03em; }
+  h2 { font-size: 1.8rem; font-weight: 700; }
   h3 { font-size: 1.5rem; }
   h4 { font-size: 1.2rem; }
 
@@ -65,11 +71,15 @@ export const GlobalStyle = createGlobalStyle<{ theme: ThemeType }>`
     margin-bottom: ${({ theme }) => theme.spacing.md};
   }
 
+  code, pre, kbd, samp {
+    font-family: ${({ theme }) => theme.fonts.mono};
+  }
+
   button {
     cursor: pointer;
     padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) =>
-  theme.spacing.md};
-    border-radius: ${({ theme }) => theme.borderRadius};
+      theme.spacing.md};
+    border-radius: ${({ theme }) => theme.borderRadius.md};
     border: 1px solid transparent;
     font-family: inherit;
     font-size: 1rem;
@@ -86,17 +96,16 @@ export const GlobalStyle = createGlobalStyle<{ theme: ThemeType }>`
     background-color: ${({ theme }) => theme.colors.primary};
     color: white;
     &:hover:not(:disabled) {
-      background-color: ${({ theme }) => theme.colors.primaryLight};
+      background-color: ${({ theme }) => theme.colors.primaryDark};
     }
   }
 
    button.secondary {
     background-color: ${({ theme }) => theme.colors.surface};
     color: ${({ theme }) => theme.colors.primary};
-    border: 1px solid ${({ theme }) => theme.colors.primary};
+    border: 1px solid ${({ theme }) => theme.colors.borderStrong};
     &:hover:not(:disabled) {
-      background-color: ${({ theme }) =>
-        theme.colors.primary}1A; // Slight primary background
+      background-color: ${({ theme }) => theme.colors.primaryTint};
     }
   }
 
@@ -105,7 +114,7 @@ export const GlobalStyle = createGlobalStyle<{ theme: ThemeType }>`
     width: 100%;
     height: 600px;
     border: 1px solid ${({ theme }) => theme.colors.border};
-    border-radius: ${({ theme }) => theme.borderRadius};
+    border-radius: ${({ theme }) => theme.borderRadius.md};
     background-color: ${({ theme }) => theme.colors.surface};
   }
 

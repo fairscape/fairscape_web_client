@@ -20,7 +20,8 @@ function extractSchemasFromGraph(metadata: any): SchemaInfo[] {
     .filter((entry: any) => {
       const type = entry["@type"];
       if (typeof type === "string") return type === "EVI:Schema";
-      if (Array.isArray(type)) return type.some((t: string) => t.includes("Schema"));
+      if (Array.isArray(type))
+        return type.some((t: string) => t.includes("Schema"));
       return false;
     })
     .map((entry: any) => ({
@@ -176,9 +177,7 @@ const SchemaExplorerView: React.FC<SchemaExplorerViewProps> = ({
     }
     return (
       <ExplorerContainer>
-        <EmptyState>
-          No schema is linked to this dataset.
-        </EmptyState>
+        <EmptyState>No schema is linked to this dataset.</EmptyState>
       </ExplorerContainer>
     );
   }

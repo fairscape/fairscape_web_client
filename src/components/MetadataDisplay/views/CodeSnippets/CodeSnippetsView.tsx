@@ -1,7 +1,10 @@
 import React, { useMemo, useState } from "react";
 import styled from "styled-components";
 import SnippetBlock from "./SnippetBlock";
-import { generatePythonSingle, generatePythonMulti } from "./generators/pythonGenerator";
+import {
+  generatePythonSingle,
+  generatePythonMulti,
+} from "./generators/pythonGenerator";
 import { generateRSingle, generateRMulti } from "./generators/rGenerator";
 import { generateCLISingle, generateCLIMulti } from "./generators/cliGenerator";
 import { generateCodeNotebook, openInJupyterLite } from "./notebookGenerator";
@@ -14,7 +17,7 @@ const Container = styled.div`
 const LangBar = styled.div`
   display: inline-flex;
   background-color: #f0f2f5;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 4px;
   margin-bottom: 20px;
 `;
@@ -22,22 +25,22 @@ const LangBar = styled.div`
 const LangButton = styled.button<{ $active?: boolean }>`
   padding: 6px 16px;
   background-color: ${({ $active }) => ($active ? "white" : "transparent")};
-  color: ${({ $active }) => ($active ? "#005f73" : "#6c757d")};
+  color: ${({ $active }) => ($active ? "#005f73" : "#51626B")};
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${({ $active }) => ($active ? "white" : "#e9ecef")};
+    background-color: ${({ $active }) => ($active ? "white" : "#EBF2F4")};
     color: #005f73;
   }
 `;
 
 const Description = styled.p`
-  color: #6c757d;
+  color: #51626b;
   font-size: 0.9rem;
   margin: 0 0 20px 0;
   line-height: 1.5;
@@ -51,7 +54,7 @@ const NotebookButton = styled.button`
   background: #005f73;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
@@ -60,8 +63,6 @@ const NotebookButton = styled.button`
 
   &:hover {
     background: #003d4d;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   }
 `;
 
@@ -98,7 +99,10 @@ interface CodeSnippetsViewProps {
 }
 
 /** Group datasets by their schema. Datasets sharing a schema become one group (rendered as a loop). */
-function extractDatasetGroups(metadata: any): { groups: DatasetGroup[]; ungrouped: DatasetInfo[] } {
+function extractDatasetGroups(metadata: any): {
+  groups: DatasetGroup[];
+  ungrouped: DatasetInfo[];
+} {
   const graph = metadata?.["@graph"];
   if (!Array.isArray(graph)) return { groups: [], ungrouped: [] };
 
@@ -106,8 +110,10 @@ function extractDatasetGroups(metadata: any): { groups: DatasetGroup[]; ungroupe
   const schemaNames: Record<string, string> = {};
   for (const entry of graph) {
     const type = entry["@type"];
-    const isSchema = typeof type === "string" ? type === "EVI:Schema" :
-      Array.isArray(type) && type.some((t: string) => t.includes("Schema"));
+    const isSchema =
+      typeof type === "string"
+        ? type === "EVI:Schema"
+        : Array.isArray(type) && type.some((t: string) => t.includes("Schema"));
     if (isSchema) {
       schemaNames[entry["@id"]] = entry.name || entry["@id"];
     }
@@ -119,7 +125,8 @@ function extractDatasetGroups(metadata: any): { groups: DatasetGroup[]; ungroupe
 
   for (const entry of graph) {
     const type = entry["@type"];
-    const isDataset = Array.isArray(type) && type.some((t: string) => t.includes("Dataset"));
+    const isDataset =
+      Array.isArray(type) && type.some((t: string) => t.includes("Dataset"));
     if (!isDataset) continue;
     if (!entry.contentUrl || entry.contentUrl === "Embargoed") continue;
 
@@ -127,7 +134,8 @@ function extractDatasetGroups(metadata: any): { groups: DatasetGroup[]; ungroupe
       name: entry.name || entry["@id"] || "Dataset",
       contentUrl: entry.contentUrl,
       fileFormat: entry.fileFormat || entry.encodingFormat || "",
-      schemaId: entry["evi:Schema"]?.["@id"] || entry["evi:Schema"] || undefined,
+      schemaId:
+        entry["evi:Schema"]?.["@id"] || entry["evi:Schema"] || undefined,
     };
 
     if (ds.schemaId && schemaNames[ds.schemaId]) {
@@ -138,12 +146,14 @@ function extractDatasetGroups(metadata: any): { groups: DatasetGroup[]; ungroupe
     }
   }
 
-  const groups: DatasetGroup[] = Object.entries(bySchema).map(([schemaId, datasets]) => ({
-    schemaId,
-    schemaName: schemaNames[schemaId] || schemaId,
-    datasets,
-    fileFormat: datasets[0]?.fileFormat,
-  }));
+  const groups: DatasetGroup[] = Object.entries(bySchema).map(
+    ([schemaId, datasets]) => ({
+      schemaId,
+      schemaName: schemaNames[schemaId] || schemaId,
+      datasets,
+      fileFormat: datasets[0]?.fileFormat,
+    }),
+  );
 
   return { groups, ungrouped };
 }
@@ -280,7 +290,10 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
         Ready-to-use code for loading {totalDatasets} dataset
         {totalDatasets !== 1 ? "s" : ""}
         {groups.some((g) => g.datasets.length > 1)
-          ? ` (${groups.filter((g) => g.datasets.length > 1).map((g) => `${g.datasets.length} ${g.schemaName} files`).join(", ")} loaded via loop)`
+          ? ` (${groups
+              .filter((g) => g.datasets.length > 1)
+              .map((g) => `${g.datasets.length} ${g.schemaName} files`)
+              .join(", ")} loaded via loop)`
           : ""}
         {joinKeys.length > 0
           ? `, ${joinKeys.length} detected join column${joinKeys.length !== 1 ? "s" : ""}`
@@ -290,7 +303,10 @@ const CodeSnippetsView: React.FC<CodeSnippetsViewProps> = ({
 
       <TopBar>
         <LangBar>
-          <LangButton $active={lang === "python"} onClick={() => setLang("python")}>
+          <LangButton
+            $active={lang === "python"}
+            onClick={() => setLang("python")}
+          >
             Python
           </LangButton>
           <LangButton $active={lang === "r"} onClick={() => setLang("r")}>

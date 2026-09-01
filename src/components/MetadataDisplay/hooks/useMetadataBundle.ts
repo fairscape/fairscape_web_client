@@ -3,7 +3,10 @@ import { AuthContext } from "../../../context/AuthContext";
 import { useMetadataApi } from "../api/metadataApi";
 import { useEvidenceApi } from "../api/evidenceApi";
 import { classify, classifyROCrate } from "../utils/classify";
-import { extractEvidenceGraphId, extractAnnotatedEvidenceGraphId } from "../utils/evidence";
+import {
+  extractEvidenceGraphId,
+  extractAnnotatedEvidenceGraphId,
+} from "../utils/evidence";
 import type { MetadataBundle, EvidenceInfo } from "../types/types";
 import { extractSupportData } from "../../../components/EvidenceGraph/SupportingElementsComponent";
 
@@ -76,7 +79,8 @@ export function useMetadataBundle(ark: string) {
 
         if (kind !== "release") {
           const annotatedEvId =
-            extractAnnotatedEvidenceGraphId(main) ?? extractAnnotatedEvidenceGraphId(rocrate);
+            extractAnnotatedEvidenceGraphId(main) ??
+            extractAnnotatedEvidenceGraphId(rocrate);
           const evId =
             extractEvidenceGraphId(main) ?? extractEvidenceGraphId(rocrate);
 
@@ -87,7 +91,9 @@ export function useMetadataBundle(ark: string) {
             try {
               const response = await evidenceApi.getEG(annotatedEvId);
               const annotatedData = response.metadata ?? response;
-              const graphData = annotatedData["@graph"] ? { "@graph": annotatedData["@graph"] } : annotatedData;
+              const graphData = annotatedData["@graph"]
+                ? { "@graph": annotatedData["@graph"] }
+                : annotatedData;
               const supportData = extractSupportData?.(graphData);
               evidence = {
                 id: annotatedEvId,
@@ -120,7 +126,7 @@ export function useMetadataBundle(ark: string) {
               const poll = await evidenceApi.pollBuild(task_id);
               if (poll.status === "SUCCESS" && poll.result?.evidence_graph_id) {
                 const response = await evidenceApi.getEG(
-                  poll.result.evidence_graph_id
+                  poll.result.evidence_graph_id,
                 );
                 const data = response.metadata ?? response;
                 const supportData = extractSupportData?.(data);

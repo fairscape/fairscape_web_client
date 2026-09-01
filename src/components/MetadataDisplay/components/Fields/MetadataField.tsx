@@ -58,12 +58,12 @@ const RenderValue: React.FC<{ value: any }> = ({ value }) => {
     const potentialType = value.includes("dataset")
       ? "Dataset"
       : value.includes("software")
-      ? "Software"
-      : value.includes("computation")
-      ? "Computation"
-      : value.includes("schema")
-      ? "Schema"
-      : "rocrate"; // Default guess
+        ? "Software"
+        : value.includes("computation")
+          ? "Computation"
+          : value.includes("schema")
+            ? "Schema"
+            : "rocrate"; // Default guess
     return (
       <InternalLink to={`/${potentialType}/${value}`}>{value}</InternalLink>
     );

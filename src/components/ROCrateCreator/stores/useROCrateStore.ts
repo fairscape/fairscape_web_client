@@ -22,7 +22,7 @@ const baseType = (t: string) => {
 const typeMatches = (rawType: unknown, want: string) => {
   const w = want.toLowerCase();
   return normalizeTypeArray(rawType).some(
-    (t) => baseType(t).toLowerCase() === w
+    (t) => baseType(t).toLowerCase() === w,
   );
 };
 
@@ -112,7 +112,7 @@ export function useROCrateStore(): UseROCrateStoreReturn {
         missingFields,
       };
     },
-    []
+    [],
   );
 
   const addObject = useCallback(
@@ -127,7 +127,7 @@ export function useROCrateStore(): UseROCrateStoreReturn {
         return { ...prev, objects: newObjects };
       });
     },
-    [validateObject]
+    [validateObject],
   );
 
   const updateObject = useCallback(
@@ -143,7 +143,7 @@ export function useROCrateStore(): UseROCrateStoreReturn {
         return { ...prev, objects: newObjects };
       });
     },
-    [validateObject]
+    [validateObject],
   );
 
   const deleteObject = useCallback((id: string) => {
@@ -214,7 +214,7 @@ export function useROCrateStore(): UseROCrateStoreReturn {
     }
 
     const incompleteObjects = Array.from(crateState.objects.values()).filter(
-      (obj) => !obj.validation?.isComplete
+      (obj) => !obj.validation?.isComplete,
     );
 
     if (incompleteObjects.length > 0) {
@@ -223,7 +223,7 @@ export function useROCrateStore(): UseROCrateStoreReturn {
           incompleteObjects.length
         } object(s) have incomplete metadata: ${incompleteObjects
           .map((obj) => obj.name || obj["@id"])
-          .join(", ")}`
+          .join(", ")}`,
       );
     }
 
@@ -234,7 +234,7 @@ export function useROCrateStore(): UseROCrateStoreReturn {
         comp.usedDataset.forEach((id) => {
           if (!crateState.objects.has(id)) {
             warnings.push(
-              `Computation "${obj.name}" references missing dataset: ${id}`
+              `Computation "${obj.name}" references missing dataset: ${id}`,
             );
           }
         });
@@ -242,7 +242,7 @@ export function useROCrateStore(): UseROCrateStoreReturn {
         comp.usedSoftware.forEach((id) => {
           if (!crateState.objects.has(id)) {
             warnings.push(
-              `Computation "${obj.name}" references missing software: ${id}`
+              `Computation "${obj.name}" references missing software: ${id}`,
             );
           }
         });
@@ -250,7 +250,7 @@ export function useROCrateStore(): UseROCrateStoreReturn {
         comp.generated.forEach((id) => {
           if (!crateState.objects.has(id)) {
             warnings.push(
-              `Computation "${obj.name}" references missing output: ${id}`
+              `Computation "${obj.name}" references missing output: ${id}`,
             );
           }
         });
@@ -269,14 +269,14 @@ export function useROCrateStore(): UseROCrateStoreReturn {
       const all = Array.from(crateState.objects.values());
       return all.filter((obj) => typeMatches((obj as any)["@type"], type));
     },
-    [crateState.objects]
+    [crateState.objects],
   );
 
   const getObjectById = useCallback(
     (id: string): MetadataObject | undefined => {
       return crateState.objects.get(id);
     },
-    [crateState]
+    [crateState],
   );
 
   const getRelatedObjects = useCallback(
@@ -318,7 +318,7 @@ export function useROCrateStore(): UseROCrateStoreReturn {
 
       return { inputs, outputs, computations };
     },
-    [crateState]
+    [crateState],
   );
 
   const clearAll = useCallback(() => {

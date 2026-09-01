@@ -27,7 +27,7 @@ interface WorkspaceViewProps {
   onExternalRegistration: (
     url: string,
     type: "Dataset" | "Software",
-    metadata: any
+    metadata: any,
   ) => void;
   onOpenEditor: (objectId: string) => void;
   onDeleteObject: (objectId: string) => void;
@@ -48,7 +48,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   const [showExternalModal, setShowExternalModal] = useState(false);
   const [externalUrl, setExternalUrl] = useState("");
   const [externalType, setExternalType] = useState<"Dataset" | "Software">(
-    "Dataset"
+    "Dataset",
   );
   const [externalName, setExternalName] = useState("");
 
@@ -62,7 +62,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   };
 
   const allObjectsComplete = Array.from(crateState.objects.values()).every(
-    (obj) => obj.validation?.isComplete
+    (obj) => obj.validation?.isComplete,
   );
 
   const hasRequiredRootFields = !!(

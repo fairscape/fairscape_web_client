@@ -58,7 +58,7 @@ export function classifyROCrate(main: any): string {
     const hasDataset = types.includes("Dataset");
     const hasROCrate = types.some(
       (t) =>
-        t === "https://w3id.org/EVI#ROCrate" || normalizeType(t) === "rocrate"
+        t === "https://w3id.org/EVI#ROCrate" || normalizeType(t) === "rocrate",
     );
 
     if (hasDataset && hasROCrate) {

@@ -85,7 +85,7 @@ const CrateMetadataForm: React.FC<CrateMetadataFormProps> = ({
     };
     // Remove undefined properties for cleaner preview
     Object.keys(preview).forEach(
-      (key) => preview[key] === undefined && delete preview[key]
+      (key) => preview[key] === undefined && delete preview[key],
     );
     if (preview.keywords && preview.keywords.length === 0)
       delete preview.keywords;
@@ -96,7 +96,7 @@ const CrateMetadataForm: React.FC<CrateMetadataFormProps> = ({
   }, [formData]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -113,7 +113,7 @@ const CrateMetadataForm: React.FC<CrateMetadataFormProps> = ({
       !formData.keywords // Added keywords as required based on CLI
     ) {
       alert(
-        "Please fill in all required fields: Crate Name, Description, Organization, Project, Author, and Keywords."
+        "Please fill in all required fields: Crate Name, Description, Organization, Project, Author, and Keywords.",
       );
       return;
     }

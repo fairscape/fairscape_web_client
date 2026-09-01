@@ -157,7 +157,7 @@ const Section = styled.div<{ isReviewed: boolean }>`
   background: white;
   border: 2px solid ${({ isReviewed }) => (isReviewed ? "#4caf50" : "#ffc107")};
   background-color: ${({ isReviewed }) => (isReviewed ? "#f1f8e9" : "white")};
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 25px;
   transition: all 0.3s ease-in-out;
 `;
@@ -202,7 +202,7 @@ const ReviewedBadge = styled.span`
   background: #4caf50;
   color: white;
   padding: 4px 12px;
-  border-radius: 12px;
+  border-radius: 2px;
   font-size: 0.85rem;
   font-weight: 600;
 `;
@@ -236,7 +236,7 @@ const AIReadyBadge = styled.span`
   background: #2196f3;
   color: white;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 2px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -246,7 +246,7 @@ const Input = styled.input`
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #e0e0e0;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 0.95rem;
   transition: border-color 0.2s;
 
@@ -260,7 +260,7 @@ const TextArea = styled.textarea`
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #e0e0e0;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 0.95rem;
   font-family: inherit;
   resize: vertical;
@@ -276,7 +276,7 @@ const Select = styled.select`
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #e0e0e0;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 0.95rem;
   background: white;
   cursor: pointer;
@@ -301,7 +301,7 @@ const ReviewButton = styled.button`
   background: #3e7aa8;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -309,7 +309,6 @@ const ReviewButton = styled.button`
 
   &:hover {
     background: #2d5f7f;
-    transform: translateY(-1px);
   }
 `;
 

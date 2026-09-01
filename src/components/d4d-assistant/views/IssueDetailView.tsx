@@ -222,9 +222,8 @@ const StickySidebar = styled.aside`
 
 const SidebarCard = styled.div`
   background: white;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 30px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const SidebarHeader = styled.div`
@@ -244,7 +243,7 @@ const CheckStatusButton = styled.button`
   background: none;
   border: 1px solid #3e7aa8;
   color: #3e7aa8;
-  border-radius: 4px;
+  border-radius: 2px;
   padding: 6px 8px;
   cursor: pointer;
   display: flex;
@@ -288,7 +287,7 @@ const ActiveBanner = styled.div`
   padding: 12px 16px;
   background: #f0f8ff;
   border: 1px solid #3e7aa8;
-  border-radius: 6px;
+  border-radius: 2px;
   margin-bottom: 12px;
 
   svg {

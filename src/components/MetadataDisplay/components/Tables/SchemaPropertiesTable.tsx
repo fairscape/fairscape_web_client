@@ -16,9 +16,18 @@ const PropertiesTable = styled.table`
     word-wrap: break-word;
   }
 
+  thead {
+    border-top: 2px solid ${({ theme }) => theme.colors.ink};
+  }
+
   th {
-    background-color: ${({ theme }) => theme.colors.backgroundAlt};
-    font-weight: bold;
+    background-color: ${({ theme }) => theme.colors.background};
+    font-family: ${({ theme }) => theme.fonts.mono};
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: ${({ theme }) => theme.colors.ink3};
   }
 
   th:nth-child(1),
@@ -48,9 +57,9 @@ const PropertiesTable = styled.table`
 
 const InfoButton = styled.button`
   background: none;
-  border: 1px solid ${({ theme }) => theme.colors.textAlt};
+  border: 1px solid ${({ theme }) => theme.colors.ink3};
   border-radius: 50%;
-  color: ${({ theme }) => theme.colors.textAlt};
+  color: ${({ theme }) => theme.colors.ink3};
   cursor: pointer;
   padding: 0;
   margin: 0 auto;
@@ -138,7 +147,7 @@ const SchemaPropertiesTable: React.FC<SchemaPropertiesTableProps> = ({
                 </td>
               </tr>
             );
-          }
+          },
         )}
       </tbody>
     </PropertiesTable>
