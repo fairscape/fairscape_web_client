@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
-import { Metadata, RawGraphEntity } from "../../types/types";
+import { Metadata, RawGraphEntity, ContentCounts } from "../../types/types";
+import { useMetadataApi } from "../../api/metadataApi";
 import {
   processOverview,
   processAIReady,
@@ -18,6 +19,7 @@ import AIReadySection from "../../components/Sections/AIReadySection";
 
 import TabsSection, { TabConfig } from "../../components/Sections/TabsSection";
 import EntityTable, { EntityItem } from "../../components/Tables/EntityTable";
+import EntityPager from "../../components/Tables/EntityPager";
 import LoadingSpinner from "../../../common/LoadingSpinner";
 import Alert from "../../../common/Alert";
 
@@ -47,14 +49,129 @@ const roCrateMainProperties: MetadataProperty[] = [
   { key: "related_publications", name: "Related Publications" },
 ];
 
+/** Page size for server-side category paging. Server default and cap: 50 / 200. */
+const PAGE_SIZE = 50;
+
+/** Categories the server's contentSummary reports, in display order. */
+const PAGED_CATEGORIES: Array<{
+  id: keyof Omit<ContentCounts, "total">;
+  label: string;
+  headers: string[];
+}> = [
+  {
+    id: "datasets",
+    label: "Datasets",
+    headers: ["Name", "Description", "Access", "Release Date"],
+  },
+  {
+    id: "software",
+    label: "Software",
+    headers: ["Name", "Description", "Access", "Release Date"],
+  },
+  {
+    id: "computations",
+    label: "Computations",
+    headers: ["Name", "Description", "Access", "Date Created"],
+  },
+  {
+    id: "schemas",
+    label: "Schemas",
+    headers: ["Name", "Description", "Access", "Date Created"],
+  },
+  {
+    id: "samples",
+    label: "Samples",
+    headers: ["Name", "Description", "Access", "Date Created"],
+  },
+  {
+    id: "mlModels",
+    label: "ML Models",
+    headers: ["Name", "Description", "Access", "Date Created"],
+  },
+  {
+    id: "rocrates",
+    label: "Nested RO-Crates",
+    headers: ["Name", "Description", "Access", "Date Created"],
+  },
+  {
+    id: "other",
+    label: "Other",
+    headers: ["Name", "Description", "Access", "Type"],
+  },
+];
+
+/**
+ * Map one @graph entity onto the row shape EntityTable renders. Shared by the
+ * inline path (categorizing a fully expanded graph) and the paged path
+ * (entities arriving one page at a time from /rocrate/entities).
+ */
+function toEntityItem(
+  entity: RawGraphEntity,
+  apiUrl: string | undefined,
+): EntityItem {
+  const types = Array.isArray(entity["@type"])
+    ? entity["@type"]
+    : typeof entity["@type"] === "string"
+      ? [entity["@type"]]
+      : [];
+  const name =
+    entity.name ||
+    entity["@id"]?.split("/").pop() ||
+    entity["@id"] ||
+    "Unnamed Entity";
+  const description = entity.description || "";
+  const date =
+    entity.datePublished || entity.dateCreated || entity.dateModified || "";
+  const id = entity["@id"] || `genid-${Math.random().toString(16).slice(2)}`;
+
+  let contentStatus = "Metadata Only";
+  let contentUrl = "";
+  const hasDistribution = entity.distribution !== undefined;
+
+  if (entity.contentUrl === "Embargoed") {
+    contentStatus = "Embargoed";
+  } else if (entity.contentUrl) {
+    contentStatus = "External";
+    contentUrl = entity.contentUrl;
+  } else if (hasDistribution && entity["@id"] && apiUrl) {
+    contentStatus = "Download";
+    contentUrl = `${apiUrl}/download/${entity["@id"]}`;
+  }
+
+  return {
+    name,
+    description,
+    contentStatus,
+    contentUrl,
+    date,
+    id,
+    type: (types[0] as string) || "Unknown",
+  };
+}
+
+interface CategoryPage {
+  items: EntityItem[];
+  total: number;
+  loading: boolean;
+  error?: string;
+}
+
 interface ROCrateComponentProps {
   metadata: Metadata;
   arkId?: string;
+  /**
+   * Present when the crate was loaded with expand=false: entity lists are not
+   * in `metadata` and must be paged in from the server instead.
+   */
+  counts?: ContentCounts;
+  paged?: boolean;
 }
 
 const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   metadata,
   arkId,
+  counts,
+  paged = false,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +193,90 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   const [experiments, setExperiments] = useState<EntityItem[]>([]);
   const [instruments, setInstruments] = useState<EntityItem[]>([]);
   const [otherItems, setOtherItems] = useState<EntityItem[]>([]);
+
+  // Paged mode: one page of rows per category, plus the page index per tab.
+  const metadataApi = useMetadataApi();
+  const [pageIndex, setPageIndex] = useState<Record<string, number>>({});
+  const [pagedEntities, setPagedEntities] = useState<
+    Record<string, CategoryPage>
+  >({});
+
+  const pagedTabs = useMemo<TabConfig[]>(() => {
+    if (!paged || !counts) return [];
+    return PAGED_CATEGORIES.filter((c) => (counts[c.id] ?? 0) > 0).map((c) => ({
+      id: c.id,
+      label: c.label,
+      count: counts[c.id] ?? 0,
+    }));
+  }, [paged, counts]);
+
+  // Pick the first non-empty category once counts arrive.
+  useEffect(() => {
+    if (!paged) return;
+    if (pagedTabs.length === 0) {
+      setActiveTab("");
+      return;
+    }
+    if (!pagedTabs.some((t) => t.id === activeTab)) {
+      setActiveTab(pagedTabs[0].id);
+    }
+  }, [paged, pagedTabs, activeTab]);
+
+  // Fetch the active category's current page. Cached per category+page, so
+  // revisiting a tab does not refetch. The requested-key set lives in a ref
+  // rather than the dep array: depending on `pagedEntities` here would let the
+  // effect's own setState re-run it and cancel the in-flight request.
+  const requestedPages = useRef<Set<string>>(new Set());
+  const activePage = pageIndex[activeTab] ?? 0;
+
+  useEffect(() => {
+    if (!paged || !arkId || !activeTab) return;
+    const cacheKey = `${activeTab}:${activePage}`;
+    if (requestedPages.current.has(cacheKey)) return;
+    requestedPages.current.add(cacheKey);
+
+    let cancelled = false;
+    setPagedEntities((prev) => ({
+      ...prev,
+      [cacheKey]: { items: [], total: 0, loading: true },
+    }));
+
+    metadataApi
+      .getRoCrateEntities(arkId, activeTab, {
+        limit: PAGE_SIZE,
+        offset: activePage * PAGE_SIZE,
+      })
+      .then((res: any) => {
+        if (cancelled) return;
+        const items = ((res?.items ?? []) as RawGraphEntity[]).map((e) =>
+          toEntityItem(e, apiUrl),
+        );
+        setPagedEntities((prev) => ({
+          ...prev,
+          [cacheKey]: {
+            items,
+            total: res?.total ?? items.length,
+            loading: false,
+          },
+        }));
+      })
+      .catch((err: any) => {
+        if (cancelled) return;
+        setPagedEntities((prev) => ({
+          ...prev,
+          [cacheKey]: {
+            items: [],
+            total: 0,
+            loading: false,
+            error: err?.message || "Failed to load entities.",
+          },
+        }));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [paged, arkId, activeTab, activePage, apiUrl]);
 
   const getToken = () => localStorage.getItem("token") || "";
   const sanitizeFilename = (name: string): string =>
@@ -255,41 +456,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
         : typeof entity["@type"] === "string"
           ? [entity["@type"]]
           : [];
-      const name =
-        entity.name ||
-        entity["@id"]?.split("/").pop() ||
-        entity["@id"] ||
-        "Unnamed Entity";
-      const description = entity.description || "";
-      const date =
-        entity.datePublished || entity.dateCreated || entity.dateModified || "";
-      const id =
-        entity["@id"] || `genid-${Math.random().toString(16).slice(2)}`;
-
-      let contentStatus = "Metadata Only";
-      let contentUrl = "";
-      const hasDistribution = entity.distribution !== undefined;
-
-      if (entity.contentUrl === "Embargoed") {
-        contentStatus = "Embargoed";
-      } else if (entity.contentUrl) {
-        contentStatus = "External";
-        contentUrl = entity.contentUrl;
-      } else if (hasDistribution && entity["@id"] && apiUrl) {
-        contentStatus = "Download";
-        contentUrl = `${apiUrl}/download/${entity["@id"]}`;
-      } else {
-        contentStatus = "Metadata Only";
-      }
-
-      const item: EntityItem = {
-        name,
-        description,
-        contentStatus,
-        contentUrl,
-        date,
-        id,
-      };
+      const item: EntityItem = toEntityItem(entity, apiUrl);
 
       if (
         types.includes("https://w3id.org/EVI#Dataset") ||
@@ -321,7 +488,6 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
       } else if (types.includes("https://w3id.org/EVI#Instrument")) {
         processedInstruments.push(item);
       } else {
-        item.type = (types[0] as string) || "Unknown";
         processedOther.push(item);
       }
     });
@@ -333,6 +499,10 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
     setExperiments(processedExperiments);
     setInstruments(processedInstruments);
     setOtherItems(processedOther);
+
+    // In paged mode the graph holds only the crate shell, so the tab set comes
+    // from the summary counts instead — leave activeTab to that effect.
+    if (paged) return;
 
     const firstAvailableTabId =
       (processedDatasets.length > 0 && "datasets") ||
@@ -352,6 +522,7 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
   };
 
   const generateTabs = (): TabConfig[] => {
+    if (paged) return pagedTabs;
     const tabs: TabConfig[] = [];
     if (datasets.length > 0)
       tabs.push({ id: "datasets", label: "Datasets", count: datasets.length });
@@ -432,7 +603,44 @@ const ROCrateComponent: React.FC<ROCrateComponentProps> = ({
         />
       )}
 
-      {tabs.length > 0 && (
+      {tabs.length > 0 && paged && (
+        <>
+          <TabsSection
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+          {(() => {
+            const category = PAGED_CATEGORIES.find((c) => c.id === activeTab);
+            if (!category) return null;
+            const state = pagedEntities[`${activeTab}:${activePage}`];
+            const total = counts?.[category.id] ?? state?.total ?? 0;
+
+            if (state?.error) {
+              return <Alert type="error" message={state.error} />;
+            }
+            if (!state || state.loading) {
+              return <LoadingSpinner />;
+            }
+            return (
+              <>
+                <EntityTable items={state.items} headers={category.headers} />
+                <EntityPager
+                  page={activePage}
+                  pageSize={PAGE_SIZE}
+                  total={total}
+                  disabled={state.loading}
+                  onPageChange={(next) =>
+                    setPageIndex((prev) => ({ ...prev, [activeTab]: next }))
+                  }
+                />
+              </>
+            );
+          })()}
+        </>
+      )}
+
+      {tabs.length > 0 && !paged && (
         <>
           <TabsSection
             tabs={tabs}

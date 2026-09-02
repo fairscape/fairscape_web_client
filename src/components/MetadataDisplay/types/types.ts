@@ -63,10 +63,30 @@ export interface IdentifierValue {
   name?: string;
 }
 
+/** Per-category entity counts from /rocrate/summary. */
+export interface ContentCounts {
+  datasets: number;
+  software: number;
+  computations: number;
+  schemas: number;
+  samples: number;
+  mlModels: number;
+  rocrates: number;
+  other: number;
+  total: number;
+}
+
 export interface MetadataBundle {
   kind: string;
   main: any;
   rocrate?: any;
+  /**
+   * Set when the crate was loaded via the paged path: `rocrate` holds only the
+   * shell (expand=false) and entity lists must be fetched a page at a time
+   * from /rocrate/entities. `counts` carries the category totals.
+   */
+  paged?: boolean;
+  counts?: ContentCounts;
   evidence?: EvidenceInfo;
   serializations?: Serializations;
   session: SessionInfo;

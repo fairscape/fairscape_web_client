@@ -424,7 +424,14 @@ export default function MetadataDisplayPage() {
           case "release":
             return <ReleaseComponent metadata={m} arkId={arkId} />;
           case "rocrate":
-            return <ROCrateComponent metadata={m} arkId={arkId} />;
+            return (
+              <ROCrateComponent
+                metadata={m}
+                arkId={arkId}
+                counts={bundle.counts}
+                paged={bundle.paged}
+              />
+            );
           default:
             return (
               <GenericMetadataComponent

@@ -7,7 +7,11 @@ import {
   extractEvidenceGraphId,
   extractAnnotatedEvidenceGraphId,
 } from "../utils/evidence";
-import type { MetadataBundle, EvidenceInfo } from "../types/types";
+import type {
+  MetadataBundle,
+  EvidenceInfo,
+  ContentCounts,
+} from "../types/types";
 import { extractSupportData } from "../../../components/EvidenceGraph/SupportingElementsComponent";
 
 export function useMetadataBundle(ark: string) {
@@ -28,18 +32,46 @@ export function useMetadataBundle(ark: string) {
       setError(null);
 
       try {
-        const mainResp = await metadataApi.getMain(ark);
+        const mainResp = await metadataApi.getRoCrateView(ark);
         const main = mainResp?.metadata ?? mainResp;
         const mainKind = classify(main);
 
         let kind = mainKind;
 
         let rocrate: any | undefined = undefined;
+        let counts: ContentCounts | undefined = undefined;
+        let paged = false;
+
         if (kind === "rocrate" || kind === "release") {
           try {
-            const roResp = await metadataApi.getRoCrate(ark);
-            rocrate = roResp?.metadata ?? roResp;
-            kind = classifyROCrate(rocrate);
+            // Probe the precomputed summary. limit=1 because all we want here
+            // is `counts` and whether a summary exists at all.
+            const summary = await metadataApi
+              .getRoCrateSummary(ark, { limit: 1 })
+              .catch(() => null);
+            const summaryCounts: ContentCounts | undefined = summary?.counts;
+            const summaryAvailable = summary?.summaryAvailable === true;
+            const subCrateCount = summaryCounts?.rocrates ?? 0;
+
+            if (summaryAvailable && subCrateCount === 0) {
+              // Paged path: fetch the shell only. Entity lists are pulled per
+              // category by ROCrateComponent as the user opens each tab.
+              const roResp = await metadataApi.getRoCrate(ark, {
+                expand: false,
+              });
+              rocrate = roResp?.metadata ?? roResp;
+              kind = classifyROCrate(rocrate);
+              counts = summaryCounts;
+              paged = true;
+            } else {
+              // No summary, or a release whose sub-crates the page renders
+              // from the graph itself: fall back to the full expansion.
+              const roResp = await metadataApi.getRoCrate(ark, {
+                expand: true,
+              });
+              rocrate = roResp?.metadata ?? roResp;
+              kind = classifyROCrate(rocrate);
+            }
           } catch {}
         }
 
@@ -62,6 +94,8 @@ export function useMetadataBundle(ark: string) {
           kind,
           main,
           rocrate,
+          paged,
+          counts,
           evidence: kind === "release" ? undefined : { status: "building" },
           serializations: { json: main, rdfXml, turtle },
           session: { isLoggedIn: !!isLoggedIn },
